@@ -16,7 +16,7 @@ public:
     virtual void setParameter(const std::string& name, float value) = 0;
     virtual float getParameter(const std::string& name) const = 0;
     
-    void setSampleRate(int sampleRate);
+    virtual void setSampleRate(int sampleRate);
     int getSampleRate() const { return sampleRate_; }
     
     virtual std::string getName() const = 0;
@@ -46,7 +46,7 @@ private:
     std::vector<float> tempBuffer_;
 };
 
-// Example effect implementations
+// Time-based effects
 class Delay : public Effect {
 public:
     Delay(int sampleRate = 44100);
@@ -85,5 +85,27 @@ private:
     class Impl;
     std::unique_ptr<Impl> pimpl_;
 };
+
+// Forward declarations of other effect classes
+// These are defined in their own header files
+
+// Modulation effects
+class Modulation;
+
+// Tone-shaping effects
+class Saturation;
+class BassBoost;
+
+// Effect factory function
+inline std::unique_ptr<Effect> createEffect(const std::string& type, int sampleRate) {
+    if (type == "Delay") {
+        return std::make_unique<Delay>(sampleRate);
+    }
+    else if (type == "Reverb") {
+        return std::make_unique<Reverb>(sampleRate);
+    }
+    // Other effect types need to include their respective headers
+    return nullptr;
+}
 
 } // namespace AIMusicHardware
