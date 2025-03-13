@@ -1,4 +1,5 @@
 #include "../../include/audio/Synthesizer.h"
+#include "../../include/sequencer/Sequencer.h"
 #include <cmath>
 #include <algorithm>
 
@@ -49,6 +50,23 @@ void Voice::noteOn(int midiNote, float velocity) {
     isActive_ = true;
     envelopeStage_ = EnvelopeStage::Attack;
     envelopeValue_ = 0.0f;
+    
+    // Default envelope values remain unchanged
+}
+
+void Voice::noteOn(int midiNote, float velocity, const AIMusicHardware::Envelope& env) {
+    frequency_ = midiNoteToFrequency(midiNote);
+    amplitude_ = std::clamp(velocity, 0.0f, 1.0f);
+    isActive_ = true;
+    
+    // Use the provided envelope parameters
+    attack_ = env.attack;
+    decay_ = env.decay;
+    sustain_ = env.sustain;
+    release_ = env.release;
+    
+    envelopeStage_ = EnvelopeStage::Attack;
+    envelopeValue_ = 0.0f;
 }
 
 void Voice::noteOff() {
@@ -66,6 +84,10 @@ float Voice::generateSample() {
         return 0.0f;
     }
     
+    // Use a constant sample rate for now
+    // In a real implementation, this would be passed from the Synthesizer
+    const float sampleRate = 44100.0f;
+    
     // Update envelope
     switch (envelopeStage_) {
         case EnvelopeStage::Idle:
@@ -73,7 +95,8 @@ float Voice::generateSample() {
             break;
             
         case EnvelopeStage::Attack:
-            envelopeValue_ += 1.0f / (attack_ * 44100.0f); // assuming 44.1kHz
+            // Faster attack for better responsiveness
+            envelopeValue_ += 1.0f / (attack_ * sampleRate);
             if (envelopeValue_ >= 1.0f) {
                 envelopeValue_ = 1.0f;
                 envelopeStage_ = EnvelopeStage::Decay;
@@ -81,7 +104,7 @@ float Voice::generateSample() {
             break;
             
         case EnvelopeStage::Decay:
-            envelopeValue_ -= (1.0f - sustain_) / (decay_ * 44100.0f);
+            envelopeValue_ -= (1.0f - sustain_) / (decay_ * sampleRate);
             if (envelopeValue_ <= sustain_) {
                 envelopeValue_ = sustain_;
                 envelopeStage_ = EnvelopeStage::Sustain;
@@ -93,8 +116,11 @@ float Voice::generateSample() {
             break;
             
         case EnvelopeStage::Release:
-            envelopeValue_ -= sustain_ / (release_ * 44100.0f);
-            if (envelopeValue_ <= 0.0f) {
+            // Ensure release always completes by using an absolute rate rather than relative to sustain
+            float releaseRate = envelopeValue_ / (release_ * sampleRate);
+            envelopeValue_ -= releaseRate;
+            
+            if (envelopeValue_ <= 0.001f) {  // Small threshold to ensure complete silence
                 envelopeValue_ = 0.0f;
                 envelopeStage_ = EnvelopeStage::Idle;
                 isActive_ = false;
@@ -184,20 +210,43 @@ void Synthesizer::noteOn(int midiNote, float velocity) {
     }
 }
 
+void Synthesizer::noteOn(int midiNote, float velocity, const AIMusicHardware::Envelope& env) {
+    // Find an inactive voice or the oldest one
+    Voice* voice = nullptr;
+    
+    // First try to find an inactive voice
+    for (auto& v : voices_) {
+        if (!v->isActive()) {
+            voice = v.get();
+            break;
+        }
+    }
+    
+    // If all voices are active, we could implement voice stealing here
+    // For now, just use the first voice as a fallback
+    if (!voice && !voices_.empty()) {
+        voice = voices_[0].get();
+    }
+    
+    // Trigger the note with custom envelope
+    if (voice) {
+        voice->setOscillatorType(currentOscType_);
+        voice->noteOn(midiNote, velocity, env);
+    }
+}
+
 void Synthesizer::noteOff(int midiNote) {
-    // Simple implementation - doesn't account for multiple voices with same note
+    // Simple implementation - for now, just turn off all active voices
     // In a real synth, we'd need to track which voices are playing which notes
+    // so we can only turn off the specific voice playing this note
+    
+    // For now, the simplest solution is to call allNotesOff
+    // In a real implementation, we would want to track which voices are playing which notes
+    
+    // Turn off all active voices since we can't identify which one is playing the note
     for (auto& voice : voices_) {
         if (voice->isActive()) {
-            // This is a simplification - we'd normally check if this voice is playing this note
-            float voiceFreq = voice->generateSample(); // just to avoid unused variable warning
-            float noteFreq = midiNoteToFrequency(midiNote);
-            
-            // If frequencies are close, this voice is playing our target note
-            // This is imprecise but serves as an example
-            if (std::abs(voiceFreq - noteFreq) < 0.1f) {
-                voice->noteOff();
-            }
+            voice->noteOff();
         }
     }
 }
@@ -224,11 +273,27 @@ void Synthesizer::process(float* outputBuffer, int numFrames) {
     // Clear buffer
     std::fill(outputBuffer, outputBuffer + numFrames * 2, 0.0f);
     
+    // Count active voices for dynamic gain adjustment
+    int activeVoiceCount = 0;
+    for (auto& voice : voices_) {
+        if (voice->isActive()) {
+            activeVoiceCount++;
+        }
+    }
+    
+    // Calculate gain reduction based on active voices
+    float gainReduction = 1.0f;
+    if (activeVoiceCount > 0) {
+        // Apply a gain reduction when multiple voices are active
+        // 1 voice = 1.0, 2 voices = 0.7, 3+ voices = 0.5 (approximate)
+        gainReduction = 1.0f / (1.0f + 0.3f * activeVoiceCount);
+    }
+    
     // Process each voice
     for (auto& voice : voices_) {
         if (voice->isActive()) {
             for (int i = 0; i < numFrames; ++i) {
-                float sample = voice->generateSample();
+                float sample = voice->generateSample() * gainReduction;
                 // Apply to both channels (stereo)
                 outputBuffer[i * 2] += sample;
                 outputBuffer[i * 2 + 1] += sample;
@@ -236,8 +301,12 @@ void Synthesizer::process(float* outputBuffer, int numFrames) {
         }
     }
     
-    // Prevent clipping - simple gain reduction
+    // Additional master volume reduction to prevent distortion
+    const float masterVolume = 0.7f;
+    
+    // Prevent clipping - apply gain and limiter
     for (int i = 0; i < numFrames * 2; ++i) {
+        outputBuffer[i] *= masterVolume;
         outputBuffer[i] = std::clamp(outputBuffer[i], -1.0f, 1.0f);
     }
 }

@@ -1,0 +1,8 @@
+/Users/geaspar/AIMusicHardware/build/CMakeFiles/AIMusicCore.dir
+/Users/geaspar/AIMusicHardware/build/CMakeFiles/TestAudio.dir
+/Users/geaspar/AIMusicHardware/build/CMakeFiles/TestSequencer.dir
+/Users/geaspar/AIMusicHardware/build/CMakeFiles/SimpleTest.dir
+/Users/geaspar/AIMusicHardware/build/CMakeFiles/TestSequencerFile.dir
+/Users/geaspar/AIMusicHardware/build/CMakeFiles/TestSequencerAdvanced.dir
+/Users/geaspar/AIMusicHardware/build/CMakeFiles/edit_cache.dir
+/Users/geaspar/AIMusicHardware/build/CMakeFiles/rebuild_cache.dir

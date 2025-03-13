@@ -19,6 +19,9 @@ public:
     using AudioCallback = std::function<void(float* outputBuffer, int numFrames)>;
     void setAudioCallback(AudioCallback callback);
     
+    // Accessor for callback (used by audio callback function)
+    AudioCallback getCallback() const;
+    
     int getSampleRate() const { return sampleRate_; }
     int getBufferSize() const { return bufferSize_; }
     

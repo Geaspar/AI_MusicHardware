@@ -3,6 +3,7 @@
 #include <vector>
 #include <array>
 #include <memory>
+#include "../sequencer/Sequencer.h" // Include for Envelope struct
 
 namespace AIMusicHardware {
 
@@ -23,6 +24,7 @@ public:
     void setOscillatorType(OscillatorType type);
     void setAmplitude(float amplitude);
     void noteOn(int midiNote, float velocity);
+    void noteOn(int midiNote, float velocity, const AIMusicHardware::Envelope& env);
     void noteOff();
     bool isActive() const;
     
@@ -53,6 +55,7 @@ public:
     
     void setSampleRate(int sampleRate);
     void noteOn(int midiNote, float velocity);
+    void noteOn(int midiNote, float velocity, const AIMusicHardware::Envelope& env);
     void noteOff(int midiNote);
     void allNotesOff();
     

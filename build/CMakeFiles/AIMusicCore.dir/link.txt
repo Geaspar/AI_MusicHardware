@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc lib/libAIMusicCore.a CMakeFiles/AIMusicCore.dir/src/audio/AudioEngine.cpp.o CMakeFiles/AIMusicCore.dir/src/audio/Synthesizer.cpp.o CMakeFiles/AIMusicCore.dir/src/sequencer/Sequencer.cpp.o CMakeFiles/AIMusicCore.dir/src/sequencer/MidiFile.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib lib/libAIMusicCore.a
