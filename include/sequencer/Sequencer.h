@@ -6,6 +6,8 @@
 #include <string>
 #include <mutex>
 #include <atomic>
+#include <optional>
+#include <cmath> // For fabs
 
 namespace AIMusicHardware {
 
@@ -114,8 +116,10 @@ public:
     void clearSong();
     
     size_t getNumPatternInstances() const;
-    PatternInstance* getPatternInstance(size_t index);
-    const PatternInstance* getPatternInstance(size_t index) const;
+    
+    // Return optional instead of raw pointers for safety
+    std::optional<PatternInstance> getPatternInstance(size_t index);
+    std::optional<PatternInstance> getPatternInstance(size_t index) const;
     
     double getSongLength() const;
     
@@ -159,7 +163,9 @@ private:
     
     std::atomic<bool> isPlaying_;
     std::atomic<bool> looping_;
+    std::atomic<size_t> currentPatternIndex_;  // Make thread-safe
     double positionInBeats_;
+    mutable std::mutex positionMutex_;  // Protect position access
     
     // Callbacks
     NoteOnCallback noteOnCallback_;
@@ -175,6 +181,7 @@ private:
         double endTime;
     };
     std::vector<ActiveNote> activeNotes_;
+    mutable std::mutex activeNotesMutex_; // Protect active notes
 };
 
 } // namespace AIMusicHardware

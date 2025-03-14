@@ -30,20 +30,40 @@ void Pattern::removeNote(size_t index) {
     if (index < notes_.size()) {
         notes_.erase(notes_.begin() + index);
         
-        // Recalculate length
-        length_ = 4.0; // Default length (1 bar at 4/4)
+        // Get parent sequencer time signature if available, otherwise default to 4/4
+        // We'll use a default minimum length of one bar, but recalculate based on notes
+        double defaultBarLength = 4.0; // Default to 4 beats (1 bar at 4/4)
+        
+        if (notes_.empty()) {
+            length_ = defaultBarLength;
+            return;
+        }
+        
+        // Start with a small value to find actual length from notes
+        length_ = 0.0;
         for (const auto& note : notes_) {
             double noteEnd = note.startTime + note.duration;
             if (noteEnd > length_) {
                 length_ = noteEnd;
             }
         }
+        
+        // If length is smaller than one bar, use a bar as minimum
+        if (length_ < defaultBarLength) {
+            length_ = defaultBarLength;
+        }
     }
 }
 
 void Pattern::clear() {
     notes_.clear();
-    length_ = 4.0; // Reset to default length (1 bar at 4/4)
+    
+    // Default to one bar at 4/4, but this could be configurable based on time signature
+    double defaultBarLength = 4.0; // Default to 4 beats (1 bar at 4/4)
+    length_ = defaultBarLength;
+    
+    // Release memory
+    notes_.shrink_to_fit();
 }
 
 Note* Pattern::getNote(size_t index) {
@@ -129,11 +149,8 @@ void Pattern::applySwing(double swingAmount, double gridSize) {
             double swingOffset = gridSize * swingAmount;
             note.startTime += swingOffset;
             
-            // Adjust duration to maintain note end
-            note.duration -= swingOffset;
-            if (note.duration < 0.01) {
-                note.duration = 0.01; // Minimum duration
-            }
+            // Adjust duration to maintain note end, but ensure it never goes below minimum
+            note.duration = std::max(gridSize * 0.5, note.duration - swingOffset);
         }
     }
     
@@ -154,11 +171,11 @@ void Pattern::applySwing(double swingAmount, double gridSize) {
 Sequencer::Sequencer(double tempo, int beatsPerBar)
     : tempo_(tempo),
       beatsPerBar_(beatsPerBar),
-      currentPatternIndex_(0),
       playbackMode_(PlaybackMode::SinglePattern),
       songLength_(0.0),
       isPlaying_(false),
       looping_(true),
+      currentPatternIndex_(0),  // Now atomic
       positionInBeats_(0.0) {
 }
 
@@ -231,12 +248,12 @@ size_t Sequencer::getNumPatterns() const {
 void Sequencer::setCurrentPattern(size_t index) {
     std::lock_guard<std::mutex> lock(patternMutex_);
     if (index < patterns_.size()) {
-        currentPatternIndex_ = index;
+        currentPatternIndex_.store(index);
     }
 }
 
 size_t Sequencer::getCurrentPatternIndex() const {
-    return currentPatternIndex_;
+    return currentPatternIndex_.load();
 }
 
 void Sequencer::setPlaybackMode(PlaybackMode mode) {
@@ -283,6 +300,7 @@ void Sequencer::removePatternFromSong(size_t arrangementIndex) {
 void Sequencer::clearSong() {
     std::lock_guard<std::mutex> lock(arrangementMutex_);
     songArrangement_.clear();
+    songArrangement_.shrink_to_fit(); // Release memory
     songLength_ = 0.0;
 }
 
@@ -291,20 +309,20 @@ size_t Sequencer::getNumPatternInstances() const {
     return songArrangement_.size();
 }
 
-PatternInstance* Sequencer::getPatternInstance(size_t index) {
+std::optional<PatternInstance> Sequencer::getPatternInstance(size_t index) {
     std::lock_guard<std::mutex> lock(arrangementMutex_);
     if (index < songArrangement_.size()) {
-        return &songArrangement_[index];
+        return songArrangement_[index]; // Return by value
     }
-    return nullptr;
+    return std::nullopt;
 }
 
-const PatternInstance* Sequencer::getPatternInstance(size_t index) const {
+std::optional<PatternInstance> Sequencer::getPatternInstance(size_t index) const {
     std::lock_guard<std::mutex> lock(arrangementMutex_);
     if (index < songArrangement_.size()) {
-        return &songArrangement_[index];
+        return songArrangement_[index]; // Return by value
     }
-    return nullptr;
+    return std::nullopt;
 }
 
 double Sequencer::getSongLength() const {
@@ -321,32 +339,60 @@ bool Sequencer::isLooping() const {
 
 void Sequencer::setPositionInBeats(double positionInBeats) {
     // Stop all active notes when changing position
-    if (noteOffCallback_) {
-        for (const auto& note : activeNotes_) {
-            noteOffCallback_(note.pitch, note.channel);
+    {
+        std::lock_guard<std::mutex> lock(activeNotesMutex_);
+        if (noteOffCallback_) {
+            for (const auto& note : activeNotes_) {
+                noteOffCallback_(note.pitch, note.channel);
+            }
         }
+        activeNotes_.clear();
     }
     
-    activeNotes_.clear();
-    positionInBeats_ = positionInBeats;
+    {
+        std::lock_guard<std::mutex> lock(positionMutex_);
+        positionInBeats_ = positionInBeats;
+    }
     
     // Notify transport callback
     if (transportCallback_) {
-        transportCallback_(positionInBeats_, getCurrentBar(), getCurrentBeat());
+        int bar, beat;
+        {
+            std::lock_guard<std::mutex> lock(positionMutex_);
+            bar = static_cast<int>(std::floor(positionInBeats_ / beatsPerBar_)) + 1;
+            double beatInBar = fmod(positionInBeats_, static_cast<double>(beatsPerBar_));
+            beat = static_cast<int>(std::floor(beatInBar)) + 1;
+        }
+        transportCallback_(positionInBeats, bar, beat);
     }
 }
 
 double Sequencer::getPositionInBeats() const {
+    std::lock_guard<std::mutex> lock(positionMutex_);
     return positionInBeats_;
 }
 
 int Sequencer::getCurrentBar() const {
-    return static_cast<int>(positionInBeats_ / beatsPerBar_) + 1;
+    std::lock_guard<std::mutex> lock(positionMutex_);
+    // More accurate bar calculation
+    return static_cast<int>(std::floor(positionInBeats_ / beatsPerBar_)) + 1;
 }
 
 int Sequencer::getCurrentBeat() const {
+    std::lock_guard<std::mutex> lock(positionMutex_);
+    // More accurate beat calculation with consistent rounding
     double beatInBar = fmod(positionInBeats_, static_cast<double>(beatsPerBar_));
-    return static_cast<int>(beatInBar) + 1;
+    
+    // Handle the case of exactly at bar boundary
+    if (fabs(beatInBar) < 1e-6) {
+        return 1; // First beat of bar
+    }
+    
+    if (fabs(beatInBar - beatsPerBar_) < 1e-6) {
+        return beatsPerBar_; // Last beat of bar
+    }
+    
+    return static_cast<int>(std::floor(beatInBar)) + 1;
 }
 
 void Sequencer::setNoteCallbacks(NoteOnCallback noteOn, NoteOffCallback noteOff) {
@@ -374,16 +420,34 @@ void Sequencer::process(double deltaTime) {
         processSongArrangement(deltaBeats);
     }
     
-    // Notify transport callback
+    // Notify transport callback with thread-safe position access
     if (transportCallback_) {
-        transportCallback_(positionInBeats_, getCurrentBar(), getCurrentBeat());
+        double safePosition;
+        int bar, beat;
+        
+        {
+            std::lock_guard<std::mutex> lock(positionMutex_);
+            safePosition = positionInBeats_;
+            bar = static_cast<int>(std::floor(positionInBeats_ / beatsPerBar_)) + 1;
+            double beatInBar = fmod(positionInBeats_, static_cast<double>(beatsPerBar_));
+            beat = static_cast<int>(std::floor(beatInBar)) + 1;
+        }
+        
+        transportCallback_(safePosition, bar, beat);
     }
 }
 
 void Sequencer::processSinglePattern(double deltaBeats) {
     // Store previous and current positions
-    double previousPosition = positionInBeats_;
-    positionInBeats_ += deltaBeats;
+    double previousPosition;
+    {
+        std::lock_guard<std::mutex> lock(positionMutex_);
+        previousPosition = positionInBeats_;
+        positionInBeats_ += deltaBeats;
+    }
+    
+    // Define a small epsilon for floating-point comparisons
+    constexpr double EPSILON = 1e-6;
     
     // Check if we need to loop
     std::lock_guard<std::mutex> lock(patternMutex_);
@@ -391,16 +455,29 @@ void Sequencer::processSinglePattern(double deltaBeats) {
         return;
     }
     
-    Pattern* currentPattern = patterns_[currentPatternIndex_].get();
+    // Use atomic for thread safety
+    size_t patternIndex = currentPatternIndex_.load();
+    if (patternIndex >= patterns_.size()) {
+        return;
+    }
+    
+    Pattern* currentPattern = patterns_[patternIndex].get();
     double patternLength = currentPattern->getLength();
     
-    if (positionInBeats_ >= patternLength) {
+    if (positionInBeats_ >= patternLength - EPSILON) {
         if (looping_) {
             // Loop back to beginning
-            positionInBeats_ = fmod(positionInBeats_, patternLength);
+            std::lock_guard<std::mutex> posLock(positionMutex_);
+            // Use careful modulo to avoid precision errors
+            if (fabs(positionInBeats_ - patternLength) < EPSILON) {
+                positionInBeats_ = 0.0;  // Exactly at the end, reset to beginning
+            } else {
+                positionInBeats_ = fmod(positionInBeats_, patternLength);
+            }
             previousPosition = 0.0;
         } else {
             // Stop at the end
+            std::lock_guard<std::mutex> posLock(positionMutex_);
             positionInBeats_ = patternLength;
             isPlaying_ = false;
             return;
@@ -426,37 +503,64 @@ void Sequencer::processSinglePattern(double deltaBeats) {
             activeNote.pitch = note->pitch;
             activeNote.channel = note->channel;
             activeNote.endTime = noteEndTime;
-            activeNotes_.push_back(activeNote);
+            
+            {
+                std::lock_guard<std::mutex> lock(activeNotesMutex_);
+                activeNotes_.push_back(activeNote);
+            }
         }
     }
     
     // Check for notes to stop in this time slice
-    auto it = activeNotes_.begin();
-    while (it != activeNotes_.end()) {
-        if (it->endTime <= positionInBeats_) {
-            if (noteOffCallback_) {
-                noteOffCallback_(it->pitch, it->channel);
+    double currentPosition;
+    {
+        std::lock_guard<std::mutex> lock(positionMutex_);
+        currentPosition = positionInBeats_;
+    }
+    
+    {
+        std::lock_guard<std::mutex> lock(activeNotesMutex_);
+        auto it = activeNotes_.begin();
+        while (it != activeNotes_.end()) {
+            if (it->endTime <= currentPosition) {
+                if (noteOffCallback_) {
+                    noteOffCallback_(it->pitch, it->channel);
+                }
+                it = activeNotes_.erase(it);
+            } else {
+                ++it;
             }
-            it = activeNotes_.erase(it);
-        } else {
-            ++it;
         }
     }
 }
 
 void Sequencer::processSongArrangement(double deltaBeats) {
     // Store previous and current positions
-    double previousPosition = positionInBeats_;
-    positionInBeats_ += deltaBeats;
+    double previousPosition;
+    {
+        std::lock_guard<std::mutex> lock(positionMutex_);
+        previousPosition = positionInBeats_;
+        positionInBeats_ += deltaBeats;
+    }
+    
+    // Define a small epsilon for floating-point comparisons
+    constexpr double EPSILON = 1e-6;
     
     // Check if we need to loop
-    if (positionInBeats_ >= songLength_) {
-        if (looping_ && songLength_ > 0.0) {
+    if (positionInBeats_ >= songLength_ - EPSILON) {
+        if (looping_ && songLength_ > EPSILON) {
             // Loop back to beginning
-            positionInBeats_ = fmod(positionInBeats_, songLength_);
+            std::lock_guard<std::mutex> lock(positionMutex_);
+            // Use careful modulo to avoid precision errors
+            if (fabs(positionInBeats_ - songLength_) < EPSILON) {
+                positionInBeats_ = 0.0;  // Exactly at the end, reset to beginning
+            } else {
+                positionInBeats_ = fmod(positionInBeats_, songLength_);
+            }
             previousPosition = 0.0;
-        } else if (songLength_ > 0.0) {
+        } else if (songLength_ > EPSILON) {
             // Stop at the end
+            std::lock_guard<std::mutex> lock(positionMutex_);
             positionInBeats_ = songLength_;
             isPlaying_ = false;
             return;
@@ -513,32 +617,51 @@ void Sequencer::processSongArrangement(double deltaBeats) {
                 activeNote.pitch = note->pitch;
                 activeNote.channel = note->channel;
                 activeNote.endTime = patternStart + noteEndTime;
-                activeNotes_.push_back(activeNote);
+                
+                {
+                    std::lock_guard<std::mutex> lock(activeNotesMutex_);
+                    activeNotes_.push_back(activeNote);
+                }
             }
         }
     }
     
     // Check for notes to stop in this time slice
-    auto it = activeNotes_.begin();
-    while (it != activeNotes_.end()) {
-        if (it->endTime <= positionInBeats_) {
-            if (noteOffCallback_) {
-                noteOffCallback_(it->pitch, it->channel);
+    double currentPosition;
+    {
+        std::lock_guard<std::mutex> lock(positionMutex_);
+        currentPosition = positionInBeats_;
+    }
+    
+    {
+        std::lock_guard<std::mutex> lock(activeNotesMutex_);
+        auto it = activeNotes_.begin();
+        while (it != activeNotes_.end()) {
+            if (it->endTime <= currentPosition) {
+                if (noteOffCallback_) {
+                    noteOffCallback_(it->pitch, it->channel);
+                }
+                it = activeNotes_.erase(it);
+            } else {
+                ++it;
             }
-            it = activeNotes_.erase(it);
-        } else {
-            ++it;
         }
     }
 }
 
 std::vector<PatternInstance*> Sequencer::getActivePatternInstances() {
+    double currentPosition;
+    {
+        std::lock_guard<std::mutex> lock(positionMutex_);
+        currentPosition = positionInBeats_;
+    }
+    
     std::lock_guard<std::mutex> lock(arrangementMutex_);
     std::vector<PatternInstance*> active;
     
     for (auto& instance : songArrangement_) {
         // Check if this pattern instance is active at current position
-        if (positionInBeats_ >= instance.startBeat && positionInBeats_ < instance.endBeat) {
+        if (currentPosition >= instance.startBeat && currentPosition < instance.endBeat) {
             active.push_back(&instance);
         }
     }
