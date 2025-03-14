@@ -151,7 +151,7 @@ private:
     // Update song length based on pattern instances
     void updateSongLength();
     
-    double tempo_;
+    std::atomic<double> tempo_;  // Make tempo atomic for lock-free access
     int beatsPerBar_;
     std::vector<std::unique_ptr<Pattern>> patterns_;
     size_t currentPatternIndex_;

@@ -169,7 +169,7 @@ void Pattern::applySwing(double swingAmount, double gridSize) {
 //-------------------------------------------------------------------------
 
 Sequencer::Sequencer(double tempo, int beatsPerBar)
-    : tempo_(tempo),
+    : tempo_(tempo),  // Initialize atomic<double>
       beatsPerBar_(beatsPerBar),
       playbackMode_(PlaybackMode::SinglePattern),
       songLength_(0.0),
@@ -184,39 +184,66 @@ Sequencer::~Sequencer() {
 }
 
 void Sequencer::start() {
-    // Reset position
-    positionInBeats_ = 0.0;
-    activeNotes_.clear();
-    isPlaying_ = true;
+    {
+        // Protect position update with mutex
+        std::lock_guard<std::mutex> posLock(positionMutex_);
+        positionInBeats_ = 0.0;
+    }
+    
+    {
+        // Protect activeNotes_ with its dedicated mutex
+        std::lock_guard<std::mutex> notesLock(activeNotesMutex_);
+        activeNotes_.clear();
+    }
+    
+    // Atomic state change - no lock needed
+    isPlaying_.store(true, std::memory_order_release);
 }
 
 void Sequencer::stop() {
-    // Stop all active notes
+    // Use std::exchange to minimize lock contention
+    std::vector<ActiveNote> notesToStop;
+    {
+        std::lock_guard<std::mutex> lock(activeNotesMutex_);
+        // Move active notes to local vector to minimize time spent in lock
+        notesToStop = std::move(activeNotes_);
+        activeNotes_ = std::vector<ActiveNote>(); // Create a fresh empty vector
+    }
+    
+    // Stop all active notes after releasing the lock
     if (noteOffCallback_) {
-        for (const auto& note : activeNotes_) {
+        for (const auto& note : notesToStop) {
             noteOffCallback_(note.pitch, note.channel);
         }
     }
     
-    activeNotes_.clear();
     isPlaying_ = false;
 }
 
 void Sequencer::reset() {
+    // Stop first to handle active notes
     stop();
-    positionInBeats_ = 0.0;
+    
+    // Then reset position with proper locking
+    {
+        std::lock_guard<std::mutex> lock(positionMutex_);
+        positionInBeats_ = 0.0;
+    }
 }
 
 bool Sequencer::isPlaying() const {
-    return isPlaying_;
+    // Use explicit memory ordering for consistent reads
+    return isPlaying_.load(std::memory_order_acquire);
 }
 
 void Sequencer::setTempo(double bpm) {
-    tempo_ = bpm;
+    // Use atomic store with explicit memory ordering - no locks needed
+    tempo_.store(bpm, std::memory_order_release);
 }
 
 double Sequencer::getTempo() const {
-    return tempo_;
+    // Use atomic load with explicit memory ordering - no locks needed
+    return tempo_.load(std::memory_order_acquire);
 }
 
 void Sequencer::addPattern(std::unique_ptr<Pattern> pattern) {
@@ -246,14 +273,21 @@ size_t Sequencer::getNumPatterns() const {
 }
 
 void Sequencer::setCurrentPattern(size_t index) {
-    std::lock_guard<std::mutex> lock(patternMutex_);
-    if (index < patterns_.size()) {
-        currentPatternIndex_.store(index);
+    // Check bounds under mutex
+    {
+        std::lock_guard<std::mutex> lock(patternMutex_);
+        if (index >= patterns_.size()) {
+            return;
+        }
     }
+    
+    // Use atomic directly - no need for mutex when setting the value
+    currentPatternIndex_.store(index, std::memory_order_release);
 }
 
 size_t Sequencer::getCurrentPatternIndex() const {
-    return currentPatternIndex_.load();
+    // Use explicit memory ordering for better performance
+    return currentPatternIndex_.load(std::memory_order_acquire);
 }
 
 void Sequencer::setPlaybackMode(PlaybackMode mode) {
@@ -265,8 +299,10 @@ PlaybackMode Sequencer::getPlaybackMode() const {
 }
 
 void Sequencer::addPatternToSong(size_t patternIndex, double startBeat) {
-    std::lock_guard<std::mutex> lock(arrangementMutex_);
+    // Always lock in consistent order to prevent deadlocks:
+    // patternMutex_ first, then arrangementMutex_
     std::lock_guard<std::mutex> patternLock(patternMutex_);
+    std::lock_guard<std::mutex> arrangementLock(arrangementMutex_);
     
     if (patternIndex >= patterns_.size()) {
         return;
@@ -330,40 +366,48 @@ double Sequencer::getSongLength() const {
 }
 
 void Sequencer::setLooping(bool loop) {
-    looping_ = loop;
+    // Use atomic store with explicit memory ordering
+    looping_.store(loop, std::memory_order_release);
 }
 
 bool Sequencer::isLooping() const {
-    return looping_;
+    // Use atomic load with explicit memory ordering
+    return looping_.load(std::memory_order_acquire);
 }
 
 void Sequencer::setPositionInBeats(double positionInBeats) {
-    // Stop all active notes when changing position
+    // Stop all active notes when changing position using the more efficient approach
+    std::vector<ActiveNote> notesToStop;
     {
         std::lock_guard<std::mutex> lock(activeNotesMutex_);
-        if (noteOffCallback_) {
-            for (const auto& note : activeNotes_) {
-                noteOffCallback_(note.pitch, note.channel);
-            }
-        }
-        activeNotes_.clear();
+        notesToStop = std::move(activeNotes_);
+        activeNotes_ = std::vector<ActiveNote>();
     }
     
+    // Stop notes after releasing the lock
+    if (noteOffCallback_) {
+        for (const auto& note : notesToStop) {
+            noteOffCallback_(note.pitch, note.channel);
+        }
+    }
+    
+    // Update position and capture values for callback
+    double safePosition;
+    int bar, beat;
     {
         std::lock_guard<std::mutex> lock(positionMutex_);
         positionInBeats_ = positionInBeats;
+        safePosition = positionInBeats;  // Make a copy for the callback
+        
+        // Calculate bar and beat while still under lock
+        bar = static_cast<int>(std::floor(positionInBeats_ / beatsPerBar_)) + 1;
+        double beatInBar = fmod(positionInBeats_, static_cast<double>(beatsPerBar_));
+        beat = static_cast<int>(std::floor(beatInBar)) + 1;
     }
     
-    // Notify transport callback
+    // Notify transport callback with the safe copies (outside the lock)
     if (transportCallback_) {
-        int bar, beat;
-        {
-            std::lock_guard<std::mutex> lock(positionMutex_);
-            bar = static_cast<int>(std::floor(positionInBeats_ / beatsPerBar_)) + 1;
-            double beatInBar = fmod(positionInBeats_, static_cast<double>(beatsPerBar_));
-            beat = static_cast<int>(std::floor(beatInBar)) + 1;
-        }
-        transportCallback_(positionInBeats, bar, beat);
+        transportCallback_(safePosition, bar, beat);
     }
 }
 
@@ -405,34 +449,40 @@ void Sequencer::setTransportCallback(TransportCallback callback) {
 }
 
 void Sequencer::process(double deltaTime) {
-    if (!isPlaying_) {
+    // Fast path exit with atomic check - no lock needed
+    if (!isPlaying_.load(std::memory_order_acquire)) {
         return;
     }
     
-    // Convert delta time to beats
+    // Convert delta time to beats - no locks needed for tempo_
     double beatsPerSecond = tempo_ / 60.0;
     double deltaBeats = deltaTime * beatsPerSecond;
     
     // Process based on playback mode
-    if (playbackMode_ == PlaybackMode::SinglePattern) {
+    PlaybackMode mode = playbackMode_; // Make a local copy to avoid repeated access
+    if (mode == PlaybackMode::SinglePattern) {
         processSinglePattern(deltaBeats);
     } else {
         processSongArrangement(deltaBeats);
     }
     
-    // Notify transport callback with thread-safe position access
+    // Only capture values needed for callback, minimize lock duration
     if (transportCallback_) {
         double safePosition;
         int bar, beat;
         
+        // Minimize critical section - only capture necessary values
         {
             std::lock_guard<std::mutex> lock(positionMutex_);
             safePosition = positionInBeats_;
-            bar = static_cast<int>(std::floor(positionInBeats_ / beatsPerBar_)) + 1;
-            double beatInBar = fmod(positionInBeats_, static_cast<double>(beatsPerBar_));
+            
+            // Compute derived values inside lock to ensure consistency
+            bar = static_cast<int>(std::floor(safePosition / beatsPerBar_)) + 1;
+            double beatInBar = fmod(safePosition, static_cast<double>(beatsPerBar_));
             beat = static_cast<int>(std::floor(beatInBar)) + 1;
-        }
+        } // Lock released as soon as possible
         
+        // Call callback outside the lock
         transportCallback_(safePosition, bar, beat);
     }
 }
