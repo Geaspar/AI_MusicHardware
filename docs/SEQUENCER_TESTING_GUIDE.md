@@ -84,6 +84,8 @@ This program generates WAV audio files from pre-defined patterns.
 
 ## Running TestSequencerAdvanced
 
+> **Note:** TestSequencerAdvanced is a simulation-only application that demonstrates sequencer functionality visually through the console. It does not produce actual audio output. For audio output, use TestSequencerFile to generate WAV files or TestAudio for real-time audio.
+
 This is an interactive application that demonstrates all the advanced sequencer features. The recent improvements make it more stable and user-friendly with better input handling, thread safety, and error management.
 
 ### Building and Running
@@ -241,20 +243,24 @@ Example workflow:
 
 #### 5. Playback Test
 
-This simulates playback of your patterns or song:
+This simulates playback of your patterns or song (no actual audio output):
 
 1. Displays current mode (Single Pattern or Song Arrangement)
 2. Shows pattern name or song length
 3. Press Enter to start playback
 4. The position indicator shows the current playback position
-5. Note On/Off events are displayed as they occur
+5. Note On/Off events are displayed as they occur in the console (visual feedback only)
 6. Press Enter again to stop playback
+
+**Important Note:** This is a visual simulation only - no actual sound will be produced. The TestSequencerAdvanced application is designed to test the sequencer's functionality without audio output. To hear actual audio:
+- Use TestSequencerFile to generate WAV files that you can listen to
+- Use TestAudio for real-time audio playback
 
 Example workflow:
 ```
 1. Select "Playback Test"
 2. Press Enter to start playback
-3. Watch the transport position and note events
+3. Watch the transport position and note events in the console
 4. Press Enter to stop playback
 5. Return to the main menu
 ```

@@ -1,5 +1,36 @@
 # Project Updates
 
+## March 15, 2025 - Sequencer Documentation and Bug Fixes
+
+We've clarified the documentation and fixed compilation errors in the sequencer-related files:
+
+### Documentation Improvements:
+
+1. **TestSequencerAdvanced Clarification**:
+   - Added clear notes in SEQUENCER_TESTING_GUIDE.md explaining that TestSequencerAdvanced is a simulation-only application
+   - Clarified that the application demonstrates sequencer functionality visually without producing actual audio
+   - Added guidance on which test applications to use for actual audio output (TestSequencerFile for WAV files and TestAudio for real-time audio)
+   - Updated the playback test section to set appropriate expectations
+
+### Bug Fixes:
+
+1. **Duplicate Variable Declaration Issue**:
+   - Removed duplicate declaration of `currentPatternIndex_` variable in Sequencer.h
+   - The class had both a regular `size_t currentPatternIndex_` and an `std::atomic<size_t> currentPatternIndex_`
+   - Kept only the thread-safe atomic version to maintain thread safety
+
+2. **API Changes Compatibility**:
+   - Updated TestSequencerAdvanced.cpp to work with the new `std::optional<PatternInstance>` return type
+   - Changed from direct pointer access to using the optional's `.value()` method
+   - Properly handled cases where the optional might not contain a value
+
+3. **Callback Signature Update**:
+   - Updated the NoteOnCallback lambda to match the new signature that includes the Envelope parameter
+   - Added display of envelope parameters (attack, decay, sustain, release) in the callback
+   - Maintained thread safety with mutex protection
+
+These fixes and clarifications ensure that the sequencer component compiles correctly and users have proper expectations about the test applications' capabilities.
+
 ## March 15, 2025 - TestSequencerAdvanced Improvements
 
 We've implemented several important fixes to the TestSequencerAdvanced.cpp test application to enhance its robustness, safety, and usability:

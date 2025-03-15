@@ -218,19 +218,22 @@ void printSongArrangement(const Sequencer* sequencer) {
         
         // Print current page of pattern instances
         for (size_t i = startIdx; i < endIdx; ++i) {
-            const PatternInstance* instance = sequencer->getPatternInstance(i);
-            if (!instance) {
+            auto instanceOpt = sequencer->getPatternInstance(i);
+            if (!instanceOpt) {
                 std::cout << std::setw(5) << i << std::setw(20) << "Invalid Instance" << std::endl;
                 continue;
             }
             
-            const Pattern* pattern = sequencer->getPattern(instance->patternIndex);
+            // Create a local copy of the PatternInstance from the optional
+            PatternInstance instance = instanceOpt.value();
+            
+            const Pattern* pattern = sequencer->getPattern(instance.patternIndex);
             std::string patternName = pattern ? pattern->getName() : "Unknown";
             
             std::cout << std::setw(5) << i 
                       << std::setw(20) << patternName
-                      << std::setw(10) << std::fixed << std::setprecision(2) << instance->startBeat
-                      << std::setw(10) << std::fixed << std::setprecision(2) << instance->endBeat
+                      << std::setw(10) << std::fixed << std::setprecision(2) << instance.startBeat
+                      << std::setw(10) << std::fixed << std::setprecision(2) << instance.endBeat
                       << std::endl;
         }
         std::cout << "----------------------------------------------------" << std::endl;
@@ -267,11 +270,13 @@ int main() {
     // Setup for note callbacks (just for debugging)
     sequencer->setNoteCallbacks(
         // Note on callback (thread-safe)
-        [](int pitch, float velocity, int channel) {
+        [](int pitch, float velocity, int channel, const Envelope& env) {
             std::lock_guard<std::mutex> lock(callbackMutex);
             try {
                 std::cout << "Note On: " << pitch << " Velocity: " << velocity 
-                          << " Channel: " << channel << std::endl;
+                          << " Channel: " << channel 
+                          << " Env: A=" << env.attack << " D=" << env.decay 
+                          << " S=" << env.sustain << " R=" << env.release << std::endl;
             } catch (const std::exception& e) {
                 std::cerr << "Error in noteOnCallback: " << e.what() << std::endl;
             }
