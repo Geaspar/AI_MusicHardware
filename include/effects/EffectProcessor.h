@@ -30,6 +30,7 @@ public:
     EffectProcessor(int sampleRate = 44100);
     ~EffectProcessor();
     
+    bool initialize();
     void addEffect(std::unique_ptr<Effect> effect);
     void removeEffect(size_t index);
     void clearEffects();

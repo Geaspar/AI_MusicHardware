@@ -17,11 +17,21 @@ void Effect::setSampleRate(int sampleRate) {
 // EffectProcessor implementation
 EffectProcessor::EffectProcessor(int sampleRate) 
     : sampleRate_(sampleRate) {
-    // Initialize temp buffer with a reasonable size
-    tempBuffer_.resize(4096);
+    // Temp buffer will be initialized in initialize()
 }
 
 EffectProcessor::~EffectProcessor() {
+}
+
+bool EffectProcessor::initialize() {
+    try {
+        // Initialize temp buffer with a reasonable size, will be resized as needed
+        tempBuffer_.resize(4096 * 2); // Stereo buffer with reasonable size
+        return true;
+    } catch (const std::exception& e) {
+        // Handle any exceptions during initialization
+        return false;
+    }
 }
 
 void EffectProcessor::addEffect(std::unique_ptr<Effect> effect) {

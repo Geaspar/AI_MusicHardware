@@ -183,6 +183,38 @@ Sequencer::~Sequencer() {
     stop(); // Ensure all notes are turned off
 }
 
+bool Sequencer::initialize() {
+    try {
+        // Clear any existing state
+        {
+            std::lock_guard<std::mutex> lock(activeNotesMutex_);
+            activeNotes_.clear();
+        }
+        
+        // Reset position
+        {
+            std::lock_guard<std::mutex> lock(positionMutex_);
+            positionInBeats_ = 0.0;
+        }
+        
+        // Create default empty pattern if needed
+        {
+            std::lock_guard<std::mutex> lock(patternMutex_);
+            if (patterns_.empty()) {
+                patterns_.push_back(std::make_unique<Pattern>("Default Pattern"));
+                if (!patterns_.back()) {
+                    return false;
+                }
+            }
+        }
+        
+        return true;
+    } catch (const std::exception& e) {
+        // Handle any exceptions during initialization
+        return false;
+    }
+}
+
 void Sequencer::start() {
     {
         // Protect position update with mutex

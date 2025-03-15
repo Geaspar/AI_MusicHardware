@@ -90,6 +90,7 @@ public:
     Sequencer(double tempo = 120.0, int beatsPerBar = 4);
     ~Sequencer();
     
+    bool initialize();
     void start();
     void stop();
     void reset();

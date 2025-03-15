@@ -171,10 +171,23 @@ Synthesizer::Synthesizer(int sampleRate)
     : sampleRate_(sampleRate),
       currentOscType_(OscillatorType::Sine) {
     
-    // Create voices
-    for (int i = 0; i < kMaxVoices; ++i) {
-        voices_.push_back(std::make_unique<Voice>());
-        voices_.back()->setOscillatorType(currentOscType_);
+    // Voices will be created in initialize()
+}
+
+bool Synthesizer::initialize() {
+    try {
+        // Create voices
+        for (int i = 0; i < kMaxVoices; ++i) {
+            voices_.push_back(std::make_unique<Voice>());
+            if (!voices_.back()) {
+                return false;
+            }
+            voices_.back()->setOscillatorType(currentOscType_);
+        }
+        return true;
+    } catch (const std::exception& e) {
+        // Handle any exceptions during initialization
+        return false;
     }
 }
 

@@ -92,6 +92,10 @@ public:
     void endVoiceInput();
     void showTranscribedText(const std::string& text);
     
+    // Quit handling
+    bool shouldQuit() const;
+    void setQuitFlag(bool quit);
+    
 private:
     class Impl;
     std::unique_ptr<Impl> pimpl_;
@@ -100,6 +104,7 @@ private:
     int height_;
     std::string currentScreen_;
     std::map<std::string, std::vector<std::unique_ptr<UIElement>>> screens_;
+    bool quitFlag_ = false;
     
     Synthesizer* synth_;
     EffectProcessor* effects_;

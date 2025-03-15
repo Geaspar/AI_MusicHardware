@@ -53,6 +53,7 @@ public:
     Synthesizer(int sampleRate = 44100);
     ~Synthesizer();
     
+    bool initialize();
     void setSampleRate(int sampleRate);
     void noteOn(int midiNote, float velocity);
     void noteOn(int midiNote, float velocity, const AIMusicHardware::Envelope& env);
