@@ -7,7 +7,9 @@ namespace AIMusicHardware {
 Effect::Effect(int sampleRate) : sampleRate_(sampleRate) {
 }
 
+// Destructor is already marked virtual in the header
 Effect::~Effect() {
+    // Virtual destructor implementation
 }
 
 void Effect::setSampleRate(int sampleRate) {
@@ -26,7 +28,7 @@ EffectProcessor::~EffectProcessor() {
 bool EffectProcessor::initialize() {
     try {
         // Initialize temp buffer with a reasonable size, will be resized as needed
-        tempBuffer_.resize(4096 * 2); // Stereo buffer with reasonable size
+        tempBuffer_.reserve(4096 * 2); // Stereo buffer with reasonable initial capacity
         return true;
     } catch (const std::exception& e) {
         // Handle any exceptions during initialization
@@ -35,24 +37,33 @@ bool EffectProcessor::initialize() {
 }
 
 void EffectProcessor::addEffect(std::unique_ptr<Effect> effect) {
-    effects_.push_back(std::move(effect));
+    if (effect) {
+        effect->setSampleRate(sampleRate_); // Ensure the effect has the correct sample rate
+        effects_.push_back(std::move(effect));
+    }
 }
 
 void EffectProcessor::removeEffect(size_t index) {
     if (index < effects_.size()) {
-        effects_.erase(effects_.begin() + index);
+        // More efficient approach - swap with last element then pop_back
+        // This avoids shifting all elements after the removed one
+        if (index < effects_.size() - 1) {
+            std::swap(effects_[index], effects_.back());
+        }
+        effects_.pop_back();
     }
 }
 
 void EffectProcessor::clearEffects() {
     effects_.clear();
+    effects_.shrink_to_fit(); // Release unused memory
 }
 
 Effect* EffectProcessor::getEffect(size_t index) {
-    if (index < effects_.size()) {
-        return effects_[index].get();
+    if (index >= effects_.size()) {
+        return nullptr;
     }
-    return nullptr;
+    return effects_[index].get();
 }
 
 size_t EffectProcessor::getNumEffects() const {
@@ -60,22 +71,43 @@ size_t EffectProcessor::getNumEffects() const {
 }
 
 void EffectProcessor::process(float* buffer, int numFrames) {
+    // Safety check for invalid input
+    if (!buffer || numFrames <= 0) {
+        return;
+    }
+    
     // Process each effect in the chain
     for (auto& effect : effects_) {
-        // Make sure temp buffer is large enough
-        if (tempBuffer_.size() < static_cast<size_t>(numFrames * 2)) {
-            tempBuffer_.resize(numFrames * 2);
+        if (!effect) {
+            continue; // Skip null effects
+        }
+        
+        // Make sure temp buffer is large enough - use reserve instead of resize for efficiency
+        if (tempBuffer_.capacity() < static_cast<size_t>(numFrames * 2)) {
+            tempBuffer_.reserve(numFrames * 2);
         }
         
         // Process effect
-        effect->process(buffer, numFrames);
+        try {
+            effect->process(buffer, numFrames);
+        } catch (const std::exception& e) {
+            // Log or handle the exception
+            // We continue processing to avoid interrupting the audio chain
+        }
     }
 }
 
 void EffectProcessor::setSampleRate(int sampleRate) {
+    // Skip if the sample rate hasn't changed
+    if (sampleRate_ == sampleRate) {
+        return;
+    }
+    
     sampleRate_ = sampleRate;
     for (auto& effect : effects_) {
-        effect->setSampleRate(sampleRate);
+        if (effect) {
+            effect->setSampleRate(sampleRate);
+        }
     }
 }
 

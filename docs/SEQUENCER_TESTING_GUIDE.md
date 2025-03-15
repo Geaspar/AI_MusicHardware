@@ -84,55 +84,216 @@ This program generates WAV audio files from pre-defined patterns.
 
 ## Running TestSequencerAdvanced
 
-This is an interactive application that demonstrates all the advanced sequencer features.
+This is an interactive application that demonstrates all the advanced sequencer features. The recent improvements make it more stable and user-friendly with better input handling, thread safety, and error management.
 
-1. Run the program:
+### Building and Running
+
+1. Build the program:
+   ```bash
+   # From the project root directory
+   mkdir -p build
+   cd build
+   cmake ..
+   make TestSequencerAdvanced
+   ```
+
+2. Run the program:
    ```bash
    ./bin/TestSequencerAdvanced
    ```
 
-2. You'll see the main menu with the following options:
-   - **Manage Patterns** - View and create note patterns
-   - **Edit Song Arrangement** - Chain patterns together into a song
-   - **Export to MIDI** - Save patterns or songs as MIDI files
-   - **Apply Quantization/Swing** - Apply timing adjustments to patterns
-   - **Playback Test** - Simulate pattern or song playback
+3. You'll see the initial output with pre-loaded patterns and the main menu will appear.
 
-### Pattern Management
+### Step-by-Step Usage Guide
 
-In the Pattern Management menu, you can:
-- View details of existing patterns (notes, timing, velocities)
-- Create new patterns
-- (Note: The full pattern editing functionality is not implemented in this demo)
+When you start TestSequencerAdvanced, the program:
+1. Creates a sequencer at 120 BPM in 4/4 time
+2. Loads five predefined patterns:
+   - C Major Scale
+   - C-F-G-C Chord Progression
+   - C-F-G-C Arpeggios
+   - Bass Pattern
+   - Basic Drum Pattern
+3. Presents the main menu
 
-### Song Arrangement
+#### Main Menu Navigation
 
-The Song Arrangement menu allows you to:
-- View the current arrangement
-- Add patterns to the song at specific positions
-- Remove patterns from the arrangement
-- Clear the entire arrangement
-- Switch between Single Pattern and Song Arrangement playback modes
+The main menu offers these options:
+1. **Manage Patterns**
+2. **Edit Song Arrangement**
+3. **Export to MIDI**
+4. **Apply Quantization/Swing**
+5. **Playback Test**
+0. **Exit**
 
-### MIDI Export
+Navigate by entering the number corresponding to your choice. The program validates your input to ensure it's within range.
 
-The MIDI Export menu provides options to:
-- Export the current pattern as a MIDI file
-- Export all patterns as separate tracks in a MIDI file
-- (Note: Full song arrangement export would require extending the MidiFile class)
+#### 1. Pattern Management
 
-### Quantization and Swing
+In this section you can:
 
-This menu allows you to:
-- Quantize pattern notes to a timing grid (e.g., 16th notes)
-- Apply swing feel to patterns with adjustable intensity
+1. **View Pattern Details**: Select a pattern to see its:
+   - Name and length
+   - Number of notes
+   - Each note's pitch, start time, duration, velocity, and channel
+   
+2. **Create New Patterns**:
+   - Choose "Create New Pattern" from the menu
+   - Enter a name for your pattern
+   - The new (empty) pattern is added to the pattern list
+   
+3. **Return to Main Menu**:
+   - Select "Exit" (option 0)
 
-### Playback Test
+Example workflow:
+```
+1. Select "Manage Patterns"
+2. Choose "C Major Scale" (option 1)
+3. View the pattern details
+4. Press Enter to continue
+5. Select "Create New Pattern" (last option)
+6. Enter a name like "My Custom Pattern"
+7. Select "Exit" (option 0) to return to the main menu
+```
 
-The Playback Test simulates sequencer playback:
-- Displays transport information (position, bar, beat)
-- Shows note on/off events as they occur
-- Works in both Single Pattern and Song Arrangement modes
+#### 2. Song Arrangement
+
+This section allows you to:
+
+1. **View Current Arrangement**:
+   - Shows all pattern instances in the song
+   - Displays pattern name, start beat, and end beat
+   - Uses pagination for large arrangements (5 items per page)
+   
+2. **Add Pattern to Song**:
+   - Select a pattern from the list
+   - Enter a start position in beats
+   - The pattern is added to the arrangement
+   
+3. **Remove Pattern from Song**:
+   - View the arrangement
+   - Enter the index of the pattern instance to remove
+   
+4. **Clear Song Arrangement**:
+   - Removes all patterns from the arrangement
+   
+5. **Set Playback Mode**:
+   - Toggle between Single Pattern and Song Arrangement modes
+
+Example workflow:
+```
+1. Select "Edit Song Arrangement"
+2. Choose "Add Pattern to Song"
+3. Select "C Major Scale" (option 1)
+4. Enter start position "0.0"
+5. Choose "Add Pattern to Song" again
+6. Select "C-F-G-C Progression" (option 2)
+7. Enter start position "4.0"
+8. Choose "View Current Arrangement" to see your song
+9. Select "Exit" to return to the main menu
+```
+
+#### 3. MIDI Export
+
+Options in this section:
+
+1. **Export Current Pattern**:
+   - Saves the current pattern as "output_pattern.mid"
+   
+2. **Export All Patterns as Separate Tracks**:
+   - Saves all patterns as "output_all_patterns.mid"
+   
+3. **Export Song Arrangement** (not fully implemented)
+
+Example workflow:
+```
+1. Select "Export to MIDI"
+2. Choose "Export All Patterns as Separate Tracks"
+3. Verify the export message
+4. Select "Exit" to return to the main menu
+```
+
+#### 4. Quantization and Swing
+
+This section allows you to:
+
+1. **Quantize a Pattern**:
+   - Select a pattern
+   - Enter grid size (e.g., 0.25 for 16th notes)
+   - Notes are aligned to the nearest grid position
+   
+2. **Apply Swing**:
+   - Select a pattern
+   - Enter swing amount (0.0-0.5, where 0.33 is typical)
+   - Enter grid size
+   - This adds a "groove" feel to the rhythm
+
+Example workflow:
+```
+1. Select "Apply Quantization/Swing"
+2. Choose "Apply Swing"
+3. Select a pattern (e.g., "C Major Scale")
+4. Enter swing amount "0.33"
+5. Enter grid size "0.25"
+6. Verify the confirmation message
+7. Return to the main menu
+```
+
+#### 5. Playback Test
+
+This simulates playback of your patterns or song:
+
+1. Displays current mode (Single Pattern or Song Arrangement)
+2. Shows pattern name or song length
+3. Press Enter to start playback
+4. The position indicator shows the current playback position
+5. Note On/Off events are displayed as they occur
+6. Press Enter again to stop playback
+
+Example workflow:
+```
+1. Select "Playback Test"
+2. Press Enter to start playback
+3. Watch the transport position and note events
+4. Press Enter to stop playback
+5. Return to the main menu
+```
+
+### Troubleshooting
+
+If you encounter issues:
+
+1. **Input Problems**:
+   - The program now handles invalid input gracefully
+   - If asked to enter a number, you'll be prompted to try again if input is invalid
+
+2. **Display Issues**:
+   - For large arrangements, the display uses pagination
+   - Press Enter to see more items when prompted
+
+3. **Playback Performance**:
+   - Playback is simulated and might show different timing behavior than real-time systems
+   - Thread safety has been improved to prevent crashes during callback execution
+
+4. **Build Issues**:
+   - Make sure you have built the program with the latest code
+   - If building fails, check for missing dependencies
+
+### Advanced Usage Tips
+
+1. **Creating Complex Songs**:
+   - Add multiple patterns with strategic start positions
+   - Use the "View Current Arrangement" to verify timing
+   - Test with "Playback Test" to hear the result
+
+2. **Effective Swing Application**:
+   - Start with 0.33 swing amount on 16th note grid (0.25)
+   - For subtle swing, use values around 0.2
+   - For stronger swing, try values up to 0.45
+
+3. **Exiting the Program**:
+   - Select "Exit" (option 0) from the main menu
+   - The program will clean up resources properly before exiting
 
 ## Sequencer Features Overview
 

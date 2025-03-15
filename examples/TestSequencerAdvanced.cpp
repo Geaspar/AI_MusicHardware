@@ -5,9 +5,13 @@
 #include <iomanip>
 #include <cmath>
 #include <string>
+#include <mutex>
 
 #include "../include/sequencer/Sequencer.h"
 #include "../include/sequencer/MidiFile.h"
+
+// Create a mutex for thread-safe callbacks
+std::mutex callbackMutex;
 
 using namespace AIMusicHardware;
 
@@ -22,13 +26,21 @@ int getUserChoice(const std::vector<std::string>& options, const std::string& pr
     
     int choice;
     std::cout << "> ";
-    std::cin >> choice;
     
-    // Handle invalid input
-    if (std::cin.fail()) {
-        std::cin.clear();
-        std::cin.ignore(10000, '\n');
-        return -1;
+    // Improved input handling with retry loop
+    while (true) {
+        std::cin >> choice;
+        
+        // Handle invalid input
+        if (std::cin.fail()) {
+            std::cin.clear();
+            std::cin.ignore(10000, '\n');
+            std::cout << "Invalid input. Please enter a number: ";
+        } else if (choice < 0 || choice > static_cast<int>(options.size())) {
+            std::cout << "Invalid option. Please choose a number between 0 and " << options.size() << ": ";
+        } else {
+            break; // Valid input received
+        }
     }
     
     return choice;
@@ -164,15 +176,18 @@ void printPattern(const Pattern* pattern) {
     
     for (size_t i = 0; i < pattern->getNumNotes(); ++i) {
         const Note* note = pattern->getNote(i);
-        if (note) {
-            std::cout << std::setw(5) << i 
-                      << std::setw(10) << note->pitch
-                      << std::setw(10) << std::fixed << std::setprecision(2) << note->startTime
-                      << std::setw(10) << std::fixed << std::setprecision(2) << note->duration
-                      << std::setw(10) << std::fixed << std::setprecision(2) << note->velocity
-                      << std::setw(10) << note->channel
-                      << std::endl;
+        if (!note) {
+            std::cout << "Error: Null note encountered at index " << i << std::endl;
+            continue;
         }
+        
+        std::cout << std::setw(5) << i 
+                  << std::setw(10) << note->pitch
+                  << std::setw(10) << std::fixed << std::setprecision(2) << note->startTime
+                  << std::setw(10) << std::fixed << std::setprecision(2) << note->duration
+                  << std::setw(10) << std::fixed << std::setprecision(2) << note->velocity
+                  << std::setw(10) << note->channel
+                  << std::endl;
     }
     std::cout << "----------------------------------------------------" << std::endl;
 }
@@ -183,14 +198,32 @@ void printSongArrangement(const Sequencer* sequencer) {
     std::cout << "Total Length: " << sequencer->getSongLength() << " beats" << std::endl;
     std::cout << "Pattern Instances: " << sequencer->getNumPatternInstances() << std::endl;
     
-    std::cout << "----------------------------------------------------" << std::endl;
-    std::cout << std::setw(5) << "Idx" << std::setw(20) << "Pattern" 
-              << std::setw(10) << "Start" << std::setw(10) << "End" << std::endl;
-    std::cout << "----------------------------------------------------" << std::endl;
+    if (sequencer->getNumPatternInstances() == 0) {
+        std::cout << "No patterns in arrangement." << std::endl;
+        return;
+    }
     
-    for (size_t i = 0; i < sequencer->getNumPatternInstances(); ++i) {
-        const PatternInstance* instance = sequencer->getPatternInstance(i);
-        if (instance) {
+    // Pagination settings
+    const size_t pageSize = 5; // Show 5 items per page
+    size_t startIdx = 0;
+    
+    while (startIdx < sequencer->getNumPatternInstances()) {
+        std::cout << "----------------------------------------------------" << std::endl;
+        std::cout << std::setw(5) << "Idx" << std::setw(20) << "Pattern" 
+                  << std::setw(10) << "Start" << std::setw(10) << "End" << std::endl;
+        std::cout << "----------------------------------------------------" << std::endl;
+        
+        // Calculate end index for current page
+        size_t endIdx = std::min(startIdx + pageSize, sequencer->getNumPatternInstances());
+        
+        // Print current page of pattern instances
+        for (size_t i = startIdx; i < endIdx; ++i) {
+            const PatternInstance* instance = sequencer->getPatternInstance(i);
+            if (!instance) {
+                std::cout << std::setw(5) << i << std::setw(20) << "Invalid Instance" << std::endl;
+                continue;
+            }
+            
             const Pattern* pattern = sequencer->getPattern(instance->patternIndex);
             std::string patternName = pattern ? pattern->getName() : "Unknown";
             
@@ -200,8 +233,18 @@ void printSongArrangement(const Sequencer* sequencer) {
                       << std::setw(10) << std::fixed << std::setprecision(2) << instance->endBeat
                       << std::endl;
         }
+        std::cout << "----------------------------------------------------" << std::endl;
+        
+        // Move to next page if there are more instances
+        startIdx += pageSize;
+        if (startIdx < sequencer->getNumPatternInstances()) {
+            std::cout << "Showing " << (startIdx - pageSize + 1) << "-" << endIdx
+                      << " of " << sequencer->getNumPatternInstances() << " instances." << std::endl;
+            std::cout << "Press Enter to view more patterns...";
+            std::cin.ignore(10000, '\n');
+            std::cin.get();
+        }
     }
-    std::cout << "----------------------------------------------------" << std::endl;
 }
 
 // Main program
@@ -223,25 +266,41 @@ int main() {
     
     // Setup for note callbacks (just for debugging)
     sequencer->setNoteCallbacks(
-        // Note on callback
+        // Note on callback (thread-safe)
         [](int pitch, float velocity, int channel) {
-            std::cout << "Note On: " << pitch << " Velocity: " << velocity 
-                      << " Channel: " << channel << std::endl;
+            std::lock_guard<std::mutex> lock(callbackMutex);
+            try {
+                std::cout << "Note On: " << pitch << " Velocity: " << velocity 
+                          << " Channel: " << channel << std::endl;
+            } catch (const std::exception& e) {
+                std::cerr << "Error in noteOnCallback: " << e.what() << std::endl;
+            }
         },
-        // Note off callback
+        // Note off callback (thread-safe)
         [](int pitch, int channel) {
-            std::cout << "Note Off: " << pitch << " Channel: " << channel << std::endl;
+            std::lock_guard<std::mutex> lock(callbackMutex);
+            try {
+                std::cout << "Note Off: " << pitch << " Channel: " << channel << std::endl;
+            } catch (const std::exception& e) {
+                std::cerr << "Error in noteOffCallback: " << e.what() << std::endl;
+            }
         }
     );
     
-    // Setup transport callback
+    // Setup transport callback with thread safety
     sequencer->setTransportCallback(
         [](double positionInBeats, int bar, int beat) {
             // Only print occasionally to avoid console spam
-            if (static_cast<int>(positionInBeats * 4) % 4 == 0) {
-                std::cout << "\rPosition: " << std::fixed << std::setprecision(2) 
-                          << positionInBeats << " | Bar: " << bar 
-                          << " Beat: " << beat << std::flush;
+            // Use fmod for floating point modulo calculation
+            if (std::fmod(positionInBeats * 4, 4.0) < 0.01) {
+                std::lock_guard<std::mutex> lock(callbackMutex);
+                try {
+                    std::cout << "\rPosition: " << std::fixed << std::setprecision(2) 
+                              << positionInBeats << " | Bar: " << bar 
+                              << " Beat: " << beat << std::flush;
+                } catch (const std::exception& e) {
+                    std::cerr << "Error in transportCallback: " << e.what() << std::endl;
+                }
             }
         }
     );
@@ -288,6 +347,8 @@ int main() {
                         std::cin.ignore(10000, '\n');
                         std::cin.get();
                     } else if (patternChoice == static_cast<int>(patternOptions.size())) {
+                        // This is safe because getUserChoice now validates the choice range
+                        // This matches the index of "Create New Pattern" option
                         std::string patternName;
                         std::cout << "Enter name for new pattern: ";
                         std::cin.ignore(10000, '\n');
