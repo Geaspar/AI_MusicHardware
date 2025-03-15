@@ -4,6 +4,8 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <mutex>
+#include <atomic>
 
 namespace AIMusicHardware {
 
@@ -19,16 +21,24 @@ public:
     using AudioCallback = std::function<void(float* outputBuffer, int numFrames)>;
     void setAudioCallback(AudioCallback callback);
     
-    // Accessor for callback (used by audio callback function)
+    // Accessor for callback (used by audio callback function) - thread-safe
     AudioCallback getCallback() const;
     
+    // Channel information
+    int getNumChannels() const { return numChannels_; }
+    
+    // Accessor methods
     int getSampleRate() const { return sampleRate_; }
     int getBufferSize() const { return bufferSize_; }
     
 private:
     int sampleRate_;
     int bufferSize_;
-    bool isInitialized_;
+    int numChannels_ = 2;  // Default to stereo
+    std::atomic<bool> isInitialized_{false};
+    
+    // Thread-safe callback handling
+    mutable std::mutex callbackMutex_;
     AudioCallback callback_;
     
     class Impl;
