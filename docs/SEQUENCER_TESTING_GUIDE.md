@@ -320,6 +320,96 @@ Through these test programs, you can explore the following sequencer capabilitie
    - Song arrangement system for pattern sequencing
    - MIDI file export
 
+## Running TestAdaptiveSequencer
+
+The AdaptiveSequencer test application demonstrates state-based music sequencing with dynamic transitions and parameter control.
+
+### Building and Running
+
+1. Build the program:
+   ```bash
+   # From the project root directory
+   mkdir -p build
+   cd build
+   cmake ..
+   make TestAdaptiveSequencer
+   ```
+
+2. Run the program:
+   ```bash
+   ./bin/TestAdaptiveSequencer
+   ```
+
+3. You'll see a welcome message and instructions for controlling the adaptive sequencer.
+
+### Interactive Controls
+
+The application provides a keyboard interface to control the adaptive sequencer parameters:
+
+1. **Intensity Parameter Control**:
+   - Press `1` - Set intensity to 0.0 (lowest)
+   - Press `2` - Set intensity to 0.25
+   - Press `3` - Set intensity to 0.5
+   - Press `4` - Set intensity to 0.75
+   - Press `5` - Set intensity to 1.0 (highest)
+
+2. **State Control**:
+   - Press `a` - Force transition to "ambient" state (low intensity)
+   - Press `e` - Force transition to "energetic" state (high intensity)
+
+3. **Mood Parameter Control**:
+   - Press `m` - Decrease mood parameter by 0.1
+   - Press `M` (shift+m) - Increase mood parameter by 0.1
+
+4. **Playback Control**:
+   - Press `p` - Pause/resume playback
+   - Press `q` - Quit the application
+
+### Automatic Transitions
+
+The test demonstrates automatic transitions based on parameter values:
+
+1. **Ambient to Energetic**: When intensity increases above 0.7, the sequencer will automatically transition from ambient to energetic state
+2. **Energetic to Ambient**: When intensity decreases below 0.3, the sequencer will automatically transition back to ambient state
+
+### Musical States 
+
+The test includes two musical states with distinct characteristics:
+
+1. **Ambient State (Low Intensity)**:
+   - Slower tempo (80 BPM)
+   - Three layers: bass, pad, and melody
+   - Two mix snapshots: "full" and "minimal"
+   - Sparser rhythmic patterns
+
+2. **Energetic State (High Intensity)**:
+   - Faster tempo (120 BPM)
+   - Three layers: bass, lead, and drums
+   - Two mix snapshots: "full" and "drums_only"
+   - Denser rhythmic patterns
+
+### Testing Suggestions
+
+1. **Test Parameter-Driven Transitions**:
+   - Start with intensity at 0.0 (press `1`)
+   - Gradually increase intensity (press `2`, `3`, `4`, `5`)
+   - Observe the automatic transition to energetic state
+   - Gradually decrease intensity (press `4`, `3`, `2`, `1`)
+   - Observe the automatic transition back to ambient state
+
+2. **Test Forced State Changes**:
+   - Press `a` to force ambient state
+   - Press `e` to force energetic state
+   - Try modifying intensity while in each state
+
+3. **Test Mood Parameter**:
+   - Adjust the mood parameter up and down using `m` and `M`
+   - In a complete implementation, this would affect elements like timbre or effects
+
+4. **Test Playback Control**:
+   - Use `p` to pause and resume playback
+   - Ensure the system resumes in the same state
+
 ## Next Steps
 
 After testing, consider these potential enhancements:
@@ -327,3 +417,4 @@ After testing, consider these potential enhancements:
 - Integration with AI components for pattern generation
 - Development of a graphical user interface for pattern editing
 - Real-time MIDI input/output capabilities
+- Hardware controller mapping for physical control of the adaptive sequencer
