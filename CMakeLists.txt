@@ -32,6 +32,7 @@ set(BASIC_AUDIO_SOURCES
 set(SEQUENCER_SOURCES
     src/sequencer/Sequencer.cpp
     src/sequencer/MidiFile.cpp
+    src/sequencer/AdaptiveSequencer.cpp
 )
 
 # Set up RtAudio if found
@@ -105,6 +106,13 @@ add_executable(TestSequencerAdvanced examples/TestSequencerAdvanced.cpp ${SEQUEN
 target_link_libraries(TestSequencerAdvanced PRIVATE Threads::Threads)
 message(STATUS "Building TestSequencerAdvanced (advanced sequencer features test)")
 
+# TestAdaptiveSequencer (adaptive sequencer features, requires RtAudio)
+if(RTAUDIO_FOUND)
+    add_executable(TestAdaptiveSequencer examples/TestAdaptiveSequencer.cpp)
+    target_link_libraries(TestAdaptiveSequencer PRIVATE AIMusicCore)
+    message(STATUS "Building TestAdaptiveSequencer (adaptive sequencer test)")
+endif()
+
 # Print audio libs for debugging
 message(STATUS "Audio libraries: ${AUDIO_LIBS}")
 
@@ -116,4 +124,5 @@ message(STATUS "3. Run ./bin/TestSequencerAdvanced to explore advanced sequencer
 if(RTAUDIO_FOUND)
     message(STATUS "4. Run ./bin/TestAudio for real-time audio playback")
     message(STATUS "5. Run ./bin/TestSequencer to test the sequencer component with real-time audio")
+    message(STATUS "6. Run ./bin/TestAdaptiveSequencer to explore the adaptive sequencer system")
 endif()

@@ -24,9 +24,10 @@ The architecture consists of the following core components:
 1. **Audio Engine**: Real-time C++ audio processing with digital synthesis
 2. **Effects System**: Modular audio effects chain
 3. **Sequencer**: Pattern-based sequencer with timing and note events
-4. **MIDI Integration**: Hardware connectivity via MIDI protocol
-5. **Hardware Interface**: Physical controls and display interface
-6. **LLM Integration**:
+4. **Adaptive Sequencer**: Game audio-inspired dynamic music system with state transitions
+5. **MIDI Integration**: Hardware connectivity via MIDI protocol
+6. **Hardware Interface**: Physical controls and display interface
+7. **LLM Integration**:
    - Voice/text to synthesizer parameter suggestions
    - Pattern completion and suggestion for sequencer
    - User preference learning for customized assistance
@@ -98,9 +99,53 @@ The LLM component acts as a creative copilot with these capabilities:
    - Identify key influencers in electronic music space
 
 ## Getting Started
-1. Install dependencies
-2. Build the project with CMake
-3. Run examples
+1. Install dependencies:
+   - C++ compiler with C++17 support
+   - CMake 3.14 or higher
+   - RtAudio library (optional but recommended for real-time audio)
+
+2. Build the project:
+   ```bash
+   mkdir -p build
+   cd build
+   cmake ..
+   make
+   ```
+
+3. Run examples:
+   ```bash
+   # Simple audio test (generates WAV files)
+   ./bin/SimpleTest
+   
+   # Sequencer test (generates sequencer patterns as WAV files)
+   ./bin/TestSequencerFile
+   
+   # Advanced sequencer features
+   ./bin/TestSequencerAdvanced
+   
+   # If RtAudio is available:
+   # Real-time audio playback
+   ./bin/TestAudio
+   
+   # Sequencer with real-time audio
+   ./bin/TestSequencer
+   
+   # Adaptive Sequencer demo
+   ./bin/TestAdaptiveSequencer
+   ```
+
+## Key Features
+
+### Adaptive Sequencer
+The AdaptiveSequencer is a state-based music sequencing system inspired by game audio middleware:
+
+- **State-Based Architecture**: Musical states with transition rules
+- **Event-Driven Design**: Trigger events for state changes and musical transitions
+- **Layered Composition**: Dynamic control over musical layers and mixing
+- **Hardware Integration**: Intuitive physical control over adaptive music system
+- **Parameter-Driven**: Real-time control values that influence musical behavior
+
+For more information, see [Adaptive Sequencer Documentation](docs/ADAPTIVE_SEQUENCER.md).
 
 ## Documentation
-For detailed information about commercialization strategy, manufacturing considerations, and cost breakdowns, see the [Commercialization Guide](docs/commercialization_guide.txt).
+For detailed information about commercialization strategy, manufacturing considerations, and cost breakdowns, see the [Commercialization Guide](docs/commercialization_guide.md).
