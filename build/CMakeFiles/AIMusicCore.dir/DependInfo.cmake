@@ -10,6 +10,8 @@ set(CMAKE_DEPENDS_LANGUAGES
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/Users/geaspar/AIMusicHardware/src/audio/AudioEngine.cpp" "CMakeFiles/AIMusicCore.dir/src/audio/AudioEngine.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/audio/AudioEngine.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/audio/Synthesizer.cpp" "CMakeFiles/AIMusicCore.dir/src/audio/Synthesizer.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/audio/Synthesizer.cpp.o.d"
+  "/Users/geaspar/AIMusicHardware/src/hardware/HardwareInterface.cpp" "CMakeFiles/AIMusicCore.dir/src/hardware/HardwareInterface.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/hardware/HardwareInterface.cpp.o.d"
+  "/Users/geaspar/AIMusicHardware/src/sequencer/AdaptiveSequencer.cpp" "CMakeFiles/AIMusicCore.dir/src/sequencer/AdaptiveSequencer.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/sequencer/AdaptiveSequencer.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/sequencer/MidiFile.cpp" "CMakeFiles/AIMusicCore.dir/src/sequencer/MidiFile.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/sequencer/MidiFile.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/sequencer/Sequencer.cpp" "CMakeFiles/AIMusicCore.dir/src/sequencer/Sequencer.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/sequencer/Sequencer.cpp.o.d"
   )

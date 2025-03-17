@@ -1,6 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/TestSequencerFile.dir/examples/TestSequencerFile.cpp.o"
   "CMakeFiles/TestSequencerFile.dir/examples/TestSequencerFile.cpp.o.d"
+  "CMakeFiles/TestSequencerFile.dir/src/sequencer/AdaptiveSequencer.cpp.o"
+  "CMakeFiles/TestSequencerFile.dir/src/sequencer/AdaptiveSequencer.cpp.o.d"
   "CMakeFiles/TestSequencerFile.dir/src/sequencer/MidiFile.cpp.o"
   "CMakeFiles/TestSequencerFile.dir/src/sequencer/MidiFile.cpp.o.d"
   "CMakeFiles/TestSequencerFile.dir/src/sequencer/Sequencer.cpp.o"

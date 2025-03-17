@@ -1,10 +1,10 @@
 #pragma once
 
-#include <vector>
 #include <string>
-#include <functional>
 #include <memory>
 #include <map>
+#include <vector>
+#include <functional>
 
 namespace AIMusicHardware {
 
@@ -15,53 +15,28 @@ class Sequencer;
 class MidiHandler;
 class LLMInterface;
 class HardwareInterface;
+class UIContext;
+class Screen;
+class UIComponent;
+class Label;
+class Button;
+class Knob;
+class WaveformDisplay;
+class SequencerGrid;
+class EnvelopeEditor;
+class InputEvent;
 
-enum class UIElementType {
-    Button,
-    Slider,
-    Knob,
-    Display,
-    Grid,
-    Menu,
-    TextInput,
-    WaveformDisplay,
-    PatternEditor,
-    KeyboardInput,
-    AIAssistantPanel
-};
-
-class UIElement {
-public:
-    UIElement(const std::string& id, UIElementType type);
-    virtual ~UIElement();
-    
-    std::string getId() const;
-    UIElementType getType() const;
-    
-    virtual void render() = 0;
-    virtual void update() = 0;
-    virtual bool handleInput(int x, int y, bool pressed) = 0;
-    
-protected:
-    std::string id_;
-    UIElementType type_;
-};
-
+// Main UI class - interface to our custom UI system
 class UserInterface {
 public:
     UserInterface();
     ~UserInterface();
     
+    // Basic UI lifecycle
     bool initialize(int width, int height);
     void shutdown();
-    
-    void update();
+    void update(float deltaTime = 0.016f); // Default to ~60fps
     void render();
-    
-    // UI Element management
-    void addElement(std::unique_ptr<UIElement> element);
-    UIElement* getElementById(const std::string& id);
-    void removeElement(const std::string& id);
     
     // System connections
     void connectSynthesizer(Synthesizer* synth);
@@ -71,16 +46,48 @@ public:
     void connectLLMInterface(LLMInterface* llmInterface);
     void connectHardwareInterface(HardwareInterface* hardware);
     
+    // Screen management
+    void addScreen(std::unique_ptr<Screen> screen);
+    Screen* getScreen(const std::string& id);
+    void setCurrentScreen(const std::string& screenName);
+    std::string getCurrentScreen() const;
+    
+    // UI component access
+    UIComponent* getComponent(const std::string& screenId, const std::string& componentId);
+    
+    // Hard key input handling (for hardware buttons, encoders, etc.)
+    bool handleInput(const InputEvent& event);
+    
+    // Common UI operations
+    Label* createLabel(const std::string& screenId, const std::string& id, 
+                     const std::string& text, int x, int y);
+    
+    Button* createButton(const std::string& screenId, const std::string& id, 
+                       const std::string& text, int x, int y, int width, int height,
+                       std::function<void()> callback = nullptr);
+    
+    Knob* createKnob(const std::string& screenId, const std::string& id, 
+                   const std::string& label, int x, int y, int size,
+                   float minValue, float maxValue, float defaultValue,
+                   std::function<void(float)> callback = nullptr);
+    
+    WaveformDisplay* createWaveformDisplay(const std::string& screenId, const std::string& id,
+                                        int x, int y, int width, int height);
+    
+    SequencerGrid* createSequencerGrid(const std::string& screenId, const std::string& id,
+                                     int x, int y, int width, int height,
+                                     int rows, int columns);
+    
+    EnvelopeEditor* createEnvelopeEditor(const std::string& screenId, const std::string& id,
+                                       int x, int y, int width, int height);
+    
+    // Theme management
+    void setThemeColor(const std::string& name, uint8_t r, uint8_t g, uint8_t b);
+    
     // Layout management
     void loadLayout(const std::string& filename);
     void saveLayout(const std::string& filename) const;
     void resetToDefaultLayout();
-    
-    // Screen management
-    void setCurrentScreen(const std::string& screenName);
-    std::string getCurrentScreen() const;
-    void addScreen(const std::string& screenName);
-    void removeScreen(const std::string& screenName);
     
     // AI Assistant specific UI
     void showAIAssistantSuggestion(const std::string& suggestion);
@@ -97,21 +104,11 @@ public:
     void setQuitFlag(bool quit);
     
 private:
-    class Impl;
-    std::unique_ptr<Impl> pimpl_;
+    std::unique_ptr<UIContext> uiContext_;
+    bool quitFlag_;
     
-    int width_;
-    int height_;
-    std::string currentScreen_;
-    std::map<std::string, std::vector<std::unique_ptr<UIElement>>> screens_;
-    bool quitFlag_ = false;
-    
-    Synthesizer* synth_;
-    EffectProcessor* effects_;
-    Sequencer* sequencer_;
-    MidiHandler* midiHandler_;
-    LLMInterface* llmInterface_;
-    HardwareInterface* hardware_;
+    // Creates standard screens and initializes the UI
+    void createDefaultScreens();
 };
 
 } // namespace AIMusicHardware

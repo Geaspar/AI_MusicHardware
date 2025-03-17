@@ -4,5 +4,6 @@
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/SimpleTest.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/TestSequencerFile.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/TestSequencerAdvanced.dir
+/Users/geaspar/AIMusicHardware/build/CMakeFiles/TestAdaptiveSequencer.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/edit_cache.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/rebuild_cache.dir

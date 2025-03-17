@@ -16,6 +16,22 @@
 
 namespace AIMusicHardware {
 
+// Define MidiEvent struct for AdaptiveSequencer
+enum class MidiEventType {
+    NoteOn,
+    NoteOff,
+    ControlChange
+};
+
+struct MidiEvent {
+    MidiEventType type;
+    int note;
+    int velocity;
+    float time;
+    int controller;
+    int value;
+};
+
 // Forward declarations
 class MusicState;
 class StateTransition;
@@ -53,7 +69,7 @@ private:
     float maxValue_;
     bool bipolar_;
     ChangeCallback changeCallback_;
-    std::mutex mutex_;
+    mutable std::mutex mutex_; // Make mutex mutable so it can be locked in const methods
 };
 
 /**
@@ -89,7 +105,7 @@ private:
     
     std::map<std::string, std::vector<EventCallback>> eventListeners_;
     std::vector<ScheduledEvent> scheduledEvents_;
-    std::mutex mutex_;
+    mutable std::mutex mutex_; // Make mutex mutable so it can be locked in const methods
 };
 
 /**
@@ -275,7 +291,7 @@ private:
     std::map<std::string, std::shared_ptr<StateTransition>> transitions_;
     std::shared_ptr<StateTransition> activeTransition_;
     float transitionProgress_;
-    std::mutex mutex_;
+    mutable std::mutex mutex_; // Make mutex mutable so it can be locked in const methods
 };
 
 /**
@@ -352,7 +368,7 @@ private:
     float tempo_;
     float currentBeat_;
     
-    std::mutex mutex_;
+    mutable std::mutex mutex_; // Make mutex mutable so it can be locked in const methods
     
     // Hardware control callbacks
     void onControlChange(int controllerId, float value);

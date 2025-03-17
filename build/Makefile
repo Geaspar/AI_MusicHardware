@@ -194,6 +194,19 @@ TestSequencerAdvanced/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerAdvanced.dir/build.make CMakeFiles/TestSequencerAdvanced.dir/build
 .PHONY : TestSequencerAdvanced/fast
 
+#=============================================================================
+# Target rules for targets named TestAdaptiveSequencer
+
+# Build rule for target.
+TestAdaptiveSequencer: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 TestAdaptiveSequencer
+.PHONY : TestAdaptiveSequencer
+
+# fast build rule for target.
+TestAdaptiveSequencer/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestAdaptiveSequencer.dir/build.make CMakeFiles/TestAdaptiveSequencer.dir/build
+.PHONY : TestAdaptiveSequencer/fast
+
 examples/SimpleTest.o: examples/SimpleTest.cpp.o
 .PHONY : examples/SimpleTest.o
 
@@ -217,6 +230,30 @@ examples/SimpleTest.s: examples/SimpleTest.cpp.s
 examples/SimpleTest.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimpleTest.dir/build.make CMakeFiles/SimpleTest.dir/examples/SimpleTest.cpp.s
 .PHONY : examples/SimpleTest.cpp.s
+
+examples/TestAdaptiveSequencer.o: examples/TestAdaptiveSequencer.cpp.o
+.PHONY : examples/TestAdaptiveSequencer.o
+
+# target to build an object file
+examples/TestAdaptiveSequencer.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestAdaptiveSequencer.dir/build.make CMakeFiles/TestAdaptiveSequencer.dir/examples/TestAdaptiveSequencer.cpp.o
+.PHONY : examples/TestAdaptiveSequencer.cpp.o
+
+examples/TestAdaptiveSequencer.i: examples/TestAdaptiveSequencer.cpp.i
+.PHONY : examples/TestAdaptiveSequencer.i
+
+# target to preprocess a source file
+examples/TestAdaptiveSequencer.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestAdaptiveSequencer.dir/build.make CMakeFiles/TestAdaptiveSequencer.dir/examples/TestAdaptiveSequencer.cpp.i
+.PHONY : examples/TestAdaptiveSequencer.cpp.i
+
+examples/TestAdaptiveSequencer.s: examples/TestAdaptiveSequencer.cpp.s
+.PHONY : examples/TestAdaptiveSequencer.s
+
+# target to generate assembly for a file
+examples/TestAdaptiveSequencer.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestAdaptiveSequencer.dir/build.make CMakeFiles/TestAdaptiveSequencer.dir/examples/TestAdaptiveSequencer.cpp.s
+.PHONY : examples/TestAdaptiveSequencer.cpp.s
 
 examples/TestAudio.o: examples/TestAudio.cpp.o
 .PHONY : examples/TestAudio.o
@@ -362,6 +399,60 @@ src/audio/Synthesizer.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/audio/Synthesizer.cpp.s
 .PHONY : src/audio/Synthesizer.cpp.s
 
+src/hardware/HardwareInterface.o: src/hardware/HardwareInterface.cpp.o
+.PHONY : src/hardware/HardwareInterface.o
+
+# target to build an object file
+src/hardware/HardwareInterface.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/hardware/HardwareInterface.cpp.o
+.PHONY : src/hardware/HardwareInterface.cpp.o
+
+src/hardware/HardwareInterface.i: src/hardware/HardwareInterface.cpp.i
+.PHONY : src/hardware/HardwareInterface.i
+
+# target to preprocess a source file
+src/hardware/HardwareInterface.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/hardware/HardwareInterface.cpp.i
+.PHONY : src/hardware/HardwareInterface.cpp.i
+
+src/hardware/HardwareInterface.s: src/hardware/HardwareInterface.cpp.s
+.PHONY : src/hardware/HardwareInterface.s
+
+# target to generate assembly for a file
+src/hardware/HardwareInterface.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/hardware/HardwareInterface.cpp.s
+.PHONY : src/hardware/HardwareInterface.cpp.s
+
+src/sequencer/AdaptiveSequencer.o: src/sequencer/AdaptiveSequencer.cpp.o
+.PHONY : src/sequencer/AdaptiveSequencer.o
+
+# target to build an object file
+src/sequencer/AdaptiveSequencer.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/sequencer/AdaptiveSequencer.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerFile.dir/build.make CMakeFiles/TestSequencerFile.dir/src/sequencer/AdaptiveSequencer.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerAdvanced.dir/build.make CMakeFiles/TestSequencerAdvanced.dir/src/sequencer/AdaptiveSequencer.cpp.o
+.PHONY : src/sequencer/AdaptiveSequencer.cpp.o
+
+src/sequencer/AdaptiveSequencer.i: src/sequencer/AdaptiveSequencer.cpp.i
+.PHONY : src/sequencer/AdaptiveSequencer.i
+
+# target to preprocess a source file
+src/sequencer/AdaptiveSequencer.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/sequencer/AdaptiveSequencer.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerFile.dir/build.make CMakeFiles/TestSequencerFile.dir/src/sequencer/AdaptiveSequencer.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerAdvanced.dir/build.make CMakeFiles/TestSequencerAdvanced.dir/src/sequencer/AdaptiveSequencer.cpp.i
+.PHONY : src/sequencer/AdaptiveSequencer.cpp.i
+
+src/sequencer/AdaptiveSequencer.s: src/sequencer/AdaptiveSequencer.cpp.s
+.PHONY : src/sequencer/AdaptiveSequencer.s
+
+# target to generate assembly for a file
+src/sequencer/AdaptiveSequencer.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/sequencer/AdaptiveSequencer.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerFile.dir/build.make CMakeFiles/TestSequencerFile.dir/src/sequencer/AdaptiveSequencer.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerAdvanced.dir/build.make CMakeFiles/TestSequencerAdvanced.dir/src/sequencer/AdaptiveSequencer.cpp.s
+.PHONY : src/sequencer/AdaptiveSequencer.cpp.s
+
 src/sequencer/MidiFile.o: src/sequencer/MidiFile.cpp.o
 .PHONY : src/sequencer/MidiFile.o
 
@@ -432,6 +523,7 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... AIMusicCore"
 	@echo "... SimpleTest"
+	@echo "... TestAdaptiveSequencer"
 	@echo "... TestAudio"
 	@echo "... TestSequencer"
 	@echo "... TestSequencerAdvanced"
@@ -439,6 +531,9 @@ help:
 	@echo "... examples/SimpleTest.o"
 	@echo "... examples/SimpleTest.i"
 	@echo "... examples/SimpleTest.s"
+	@echo "... examples/TestAdaptiveSequencer.o"
+	@echo "... examples/TestAdaptiveSequencer.i"
+	@echo "... examples/TestAdaptiveSequencer.s"
 	@echo "... examples/TestAudio.o"
 	@echo "... examples/TestAudio.i"
 	@echo "... examples/TestAudio.s"
@@ -457,6 +552,12 @@ help:
 	@echo "... src/audio/Synthesizer.o"
 	@echo "... src/audio/Synthesizer.i"
 	@echo "... src/audio/Synthesizer.s"
+	@echo "... src/hardware/HardwareInterface.o"
+	@echo "... src/hardware/HardwareInterface.i"
+	@echo "... src/hardware/HardwareInterface.s"
+	@echo "... src/sequencer/AdaptiveSequencer.o"
+	@echo "... src/sequencer/AdaptiveSequencer.i"
+	@echo "... src/sequencer/AdaptiveSequencer.s"
 	@echo "... src/sequencer/MidiFile.o"
 	@echo "... src/sequencer/MidiFile.i"
 	@echo "... src/sequencer/MidiFile.s"

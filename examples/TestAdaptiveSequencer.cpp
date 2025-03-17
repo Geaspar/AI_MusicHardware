@@ -277,7 +277,8 @@ int main() {
     // Cleanup
     adaptiveSequencer->stop();
     adaptiveSequencer->shutdown();
-    synthesizer->shutdown();
+    // Synthesizer doesn't have a shutdown method, just use allNotesOff
+    synthesizer->allNotesOff();
     audioEngine->shutdown();
     
     std::cout << "Adaptive Sequencer test completed." << std::endl;

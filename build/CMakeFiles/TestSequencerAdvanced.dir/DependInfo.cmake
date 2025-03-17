@@ -9,6 +9,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/Users/geaspar/AIMusicHardware/examples/TestSequencerAdvanced.cpp" "CMakeFiles/TestSequencerAdvanced.dir/examples/TestSequencerAdvanced.cpp.o" "gcc" "CMakeFiles/TestSequencerAdvanced.dir/examples/TestSequencerAdvanced.cpp.o.d"
+  "/Users/geaspar/AIMusicHardware/src/sequencer/AdaptiveSequencer.cpp" "CMakeFiles/TestSequencerAdvanced.dir/src/sequencer/AdaptiveSequencer.cpp.o" "gcc" "CMakeFiles/TestSequencerAdvanced.dir/src/sequencer/AdaptiveSequencer.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/sequencer/MidiFile.cpp" "CMakeFiles/TestSequencerAdvanced.dir/src/sequencer/MidiFile.cpp.o" "gcc" "CMakeFiles/TestSequencerAdvanced.dir/src/sequencer/MidiFile.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/sequencer/Sequencer.cpp" "CMakeFiles/TestSequencerAdvanced.dir/src/sequencer/Sequencer.cpp.o" "gcc" "CMakeFiles/TestSequencerAdvanced.dir/src/sequencer/Sequencer.cpp.o.d"
   )

@@ -27,12 +27,21 @@ find_package(RtAudio QUIET)
 set(BASIC_AUDIO_SOURCES
     src/audio/AudioEngine.cpp
     src/audio/Synthesizer.cpp
+    src/hardware/HardwareInterface.cpp
 )
 
 set(SEQUENCER_SOURCES
     src/sequencer/Sequencer.cpp
     src/sequencer/MidiFile.cpp
     src/sequencer/AdaptiveSequencer.cpp
+)
+
+set(UI_SOURCES
+    src/ui/DisplayManager.cpp
+    src/ui/UIContext.cpp
+    src/ui/UserInterface.cpp
+    src/ui/UIComponents.cpp
+    src/ui/Font.cpp
 )
 
 # Set up RtAudio if found
@@ -71,6 +80,7 @@ endforeach()
 add_library(AIMusicCore STATIC
     ${BASIC_AUDIO_SOURCES}
     ${SEQUENCER_SOURCES}
+    ${UI_SOURCES}
 )
 
 target_link_libraries(AIMusicCore PRIVATE

@@ -62,4 +62,5 @@ set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/SimpleTest.dir/DependInfo.cmake"
   "CMakeFiles/TestSequencerFile.dir/DependInfo.cmake"
   "CMakeFiles/TestSequencerAdvanced.dir/DependInfo.cmake"
+  "CMakeFiles/TestAdaptiveSequencer.dir/DependInfo.cmake"
   )
