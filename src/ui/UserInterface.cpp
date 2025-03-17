@@ -353,6 +353,12 @@ void UserInterface::setQuitFlag(bool quit) {
 }
 
 // Private methods
+// Private concrete Screen class for the default implementation
+class DefaultScreen : public Screen {
+public:
+    DefaultScreen(const std::string& id) : Screen(id) {}
+};
+
 void UserInterface::createDefaultScreens() {
     if (!uiContext_) {
         return;
@@ -361,7 +367,7 @@ void UserInterface::createDefaultScreens() {
     // Define default screens
     
     // Main/Home screen
-    auto mainScreen = std::make_unique<Screen>("main");
+    auto mainScreen = std::make_unique<DefaultScreen>("main");
     mainScreen->setBackgroundColor(uiContext_->getThemeColor("background"));
     
     // Add a label to main screen
@@ -418,7 +424,7 @@ void UserInterface::createDefaultScreens() {
     // Create other screens (just placeholders for now)
     
     // Synth screen
-    auto synthScreen = std::make_unique<Screen>("synth");
+    auto synthScreen = std::make_unique<DefaultScreen>("synth");
     synthScreen->setBackgroundColor(uiContext_->getThemeColor("background"));
     
     // Add a back button
@@ -464,7 +470,7 @@ void UserInterface::createDefaultScreens() {
     uiContext_->addScreen(std::move(synthScreen));
     
     // Sequencer screen
-    auto seqScreen = std::make_unique<Screen>("sequencer");
+    auto seqScreen = std::make_unique<DefaultScreen>("sequencer");
     seqScreen->setBackgroundColor(uiContext_->getThemeColor("background"));
     
     // Add a back button
@@ -519,7 +525,7 @@ void UserInterface::createDefaultScreens() {
     uiContext_->addScreen(std::move(seqScreen));
     
     // Effects screen (placeholder)
-    auto effectsScreen = std::make_unique<Screen>("effects");
+    auto effectsScreen = std::make_unique<DefaultScreen>("effects");
     effectsScreen->setBackgroundColor(uiContext_->getThemeColor("background"));
     
     // Add a back button
@@ -540,7 +546,7 @@ void UserInterface::createDefaultScreens() {
     uiContext_->addScreen(std::move(effectsScreen));
     
     // AI Assistant screen (placeholder)
-    auto aiScreen = std::make_unique<Screen>("ai_assistant");
+    auto aiScreen = std::make_unique<DefaultScreen>("ai_assistant");
     aiScreen->setBackgroundColor(uiContext_->getThemeColor("background"));
     
     // Add a back button

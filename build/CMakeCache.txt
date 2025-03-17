@@ -249,6 +249,9 @@ RTAUDIO_INCLUDE_DIR:PATH=/opt/homebrew/include/rtaudio
 //Path to a library.
 RTAUDIO_LIBRARY:FILEPATH=/opt/homebrew/lib/librtaudio.dylib
 
+//The directory containing a CMake configuration file for SDL2.
+SDL2_DIR:PATH=/opt/homebrew/lib/cmake/SDL2
+
 
 ########################
 # INTERNAL cache entries

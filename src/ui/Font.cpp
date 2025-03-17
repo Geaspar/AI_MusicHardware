@@ -123,6 +123,12 @@ int Font::getFontSize() const {
     return fontSize_;
 }
 
+// Define the static data arrays with minimal placeholder data
+const uint8_t FontFactory::defaultFontData_[] = { 0 };
+const uint8_t FontFactory::monospaceFontData_[] = { 0 };
+const uint8_t FontFactory::titleFontData_[] = { 0 };
+const uint8_t FontFactory::iconFontData_[] = { 0 };
+
 std::unique_ptr<Font> FontFactory::createDefaultFont() {
     auto font = std::make_unique<Font>();
     font->create(12);

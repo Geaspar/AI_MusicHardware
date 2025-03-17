@@ -437,49 +437,51 @@ void DisplayManager::blendPixel(int x, int y, const Color& color) {
     // Apply blending based on mode
     uint8_t resultR, resultG, resultB, resultA;
     
-    switch (blendMode_) {
-        case BlendMode::None:
-            // Direct overwrite
-            resultR = color.r;
-            resultG = color.g;
-            resultB = color.b;
-            resultA = color.a;
-            break;
-            
-        case BlendMode::Alpha:
-            // Alpha blending
-            float srcAlpha = color.a / 255.0f;
-            float destAlpha = destA / 255.0f;
-            float outAlpha = srcAlpha + destAlpha * (1.0f - srcAlpha);
-            
-            if (outAlpha > 0.0f) {
-                resultR = static_cast<uint8_t>((color.r * srcAlpha + destR * destAlpha * (1.0f - srcAlpha)) / outAlpha);
-                resultG = static_cast<uint8_t>((color.g * srcAlpha + destG * destAlpha * (1.0f - srcAlpha)) / outAlpha);
-                resultB = static_cast<uint8_t>((color.b * srcAlpha + destB * destAlpha * (1.0f - srcAlpha)) / outAlpha);
-            } else {
-                resultR = 0;
-                resultG = 0;
-                resultB = 0;
-            }
-            
-            resultA = static_cast<uint8_t>(outAlpha * 255.0f);
-            break;
-            
-        case BlendMode::Add:
-            // Additive blending
-            resultR = std::min(255, destR + color.r);
-            resultG = std::min(255, destG + color.g);
-            resultB = std::min(255, destB + color.b);
-            resultA = std::max(destA, color.a);
-            break;
-            
-        case BlendMode::Multiply:
-            // Multiplicative blending
-            resultR = (destR * color.r) / 255;
-            resultG = (destG * color.g) / 255;
-            resultB = (destB * color.b) / 255;
-            resultA = (destA * color.a) / 255;
-            break;
+    if (blendMode_ == BlendMode::None) {
+        // Direct overwrite
+        resultR = color.r;
+        resultG = color.g;
+        resultB = color.b;
+        resultA = color.a;
+    }
+    else if (blendMode_ == BlendMode::Alpha) {
+        // Alpha blending
+        float srcAlpha = color.a / 255.0f;
+        float destAlpha = destA / 255.0f;
+        float outAlpha = srcAlpha + destAlpha * (1.0f - srcAlpha);
+        
+        if (outAlpha > 0.0f) {
+            resultR = static_cast<uint8_t>((color.r * srcAlpha + destR * destAlpha * (1.0f - srcAlpha)) / outAlpha);
+            resultG = static_cast<uint8_t>((color.g * srcAlpha + destG * destAlpha * (1.0f - srcAlpha)) / outAlpha);
+            resultB = static_cast<uint8_t>((color.b * srcAlpha + destB * destAlpha * (1.0f - srcAlpha)) / outAlpha);
+        } else {
+            resultR = 0;
+            resultG = 0;
+            resultB = 0;
+        }
+        
+        resultA = static_cast<uint8_t>(outAlpha * 255.0f);
+    }
+    else if (blendMode_ == BlendMode::Add) {
+        // Additive blending
+        resultR = std::min(255, destR + color.r);
+        resultG = std::min(255, destG + color.g);
+        resultB = std::min(255, destB + color.b);
+        resultA = std::max(destA, color.a);
+    }
+    else if (blendMode_ == BlendMode::Multiply) {
+        // Multiplicative blending
+        resultR = (destR * color.r) / 255;
+        resultG = (destG * color.g) / 255;
+        resultB = (destB * color.b) / 255;
+        resultA = (destA * color.a) / 255;
+    }
+    else {
+        // Default to direct copy if mode not recognized
+        resultR = color.r;
+        resultG = color.g;
+        resultB = color.b;
+        resultA = color.a;
     }
     
     // Write the result back to the buffer

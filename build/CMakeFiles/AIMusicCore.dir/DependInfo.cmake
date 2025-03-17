@@ -14,6 +14,11 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/Users/geaspar/AIMusicHardware/src/sequencer/AdaptiveSequencer.cpp" "CMakeFiles/AIMusicCore.dir/src/sequencer/AdaptiveSequencer.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/sequencer/AdaptiveSequencer.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/sequencer/MidiFile.cpp" "CMakeFiles/AIMusicCore.dir/src/sequencer/MidiFile.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/sequencer/MidiFile.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/sequencer/Sequencer.cpp" "CMakeFiles/AIMusicCore.dir/src/sequencer/Sequencer.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/sequencer/Sequencer.cpp.o.d"
+  "/Users/geaspar/AIMusicHardware/src/ui/DisplayManager.cpp" "CMakeFiles/AIMusicCore.dir/src/ui/DisplayManager.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/ui/DisplayManager.cpp.o.d"
+  "/Users/geaspar/AIMusicHardware/src/ui/Font.cpp" "CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.o.d"
+  "/Users/geaspar/AIMusicHardware/src/ui/UIComponents.cpp" "CMakeFiles/AIMusicCore.dir/src/ui/UIComponents.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/ui/UIComponents.cpp.o.d"
+  "/Users/geaspar/AIMusicHardware/src/ui/UIContext.cpp" "CMakeFiles/AIMusicCore.dir/src/ui/UIContext.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/ui/UIContext.cpp.o.d"
+  "/Users/geaspar/AIMusicHardware/src/ui/UserInterface.cpp" "CMakeFiles/AIMusicCore.dir/src/ui/UserInterface.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/ui/UserInterface.cpp.o.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

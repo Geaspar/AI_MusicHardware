@@ -102,7 +102,12 @@ public:
     virtual void onActivate() {}
     virtual void onDeactivate() {}
     
-private:
+    // Implement UIComponent pure virtual methods with default behavior
+    virtual void update(float deltaTime) override;
+    virtual void render(DisplayManager* display) override;
+    virtual bool handleInput(const InputEvent& event) override;
+    
+protected:
     Color backgroundColor_;
 };
 

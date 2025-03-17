@@ -71,6 +71,32 @@ Screen::Screen(const std::string& id)
 Screen::~Screen() {
 }
 
+void Screen::update(float deltaTime) {
+    // Update all children
+    for (auto& child : children_) {
+        if (child->isVisible()) {
+            child->update(deltaTime);
+        }
+    }
+}
+
+void Screen::render(DisplayManager* display) {
+    if (!display) {
+        return;
+    }
+    
+    // Draw background
+    display->fillRect(x_, y_, width_, height_, backgroundColor_);
+    
+    // Render all children
+    renderChildren(display);
+}
+
+bool Screen::handleInput(const InputEvent& event) {
+    // Handle input for children
+    return handleChildrenInput(event);
+}
+
 //
 // UIContext implementation
 //

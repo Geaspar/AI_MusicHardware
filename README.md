@@ -132,9 +132,24 @@ The LLM component acts as a creative copilot with these capabilities:
    
    # Adaptive Sequencer demo
    ./bin/TestAdaptiveSequencer
+   
+   # If SDL2 is available:
+   # UI visualization test
+   ./bin/TestUI
    ```
 
 ## Key Features
+
+### Custom UI Framework
+The UI framework provides a minimalist, hardware-oriented interface inspired by the Teenage Engineering OP-1:
+
+- **Direct Framebuffer Access**: No dependencies on external UI frameworks
+- **Music-Specific Components**: Specialized UI elements for music production
+- **Hardware Integration**: Support for physical controls and touch interfaces
+- **Theming System**: Consistent color palette with easy customization
+- **Performance Focused**: Optimized for embedded hardware
+
+For more information, see [UI Implementation Documentation](docs/UI_IMPLEMENTATION.md).
 
 ### Adaptive Sequencer
 The AdaptiveSequencer is a state-based music sequencing system inspired by game audio middleware:

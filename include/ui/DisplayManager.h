@@ -126,6 +126,8 @@ private:
     // Utility functions
     void blendPixel(int x, int y, const Color& color);
     bool isInClipRect(int x, int y) const;
+    void fillFlatBottomTriangle(int x1, int y1, int x2, int y2, int x3, int y3, const Color& color);
+    void fillFlatTopTriangle(int x1, int y1, int x2, int y2, int x3, int y3, const Color& color);
 };
 
 } // namespace AIMusicHardware

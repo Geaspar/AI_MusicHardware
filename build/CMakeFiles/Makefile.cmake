@@ -28,6 +28,7 @@ set(CMAKE_MAKEFILE_DEPENDS
   "/opt/homebrew/Cellar/cmake/3.30.2/share/cmake/Modules/Compiler/CMakeCommonCompilerMacros.cmake"
   "/opt/homebrew/Cellar/cmake/3.30.2/share/cmake/Modules/Compiler/Clang.cmake"
   "/opt/homebrew/Cellar/cmake/3.30.2/share/cmake/Modules/Compiler/GNU.cmake"
+  "/opt/homebrew/Cellar/cmake/3.30.2/share/cmake/Modules/FeatureSummary.cmake"
   "/opt/homebrew/Cellar/cmake/3.30.2/share/cmake/Modules/FindPackageHandleStandardArgs.cmake"
   "/opt/homebrew/Cellar/cmake/3.30.2/share/cmake/Modules/FindPackageMessage.cmake"
   "/opt/homebrew/Cellar/cmake/3.30.2/share/cmake/Modules/FindPkgConfig.cmake"
@@ -41,6 +42,8 @@ set(CMAKE_MAKEFILE_DEPENDS
   "/opt/homebrew/Cellar/cmake/3.30.2/share/cmake/Modules/Platform/Darwin-Initialize.cmake"
   "/opt/homebrew/Cellar/cmake/3.30.2/share/cmake/Modules/Platform/Darwin.cmake"
   "/opt/homebrew/Cellar/cmake/3.30.2/share/cmake/Modules/Platform/UnixPaths.cmake"
+  "/opt/homebrew/lib/cmake/SDL2/sdl2-config-version.cmake"
+  "/opt/homebrew/lib/cmake/SDL2/sdl2-config.cmake"
   )
 
 # The corresponding makefile is:
@@ -63,4 +66,5 @@ set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/TestSequencerFile.dir/DependInfo.cmake"
   "CMakeFiles/TestSequencerAdvanced.dir/DependInfo.cmake"
   "CMakeFiles/TestAdaptiveSequencer.dir/DependInfo.cmake"
+  "CMakeFiles/TestUI.dir/DependInfo.cmake"
   )

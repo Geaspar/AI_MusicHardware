@@ -207,6 +207,19 @@ TestAdaptiveSequencer/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestAdaptiveSequencer.dir/build.make CMakeFiles/TestAdaptiveSequencer.dir/build
 .PHONY : TestAdaptiveSequencer/fast
 
+#=============================================================================
+# Target rules for targets named TestUI
+
+# Build rule for target.
+TestUI: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 TestUI
+.PHONY : TestUI
+
+# fast build rule for target.
+TestUI/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestUI.dir/build.make CMakeFiles/TestUI.dir/build
+.PHONY : TestUI/fast
+
 examples/SimpleTest.o: examples/SimpleTest.cpp.o
 .PHONY : examples/SimpleTest.o
 
@@ -350,6 +363,30 @@ examples/TestSequencerFile.s: examples/TestSequencerFile.cpp.s
 examples/TestSequencerFile.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerFile.dir/build.make CMakeFiles/TestSequencerFile.dir/examples/TestSequencerFile.cpp.s
 .PHONY : examples/TestSequencerFile.cpp.s
+
+examples/TestUI.o: examples/TestUI.cpp.o
+.PHONY : examples/TestUI.o
+
+# target to build an object file
+examples/TestUI.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestUI.dir/build.make CMakeFiles/TestUI.dir/examples/TestUI.cpp.o
+.PHONY : examples/TestUI.cpp.o
+
+examples/TestUI.i: examples/TestUI.cpp.i
+.PHONY : examples/TestUI.i
+
+# target to preprocess a source file
+examples/TestUI.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestUI.dir/build.make CMakeFiles/TestUI.dir/examples/TestUI.cpp.i
+.PHONY : examples/TestUI.cpp.i
+
+examples/TestUI.s: examples/TestUI.cpp.s
+.PHONY : examples/TestUI.s
+
+# target to generate assembly for a file
+examples/TestUI.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestUI.dir/build.make CMakeFiles/TestUI.dir/examples/TestUI.cpp.s
+.PHONY : examples/TestUI.cpp.s
 
 src/audio/AudioEngine.o: src/audio/AudioEngine.cpp.o
 .PHONY : src/audio/AudioEngine.o
@@ -513,6 +550,126 @@ src/sequencer/Sequencer.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerAdvanced.dir/build.make CMakeFiles/TestSequencerAdvanced.dir/src/sequencer/Sequencer.cpp.s
 .PHONY : src/sequencer/Sequencer.cpp.s
 
+src/ui/DisplayManager.o: src/ui/DisplayManager.cpp.o
+.PHONY : src/ui/DisplayManager.o
+
+# target to build an object file
+src/ui/DisplayManager.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/DisplayManager.cpp.o
+.PHONY : src/ui/DisplayManager.cpp.o
+
+src/ui/DisplayManager.i: src/ui/DisplayManager.cpp.i
+.PHONY : src/ui/DisplayManager.i
+
+# target to preprocess a source file
+src/ui/DisplayManager.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/DisplayManager.cpp.i
+.PHONY : src/ui/DisplayManager.cpp.i
+
+src/ui/DisplayManager.s: src/ui/DisplayManager.cpp.s
+.PHONY : src/ui/DisplayManager.s
+
+# target to generate assembly for a file
+src/ui/DisplayManager.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/DisplayManager.cpp.s
+.PHONY : src/ui/DisplayManager.cpp.s
+
+src/ui/Font.o: src/ui/Font.cpp.o
+.PHONY : src/ui/Font.o
+
+# target to build an object file
+src/ui/Font.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.o
+.PHONY : src/ui/Font.cpp.o
+
+src/ui/Font.i: src/ui/Font.cpp.i
+.PHONY : src/ui/Font.i
+
+# target to preprocess a source file
+src/ui/Font.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.i
+.PHONY : src/ui/Font.cpp.i
+
+src/ui/Font.s: src/ui/Font.cpp.s
+.PHONY : src/ui/Font.s
+
+# target to generate assembly for a file
+src/ui/Font.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.s
+.PHONY : src/ui/Font.cpp.s
+
+src/ui/UIComponents.o: src/ui/UIComponents.cpp.o
+.PHONY : src/ui/UIComponents.o
+
+# target to build an object file
+src/ui/UIComponents.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/UIComponents.cpp.o
+.PHONY : src/ui/UIComponents.cpp.o
+
+src/ui/UIComponents.i: src/ui/UIComponents.cpp.i
+.PHONY : src/ui/UIComponents.i
+
+# target to preprocess a source file
+src/ui/UIComponents.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/UIComponents.cpp.i
+.PHONY : src/ui/UIComponents.cpp.i
+
+src/ui/UIComponents.s: src/ui/UIComponents.cpp.s
+.PHONY : src/ui/UIComponents.s
+
+# target to generate assembly for a file
+src/ui/UIComponents.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/UIComponents.cpp.s
+.PHONY : src/ui/UIComponents.cpp.s
+
+src/ui/UIContext.o: src/ui/UIContext.cpp.o
+.PHONY : src/ui/UIContext.o
+
+# target to build an object file
+src/ui/UIContext.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/UIContext.cpp.o
+.PHONY : src/ui/UIContext.cpp.o
+
+src/ui/UIContext.i: src/ui/UIContext.cpp.i
+.PHONY : src/ui/UIContext.i
+
+# target to preprocess a source file
+src/ui/UIContext.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/UIContext.cpp.i
+.PHONY : src/ui/UIContext.cpp.i
+
+src/ui/UIContext.s: src/ui/UIContext.cpp.s
+.PHONY : src/ui/UIContext.s
+
+# target to generate assembly for a file
+src/ui/UIContext.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/UIContext.cpp.s
+.PHONY : src/ui/UIContext.cpp.s
+
+src/ui/UserInterface.o: src/ui/UserInterface.cpp.o
+.PHONY : src/ui/UserInterface.o
+
+# target to build an object file
+src/ui/UserInterface.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/UserInterface.cpp.o
+.PHONY : src/ui/UserInterface.cpp.o
+
+src/ui/UserInterface.i: src/ui/UserInterface.cpp.i
+.PHONY : src/ui/UserInterface.i
+
+# target to preprocess a source file
+src/ui/UserInterface.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/UserInterface.cpp.i
+.PHONY : src/ui/UserInterface.cpp.i
+
+src/ui/UserInterface.s: src/ui/UserInterface.cpp.s
+.PHONY : src/ui/UserInterface.s
+
+# target to generate assembly for a file
+src/ui/UserInterface.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/UserInterface.cpp.s
+.PHONY : src/ui/UserInterface.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -528,6 +685,7 @@ help:
 	@echo "... TestSequencer"
 	@echo "... TestSequencerAdvanced"
 	@echo "... TestSequencerFile"
+	@echo "... TestUI"
 	@echo "... examples/SimpleTest.o"
 	@echo "... examples/SimpleTest.i"
 	@echo "... examples/SimpleTest.s"
@@ -546,6 +704,9 @@ help:
 	@echo "... examples/TestSequencerFile.o"
 	@echo "... examples/TestSequencerFile.i"
 	@echo "... examples/TestSequencerFile.s"
+	@echo "... examples/TestUI.o"
+	@echo "... examples/TestUI.i"
+	@echo "... examples/TestUI.s"
 	@echo "... src/audio/AudioEngine.o"
 	@echo "... src/audio/AudioEngine.i"
 	@echo "... src/audio/AudioEngine.s"
@@ -564,6 +725,21 @@ help:
 	@echo "... src/sequencer/Sequencer.o"
 	@echo "... src/sequencer/Sequencer.i"
 	@echo "... src/sequencer/Sequencer.s"
+	@echo "... src/ui/DisplayManager.o"
+	@echo "... src/ui/DisplayManager.i"
+	@echo "... src/ui/DisplayManager.s"
+	@echo "... src/ui/Font.o"
+	@echo "... src/ui/Font.i"
+	@echo "... src/ui/Font.s"
+	@echo "... src/ui/UIComponents.o"
+	@echo "... src/ui/UIComponents.i"
+	@echo "... src/ui/UIComponents.s"
+	@echo "... src/ui/UIContext.o"
+	@echo "... src/ui/UIContext.i"
+	@echo "... src/ui/UIContext.s"
+	@echo "... src/ui/UserInterface.o"
+	@echo "... src/ui/UserInterface.i"
+	@echo "... src/ui/UserInterface.s"
 .PHONY : help
 
 

@@ -123,6 +123,18 @@ if(RTAUDIO_FOUND)
     message(STATUS "Building TestAdaptiveSequencer (adaptive sequencer test)")
 endif()
 
+# TestUI (UI visualization with SDL2)
+# Check for SDL2
+find_package(SDL2 QUIET)
+if(SDL2_FOUND)
+    add_executable(TestUI examples/TestUI.cpp)
+    target_link_libraries(TestUI PRIVATE AIMusicCore ${SDL2_LIBRARIES})
+    target_include_directories(TestUI PRIVATE ${SDL2_INCLUDE_DIRS})
+    message(STATUS "Building TestUI (UI visualization test)")
+else()
+    message(STATUS "Skipping TestUI due to missing SDL2 dependency")
+endif()
+
 # Print audio libs for debugging
 message(STATUS "Audio libraries: ${AUDIO_LIBS}")
 
