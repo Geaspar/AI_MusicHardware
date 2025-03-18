@@ -94,6 +94,7 @@ bin/WavetableDemo: CMakeFiles/WavetableDemo.dir/examples/WavetableDemo.cpp.o
 bin/WavetableDemo: CMakeFiles/WavetableDemo.dir/build.make
 bin/WavetableDemo: lib/libAIMusicCore.a
 bin/WavetableDemo: /opt/homebrew/lib/librtaudio.dylib
+bin/WavetableDemo: /opt/homebrew/lib/librtmidi.dylib
 bin/WavetableDemo: CMakeFiles/WavetableDemo.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable bin/WavetableDemo"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/WavetableDemo.dir/link.txt --verbose=$(VERBOSE)

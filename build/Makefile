@@ -207,6 +207,19 @@ WavetableDemo/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/WavetableDemo.dir/build.make CMakeFiles/WavetableDemo.dir/build
 .PHONY : WavetableDemo/fast
 
+#=============================================================================
+# Target rules for targets named TestMidi
+
+# Build rule for target.
+TestMidi: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 TestMidi
+.PHONY : TestMidi
+
+# fast build rule for target.
+TestMidi/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestMidi.dir/build.make CMakeFiles/TestMidi.dir/build
+.PHONY : TestMidi/fast
+
 examples/SimpleTest.o: examples/SimpleTest.cpp.o
 .PHONY : examples/SimpleTest.o
 
@@ -278,6 +291,30 @@ examples/TestAudio.s: examples/TestAudio.cpp.s
 examples/TestAudio.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestAudio.dir/build.make CMakeFiles/TestAudio.dir/examples/TestAudio.cpp.s
 .PHONY : examples/TestAudio.cpp.s
+
+examples/TestMidi.o: examples/TestMidi.cpp.o
+.PHONY : examples/TestMidi.o
+
+# target to build an object file
+examples/TestMidi.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestMidi.dir/build.make CMakeFiles/TestMidi.dir/examples/TestMidi.cpp.o
+.PHONY : examples/TestMidi.cpp.o
+
+examples/TestMidi.i: examples/TestMidi.cpp.i
+.PHONY : examples/TestMidi.i
+
+# target to preprocess a source file
+examples/TestMidi.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestMidi.dir/build.make CMakeFiles/TestMidi.dir/examples/TestMidi.cpp.i
+.PHONY : examples/TestMidi.cpp.i
+
+examples/TestMidi.s: examples/TestMidi.cpp.s
+.PHONY : examples/TestMidi.s
+
+# target to generate assembly for a file
+examples/TestMidi.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestMidi.dir/build.make CMakeFiles/TestMidi.dir/examples/TestMidi.cpp.s
+.PHONY : examples/TestMidi.cpp.s
 
 examples/TestSequencer.o: examples/TestSequencer.cpp.o
 .PHONY : examples/TestSequencer.o
@@ -422,6 +459,54 @@ src/hardware/HardwareInterface.s: src/hardware/HardwareInterface.cpp.s
 src/hardware/HardwareInterface.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/hardware/HardwareInterface.cpp.s
 .PHONY : src/hardware/HardwareInterface.cpp.s
+
+src/midi/MidiInterface.o: src/midi/MidiInterface.cpp.o
+.PHONY : src/midi/MidiInterface.o
+
+# target to build an object file
+src/midi/MidiInterface.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/midi/MidiInterface.cpp.o
+.PHONY : src/midi/MidiInterface.cpp.o
+
+src/midi/MidiInterface.i: src/midi/MidiInterface.cpp.i
+.PHONY : src/midi/MidiInterface.i
+
+# target to preprocess a source file
+src/midi/MidiInterface.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/midi/MidiInterface.cpp.i
+.PHONY : src/midi/MidiInterface.cpp.i
+
+src/midi/MidiInterface.s: src/midi/MidiInterface.cpp.s
+.PHONY : src/midi/MidiInterface.s
+
+# target to generate assembly for a file
+src/midi/MidiInterface.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/midi/MidiInterface.cpp.s
+.PHONY : src/midi/MidiInterface.cpp.s
+
+src/midi/MidiManager.o: src/midi/MidiManager.cpp.o
+.PHONY : src/midi/MidiManager.o
+
+# target to build an object file
+src/midi/MidiManager.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/midi/MidiManager.cpp.o
+.PHONY : src/midi/MidiManager.cpp.o
+
+src/midi/MidiManager.i: src/midi/MidiManager.cpp.i
+.PHONY : src/midi/MidiManager.i
+
+# target to preprocess a source file
+src/midi/MidiManager.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/midi/MidiManager.cpp.i
+.PHONY : src/midi/MidiManager.cpp.i
+
+src/midi/MidiManager.s: src/midi/MidiManager.cpp.s
+.PHONY : src/midi/MidiManager.s
+
+# target to generate assembly for a file
+src/midi/MidiManager.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/midi/MidiManager.cpp.s
+.PHONY : src/midi/MidiManager.cpp.s
 
 src/sequencer/AdaptiveSequencer.o: src/sequencer/AdaptiveSequencer.cpp.o
 .PHONY : src/sequencer/AdaptiveSequencer.o
@@ -747,6 +832,7 @@ help:
 	@echo "... SimpleTest"
 	@echo "... TestAdaptiveSequencer"
 	@echo "... TestAudio"
+	@echo "... TestMidi"
 	@echo "... TestSequencer"
 	@echo "... TestUI"
 	@echo "... WavetableDemo"
@@ -759,6 +845,9 @@ help:
 	@echo "... examples/TestAudio.o"
 	@echo "... examples/TestAudio.i"
 	@echo "... examples/TestAudio.s"
+	@echo "... examples/TestMidi.o"
+	@echo "... examples/TestMidi.i"
+	@echo "... examples/TestMidi.s"
 	@echo "... examples/TestSequencer.o"
 	@echo "... examples/TestSequencer.i"
 	@echo "... examples/TestSequencer.s"
@@ -777,6 +866,12 @@ help:
 	@echo "... src/hardware/HardwareInterface.o"
 	@echo "... src/hardware/HardwareInterface.i"
 	@echo "... src/hardware/HardwareInterface.s"
+	@echo "... src/midi/MidiInterface.o"
+	@echo "... src/midi/MidiInterface.i"
+	@echo "... src/midi/MidiInterface.s"
+	@echo "... src/midi/MidiManager.o"
+	@echo "... src/midi/MidiManager.i"
+	@echo "... src/midi/MidiManager.s"
 	@echo "... src/sequencer/AdaptiveSequencer.o"
 	@echo "... src/sequencer/AdaptiveSequencer.i"
 	@echo "... src/sequencer/AdaptiveSequencer.s"

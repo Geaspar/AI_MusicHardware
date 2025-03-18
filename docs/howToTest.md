@@ -6,7 +6,7 @@ This guide provides instructions for testing the various components of the AIMus
 
 ### Installing RtMidi
 
-Before you can test the MIDI implementation, you need to install the RtMidi library:
+Before you can test the MIDI implementation, you need to install the RtMidi library. You can use CMake to build and install it:
 
 1. Clone the RtMidi repository:
    ```bash
@@ -14,9 +14,11 @@ Before you can test the MIDI implementation, you need to install the RtMidi libr
    cd rtmidi
    ```
 
-2. Configure and build the library:
+2. Build and install using CMake:
    ```bash
-   ./configure
+   mkdir build
+   cd build
+   cmake ..
    make
    ```
 
@@ -29,6 +31,12 @@ Before you can test the MIDI implementation, you need to install the RtMidi libr
    ```bash
    export DYLD_LIBRARY_PATH=/usr/local/lib:$DYLD_LIBRARY_PATH
    ```
+
+Alternatively, on macOS, you can use Homebrew to install RtMidi:
+
+```bash
+brew install rtmidi
+```
 
 ### Building the TestMidi Application
 

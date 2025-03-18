@@ -32,7 +32,8 @@ void rtMidiCallback(double timeStamp, std::vector<unsigned char>* message, void*
         unsigned char type = status & 0xF0;
         unsigned char channel = status & 0x0F;
         
-        midiMessage.channel = channel;
+        // Convert to 1-based channel numbers for consistency with MIDI standard
+        midiMessage.channel = channel + 1;
         
         // Parse message type
         switch (type) {
@@ -189,7 +190,20 @@ MidiInput::~MidiInput() {
 }
 
 std::vector<std::string> MidiInput::getDevices() {
-    return pimpl_->getDevices();
+#ifdef HAVE_RTMIDI
+    try {
+        RtMidiIn rtMidiIn;
+        std::vector<std::string> devices;
+        unsigned int portCount = rtMidiIn.getPortCount();
+        for (unsigned int i = 0; i < portCount; ++i) {
+            devices.push_back(rtMidiIn.getPortName(i));
+        }
+        return devices;
+    } catch (RtMidiError& error) {
+        std::cerr << "Error getting MIDI input devices: " << error.getMessage() << std::endl;
+    }
+#endif
+    return {};
 }
 
 bool MidiInput::openDevice(int deviceIndex) {
@@ -306,7 +320,20 @@ MidiOutput::~MidiOutput() {
 }
 
 std::vector<std::string> MidiOutput::getDevices() {
-    return pimpl_->getDevices();
+#ifdef HAVE_RTMIDI
+    try {
+        RtMidiOut rtMidiOut;
+        std::vector<std::string> devices;
+        unsigned int portCount = rtMidiOut.getPortCount();
+        for (unsigned int i = 0; i < portCount; ++i) {
+            devices.push_back(rtMidiOut.getPortName(i));
+        }
+        return devices;
+    } catch (RtMidiError& error) {
+        std::cerr << "Error getting MIDI output devices: " << error.getMessage() << std::endl;
+    }
+#endif
+    return {};
 }
 
 bool MidiOutput::openDevice(int deviceIndex) {

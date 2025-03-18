@@ -816,12 +816,8 @@ CMakeFiles/WavetableDemo.dir/examples/WavetableDemo.cpp.o: /Users/geaspar/AIMusi
   /Users/geaspar/AIMusicHardware/include/effects/Filter.h \
   /Users/geaspar/AIMusicHardware/include/effects/Modulation.h \
   /Users/geaspar/AIMusicHardware/include/effects/Phaser.h \
-  /Users/geaspar/AIMusicHardware/include/effects/Saturation.h \
-  /Users/geaspar/AIMusicHardware/include/synthesis/framework/processor.h \
-  /Users/geaspar/AIMusicHardware/include/synthesis/effects/effect_processor.h
+  /Users/geaspar/AIMusicHardware/include/effects/Saturation.h
 
-
-/Users/geaspar/AIMusicHardware/include/synthesis/effects/effect_processor.h:
 
 /Users/geaspar/AIMusicHardware/include/effects/Saturation.h:
 

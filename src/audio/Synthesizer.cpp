@@ -3,6 +3,7 @@
 #include <cmath>
 #include <algorithm>
 #include <random>
+#include <iostream>
 
 namespace AIMusicHardware {
 

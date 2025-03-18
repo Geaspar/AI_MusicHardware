@@ -94,6 +94,7 @@ bin/TestAdaptiveSequencer: CMakeFiles/TestAdaptiveSequencer.dir/examples/TestAda
 bin/TestAdaptiveSequencer: CMakeFiles/TestAdaptiveSequencer.dir/build.make
 bin/TestAdaptiveSequencer: lib/libAIMusicCore.a
 bin/TestAdaptiveSequencer: /opt/homebrew/lib/librtaudio.dylib
+bin/TestAdaptiveSequencer: /opt/homebrew/lib/librtmidi.dylib
 bin/TestAdaptiveSequencer: CMakeFiles/TestAdaptiveSequencer.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable bin/TestAdaptiveSequencer"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/TestAdaptiveSequencer.dir/link.txt --verbose=$(VERBOSE)

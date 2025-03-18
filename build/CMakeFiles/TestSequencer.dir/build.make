@@ -94,6 +94,7 @@ bin/TestSequencer: CMakeFiles/TestSequencer.dir/examples/TestSequencer.cpp.o
 bin/TestSequencer: CMakeFiles/TestSequencer.dir/build.make
 bin/TestSequencer: lib/libAIMusicCore.a
 bin/TestSequencer: /opt/homebrew/lib/librtaudio.dylib
+bin/TestSequencer: /opt/homebrew/lib/librtmidi.dylib
 bin/TestSequencer: CMakeFiles/TestSequencer.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable bin/TestSequencer"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/TestSequencer.dir/link.txt --verbose=$(VERBOSE)

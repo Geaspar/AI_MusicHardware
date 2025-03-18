@@ -12,6 +12,7 @@ set(CMAKE_MAKEFILE_DEPENDS
   "CMakeFiles/3.30.2/CMakeCXXCompiler.cmake"
   "CMakeFiles/3.30.2/CMakeSystem.cmake"
   "/Users/geaspar/AIMusicHardware/cmake/FindRtAudio.cmake"
+  "/Users/geaspar/AIMusicHardware/cmake/FindRtMidi.cmake"
   "/opt/homebrew/Cellar/cmake/3.30.2/share/cmake/Modules/CMakeCInformation.cmake"
   "/opt/homebrew/Cellar/cmake/3.30.2/share/cmake/Modules/CMakeCXXInformation.cmake"
   "/opt/homebrew/Cellar/cmake/3.30.2/share/cmake/Modules/CMakeCommonLanguageInclude.cmake"
@@ -66,4 +67,5 @@ set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/TestAdaptiveSequencer.dir/DependInfo.cmake"
   "CMakeFiles/TestUI.dir/DependInfo.cmake"
   "CMakeFiles/WavetableDemo.dir/DependInfo.cmake"
+  "CMakeFiles/TestMidi.dir/DependInfo.cmake"
   )

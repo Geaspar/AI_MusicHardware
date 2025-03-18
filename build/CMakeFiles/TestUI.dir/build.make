@@ -95,6 +95,7 @@ bin/TestUI: CMakeFiles/TestUI.dir/build.make
 bin/TestUI: lib/libAIMusicCore.a
 bin/TestUI: /opt/homebrew/Cellar/sdl2/2.32.2/lib/libSDL2.dylib
 bin/TestUI: /opt/homebrew/lib/librtaudio.dylib
+bin/TestUI: /opt/homebrew/lib/librtmidi.dylib
 bin/TestUI: CMakeFiles/TestUI.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable bin/TestUI"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/TestUI.dir/link.txt --verbose=$(VERBOSE)

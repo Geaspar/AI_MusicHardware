@@ -249,6 +249,12 @@ RTAUDIO_INCLUDE_DIR:PATH=/opt/homebrew/include/rtaudio
 //Path to a library.
 RTAUDIO_LIBRARY:FILEPATH=/opt/homebrew/lib/librtaudio.dylib
 
+//Path to a file.
+RTMIDI_INCLUDE_DIR:PATH=/opt/homebrew/include/rtmidi
+
+//Path to a library.
+RTMIDI_LIBRARY:FILEPATH=/opt/homebrew/lib/librtmidi.dylib
+
 //The directory containing a CMake configuration file for SDL2.
 SDL2_DIR:PATH=/opt/homebrew/lib/cmake/SDL2
 
@@ -408,4 +414,8 @@ PKG_CONFIG_EXECUTABLE-ADVANCED:INTERNAL=1
 RTAUDIO_INCLUDE_DIR-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: RTAUDIO_LIBRARY
 RTAUDIO_LIBRARY-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: RTMIDI_INCLUDE_DIR
+RTMIDI_INCLUDE_DIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: RTMIDI_LIBRARY
+RTMIDI_LIBRARY-ADVANCED:INTERNAL=1
 

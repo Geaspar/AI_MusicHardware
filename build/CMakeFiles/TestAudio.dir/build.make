@@ -94,6 +94,7 @@ bin/TestAudio: CMakeFiles/TestAudio.dir/examples/TestAudio.cpp.o
 bin/TestAudio: CMakeFiles/TestAudio.dir/build.make
 bin/TestAudio: lib/libAIMusicCore.a
 bin/TestAudio: /opt/homebrew/lib/librtaudio.dylib
+bin/TestAudio: /opt/homebrew/lib/librtmidi.dylib
 bin/TestAudio: CMakeFiles/TestAudio.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable bin/TestAudio"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/TestAudio.dir/link.txt --verbose=$(VERBOSE)
