@@ -109,3 +109,81 @@ For the initial development phase, we recommend focusing on:
 5. Fundamental voice management system
 
 Once these foundations are solid, more advanced features can be progressively added while maintaining a stable and efficient codebase.
+
+## Running the WavetableDemo Example
+
+To experience the new synthesizer architecture in action, follow these steps to build and run the WavetableDemo example:
+
+### Prerequisites
+- Ensure you have CMake (version 3.14 or higher) installed
+- Make sure you have a C++ compiler with C++17 support
+- RtAudio library is required for audio output
+
+### Build Instructions
+
+1. **Create a build directory (if not already present)**:
+   ```bash
+   mkdir -p build
+   cd build
+   ```
+
+2. **Run CMake to configure the project**:
+   ```bash
+   cmake ..
+   ```
+
+3. **Build the project**:
+   ```bash
+   cmake --build . --config Release
+   ```
+   This will build all components, including the WavetableDemo executable.
+
+4. **Running the WavetableDemo**:
+   ```bash
+   ./bin/WavetableDemo
+   ```
+
+### Expected Behavior
+
+1. When you run the demo:
+   - The console will display "Wavetable Synthesizer Demo"
+   - You'll hear a simple melody played using the wavetable synthesizer
+   - Each note will have a subtle reverb effect applied
+   - After the melody completes, you'll hear the reverb tail fade out
+
+2. What you're experiencing:
+   - Wavetable synthesis with morphing between different waveforms
+   - Advanced voice management with proper voice allocation
+   - High-quality envelope shaping for natural note dynamics
+   - Effect processing using the new effects architecture
+   - Basic LFO modulation implementation
+
+### Troubleshooting
+
+If you encounter issues:
+
+1. **No audio output**: 
+   - Ensure your audio device is properly connected and working
+   - Check that RtAudio was properly detected during the CMake configuration step
+   - Try adjusting your system volume
+
+2. **Build errors**:
+   - Make sure all dependencies are properly installed
+   - Verify that you have the necessary permissions to access audio devices
+   - On Linux, you may need to install ALSA development libraries (`libasound2-dev`)
+   - On macOS, no additional libraries are needed as Core Audio is used
+
+3. **Runtime errors**:
+   - If you see "Failed to start audio engine", it may indicate that your audio device cannot be accessed
+   - Try running with administrator/root privileges if needed
+
+### Modifying the Demo
+
+The WavetableDemo.cpp file is designed to be a starting point for experimentation:
+
+- Try modifying the melody array to create different musical patterns
+- Adjust the reverb parameters to change the sound character
+- Explore creating different wavetable configurations
+- Add additional effects to the processing chain
+
+This example provides a hands-on introduction to the key components of the new synthesizer architecture and can serve as a reference for more advanced implementations.
