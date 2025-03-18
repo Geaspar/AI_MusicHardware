@@ -22,12 +22,15 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 # Find dependencies
 find_package(Threads REQUIRED)
 find_package(RtAudio QUIET)
+find_package(RtMidi QUIET)
 
 # Define basic source files
 set(BASIC_AUDIO_SOURCES
     src/audio/AudioEngine.cpp
     src/audio/Synthesizer.cpp
     src/hardware/HardwareInterface.cpp
+    src/midi/MidiInterface.cpp
+    src/midi/MidiManager.cpp
 )
 
 set(SEQUENCER_SOURCES
@@ -62,6 +65,16 @@ if(RTAUDIO_FOUND)
 else()
     message(WARNING "RtAudio not found. Using dummy implementation.")
     set(AUDIO_LIBS "")
+endif()
+
+# Set up RtMidi if found
+if(RTMIDI_FOUND)
+    message(STATUS "Found RtMidi: ${RTMIDI_INCLUDE_DIRS}")
+    include_directories(${RTMIDI_INCLUDE_DIRS})
+    list(APPEND AUDIO_LIBS ${RTMIDI_LIBRARIES})
+    add_definitions(-DHAVE_RTMIDI)
+else()
+    message(WARNING "RtMidi not found. Using dummy implementation.")
 endif()
 
 # Platform-specific settings
@@ -152,6 +165,13 @@ if(RTAUDIO_FOUND)
     message(STATUS "Building WavetableDemo (wavetable synthesizer demo)")
 endif()
 
+# Add MIDI test (requires RtMidi)
+if(RTMIDI_FOUND)
+    add_executable(TestMidi examples/TestMidi.cpp)
+    target_link_libraries(TestMidi PRIVATE AIMusicCore)
+    message(STATUS "Building TestMidi (MIDI implementation test)")
+endif()
+
 # Print audio libs for debugging
 message(STATUS "Audio libraries: ${AUDIO_LIBS}")
 
@@ -165,4 +185,7 @@ if(RTAUDIO_FOUND)
     message(STATUS "5. Run ./bin/TestSequencer to test the sequencer component with real-time audio")
     message(STATUS "6. Run ./bin/TestAdaptiveSequencer to explore the adaptive sequencer system")
     message(STATUS "7. Run ./bin/WavetableDemo to try the wavetable synthesizer implementation")
+endif()
+if(RTMIDI_FOUND)
+    message(STATUS "8. Run ./bin/TestMidi to test MIDI input/output functionality")
 endif()

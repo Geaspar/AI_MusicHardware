@@ -37,10 +37,22 @@ public:
     bool initialize();
     
     // Basic note control
-    void noteOn(int midiNote, float velocity);
-    void noteOn(int midiNote, float velocity, const AIMusicHardware::Envelope& env);
-    void noteOff(int midiNote);
-    void allNotesOff();
+    void noteOn(int midiNote, float velocity, int channel = 0);
+    void noteOn(int midiNote, float velocity, const AIMusicHardware::Envelope& env, int channel = 0);
+    void noteOff(int midiNote, int channel = 0);
+    void allNotesOff(int channel = -1);  // -1 means all channels
+    
+    // MIDI-specific control methods
+    void sustainOn(int channel = 0);
+    void sustainOff(int channel = 0);
+    void setPitchBend(float value, int channel = 0);  // value range: -1.0 to 1.0
+    void setAftertouch(int note, float pressure, int channel = 0);
+    void setChannelPressure(float pressure, int channel = 0);
+    void resetAllControllers();
+    
+    // Parameter system
+    void setParameter(const std::string& paramId, float value);
+    float getParameter(const std::string& paramId) const;
     
     // Legacy oscillator type for backward compatibility
     void setOscillatorType(OscillatorType type);

@@ -163,13 +163,14 @@ void Synthesizer::setSampleRate(int sampleRate) {
     }
 }
 
-void Synthesizer::noteOn(int midiNote, float velocity) {
+void Synthesizer::noteOn(int midiNote, float velocity, int channel) {
     if (voiceManager_) {
+        // For now, we'll ignore channel but in the future we could implement multi-channel support
         voiceManager_->noteOn(midiNote, velocity);
     }
 }
 
-void Synthesizer::noteOn(int midiNote, float velocity, const AIMusicHardware::Envelope& legacyEnv) {
+void Synthesizer::noteOn(int midiNote, float velocity, const AIMusicHardware::Envelope& legacyEnv, int channel) {
     if (voiceManager_) {
         // Legacy support - first use standard noteOn
         voiceManager_->noteOn(midiNote, velocity);
@@ -181,16 +182,118 @@ void Synthesizer::noteOn(int midiNote, float velocity, const AIMusicHardware::En
     }
 }
 
-void Synthesizer::noteOff(int midiNote) {
+void Synthesizer::noteOff(int midiNote, int channel) {
     if (voiceManager_) {
+        // For now, we'll ignore channel
         voiceManager_->noteOff(midiNote);
     }
 }
 
-void Synthesizer::allNotesOff() {
+void Synthesizer::allNotesOff(int channel) {
     if (voiceManager_) {
+        // For now, channel parameter is ignored, all notes are turned off regardless of channel
         voiceManager_->allNotesOff();
     }
+}
+
+void Synthesizer::sustainOn(int channel) {
+    if (voiceManager_) {
+        // For future implementation - will need to add sustain functionality to VoiceManager
+        // voiceManager_->sustainOn(channel);
+        
+        // For now, just log the action
+        std::cout << "Sustain pedal on for channel " << channel << std::endl;
+    }
+}
+
+void Synthesizer::sustainOff(int channel) {
+    if (voiceManager_) {
+        // For future implementation - will need to add sustain functionality to VoiceManager
+        // voiceManager_->sustainOff(channel);
+        
+        // For now, just log the action
+        std::cout << "Sustain pedal off for channel " << channel << std::endl;
+    }
+}
+
+void Synthesizer::setPitchBend(float value, int channel) {
+    if (voiceManager_) {
+        // For future implementation - will need to add pitch bend to VoiceManager
+        // voiceManager_->setPitchBend(value, channel);
+        
+        // For now, just log the action
+        std::cout << "Pitch bend value " << value << " for channel " << channel << std::endl;
+    }
+}
+
+void Synthesizer::setAftertouch(int note, float pressure, int channel) {
+    if (voiceManager_) {
+        // For future implementation - will need to add aftertouch to VoiceManager
+        // voiceManager_->setAftertouch(note, pressure, channel);
+        
+        // For now, just log the action
+        std::cout << "Aftertouch for note " << note << " with pressure " << pressure 
+                  << " on channel " << channel << std::endl;
+    }
+}
+
+void Synthesizer::setChannelPressure(float pressure, int channel) {
+    if (voiceManager_) {
+        // For future implementation - will need to add channel pressure to VoiceManager
+        // voiceManager_->setChannelPressure(pressure, channel);
+        
+        // For now, just log the action
+        std::cout << "Channel pressure " << pressure << " for channel " << channel << std::endl;
+    }
+}
+
+void Synthesizer::resetAllControllers() {
+    if (voiceManager_) {
+        // For future implementation - will need to add controller reset to VoiceManager
+        // voiceManager_->resetAllControllers();
+        
+        // For now, just log the action
+        std::cout << "Resetting all controllers" << std::endl;
+    }
+}
+
+void Synthesizer::setParameter(const std::string& paramId, float value) {
+    // We'll need a parameter system for this in the future
+    // For now, just handle a few basic parameters
+    
+    if (paramId == "oscillator_frame") {
+        if (voiceManager_) {
+            // For future implementation - will need to add parameter control to VoiceManager
+            std::cout << "Setting oscillator frame to " << value << std::endl;
+        }
+    }
+    else if (paramId == "filter_cutoff") {
+        std::cout << "Setting filter cutoff to " << value << std::endl;
+    }
+    else if (paramId == "filter_resonance") {
+        std::cout << "Setting filter resonance to " << value << std::endl;
+    }
+    else {
+        std::cout << "Unknown parameter: " << paramId << std::endl;
+    }
+}
+
+float Synthesizer::getParameter(const std::string& paramId) const {
+    // Stub implementation - we'll need a proper parameter system later
+    
+    // Return default values for some recognized parameters
+    if (paramId == "oscillator_frame") {
+        return 0.0f;
+    }
+    else if (paramId == "filter_cutoff") {
+        return 1.0f;
+    }
+    else if (paramId == "filter_resonance") {
+        return 0.5f;
+    }
+    
+    // Unknown parameter
+    return 0.0f;
 }
 
 void Synthesizer::setOscillatorType(OscillatorType type) {

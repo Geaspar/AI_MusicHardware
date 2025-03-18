@@ -1,0 +1,100 @@
+# How to Test AIMusicHardware
+
+This guide provides instructions for testing the various components of the AIMusicHardware project.
+
+## MIDI Implementation Testing
+
+### Installing RtMidi
+
+Before you can test the MIDI implementation, you need to install the RtMidi library:
+
+1. Clone the RtMidi repository:
+   ```bash
+   git clone https://github.com/thestk/rtmidi.git
+   cd rtmidi
+   ```
+
+2. Configure and build the library:
+   ```bash
+   ./configure
+   make
+   ```
+
+3. Install the library (may require sudo):
+   ```bash
+   sudo make install
+   ```
+
+4. On macOS, you might need to update the dynamic library path:
+   ```bash
+   export DYLD_LIBRARY_PATH=/usr/local/lib:$DYLD_LIBRARY_PATH
+   ```
+
+### Building the TestMidi Application
+
+Once RtMidi is installed, you can build the TestMidi application:
+
+1. Make sure your CMake build is up to date:
+   ```bash
+   cd /Users/geaspar/AIMusicHardware
+   mkdir -p build
+   cd build
+   cmake ..
+   make
+   ```
+
+2. The build system should detect RtMidi and build the TestMidi application:
+   ```bash
+   make TestMidi
+   ```
+
+### Running the TestMidi Application
+
+The TestMidi application allows you to test MIDI input/output functionality:
+
+1. Connect a MIDI device to your computer (keyboard, controller, etc.)
+
+2. Run the TestMidi application:
+   ```bash
+   ./bin/TestMidi
+   ```
+
+3. The application will:
+   - Display a list of available MIDI input devices
+   - Prompt you to select an input device
+   - Show MIDI messages received from the selected device
+   - Test MIDI learn functionality
+
+4. Test interactions:
+   - Play notes on your MIDI device to see the note messages
+   - Move controllers to see control change messages
+   - Use the pitch wheel to test pitch bend messages
+   - Assign a controller to a parameter using MIDI learn
+
+5. To exit the application, press Ctrl+C
+
+### Troubleshooting
+
+If you encounter issues with RtMidi:
+
+1. Make sure your MIDI device is connected before starting the application
+2. Check system MIDI settings to ensure your device is recognized
+3. Verify that you have the correct permissions to access MIDI devices
+4. On Linux, you might need to install ALSA development libraries:
+   ```bash
+   sudo apt-get install libasound2-dev
+   ```
+5. On macOS, ensure CoreAudio and CoreMIDI frameworks are available
+
+## Other Tests
+
+The project includes several other test applications:
+
+- `SimpleTest`: Generates WAV files in the output directory
+- `TestAudio`: Real-time audio playback test
+- `TestSequencer`: Tests the sequencer component with real-time audio
+- `TestAdaptiveSequencer`: Tests the adaptive sequencer system
+- `WavetableDemo`: Demonstrates the wavetable synthesizer implementation
+- `TestUI`: Visual test for the UI components
+
+Run any of these tests from the build/bin directory to evaluate different aspects of the system.
