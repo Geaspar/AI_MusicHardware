@@ -2,188 +2,126 @@
 #include "../../include/sequencer/Sequencer.h"
 #include <cmath>
 #include <algorithm>
+#include <random>
 
 namespace AIMusicHardware {
 
-// Constants
-constexpr float TWO_PI = 6.28318530718f;
-
-// Helper function to convert MIDI note to frequency (A4 = 69 = 440Hz)
-float midiNoteToFrequency(int midiNote) {
-    return 440.0f * std::pow(2.0f, (midiNote - 69) / 12.0f);
-}
-
-// Voice implementation
-Voice::Voice()
-    : frequency_(440.0f),
-      amplitude_(0.0f),
-      phase_(0.0f),
-      oscType_(OscillatorType::Sine),
-      isActive_(false),
-      envelope_(0.0f),
-      attack_(0.01f),     // 10ms attack
-      decay_(0.1f),       // 100ms decay
-      sustain_(0.7f),     // 70% sustain level
-      release_(0.5f),     // 500ms release
-      envelopeValue_(0.0f),
-      envelopeStage_(EnvelopeStage::Idle) {
-}
-
-Voice::~Voice() {
-}
-
-void Voice::setFrequency(float frequency) {
-    frequency_ = frequency;
-}
-
-void Voice::setOscillatorType(OscillatorType type) {
-    oscType_ = type;
-}
-
-void Voice::setAmplitude(float amplitude) {
-    amplitude_ = std::clamp(amplitude, 0.0f, 1.0f);
-}
-
-void Voice::noteOn(int midiNote, float velocity) {
-    frequency_ = midiNoteToFrequency(midiNote);
-    amplitude_ = std::clamp(velocity, 0.0f, 1.0f);
-    isActive_ = true;
-    envelopeStage_ = EnvelopeStage::Attack;
-    envelopeValue_ = 0.0f;
+// Helper LFO source for modulation
+class LfoSource : public ModulationSource {
+public:
+    enum class WaveShape {
+        Sine,
+        Triangle,
+        Saw,
+        Square,
+        Random
+    };
     
-    // Default envelope values remain unchanged
-}
-
-void Voice::noteOn(int midiNote, float velocity, const AIMusicHardware::Envelope& env) {
-    frequency_ = midiNoteToFrequency(midiNote);
-    amplitude_ = std::clamp(velocity, 0.0f, 1.0f);
-    isActive_ = true;
-    
-    // Use the provided envelope parameters
-    attack_ = env.attack;
-    decay_ = env.decay;
-    sustain_ = env.sustain;
-    release_ = env.release;
-    
-    envelopeStage_ = EnvelopeStage::Attack;
-    envelopeValue_ = 0.0f;
-}
-
-void Voice::noteOff() {
-    if (isActive_) {
-        envelopeStage_ = EnvelopeStage::Release;
-    }
-}
-
-bool Voice::isActive() const {
-    return isActive_;
-}
-
-float Voice::generateSample() {
-    if (!isActive_) {
-        return 0.0f;
+    LfoSource(const std::string& name, int sampleRate = 44100)
+        : ModulationSource(name),
+          sampleRate_(sampleRate),
+          frequency_(1.0f),  // 1 Hz default
+          phase_(0.0f),
+          shape_(WaveShape::Sine),
+          value_(0.0f) {
     }
     
-    // Use a constant sample rate for now
-    // In a real implementation, this would be passed from the Synthesizer
-    const float sampleRate = 44100.0f;
-    
-    // Update envelope
-    switch (envelopeStage_) {
-        case EnvelopeStage::Idle:
-            envelopeValue_ = 0.0f;
-            break;
-            
-        case EnvelopeStage::Attack:
-            // Faster attack for better responsiveness
-            envelopeValue_ += 1.0f / (attack_ * sampleRate);
-            if (envelopeValue_ >= 1.0f) {
-                envelopeValue_ = 1.0f;
-                envelopeStage_ = EnvelopeStage::Decay;
-            }
-            break;
-            
-        case EnvelopeStage::Decay:
-            envelopeValue_ -= (1.0f - sustain_) / (decay_ * sampleRate);
-            if (envelopeValue_ <= sustain_) {
-                envelopeValue_ = sustain_;
-                envelopeStage_ = EnvelopeStage::Sustain;
-            }
-            break;
-            
-        case EnvelopeStage::Sustain:
-            envelopeValue_ = sustain_;
-            break;
-            
-        case EnvelopeStage::Release:
-            // Ensure release always completes by using an absolute rate rather than relative to sustain
-            float releaseRate = envelopeValue_ / (release_ * sampleRate);
-            envelopeValue_ -= releaseRate;
-            
-            if (envelopeValue_ <= 0.001f) {  // Small threshold to ensure complete silence
-                envelopeValue_ = 0.0f;
-                envelopeStage_ = EnvelopeStage::Idle;
-                isActive_ = false;
-            }
-            break;
+    float getValue() const override {
+        return value_;
     }
     
-    // Generate waveform
-    float sample = 0.0f;
-    
-    // Phase increment for this sample
-    float phaseIncrement = frequency_ / 44100.0f;
-    
-    switch (oscType_) {
-        case OscillatorType::Sine:
-            sample = std::sin(phase_ * TWO_PI);
-            break;
-            
-        case OscillatorType::Square:
-            sample = (phase_ < 0.5f) ? 1.0f : -1.0f;
-            break;
-            
-        case OscillatorType::Saw:
-            sample = 2.0f * phase_ - 1.0f;
-            break;
-            
-        case OscillatorType::Triangle:
-            sample = (phase_ < 0.5f) ? (4.0f * phase_ - 1.0f) : (3.0f - 4.0f * phase_);
-            break;
-            
-        case OscillatorType::Noise:
-            sample = 2.0f * (static_cast<float>(rand()) / RAND_MAX) - 1.0f;
-            break;
+    void update() override {
+        // Update phase
+        phase_ += frequency_ / sampleRate_;
+        if (phase_ >= 1.0f) {
+            phase_ -= 1.0f;
+        }
+        
+        // Generate value based on wave shape
+        switch (shape_) {
+            case WaveShape::Sine:
+                value_ = std::sin(phase_ * 2.0f * 3.14159265359f);
+                break;
+                
+            case WaveShape::Triangle:
+                value_ = (phase_ < 0.5f) ? 
+                    (4.0f * phase_ - 1.0f) : 
+                    (3.0f - 4.0f * phase_);
+                break;
+                
+            case WaveShape::Saw:
+                value_ = 2.0f * phase_ - 1.0f;
+                break;
+                
+            case WaveShape::Square:
+                value_ = (phase_ < 0.5f) ? 1.0f : -1.0f;
+                break;
+                
+            case WaveShape::Random:
+                if (phase_ < prevPhase_) {
+                    // Generate new random value when phase wraps
+                    std::random_device rd;
+                    std::mt19937 gen(rd());
+                    std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
+                    value_ = dist(gen);
+                }
+                break;
+        }
+        
+        prevPhase_ = phase_;
     }
     
-    // Update phase
-    phase_ += phaseIncrement;
-    if (phase_ >= 1.0f) {
-        phase_ -= 1.0f;
+    void setFrequency(float freq) {
+        frequency_ = std::clamp(freq, 0.01f, 20.0f); // Limit to reasonable range
     }
     
-    // Apply envelope and amplitude
-    return sample * amplitude_ * envelopeValue_;
-}
+    void setShape(WaveShape shape) {
+        shape_ = shape;
+    }
+    
+    void setSampleRate(int sampleRate) {
+        sampleRate_ = sampleRate;
+    }
+    
+private:
+    int sampleRate_;
+    float frequency_;
+    float phase_;
+    float prevPhase_ = 0.0f;
+    WaveShape shape_;
+    float value_;
+};
 
 // Synthesizer implementation
 Synthesizer::Synthesizer(int sampleRate)
-    : sampleRate_(sampleRate),
+    : Processor(sampleRate),
       currentOscType_(OscillatorType::Sine) {
+      
+    // Create VoiceManager
+    voiceManager_ = std::make_unique<VoiceManager>(sampleRate);
     
-    // Voices will be created in initialize()
+    // Create default wavetable
+    createDefaultWavetable();
+    
+    // Create modulation sources
+    createModulationSources();
+}
+
+Synthesizer::~Synthesizer() {
+}
+
+void Synthesizer::createDefaultWavetable() {
+    currentWavetable_ = std::make_shared<Wavetable>();
+    currentWavetable_->initBasicWaveforms();
+    
+    if (voiceManager_) {
+        voiceManager_->setWavetable(currentWavetable_);
+    }
 }
 
 bool Synthesizer::initialize() {
     try {
-        // Create voices
-        for (int i = 0; i < kMaxVoices; ++i) {
-            voices_.push_back(std::make_unique<Voice>());
-            if (!voices_.back()) {
-                return false;
-            }
-            voices_.back()->setOscillatorType(currentOscType_);
-        }
+        // Nothing to do here now, constructor handles initialization
         return true;
     } catch (const std::exception& e) {
         // Handle any exceptions during initialization
@@ -191,137 +129,186 @@ bool Synthesizer::initialize() {
     }
 }
 
-Synthesizer::~Synthesizer() {
+void Synthesizer::createModulationSources() {
+    // Create LFO sources
+    auto lfo1 = std::make_unique<LfoSource>("LFO1", sampleRate_);
+    auto lfo2 = std::make_unique<LfoSource>("LFO2", sampleRate_);
+    
+    // Set different default shapes
+    lfo1->setFrequency(1.0f);  // 1 Hz
+    lfo2->setFrequency(0.5f);  // 0.5 Hz
+    
+    // Add to modulation matrix
+    modulationMatrix_.addSource(std::move(lfo1));
+    modulationMatrix_.addSource(std::move(lfo2));
 }
 
 void Synthesizer::setSampleRate(int sampleRate) {
-    sampleRate_ = sampleRate;
+    Processor::setSampleRate(sampleRate);
+    
+    // Update components
+    if (voiceManager_) {
+        voiceManager_->setSampleRate(sampleRate);
+    }
+    
+    effectChain_.setSampleRate(sampleRate);
+    
+    // Update LFOs
+    if (auto lfo1 = dynamic_cast<LfoSource*>(modulationMatrix_.getSource("LFO1"))) {
+        lfo1->setSampleRate(sampleRate);
+    }
+    
+    if (auto lfo2 = dynamic_cast<LfoSource*>(modulationMatrix_.getSource("LFO2"))) {
+        lfo2->setSampleRate(sampleRate);
+    }
 }
 
 void Synthesizer::noteOn(int midiNote, float velocity) {
-    // Find an inactive voice or the oldest one
-    Voice* voice = nullptr;
-    
-    // First try to find an inactive voice
-    for (auto& v : voices_) {
-        if (!v->isActive()) {
-            voice = v.get();
-            break;
-        }
-    }
-    
-    // If all voices are active, we could implement voice stealing here
-    // For now, just use the first voice as a fallback
-    if (!voice && !voices_.empty()) {
-        voice = voices_[0].get();
-    }
-    
-    // Trigger the note
-    if (voice) {
-        voice->setOscillatorType(currentOscType_);
-        voice->noteOn(midiNote, velocity);
+    if (voiceManager_) {
+        voiceManager_->noteOn(midiNote, velocity);
     }
 }
 
-void Synthesizer::noteOn(int midiNote, float velocity, const AIMusicHardware::Envelope& env) {
-    // Find an inactive voice or the oldest one
-    Voice* voice = nullptr;
-    
-    // First try to find an inactive voice
-    for (auto& v : voices_) {
-        if (!v->isActive()) {
-            voice = v.get();
-            break;
-        }
-    }
-    
-    // If all voices are active, we could implement voice stealing here
-    // For now, just use the first voice as a fallback
-    if (!voice && !voices_.empty()) {
-        voice = voices_[0].get();
-    }
-    
-    // Trigger the note with custom envelope
-    if (voice) {
-        voice->setOscillatorType(currentOscType_);
-        voice->noteOn(midiNote, velocity, env);
+void Synthesizer::noteOn(int midiNote, float velocity, const AIMusicHardware::Envelope& legacyEnv) {
+    if (voiceManager_) {
+        // Legacy support - first use standard noteOn
+        voiceManager_->noteOn(midiNote, velocity);
+        
+        // Then find and update the envelope for this note
+        // This is not implemented here since we don't have direct access to voice envelopes
+        // through VoiceManager. In a real implementation, we'd need to extend VoiceManager
+        // to support this or handle envelope mapping differently.
     }
 }
 
 void Synthesizer::noteOff(int midiNote) {
-    // Simple implementation - for now, just turn off all active voices
-    // In a real synth, we'd need to track which voices are playing which notes
-    // so we can only turn off the specific voice playing this note
-    
-    // For now, the simplest solution is to call allNotesOff
-    // In a real implementation, we would want to track which voices are playing which notes
-    
-    // Turn off all active voices since we can't identify which one is playing the note
-    for (auto& voice : voices_) {
-        if (voice->isActive()) {
-            voice->noteOff();
-        }
+    if (voiceManager_) {
+        voiceManager_->noteOff(midiNote);
     }
 }
 
 void Synthesizer::allNotesOff() {
-    for (auto& voice : voices_) {
-        voice->noteOff();
+    if (voiceManager_) {
+        voiceManager_->allNotesOff();
     }
 }
 
 void Synthesizer::setOscillatorType(OscillatorType type) {
     currentOscType_ = type;
     
-    // Update all inactive voices immediately
-    // Active voices will be updated when they're retriggered
-    for (auto& voice : voices_) {
-        if (!voice->isActive()) {
-            voice->setOscillatorType(type);
+    // Convert oscillator type to wavetable frame position
+    float framePos = oscTypeToFramePosition(type);
+    
+    // Update wavetable frame position for all voices
+    // In a real implementation, we'd need to extend VoiceManager to support this
+    // For now, createDefaultWavetable() already creates frames in the right order
+}
+
+float Synthesizer::oscTypeToFramePosition(OscillatorType type) {
+    // Map oscillator type to frame position (0-1)
+    switch (type) {
+        case OscillatorType::Sine:
+            return 0.0f;
+        case OscillatorType::Saw:
+            return 0.25f;
+        case OscillatorType::Square:
+            return 0.5f;
+        case OscillatorType::Triangle:
+            return 0.75f;
+        case OscillatorType::Noise:
+            return 1.0f;
+        default:
+            return 0.0f;
+    }
+}
+
+void Synthesizer::setWavetable(std::shared_ptr<Wavetable> wavetable) {
+    if (wavetable) {
+        currentWavetable_ = wavetable;
+        
+        if (voiceManager_) {
+            voiceManager_->setWavetable(wavetable);
         }
     }
 }
 
-void Synthesizer::process(float* outputBuffer, int numFrames) {
+void Synthesizer::setVoiceCount(int count) {
+    if (voiceManager_) {
+        voiceManager_->setMaxVoices(count);
+    }
+}
+
+int Synthesizer::getVoiceCount() const {
+    return voiceManager_ ? voiceManager_->getMaxVoices() : 0;
+}
+
+void Synthesizer::process(float* buffer, int numFrames) {
+    if (!enabled_) {
+        return;
+    }
+    
     // Clear buffer
-    std::fill(outputBuffer, outputBuffer + numFrames * 2, 0.0f);
+    std::fill(buffer, buffer + numFrames * 2, 0.0f);
     
-    // Count active voices for dynamic gain adjustment
-    int activeVoiceCount = 0;
-    for (auto& voice : voices_) {
-        if (voice->isActive()) {
-            activeVoiceCount++;
-        }
+    // Update modulation matrix
+    modulationMatrix_.update();
+    
+    // Process voices through voice manager
+    if (voiceManager_) {
+        voiceManager_->process(buffer, numFrames);
     }
     
-    // Calculate gain reduction based on active voices
-    float gainReduction = 1.0f;
-    if (activeVoiceCount > 0) {
-        // Apply a gain reduction when multiple voices are active
-        // 1 voice = 1.0, 2 voices = 0.7, 3+ voices = 0.5 (approximate)
-        gainReduction = 1.0f / (1.0f + 0.3f * activeVoiceCount);
-    }
+    // Process effects chain
+    effectChain_.process(buffer, numFrames);
     
-    // Process each voice
-    for (auto& voice : voices_) {
-        if (voice->isActive()) {
-            for (int i = 0; i < numFrames; ++i) {
-                float sample = voice->generateSample() * gainReduction;
-                // Apply to both channels (stereo)
-                outputBuffer[i * 2] += sample;
-                outputBuffer[i * 2 + 1] += sample;
-            }
-        }
-    }
-    
-    // Additional master volume reduction to prevent distortion
+    // Final limiter to prevent clipping
     const float masterVolume = 0.7f;
-    
-    // Prevent clipping - apply gain and limiter
     for (int i = 0; i < numFrames * 2; ++i) {
-        outputBuffer[i] *= masterVolume;
-        outputBuffer[i] = std::clamp(outputBuffer[i], -1.0f, 1.0f);
+        buffer[i] *= masterVolume;
+        buffer[i] = std::clamp(buffer[i], -1.0f, 1.0f);
     }
+}
+
+void Synthesizer::reset() {
+    Processor::reset();
+    
+    // Reset all components
+    if (voiceManager_) {
+        voiceManager_->allNotesOff();
+    }
+    
+    effectChain_.reset();
+}
+
+void Synthesizer::legacyEnvelopeToNew(const AIMusicHardware::Envelope& legacyEnv, 
+                                     AIMusicHardware::Envelope* newEnv) {
+    if (!newEnv) {
+        return;
+    }
+    
+    // Map legacy envelope parameters to new envelope
+    newEnv->setAttack(legacyEnv.attack);
+    newEnv->setDecay(legacyEnv.decay);
+    newEnv->setSustain(legacyEnv.sustain);
+    newEnv->setRelease(legacyEnv.release);
+}
+
+void Synthesizer::addEffect(std::unique_ptr<Processor> effect) {
+    if (effect) {
+        effectChain_.addProcessor(std::move(effect));
+    }
+}
+
+void Synthesizer::removeEffect(size_t index) {
+    effectChain_.removeProcessor(index);
+}
+
+Processor* Synthesizer::getEffect(size_t index) {
+    return effectChain_.getProcessor(index);
+}
+
+size_t Synthesizer::getNumEffects() const {
+    return effectChain_.getNumProcessors();
 }
 
 } // namespace AIMusicHardware

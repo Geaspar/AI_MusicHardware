@@ -44,6 +44,15 @@ set(UI_SOURCES
     src/ui/Font.cpp
 )
 
+# New modular synthesis framework sources
+set(SYNTHESIS_SOURCES
+    src/synthesis/framework/processor.cpp
+    src/synthesis/wavetable/wavetable.cpp
+    src/synthesis/modulators/envelope.cpp
+    src/synthesis/modulators/modulation_matrix.cpp
+    src/synthesis/voice/voice_manager.cpp
+)
+
 # Set up RtAudio if found
 if(RTAUDIO_FOUND)
     message(STATUS "Found RtAudio: ${RTAUDIO_INCLUDE_DIRS}")
@@ -81,6 +90,7 @@ add_library(AIMusicCore STATIC
     ${BASIC_AUDIO_SOURCES}
     ${SEQUENCER_SOURCES}
     ${UI_SOURCES}
+    ${SYNTHESIS_SOURCES}
 )
 
 target_link_libraries(AIMusicCore PRIVATE
@@ -135,6 +145,13 @@ else()
     message(STATUS "Skipping TestUI due to missing SDL2 dependency")
 endif()
 
+# Add the wavetable demo (requires RtAudio)
+if(RTAUDIO_FOUND)
+    add_executable(WavetableDemo examples/WavetableDemo.cpp)
+    target_link_libraries(WavetableDemo PRIVATE AIMusicCore)
+    message(STATUS "Building WavetableDemo (wavetable synthesizer demo)")
+endif()
+
 # Print audio libs for debugging
 message(STATUS "Audio libraries: ${AUDIO_LIBS}")
 
@@ -147,4 +164,5 @@ if(RTAUDIO_FOUND)
     message(STATUS "4. Run ./bin/TestAudio for real-time audio playback")
     message(STATUS "5. Run ./bin/TestSequencer to test the sequencer component with real-time audio")
     message(STATUS "6. Run ./bin/TestAdaptiveSequencer to explore the adaptive sequencer system")
+    message(STATUS "7. Run ./bin/WavetableDemo to try the wavetable synthesizer implementation")
 endif()
