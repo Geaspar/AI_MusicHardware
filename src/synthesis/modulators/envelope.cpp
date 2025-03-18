@@ -4,7 +4,7 @@
 
 namespace AIMusicHardware {
 
-Envelope::Envelope(int sampleRate)
+ModEnvelope::ModEnvelope(int sampleRate)
     : attack_(0.01f),      // 10ms attack by default
       decay_(0.1f),        // 100ms decay by default
       sustain_(0.7f),      // 70% sustain level by default
@@ -19,28 +19,28 @@ Envelope::Envelope(int sampleRate)
     updateRates();
 }
 
-Envelope::~Envelope() {
+ModEnvelope::~ModEnvelope() {
 }
 
-void Envelope::noteOn() {
+void ModEnvelope::noteOn() {
     stageProgress_ = 0.0f;
     currentStage_ = Stage::Attack;
 }
 
-void Envelope::noteOff() {
+void ModEnvelope::noteOff() {
     if (currentStage_ != Stage::Idle && currentStage_ != Stage::Killed) {
         stageProgress_ = 0.0f;
         currentStage_ = Stage::Release;
     }
 }
 
-void Envelope::reset() {
+void ModEnvelope::reset() {
     value_ = 0.0f;
     stageProgress_ = 0.0f;
     currentStage_ = Stage::Idle;
 }
 
-float Envelope::generateValue() {
+float ModEnvelope::generateValue() {
     switch (currentStage_) {
         case Stage::Idle:
             value_ = 0.0f;
@@ -99,50 +99,50 @@ float Envelope::generateValue() {
     return value_;
 }
 
-void Envelope::setAttack(float seconds) {
+void ModEnvelope::setAttack(float seconds) {
     attack_ = std::max(0.001f, seconds); // Minimum 1ms attack
     updateRates();
 }
 
-void Envelope::setDecay(float seconds) {
+void ModEnvelope::setDecay(float seconds) {
     decay_ = std::max(0.001f, seconds); // Minimum 1ms decay
     updateRates();
 }
 
-void Envelope::setSustain(float level) {
+void ModEnvelope::setSustain(float level) {
     sustain_ = std::clamp(level, 0.0f, 1.0f);
 }
 
-void Envelope::setRelease(float seconds) {
+void ModEnvelope::setRelease(float seconds) {
     release_ = std::max(0.001f, seconds); // Minimum 1ms release
     updateRates();
 }
 
-void Envelope::setAttackCurve(float curve) {
+void ModEnvelope::setAttackCurve(float curve) {
     attackCurve_ = std::clamp(curve, -1.0f, 1.0f);
 }
 
-void Envelope::setDecayCurve(float curve) {
+void ModEnvelope::setDecayCurve(float curve) {
     decayCurve_ = std::clamp(curve, -1.0f, 1.0f);
 }
 
-void Envelope::setReleaseCurve(float curve) {
+void ModEnvelope::setReleaseCurve(float curve) {
     releaseCurve_ = std::clamp(curve, -1.0f, 1.0f);
 }
 
-void Envelope::setSampleRate(int sampleRate) {
+void ModEnvelope::setSampleRate(int sampleRate) {
     sampleRate_ = sampleRate;
     updateRates();
 }
 
-void Envelope::updateRates() {
+void ModEnvelope::updateRates() {
     // Calculate rates based on time values and sample rate
     attackRate_ = 1.0f / (attack_ * sampleRate_);
     decayRate_ = 1.0f / (decay_ * sampleRate_);
     releaseRate_ = 1.0f / (release_ * sampleRate_);
 }
 
-float Envelope::applyCurve(float value, float curve) const {
+float ModEnvelope::applyCurve(float value, float curve) const {
     // Linear case - no curve applied
     if (curve == 0.0f) {
         return value;

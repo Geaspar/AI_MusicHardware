@@ -1,7 +1,8 @@
 #include "../include/audio/AudioEngine.h"
 #include "../include/audio/Synthesizer.h"
 #include "../include/effects/AllEffects.h"
-#include "../include/synthesis/effects/effect_processor.h"
+// Conflicts with the original EffectProcessor
+// #include "../include/synthesis/effects/effect_processor.h"
 #include <iostream>
 #include <thread>
 #include <chrono>
@@ -9,7 +10,7 @@
 
 using namespace AIMusicHardware;
 
-// Custom effect processor that inherits from the new architecture
+// Custom effect processor that inherits from the Processor base class
 class SimpleReverbEffect : public Processor {
 public:
     SimpleReverbEffect(int sampleRate = 44100)
@@ -95,13 +96,13 @@ private:
 };
 
 // Example melody to play
-struct Note {
+struct MelodyNote {
     int midiNote;
     float duration;    // in seconds
     float velocity;
 };
 
-const std::vector<Note> melody = {
+const std::vector<MelodyNote> melody = {
     {60, 0.5, 0.8},   // C4
     {64, 0.5, 0.7},   // E4
     {67, 0.5, 0.7},   // G4
@@ -141,14 +142,16 @@ int main() {
     // This is just for demonstration. In a real implementation, we'd need 
     // additional code to expose wavetable position as a destination parameter.
     
-    // Start audio processing
-    if (!audioEngine.start([&](float* buffer, int numFrames) {
-        synth.process(buffer, numFrames);
-        return true;
-    })) {
-        std::cerr << "Failed to start audio engine\n";
+    // Initialize audio engine
+    if (!audioEngine.initialize()) {
+        std::cerr << "Failed to initialize audio engine\n";
         return 1;
     }
+    
+    // Set audio callback
+    audioEngine.setAudioCallback([&](float* buffer, int numFrames) {
+        synth.process(buffer, numFrames);
+    });
     
     std::cout << "Wavetable Synthesizer Demo\n";
     std::cout << "Playing melody...\n";
@@ -172,8 +175,8 @@ int main() {
     std::cout << "Melody finished, waiting for reverb tail...\n";
     std::this_thread::sleep_for(std::chrono::seconds(2));
     
-    // Stop audio processing
-    audioEngine.stop();
+    // Shutdown audio engine
+    audioEngine.shutdown();
     
     std::cout << "Demo completed\n";
     

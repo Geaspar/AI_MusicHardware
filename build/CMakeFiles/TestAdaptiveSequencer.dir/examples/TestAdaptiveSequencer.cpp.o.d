@@ -799,6 +799,12 @@ CMakeFiles/TestAdaptiveSequencer.dir/examples/TestAdaptiveSequencer.cpp.o: \
   /Users/geaspar/AIMusicHardware/examples/../include/sequencer/../audio/AudioEngine.h \
   /Users/geaspar/AIMusicHardware/examples/../include/sequencer/../audio/Synthesizer.h \
   /Users/geaspar/AIMusicHardware/examples/../include/sequencer/../audio/../sequencer/Sequencer.h \
+  /Users/geaspar/AIMusicHardware/examples/../include/sequencer/../audio/../synthesis/framework/processor.h \
+  /Users/geaspar/AIMusicHardware/examples/../include/sequencer/../audio/../synthesis/voice/voice_manager.h \
+  /Users/geaspar/AIMusicHardware/examples/../include/sequencer/../audio/../synthesis/voice/../wavetable/wavetable.h \
+  /Users/geaspar/AIMusicHardware/examples/../include/sequencer/../audio/../synthesis/wavetable/wavetable.h \
+  /Users/geaspar/AIMusicHardware/examples/../include/sequencer/../audio/../synthesis/modulators/envelope.h \
+  /Users/geaspar/AIMusicHardware/examples/../include/sequencer/../audio/../synthesis/modulators/modulation_matrix.h \
   /Users/geaspar/AIMusicHardware/examples/../include/sequencer/../midi/MidiInterface.h \
   /Users/geaspar/AIMusicHardware/examples/../include/sequencer/../hardware/HardwareInterface.h \
   /Users/geaspar/AIMusicHardware/examples/../include/audio/AudioEngine.h \

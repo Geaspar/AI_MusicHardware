@@ -746,6 +746,12 @@ CMakeFiles/AIMusicCore.dir/src/sequencer/AdaptiveSequencer.cpp.o: \
   /Users/geaspar/AIMusicHardware/src/sequencer/../../include/sequencer/../audio/AudioEngine.h \
   /Users/geaspar/AIMusicHardware/src/sequencer/../../include/sequencer/../audio/Synthesizer.h \
   /Users/geaspar/AIMusicHardware/src/sequencer/../../include/sequencer/../audio/../sequencer/Sequencer.h \
+  /Users/geaspar/AIMusicHardware/src/sequencer/../../include/sequencer/../audio/../synthesis/framework/processor.h \
+  /Users/geaspar/AIMusicHardware/src/sequencer/../../include/sequencer/../audio/../synthesis/voice/voice_manager.h \
+  /Users/geaspar/AIMusicHardware/src/sequencer/../../include/sequencer/../audio/../synthesis/voice/../wavetable/wavetable.h \
+  /Users/geaspar/AIMusicHardware/src/sequencer/../../include/sequencer/../audio/../synthesis/wavetable/wavetable.h \
+  /Users/geaspar/AIMusicHardware/src/sequencer/../../include/sequencer/../audio/../synthesis/modulators/envelope.h \
+  /Users/geaspar/AIMusicHardware/src/sequencer/../../include/sequencer/../audio/../synthesis/modulators/modulation_matrix.h \
   /Users/geaspar/AIMusicHardware/src/sequencer/../../include/sequencer/../midi/MidiInterface.h \
   /Users/geaspar/AIMusicHardware/src/sequencer/../../include/sequencer/../hardware/HardwareInterface.h \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/iostream \

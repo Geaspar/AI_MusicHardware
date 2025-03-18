@@ -77,7 +77,7 @@ private:
     
     // Convert legacy envelope to new envelope parameters
     void legacyEnvelopeToNew(const AIMusicHardware::Envelope& legacyEnv, 
-                             AIMusicHardware::Envelope* newEnv);
+                             AIMusicHardware::ModEnvelope* newEnv);
     
     // Components
     std::unique_ptr<VoiceManager> voiceManager_;

@@ -796,4 +796,10 @@ CMakeFiles/TestSequencer.dir/examples/TestSequencer.cpp.o: \
   /Users/geaspar/AIMusicHardware/examples/../include/sequencer/Sequencer.h \
   /Users/geaspar/AIMusicHardware/examples/../include/audio/AudioEngine.h \
   /Users/geaspar/AIMusicHardware/examples/../include/audio/Synthesizer.h \
-  /Users/geaspar/AIMusicHardware/examples/../include/audio/../sequencer/Sequencer.h
+  /Users/geaspar/AIMusicHardware/examples/../include/audio/../sequencer/Sequencer.h \
+  /Users/geaspar/AIMusicHardware/examples/../include/audio/../synthesis/framework/processor.h \
+  /Users/geaspar/AIMusicHardware/examples/../include/audio/../synthesis/voice/voice_manager.h \
+  /Users/geaspar/AIMusicHardware/examples/../include/audio/../synthesis/voice/../wavetable/wavetable.h \
+  /Users/geaspar/AIMusicHardware/examples/../include/audio/../synthesis/wavetable/wavetable.h \
+  /Users/geaspar/AIMusicHardware/examples/../include/audio/../synthesis/modulators/envelope.h \
+  /Users/geaspar/AIMusicHardware/examples/../include/audio/../synthesis/modulators/modulation_matrix.h

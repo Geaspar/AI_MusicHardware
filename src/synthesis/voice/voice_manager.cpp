@@ -23,7 +23,7 @@ Voice::Voice(int sampleRate)
     
     // Create oscillator and envelope
     oscillator_ = std::make_unique<WavetableOscillator>(sampleRate);
-    envelope_ = std::make_unique<Envelope>(sampleRate);
+    envelope_ = std::make_unique<ModEnvelope>(sampleRate);
     
     // Setup default envelope
     envelope_->setAttack(0.01f);     // 10ms attack

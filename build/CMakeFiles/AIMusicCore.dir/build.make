@@ -223,6 +223,76 @@ CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.s"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/geaspar/AIMusicHardware/src/ui/Font.cpp -o CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.s
 
+CMakeFiles/AIMusicCore.dir/src/synthesis/framework/processor.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
+CMakeFiles/AIMusicCore.dir/src/synthesis/framework/processor.cpp.o: /Users/geaspar/AIMusicHardware/src/synthesis/framework/processor.cpp
+CMakeFiles/AIMusicCore.dir/src/synthesis/framework/processor.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/AIMusicCore.dir/src/synthesis/framework/processor.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/synthesis/framework/processor.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/synthesis/framework/processor.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/synthesis/framework/processor.cpp.o -c /Users/geaspar/AIMusicHardware/src/synthesis/framework/processor.cpp
+
+CMakeFiles/AIMusicCore.dir/src/synthesis/framework/processor.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/AIMusicCore.dir/src/synthesis/framework/processor.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/geaspar/AIMusicHardware/src/synthesis/framework/processor.cpp > CMakeFiles/AIMusicCore.dir/src/synthesis/framework/processor.cpp.i
+
+CMakeFiles/AIMusicCore.dir/src/synthesis/framework/processor.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/AIMusicCore.dir/src/synthesis/framework/processor.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/geaspar/AIMusicHardware/src/synthesis/framework/processor.cpp -o CMakeFiles/AIMusicCore.dir/src/synthesis/framework/processor.cpp.s
+
+CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
+CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.o: /Users/geaspar/AIMusicHardware/src/synthesis/wavetable/wavetable.cpp
+CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.o -c /Users/geaspar/AIMusicHardware/src/synthesis/wavetable/wavetable.cpp
+
+CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/geaspar/AIMusicHardware/src/synthesis/wavetable/wavetable.cpp > CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.i
+
+CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/geaspar/AIMusicHardware/src/synthesis/wavetable/wavetable.cpp -o CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.s
+
+CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/envelope.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
+CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/envelope.cpp.o: /Users/geaspar/AIMusicHardware/src/synthesis/modulators/envelope.cpp
+CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/envelope.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building CXX object CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/envelope.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/envelope.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/envelope.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/envelope.cpp.o -c /Users/geaspar/AIMusicHardware/src/synthesis/modulators/envelope.cpp
+
+CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/envelope.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/envelope.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/geaspar/AIMusicHardware/src/synthesis/modulators/envelope.cpp > CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/envelope.cpp.i
+
+CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/envelope.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/envelope.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/geaspar/AIMusicHardware/src/synthesis/modulators/envelope.cpp -o CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/envelope.cpp.s
+
+CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/modulation_matrix.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
+CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/modulation_matrix.cpp.o: /Users/geaspar/AIMusicHardware/src/synthesis/modulators/modulation_matrix.cpp
+CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/modulation_matrix.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building CXX object CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/modulation_matrix.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/modulation_matrix.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/modulation_matrix.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/modulation_matrix.cpp.o -c /Users/geaspar/AIMusicHardware/src/synthesis/modulators/modulation_matrix.cpp
+
+CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/modulation_matrix.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/modulation_matrix.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/geaspar/AIMusicHardware/src/synthesis/modulators/modulation_matrix.cpp > CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/modulation_matrix.cpp.i
+
+CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/modulation_matrix.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/modulation_matrix.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/geaspar/AIMusicHardware/src/synthesis/modulators/modulation_matrix.cpp -o CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/modulation_matrix.cpp.s
+
+CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
+CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.o: /Users/geaspar/AIMusicHardware/src/synthesis/voice/voice_manager.cpp
+CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building CXX object CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.o -c /Users/geaspar/AIMusicHardware/src/synthesis/voice/voice_manager.cpp
+
+CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/geaspar/AIMusicHardware/src/synthesis/voice/voice_manager.cpp > CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.i
+
+CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/geaspar/AIMusicHardware/src/synthesis/voice/voice_manager.cpp -o CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.s
+
 # Object files for target AIMusicCore
 AIMusicCore_OBJECTS = \
 "CMakeFiles/AIMusicCore.dir/src/audio/AudioEngine.cpp.o" \
@@ -235,7 +305,12 @@ AIMusicCore_OBJECTS = \
 "CMakeFiles/AIMusicCore.dir/src/ui/UIContext.cpp.o" \
 "CMakeFiles/AIMusicCore.dir/src/ui/UserInterface.cpp.o" \
 "CMakeFiles/AIMusicCore.dir/src/ui/UIComponents.cpp.o" \
-"CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.o"
+"CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.o" \
+"CMakeFiles/AIMusicCore.dir/src/synthesis/framework/processor.cpp.o" \
+"CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.o" \
+"CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/envelope.cpp.o" \
+"CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/modulation_matrix.cpp.o" \
+"CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.o"
 
 # External object files for target AIMusicCore
 AIMusicCore_EXTERNAL_OBJECTS =
@@ -251,9 +326,14 @@ lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/ui/UIContext.cpp.o
 lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/ui/UserInterface.cpp.o
 lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/ui/UIComponents.cpp.o
 lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.o
+lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/synthesis/framework/processor.cpp.o
+lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.o
+lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/envelope.cpp.o
+lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/modulation_matrix.cpp.o
+lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.o
 lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/build.make
 lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Linking CXX static library lib/libAIMusicCore.a"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Linking CXX static library lib/libAIMusicCore.a"
 	$(CMAKE_COMMAND) -P CMakeFiles/AIMusicCore.dir/cmake_clean_target.cmake
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/AIMusicCore.dir/link.txt --verbose=$(VERBOSE)
 

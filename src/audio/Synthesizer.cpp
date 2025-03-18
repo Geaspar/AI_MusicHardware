@@ -281,7 +281,7 @@ void Synthesizer::reset() {
 }
 
 void Synthesizer::legacyEnvelopeToNew(const AIMusicHardware::Envelope& legacyEnv, 
-                                     AIMusicHardware::Envelope* newEnv) {
+                                     AIMusicHardware::ModEnvelope* newEnv) {
     if (!newEnv) {
         return;
     }

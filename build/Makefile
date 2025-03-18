@@ -169,32 +169,6 @@ SimpleTest/fast:
 .PHONY : SimpleTest/fast
 
 #=============================================================================
-# Target rules for targets named TestSequencerFile
-
-# Build rule for target.
-TestSequencerFile: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 TestSequencerFile
-.PHONY : TestSequencerFile
-
-# fast build rule for target.
-TestSequencerFile/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerFile.dir/build.make CMakeFiles/TestSequencerFile.dir/build
-.PHONY : TestSequencerFile/fast
-
-#=============================================================================
-# Target rules for targets named TestSequencerAdvanced
-
-# Build rule for target.
-TestSequencerAdvanced: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 TestSequencerAdvanced
-.PHONY : TestSequencerAdvanced
-
-# fast build rule for target.
-TestSequencerAdvanced/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerAdvanced.dir/build.make CMakeFiles/TestSequencerAdvanced.dir/build
-.PHONY : TestSequencerAdvanced/fast
-
-#=============================================================================
 # Target rules for targets named TestAdaptiveSequencer
 
 # Build rule for target.
@@ -219,6 +193,19 @@ TestUI: cmake_check_build_system
 TestUI/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestUI.dir/build.make CMakeFiles/TestUI.dir/build
 .PHONY : TestUI/fast
+
+#=============================================================================
+# Target rules for targets named WavetableDemo
+
+# Build rule for target.
+WavetableDemo: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 WavetableDemo
+.PHONY : WavetableDemo
+
+# fast build rule for target.
+WavetableDemo/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/WavetableDemo.dir/build.make CMakeFiles/WavetableDemo.dir/build
+.PHONY : WavetableDemo/fast
 
 examples/SimpleTest.o: examples/SimpleTest.cpp.o
 .PHONY : examples/SimpleTest.o
@@ -316,54 +303,6 @@ examples/TestSequencer.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencer.dir/build.make CMakeFiles/TestSequencer.dir/examples/TestSequencer.cpp.s
 .PHONY : examples/TestSequencer.cpp.s
 
-examples/TestSequencerAdvanced.o: examples/TestSequencerAdvanced.cpp.o
-.PHONY : examples/TestSequencerAdvanced.o
-
-# target to build an object file
-examples/TestSequencerAdvanced.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerAdvanced.dir/build.make CMakeFiles/TestSequencerAdvanced.dir/examples/TestSequencerAdvanced.cpp.o
-.PHONY : examples/TestSequencerAdvanced.cpp.o
-
-examples/TestSequencerAdvanced.i: examples/TestSequencerAdvanced.cpp.i
-.PHONY : examples/TestSequencerAdvanced.i
-
-# target to preprocess a source file
-examples/TestSequencerAdvanced.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerAdvanced.dir/build.make CMakeFiles/TestSequencerAdvanced.dir/examples/TestSequencerAdvanced.cpp.i
-.PHONY : examples/TestSequencerAdvanced.cpp.i
-
-examples/TestSequencerAdvanced.s: examples/TestSequencerAdvanced.cpp.s
-.PHONY : examples/TestSequencerAdvanced.s
-
-# target to generate assembly for a file
-examples/TestSequencerAdvanced.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerAdvanced.dir/build.make CMakeFiles/TestSequencerAdvanced.dir/examples/TestSequencerAdvanced.cpp.s
-.PHONY : examples/TestSequencerAdvanced.cpp.s
-
-examples/TestSequencerFile.o: examples/TestSequencerFile.cpp.o
-.PHONY : examples/TestSequencerFile.o
-
-# target to build an object file
-examples/TestSequencerFile.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerFile.dir/build.make CMakeFiles/TestSequencerFile.dir/examples/TestSequencerFile.cpp.o
-.PHONY : examples/TestSequencerFile.cpp.o
-
-examples/TestSequencerFile.i: examples/TestSequencerFile.cpp.i
-.PHONY : examples/TestSequencerFile.i
-
-# target to preprocess a source file
-examples/TestSequencerFile.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerFile.dir/build.make CMakeFiles/TestSequencerFile.dir/examples/TestSequencerFile.cpp.i
-.PHONY : examples/TestSequencerFile.cpp.i
-
-examples/TestSequencerFile.s: examples/TestSequencerFile.cpp.s
-.PHONY : examples/TestSequencerFile.s
-
-# target to generate assembly for a file
-examples/TestSequencerFile.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerFile.dir/build.make CMakeFiles/TestSequencerFile.dir/examples/TestSequencerFile.cpp.s
-.PHONY : examples/TestSequencerFile.cpp.s
-
 examples/TestUI.o: examples/TestUI.cpp.o
 .PHONY : examples/TestUI.o
 
@@ -387,6 +326,30 @@ examples/TestUI.s: examples/TestUI.cpp.s
 examples/TestUI.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestUI.dir/build.make CMakeFiles/TestUI.dir/examples/TestUI.cpp.s
 .PHONY : examples/TestUI.cpp.s
+
+examples/WavetableDemo.o: examples/WavetableDemo.cpp.o
+.PHONY : examples/WavetableDemo.o
+
+# target to build an object file
+examples/WavetableDemo.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/WavetableDemo.dir/build.make CMakeFiles/WavetableDemo.dir/examples/WavetableDemo.cpp.o
+.PHONY : examples/WavetableDemo.cpp.o
+
+examples/WavetableDemo.i: examples/WavetableDemo.cpp.i
+.PHONY : examples/WavetableDemo.i
+
+# target to preprocess a source file
+examples/WavetableDemo.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/WavetableDemo.dir/build.make CMakeFiles/WavetableDemo.dir/examples/WavetableDemo.cpp.i
+.PHONY : examples/WavetableDemo.cpp.i
+
+examples/WavetableDemo.s: examples/WavetableDemo.cpp.s
+.PHONY : examples/WavetableDemo.s
+
+# target to generate assembly for a file
+examples/WavetableDemo.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/WavetableDemo.dir/build.make CMakeFiles/WavetableDemo.dir/examples/WavetableDemo.cpp.s
+.PHONY : examples/WavetableDemo.cpp.s
 
 src/audio/AudioEngine.o: src/audio/AudioEngine.cpp.o
 .PHONY : src/audio/AudioEngine.o
@@ -466,8 +429,6 @@ src/sequencer/AdaptiveSequencer.o: src/sequencer/AdaptiveSequencer.cpp.o
 # target to build an object file
 src/sequencer/AdaptiveSequencer.cpp.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/sequencer/AdaptiveSequencer.cpp.o
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerFile.dir/build.make CMakeFiles/TestSequencerFile.dir/src/sequencer/AdaptiveSequencer.cpp.o
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerAdvanced.dir/build.make CMakeFiles/TestSequencerAdvanced.dir/src/sequencer/AdaptiveSequencer.cpp.o
 .PHONY : src/sequencer/AdaptiveSequencer.cpp.o
 
 src/sequencer/AdaptiveSequencer.i: src/sequencer/AdaptiveSequencer.cpp.i
@@ -476,8 +437,6 @@ src/sequencer/AdaptiveSequencer.i: src/sequencer/AdaptiveSequencer.cpp.i
 # target to preprocess a source file
 src/sequencer/AdaptiveSequencer.cpp.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/sequencer/AdaptiveSequencer.cpp.i
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerFile.dir/build.make CMakeFiles/TestSequencerFile.dir/src/sequencer/AdaptiveSequencer.cpp.i
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerAdvanced.dir/build.make CMakeFiles/TestSequencerAdvanced.dir/src/sequencer/AdaptiveSequencer.cpp.i
 .PHONY : src/sequencer/AdaptiveSequencer.cpp.i
 
 src/sequencer/AdaptiveSequencer.s: src/sequencer/AdaptiveSequencer.cpp.s
@@ -486,8 +445,6 @@ src/sequencer/AdaptiveSequencer.s: src/sequencer/AdaptiveSequencer.cpp.s
 # target to generate assembly for a file
 src/sequencer/AdaptiveSequencer.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/sequencer/AdaptiveSequencer.cpp.s
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerFile.dir/build.make CMakeFiles/TestSequencerFile.dir/src/sequencer/AdaptiveSequencer.cpp.s
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerAdvanced.dir/build.make CMakeFiles/TestSequencerAdvanced.dir/src/sequencer/AdaptiveSequencer.cpp.s
 .PHONY : src/sequencer/AdaptiveSequencer.cpp.s
 
 src/sequencer/MidiFile.o: src/sequencer/MidiFile.cpp.o
@@ -496,8 +453,6 @@ src/sequencer/MidiFile.o: src/sequencer/MidiFile.cpp.o
 # target to build an object file
 src/sequencer/MidiFile.cpp.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/sequencer/MidiFile.cpp.o
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerFile.dir/build.make CMakeFiles/TestSequencerFile.dir/src/sequencer/MidiFile.cpp.o
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerAdvanced.dir/build.make CMakeFiles/TestSequencerAdvanced.dir/src/sequencer/MidiFile.cpp.o
 .PHONY : src/sequencer/MidiFile.cpp.o
 
 src/sequencer/MidiFile.i: src/sequencer/MidiFile.cpp.i
@@ -506,8 +461,6 @@ src/sequencer/MidiFile.i: src/sequencer/MidiFile.cpp.i
 # target to preprocess a source file
 src/sequencer/MidiFile.cpp.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/sequencer/MidiFile.cpp.i
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerFile.dir/build.make CMakeFiles/TestSequencerFile.dir/src/sequencer/MidiFile.cpp.i
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerAdvanced.dir/build.make CMakeFiles/TestSequencerAdvanced.dir/src/sequencer/MidiFile.cpp.i
 .PHONY : src/sequencer/MidiFile.cpp.i
 
 src/sequencer/MidiFile.s: src/sequencer/MidiFile.cpp.s
@@ -516,8 +469,6 @@ src/sequencer/MidiFile.s: src/sequencer/MidiFile.cpp.s
 # target to generate assembly for a file
 src/sequencer/MidiFile.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/sequencer/MidiFile.cpp.s
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerFile.dir/build.make CMakeFiles/TestSequencerFile.dir/src/sequencer/MidiFile.cpp.s
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerAdvanced.dir/build.make CMakeFiles/TestSequencerAdvanced.dir/src/sequencer/MidiFile.cpp.s
 .PHONY : src/sequencer/MidiFile.cpp.s
 
 src/sequencer/Sequencer.o: src/sequencer/Sequencer.cpp.o
@@ -526,8 +477,6 @@ src/sequencer/Sequencer.o: src/sequencer/Sequencer.cpp.o
 # target to build an object file
 src/sequencer/Sequencer.cpp.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/sequencer/Sequencer.cpp.o
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerFile.dir/build.make CMakeFiles/TestSequencerFile.dir/src/sequencer/Sequencer.cpp.o
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerAdvanced.dir/build.make CMakeFiles/TestSequencerAdvanced.dir/src/sequencer/Sequencer.cpp.o
 .PHONY : src/sequencer/Sequencer.cpp.o
 
 src/sequencer/Sequencer.i: src/sequencer/Sequencer.cpp.i
@@ -536,8 +485,6 @@ src/sequencer/Sequencer.i: src/sequencer/Sequencer.cpp.i
 # target to preprocess a source file
 src/sequencer/Sequencer.cpp.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/sequencer/Sequencer.cpp.i
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerFile.dir/build.make CMakeFiles/TestSequencerFile.dir/src/sequencer/Sequencer.cpp.i
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerAdvanced.dir/build.make CMakeFiles/TestSequencerAdvanced.dir/src/sequencer/Sequencer.cpp.i
 .PHONY : src/sequencer/Sequencer.cpp.i
 
 src/sequencer/Sequencer.s: src/sequencer/Sequencer.cpp.s
@@ -546,9 +493,127 @@ src/sequencer/Sequencer.s: src/sequencer/Sequencer.cpp.s
 # target to generate assembly for a file
 src/sequencer/Sequencer.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/sequencer/Sequencer.cpp.s
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerFile.dir/build.make CMakeFiles/TestSequencerFile.dir/src/sequencer/Sequencer.cpp.s
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencerAdvanced.dir/build.make CMakeFiles/TestSequencerAdvanced.dir/src/sequencer/Sequencer.cpp.s
 .PHONY : src/sequencer/Sequencer.cpp.s
+
+src/synthesis/framework/processor.o: src/synthesis/framework/processor.cpp.o
+.PHONY : src/synthesis/framework/processor.o
+
+# target to build an object file
+src/synthesis/framework/processor.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/framework/processor.cpp.o
+.PHONY : src/synthesis/framework/processor.cpp.o
+
+src/synthesis/framework/processor.i: src/synthesis/framework/processor.cpp.i
+.PHONY : src/synthesis/framework/processor.i
+
+# target to preprocess a source file
+src/synthesis/framework/processor.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/framework/processor.cpp.i
+.PHONY : src/synthesis/framework/processor.cpp.i
+
+src/synthesis/framework/processor.s: src/synthesis/framework/processor.cpp.s
+.PHONY : src/synthesis/framework/processor.s
+
+# target to generate assembly for a file
+src/synthesis/framework/processor.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/framework/processor.cpp.s
+.PHONY : src/synthesis/framework/processor.cpp.s
+
+src/synthesis/modulators/envelope.o: src/synthesis/modulators/envelope.cpp.o
+.PHONY : src/synthesis/modulators/envelope.o
+
+# target to build an object file
+src/synthesis/modulators/envelope.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/envelope.cpp.o
+.PHONY : src/synthesis/modulators/envelope.cpp.o
+
+src/synthesis/modulators/envelope.i: src/synthesis/modulators/envelope.cpp.i
+.PHONY : src/synthesis/modulators/envelope.i
+
+# target to preprocess a source file
+src/synthesis/modulators/envelope.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/envelope.cpp.i
+.PHONY : src/synthesis/modulators/envelope.cpp.i
+
+src/synthesis/modulators/envelope.s: src/synthesis/modulators/envelope.cpp.s
+.PHONY : src/synthesis/modulators/envelope.s
+
+# target to generate assembly for a file
+src/synthesis/modulators/envelope.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/envelope.cpp.s
+.PHONY : src/synthesis/modulators/envelope.cpp.s
+
+src/synthesis/modulators/modulation_matrix.o: src/synthesis/modulators/modulation_matrix.cpp.o
+.PHONY : src/synthesis/modulators/modulation_matrix.o
+
+# target to build an object file
+src/synthesis/modulators/modulation_matrix.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/modulation_matrix.cpp.o
+.PHONY : src/synthesis/modulators/modulation_matrix.cpp.o
+
+src/synthesis/modulators/modulation_matrix.i: src/synthesis/modulators/modulation_matrix.cpp.i
+.PHONY : src/synthesis/modulators/modulation_matrix.i
+
+# target to preprocess a source file
+src/synthesis/modulators/modulation_matrix.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/modulation_matrix.cpp.i
+.PHONY : src/synthesis/modulators/modulation_matrix.cpp.i
+
+src/synthesis/modulators/modulation_matrix.s: src/synthesis/modulators/modulation_matrix.cpp.s
+.PHONY : src/synthesis/modulators/modulation_matrix.s
+
+# target to generate assembly for a file
+src/synthesis/modulators/modulation_matrix.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/modulation_matrix.cpp.s
+.PHONY : src/synthesis/modulators/modulation_matrix.cpp.s
+
+src/synthesis/voice/voice_manager.o: src/synthesis/voice/voice_manager.cpp.o
+.PHONY : src/synthesis/voice/voice_manager.o
+
+# target to build an object file
+src/synthesis/voice/voice_manager.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.o
+.PHONY : src/synthesis/voice/voice_manager.cpp.o
+
+src/synthesis/voice/voice_manager.i: src/synthesis/voice/voice_manager.cpp.i
+.PHONY : src/synthesis/voice/voice_manager.i
+
+# target to preprocess a source file
+src/synthesis/voice/voice_manager.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.i
+.PHONY : src/synthesis/voice/voice_manager.cpp.i
+
+src/synthesis/voice/voice_manager.s: src/synthesis/voice/voice_manager.cpp.s
+.PHONY : src/synthesis/voice/voice_manager.s
+
+# target to generate assembly for a file
+src/synthesis/voice/voice_manager.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.s
+.PHONY : src/synthesis/voice/voice_manager.cpp.s
+
+src/synthesis/wavetable/wavetable.o: src/synthesis/wavetable/wavetable.cpp.o
+.PHONY : src/synthesis/wavetable/wavetable.o
+
+# target to build an object file
+src/synthesis/wavetable/wavetable.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.o
+.PHONY : src/synthesis/wavetable/wavetable.cpp.o
+
+src/synthesis/wavetable/wavetable.i: src/synthesis/wavetable/wavetable.cpp.i
+.PHONY : src/synthesis/wavetable/wavetable.i
+
+# target to preprocess a source file
+src/synthesis/wavetable/wavetable.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.i
+.PHONY : src/synthesis/wavetable/wavetable.cpp.i
+
+src/synthesis/wavetable/wavetable.s: src/synthesis/wavetable/wavetable.cpp.s
+.PHONY : src/synthesis/wavetable/wavetable.s
+
+# target to generate assembly for a file
+src/synthesis/wavetable/wavetable.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.s
+.PHONY : src/synthesis/wavetable/wavetable.cpp.s
 
 src/ui/DisplayManager.o: src/ui/DisplayManager.cpp.o
 .PHONY : src/ui/DisplayManager.o
@@ -683,9 +748,8 @@ help:
 	@echo "... TestAdaptiveSequencer"
 	@echo "... TestAudio"
 	@echo "... TestSequencer"
-	@echo "... TestSequencerAdvanced"
-	@echo "... TestSequencerFile"
 	@echo "... TestUI"
+	@echo "... WavetableDemo"
 	@echo "... examples/SimpleTest.o"
 	@echo "... examples/SimpleTest.i"
 	@echo "... examples/SimpleTest.s"
@@ -698,15 +762,12 @@ help:
 	@echo "... examples/TestSequencer.o"
 	@echo "... examples/TestSequencer.i"
 	@echo "... examples/TestSequencer.s"
-	@echo "... examples/TestSequencerAdvanced.o"
-	@echo "... examples/TestSequencerAdvanced.i"
-	@echo "... examples/TestSequencerAdvanced.s"
-	@echo "... examples/TestSequencerFile.o"
-	@echo "... examples/TestSequencerFile.i"
-	@echo "... examples/TestSequencerFile.s"
 	@echo "... examples/TestUI.o"
 	@echo "... examples/TestUI.i"
 	@echo "... examples/TestUI.s"
+	@echo "... examples/WavetableDemo.o"
+	@echo "... examples/WavetableDemo.i"
+	@echo "... examples/WavetableDemo.s"
 	@echo "... src/audio/AudioEngine.o"
 	@echo "... src/audio/AudioEngine.i"
 	@echo "... src/audio/AudioEngine.s"
@@ -725,6 +786,21 @@ help:
 	@echo "... src/sequencer/Sequencer.o"
 	@echo "... src/sequencer/Sequencer.i"
 	@echo "... src/sequencer/Sequencer.s"
+	@echo "... src/synthesis/framework/processor.o"
+	@echo "... src/synthesis/framework/processor.i"
+	@echo "... src/synthesis/framework/processor.s"
+	@echo "... src/synthesis/modulators/envelope.o"
+	@echo "... src/synthesis/modulators/envelope.i"
+	@echo "... src/synthesis/modulators/envelope.s"
+	@echo "... src/synthesis/modulators/modulation_matrix.o"
+	@echo "... src/synthesis/modulators/modulation_matrix.i"
+	@echo "... src/synthesis/modulators/modulation_matrix.s"
+	@echo "... src/synthesis/voice/voice_manager.o"
+	@echo "... src/synthesis/voice/voice_manager.i"
+	@echo "... src/synthesis/voice/voice_manager.s"
+	@echo "... src/synthesis/wavetable/wavetable.o"
+	@echo "... src/synthesis/wavetable/wavetable.i"
+	@echo "... src/synthesis/wavetable/wavetable.s"
 	@echo "... src/ui/DisplayManager.o"
 	@echo "... src/ui/DisplayManager.i"
 	@echo "... src/ui/DisplayManager.s"

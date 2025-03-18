@@ -795,6 +795,13 @@ CMakeFiles/TestAudio.dir/examples/TestAudio.cpp.o
  /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/15.0.0/include/stdarg.h
  /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/15.0.0/include/stddef.h
  /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/15.0.0/include/stdint.h
+ /Users/geaspar/AIMusicHardware/include/sequencer/Sequencer.h
+ /Users/geaspar/AIMusicHardware/include/synthesis/framework/processor.h
+ /Users/geaspar/AIMusicHardware/include/synthesis/modulators/envelope.h
+ /Users/geaspar/AIMusicHardware/include/synthesis/modulators/modulation_matrix.h
+ /Users/geaspar/AIMusicHardware/include/synthesis/wavetable/wavetable.h
+ /Users/geaspar/AIMusicHardware/include/synthesis/voice/voice_manager.h
+ /Users/geaspar/AIMusicHardware/include/synthesis/wavetable/wavetable.h
  /Users/geaspar/AIMusicHardware/include/audio/AudioEngine.h
  /Users/geaspar/AIMusicHardware/include/audio/Synthesizer.h
 

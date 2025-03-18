@@ -3,13 +3,14 @@
 #include <vector>
 #include <memory>
 #include <unordered_map>
+#include "../wavetable/wavetable.h"  // For Wavetable class
 
 namespace AIMusicHardware {
 
 // Forward declarations
 class Voice;
 class WavetableOscillator;
-class Envelope;
+class ModEnvelope;
 
 /**
  * Voice allocation and management system.
@@ -124,7 +125,7 @@ private:
     
     // Voice components
     std::unique_ptr<WavetableOscillator> oscillator_;
-    std::unique_ptr<Envelope> envelope_;
+    std::unique_ptr<ModEnvelope> envelope_;
 };
 
 } // namespace AIMusicHardware

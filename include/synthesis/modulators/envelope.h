@@ -1,13 +1,15 @@
 #pragma once
 
 #include <string>
+#include <algorithm> // For std::clamp
 
 namespace AIMusicHardware {
 
 /**
  * Advanced ADSR envelope with curve control.
+ * This is different from the simple Envelope struct in sequencer/Sequencer.h
  */
-class Envelope {
+class ModEnvelope {
 public:
     enum class Stage {
         Idle,
@@ -18,8 +20,8 @@ public:
         Killed
     };
     
-    Envelope(int sampleRate = 44100);
-    ~Envelope();
+    ModEnvelope(int sampleRate = 44100);
+    ~ModEnvelope();
     
     // Envelope control
     void noteOn();

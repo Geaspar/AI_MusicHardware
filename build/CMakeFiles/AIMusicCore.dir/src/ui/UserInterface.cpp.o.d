@@ -749,6 +749,12 @@ CMakeFiles/AIMusicCore.dir/src/ui/UserInterface.cpp.o: \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/system_error \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/__errc \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/cerrno \
+  /Users/geaspar/AIMusicHardware/src/ui/../../include/audio/../synthesis/framework/processor.h \
+  /Users/geaspar/AIMusicHardware/src/ui/../../include/audio/../synthesis/voice/voice_manager.h \
+  /Users/geaspar/AIMusicHardware/src/ui/../../include/audio/../synthesis/voice/../wavetable/wavetable.h \
+  /Users/geaspar/AIMusicHardware/src/ui/../../include/audio/../synthesis/wavetable/wavetable.h \
+  /Users/geaspar/AIMusicHardware/src/ui/../../include/audio/../synthesis/modulators/envelope.h \
+  /Users/geaspar/AIMusicHardware/src/ui/../../include/audio/../synthesis/modulators/modulation_matrix.h \
   /Users/geaspar/AIMusicHardware/src/ui/../../include/effects/EffectProcessor.h \
   /Users/geaspar/AIMusicHardware/src/ui/../../include/sequencer/Sequencer.h \
   /Users/geaspar/AIMusicHardware/src/ui/../../include/midi/MidiInterface.h \
