@@ -130,6 +130,22 @@ public:
     void setColor(const Color& color);
     void setBackgroundColor(const Color& color);
     
+    // Modulation
+    void setModulationAmount(float amount);
+    float getModulationAmount() const;
+    void setModulationColor(const Color& color);
+    const Color& getModulationColor() const;
+    
+    // Parameter binding
+    void setParameterId(const std::string& parameterId);
+    const std::string& getParameterId() const;
+    
+    // MIDI Learn
+    void setMidiLearnEnabled(bool enabled);
+    bool isMidiLearnEnabled() const;
+    void setMidiControlNumber(int ccNumber);
+    int getMidiControlNumber() const;
+    
     // Callback for value changes
     using ValueChangeCallback = std::function<void(float)>;
     void setValueChangeCallback(ValueChangeCallback callback);
@@ -141,6 +157,7 @@ public:
     
 private:
     std::string label_;
+    std::string parameterId_;
     float value_;
     float minValue_;
     float maxValue_;
@@ -148,6 +165,10 @@ private:
     bool showValue_;
     Color color_;
     Color backgroundColor_;
+    float modulationAmount_;
+    Color modulationColor_;
+    bool midiLearnEnabled_;
+    int midiControlNumber_;
     ValueChangeCallback valueChangeCallback_;
     std::function<std::string(float)> valueFormatter_;
 };
@@ -359,6 +380,172 @@ private:
     Color backgroundColor_;
     Color levelColor_;
     Color peakColor_;
+};
+
+// ParameterBinding - Connects UI components to synth parameters
+class ParameterBinding {
+public:
+    ParameterBinding(UIComponent* component, const std::string& parameterId);
+    ~ParameterBinding();
+    
+    // Connect to a Knob component
+    void connectToKnob(Knob* knob);
+    
+    // Update UI from parameter value
+    void updateUI();
+    
+    // Update parameter from UI value
+    void updateParameter();
+    
+    // Set and get parameter value
+    void setValue(float value);
+    float getValue() const;
+    
+    // Set and get modulation amount
+    void setModulationAmount(float amount);
+    float getModulationAmount() const;
+    
+    // Get parameter ID
+    const std::string& getParameterId() const;
+    
+    // MIDI mapping
+    void setMidiControlNumber(int ccNumber);
+    int getMidiControlNumber() const;
+    void clearMidiMapping();
+    
+private:
+    UIComponent* component_;  // The UI component bound to the parameter
+    Knob* knobComponent_;     // Knob-specific interface if applicable
+    std::string parameterId_; // Identifier for the parameter in the synth
+    float value_;             // Current parameter value
+    float modulationAmount_;  // Current modulation amount
+    int midiControlNumber_;   // MIDI CC number (-1 if not mapped)
+};
+
+// ParameterPanel - Grid of organized parameter controls
+class ParameterPanel : public UIComponent {
+public:
+    ParameterPanel(const std::string& id, const std::string& title = "");
+    virtual ~ParameterPanel();
+    
+    // Panel properties
+    void setTitle(const std::string& title);
+    const std::string& getTitle() const;
+    void setGridSize(int columns, int rows);
+    void getGridSize(int& columns, int& rows) const;
+    
+    // Add parameters
+    Knob* addParameter(const std::string& parameterId, const std::string& label, 
+                      float minValue, float maxValue, float defaultValue,
+                      int gridX, int gridY);
+    
+    // Access parameters
+    Knob* getParameterKnob(const std::string& parameterId);
+    ParameterBinding* getParameterBinding(const std::string& parameterId);
+    
+    // Get all parameter bindings
+    std::vector<ParameterBinding*> getAllParameterBindings();
+    
+    // MIDI Learn
+    void enableMidiLearnForParameter(const std::string& parameterId);
+    void disableMidiLearnForAllParameters();
+    void setMidiMapping(const std::string& parameterId, int ccNumber);
+    void clearAllMidiMappings();
+    
+    // Appearance
+    void setBackgroundColor(const Color& color);
+    void setTitleColor(const Color& color);
+    void setBorderColor(const Color& color);
+    
+    // UIComponent overrides
+    virtual void update(float deltaTime) override;
+    virtual void render(DisplayManager* display) override;
+    virtual bool handleInput(const InputEvent& event) override;
+    
+private:
+    struct ParameterItem {
+        std::string parameterId;
+        std::string label;
+        Knob* knob;
+        std::unique_ptr<ParameterBinding> binding;
+        int gridX;
+        int gridY;
+    };
+    
+    std::string title_;
+    int columns_;
+    int rows_;
+    int cellWidth_;
+    int cellHeight_;
+    Color backgroundColor_;
+    Color titleColor_;
+    Color borderColor_;
+    std::vector<ParameterItem> parameters_;
+    
+    // Calculate positions based on grid
+    void updateLayout();
+    
+    // Find parameter by ID
+    ParameterItem* findParameter(const std::string& parameterId);
+};
+
+// TabView - Container with tabs to organize content
+class TabView : public UIComponent {
+public:
+    TabView(const std::string& id);
+    virtual ~TabView();
+    
+    // Add a new tab
+    void addTab(const std::string& tabId, const std::string& tabName);
+    
+    // Tab content management
+    void addComponentToTab(const std::string& tabId, UIComponent* component);
+    void removeComponentFromTab(const std::string& tabId, UIComponent* component);
+    void clearTabContent(const std::string& tabId);
+    
+    // Tab access and control
+    int getTabCount() const;
+    std::string getTabId(int index) const;
+    std::string getTabName(int index) const;
+    void setTabName(const std::string& tabId, const std::string& newName);
+    void setActiveTab(const std::string& tabId);
+    std::string getActiveTabId() const;
+    int getActiveTabIndex() const;
+    
+    // Tab navigation
+    void nextTab();
+    void previousTab();
+    
+    // Appearance
+    void setTabBackgroundColor(const Color& color);
+    void setTabActiveColor(const Color& color);
+    void setTabTextColor(const Color& color);
+    void setContentBackgroundColor(const Color& color);
+    
+    // UIComponent overrides
+    virtual void update(float deltaTime) override;
+    virtual void render(DisplayManager* display) override;
+    virtual bool handleInput(const InputEvent& event) override;
+    
+private:
+    struct Tab {
+        std::string id;
+        std::string name;
+        std::vector<UIComponent*> components;
+    };
+    
+    std::vector<Tab> tabs_;
+    int activeTabIndex_;
+    
+    Color tabBackgroundColor_;
+    Color tabActiveColor_;
+    Color tabTextColor_;
+    Color contentBackgroundColor_;
+    
+    // Utility functions
+    int findTabIndex(const std::string& tabId) const;
+    void updateTabLayout();
+    void updateContentVisibility();
 };
 
 } // namespace AIMusicHardware

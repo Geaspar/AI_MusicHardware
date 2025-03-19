@@ -94,6 +94,84 @@ If you encounter issues with RtMidi:
    ```
 5. On macOS, ensure CoreAudio and CoreMIDI frameworks are available
 
+## UI Components Testing
+
+The UI component framework can be tested using the TestUI application, which provides a visual demonstration of the controls and parameter organization:
+
+### Building the TestUI Application
+
+1. Make sure your build environment is up to date:
+   ```bash
+   cd /Users/geaspar/AIMusicHardware
+   mkdir -p build
+   cd build
+   cmake ..
+   make
+   ```
+
+2. Build the TestUI application specifically:
+   ```bash
+   make TestUI
+   ```
+
+### Running the TestUI Application
+
+1. Launch the TestUI application:
+   ```bash
+   ./bin/TestUI
+   ```
+
+2. The application provides a visual testbed with:
+   - Knobs with modulation visualization
+   - Parameter panels with organized controls
+   - Tabbed interface for switching between parameter sections
+   - MIDI learn functionality demonstration
+   - Waveform display and envelopes
+
+### Testing UI Features
+
+1. **Parameter Controls**:
+   - Click and drag knobs to change values
+   - Use mouse wheel on knobs for fine adjustments
+   - Double-click a knob to activate MIDI learn mode
+   - Observe the visual feedback for parameter changes
+
+2. **Tab Navigation**:
+   - Click on different tabs to switch between parameter sections
+   - Test tab scrolling arrows if more tabs are available than can fit
+   - Verify tab highlighting works correctly
+
+3. **Parameter Panels**:
+   - Test grid-based layout with multiple parameters
+   - Verify parameter titles and values display correctly
+   - Check spacing and organization of controls
+
+4. **MIDI Learn**:
+   - Enter MIDI learn mode by double-clicking on a knob
+   - Send MIDI CC messages from a connected controller
+   - Verify the knob shows the mapped CC number and responds to controller movements
+   - Test clearing MIDI mappings
+
+5. **Modulation Visualization**:
+   - Observe modulation arcs showing parameter modulation range
+   - Test changes to modulation amount
+   - Verify color coding for different modulation sources
+
+### Keyboard Shortcuts
+
+- `Tab`: Cycle through UI components
+- `Space`: Toggle selected controls (buttons, toggles)
+- `Arrow Keys`: Navigate between controls
+- `ESC`: Exit MIDI learn mode / Exit application
+
+### Testing Tips
+
+- Test on different screen sizes to verify layout adaptability
+- Try different DPI settings to ensure proper scaling
+- Test with both mouse and touch input if available
+- Connect MIDI controllers to verify hardware integration
+- Verify CPU usage remains reasonable during UI updates
+
 ## Other Tests
 
 The project includes several other test applications:
@@ -103,6 +181,5 @@ The project includes several other test applications:
 - `TestSequencer`: Tests the sequencer component with real-time audio
 - `TestAdaptiveSequencer`: Tests the adaptive sequencer system
 - `WavetableDemo`: Demonstrates the wavetable synthesizer implementation
-- `TestUI`: Visual test for the UI components
 
 Run any of these tests from the build/bin directory to evaluate different aspects of the system.

@@ -327,9 +327,11 @@ bool Button::handleInput(const InputEvent& event) {
 // Knob implementation
 //
 Knob::Knob(const std::string& id, const std::string& label)
-    : UIComponent(id), label_(label), value_(0.5f), 
+    : UIComponent(id), label_(label), parameterId_(""), value_(0.5f), 
       minValue_(0.0f), maxValue_(1.0f), step_(0.01f), showValue_(true),
       color_(Color(200, 200, 200)), backgroundColor_(Color(40, 40, 40)),
+      modulationAmount_(0.0f), modulationColor_(Color(0, 150, 255)),
+      midiLearnEnabled_(false), midiControlNumber_(-1),
       valueChangeCallback_(nullptr) {
 }
 
@@ -404,6 +406,46 @@ void Knob::setBackgroundColor(const Color& color) {
     backgroundColor_ = color;
 }
 
+void Knob::setModulationAmount(float amount) {
+    modulationAmount_ = std::clamp(amount, 0.0f, 1.0f);
+}
+
+float Knob::getModulationAmount() const {
+    return modulationAmount_;
+}
+
+void Knob::setModulationColor(const Color& color) {
+    modulationColor_ = color;
+}
+
+const Color& Knob::getModulationColor() const {
+    return modulationColor_;
+}
+
+void Knob::setParameterId(const std::string& parameterId) {
+    parameterId_ = parameterId;
+}
+
+const std::string& Knob::getParameterId() const {
+    return parameterId_;
+}
+
+void Knob::setMidiLearnEnabled(bool enabled) {
+    midiLearnEnabled_ = enabled;
+}
+
+bool Knob::isMidiLearnEnabled() const {
+    return midiLearnEnabled_;
+}
+
+void Knob::setMidiControlNumber(int ccNumber) {
+    midiControlNumber_ = ccNumber;
+}
+
+int Knob::getMidiControlNumber() const {
+    return midiControlNumber_;
+}
+
 void Knob::setValueChangeCallback(ValueChangeCallback callback) {
     valueChangeCallback_ = callback;
 }
@@ -424,7 +466,36 @@ void Knob::render(DisplayManager* display) {
     
     // Draw knob background
     display->fillCircle(centerX, centerY, radius, backgroundColor_);
+    
+    // Draw modulation ring if modulation is active
+    if (modulationAmount_ > 0.0f) {
+        // Calculate modulation start and end angles
+        float normalizedValue = (value_ - minValue_) / (maxValue_ - minValue_);
+        float modulatedValue = std::clamp(normalizedValue + modulationAmount_, 0.0f, 1.0f);
+        
+        float startAngle = (normalizedValue * 270.0f - 135.0f) * 3.14159f / 180.0f;
+        float endAngle = (modulatedValue * 270.0f - 135.0f) * 3.14159f / 180.0f;
+        
+        // Draw arc for modulation range
+        display->drawArc(centerX, centerY, radius - 2, startAngle, endAngle, modulationColor_);
+    }
+    
+    // Draw knob border
     display->drawCircle(centerX, centerY, radius, color_);
+    
+    // Draw MIDI learn indicator if active
+    if (midiLearnEnabled_) {
+        // Draw pulsing highlight
+        int pulseRadius = radius + 3;
+        Color pulseColor = Color(255, 100, 0); // Orange pulse for MIDI learn
+        display->drawCircle(centerX, centerY, pulseRadius, pulseColor);
+    }
+    else if (midiControlNumber_ >= 0) {
+        // Draw small indicator showing this knob has MIDI mapping
+        int indicatorSize = 3;
+        Color mappedColor = Color(0, 255, 0); // Green dot for mapped
+        display->fillCircle(x_ + indicatorSize, y_ + indicatorSize, indicatorSize, mappedColor);
+    }
     
     // Calculate normalized value (0.0 - 1.0)
     float normalizedValue = (value_ - minValue_) / (maxValue_ - minValue_);
@@ -456,6 +527,27 @@ void Knob::render(DisplayManager* display) {
             }
             
             display->drawText(centerX - valueText.length() * 4, y_ - 15, valueText, font, color_);
+        }
+        
+        // Draw MIDI CC number if mapped
+        if (midiControlNumber_ >= 0 && !midiLearnEnabled_) {
+            std::ostringstream ccText;
+            ccText << "CC" << midiControlNumber_;
+            std::string ccString = ccText.str();
+            
+            display->drawText(centerX - ccString.length() * 4, y_ + height_ + 20, 
+                           ccString, font, Color(0, 200, 0));
+        }
+    }
+    else {
+        // Fallback rendering if no font available
+        
+        // Draw label as basic rectangle at bottom
+        display->fillRect(x_, y_ + height_ + 5, width_, 10, color_);
+        
+        // Draw MIDI indicator if mapped
+        if (midiControlNumber_ >= 0) {
+            display->fillRect(x_, y_ + height_ + 20, width_ / 2, 5, Color(0, 200, 0));
         }
     }
     
@@ -503,6 +595,23 @@ bool Knob::handleInput(const InputEvent& event) {
             float newValue = minValue_ + normalizedAngle * (maxValue_ - minValue_);
             setValue(newValue);
             
+            handled = true;
+        }
+    }
+    // Handle double-click for MIDI learn
+    else if (event.type == InputEventType::TouchDoublePress) {
+        // Check if within knob bounds
+        int centerX = x_ + width_ / 2;
+        int centerY = y_ + height_ / 2;
+        int radius = std::min(width_, height_) / 2;
+        
+        int dx = event.value - centerX;
+        int dy = event.value2 - centerY;
+        float distance = std::sqrt(dx*dx + dy*dy);
+        
+        if (distance <= radius) {
+            // Toggle MIDI learn mode
+            setMidiLearnEnabled(!midiLearnEnabled_);
             handled = true;
         }
     }
@@ -1415,6 +1524,669 @@ void VUMeter::render(DisplayManager* display) {
 bool VUMeter::handleInput(const InputEvent& event) {
     // VU meters don't typically handle input
     return handleChildrenInput(event);
+}
+
+//
+// ParameterBinding implementation
+//
+ParameterBinding::ParameterBinding(UIComponent* component, const std::string& parameterId)
+    : component_(component), knobComponent_(nullptr), parameterId_(parameterId),
+      value_(0.0f), modulationAmount_(0.0f), midiControlNumber_(-1) {
+    
+    // Check if component is a Knob and store specialized pointer if so
+    if (component) {
+        Knob* knob = dynamic_cast<Knob*>(component);
+        if (knob) {
+            knobComponent_ = knob;
+            knobComponent_->setParameterId(parameterId);
+        }
+    }
+}
+
+ParameterBinding::~ParameterBinding() {
+    // No ownership of component, so just clear reference
+    component_ = nullptr;
+    knobComponent_ = nullptr;
+}
+
+void ParameterBinding::connectToKnob(Knob* knob) {
+    // Store component and specialized knob pointer
+    component_ = knob;
+    knobComponent_ = knob;
+    
+    if (knobComponent_) {
+        // Set parameter ID in the knob
+        knobComponent_->setParameterId(parameterId_);
+        
+        // Set MIDI mapping if available
+        if (midiControlNumber_ >= 0) {
+            knobComponent_->setMidiControlNumber(midiControlNumber_);
+        }
+        
+        // Set modulation amount
+        knobComponent_->setModulationAmount(modulationAmount_);
+        
+        // Set initial value
+        knobComponent_->setValue(value_);
+    }
+}
+
+void ParameterBinding::updateUI() {
+    // Update UI component based on current parameter value
+    if (knobComponent_) {
+        knobComponent_->setValue(value_);
+        knobComponent_->setModulationAmount(modulationAmount_);
+        knobComponent_->setMidiControlNumber(midiControlNumber_);
+    }
+}
+
+void ParameterBinding::updateParameter() {
+    // Update parameter value based on UI component
+    if (knobComponent_) {
+        value_ = knobComponent_->getValue();
+    }
+}
+
+void ParameterBinding::setValue(float value) {
+    value_ = value;
+    updateUI();
+}
+
+float ParameterBinding::getValue() const {
+    return value_;
+}
+
+void ParameterBinding::setModulationAmount(float amount) {
+    modulationAmount_ = std::clamp(amount, 0.0f, 1.0f);
+    
+    if (knobComponent_) {
+        knobComponent_->setModulationAmount(modulationAmount_);
+    }
+}
+
+float ParameterBinding::getModulationAmount() const {
+    return modulationAmount_;
+}
+
+const std::string& ParameterBinding::getParameterId() const {
+    return parameterId_;
+}
+
+void ParameterBinding::setMidiControlNumber(int ccNumber) {
+    midiControlNumber_ = ccNumber;
+    
+    if (knobComponent_) {
+        knobComponent_->setMidiControlNumber(midiControlNumber_);
+        // Turn off MIDI learn mode if it was active
+        knobComponent_->setMidiLearnEnabled(false);
+    }
+}
+
+int ParameterBinding::getMidiControlNumber() const {
+    return midiControlNumber_;
+}
+
+void ParameterBinding::clearMidiMapping() {
+    midiControlNumber_ = -1;
+    
+    if (knobComponent_) {
+        knobComponent_->setMidiControlNumber(-1);
+    }
+}
+
+//
+// ParameterPanel implementation
+//
+ParameterPanel::ParameterPanel(const std::string& id, const std::string& title)
+    : UIComponent(id), title_(title), columns_(4), rows_(4),
+      cellWidth_(80), cellHeight_(100),
+      backgroundColor_(Color(30, 30, 30)), 
+      titleColor_(Color(200, 200, 200)),
+      borderColor_(Color(100, 100, 100)) {
+}
+
+ParameterPanel::~ParameterPanel() {
+    // Parameters will be automatically cleaned up via unique_ptr
+}
+
+void ParameterPanel::setTitle(const std::string& title) {
+    title_ = title;
+}
+
+const std::string& ParameterPanel::getTitle() const {
+    return title_;
+}
+
+void ParameterPanel::setGridSize(int columns, int rows) {
+    columns_ = std::max(1, columns);
+    rows_ = std::max(1, rows);
+    updateLayout();
+}
+
+void ParameterPanel::getGridSize(int& columns, int& rows) const {
+    columns = columns_;
+    rows = rows_;
+}
+
+Knob* ParameterPanel::addParameter(const std::string& parameterId, const std::string& label,
+                                  float minValue, float maxValue, float defaultValue,
+                                  int gridX, int gridY) {
+    // Check if parameter with this ID already exists
+    if (findParameter(parameterId)) {
+        return nullptr; // Parameter already exists
+    }
+    
+    // Create parameter item
+    ParameterItem item;
+    item.parameterId = parameterId;
+    item.label = label;
+    item.gridX = std::min(gridX, columns_ - 1);
+    item.gridY = std::min(gridY, rows_ - 1);
+    
+    // Create knob with a unique ID based on parameter ID
+    std::string knobId = getId() + "_" + parameterId;
+    item.knob = new Knob(knobId, label);
+    item.knob->setRange(minValue, maxValue);
+    item.knob->setValue(defaultValue);
+    
+    // Create binding
+    item.binding = std::make_unique<ParameterBinding>(item.knob, parameterId);
+    
+    // Add knob as child component
+    addChild(item.knob);
+    
+    // Store in parameters list
+    parameters_.push_back(std::move(item));
+    
+    // Update layout
+    updateLayout();
+    
+    // Return pointer to the knob
+    return parameters_.back().knob;
+}
+
+Knob* ParameterPanel::getParameterKnob(const std::string& parameterId) {
+    ParameterItem* item = findParameter(parameterId);
+    return item ? item->knob : nullptr;
+}
+
+ParameterBinding* ParameterPanel::getParameterBinding(const std::string& parameterId) {
+    ParameterItem* item = findParameter(parameterId);
+    return item ? item->binding.get() : nullptr;
+}
+
+std::vector<ParameterBinding*> ParameterPanel::getAllParameterBindings() {
+    std::vector<ParameterBinding*> bindings;
+    bindings.reserve(parameters_.size());
+    
+    for (auto& param : parameters_) {
+        bindings.push_back(param.binding.get());
+    }
+    
+    return bindings;
+}
+
+void ParameterPanel::enableMidiLearnForParameter(const std::string& parameterId) {
+    // Disable MIDI learn for all parameters first
+    disableMidiLearnForAllParameters();
+    
+    // Enable for the specified parameter
+    ParameterItem* item = findParameter(parameterId);
+    if (item && item->knob) {
+        item->knob->setMidiLearnEnabled(true);
+    }
+}
+
+void ParameterPanel::disableMidiLearnForAllParameters() {
+    for (auto& param : parameters_) {
+        if (param.knob) {
+            param.knob->setMidiLearnEnabled(false);
+        }
+    }
+}
+
+void ParameterPanel::setMidiMapping(const std::string& parameterId, int ccNumber) {
+    ParameterItem* item = findParameter(parameterId);
+    if (item && item->binding) {
+        item->binding->setMidiControlNumber(ccNumber);
+    }
+}
+
+void ParameterPanel::clearAllMidiMappings() {
+    for (auto& param : parameters_) {
+        if (param.binding) {
+            param.binding->clearMidiMapping();
+        }
+    }
+}
+
+void ParameterPanel::setBackgroundColor(const Color& color) {
+    backgroundColor_ = color;
+}
+
+void ParameterPanel::setTitleColor(const Color& color) {
+    titleColor_ = color;
+}
+
+void ParameterPanel::setBorderColor(const Color& color) {
+    borderColor_ = color;
+}
+
+void ParameterPanel::update(float deltaTime) {
+    // Update children (knobs)
+    updateChildren(deltaTime);
+}
+
+void ParameterPanel::render(DisplayManager* display) {
+    if (!display) {
+        return;
+    }
+    
+    // Draw panel background
+    display->fillRect(x_, y_, width_, height_, backgroundColor_);
+    display->drawRect(x_, y_, width_, height_, borderColor_);
+    
+    // Draw title if we have one
+    if (!title_.empty()) {
+        // Get font for rendering
+        Font* font = nullptr;
+        // TODO: Get font from context
+        
+        if (font) {
+            // Draw title at top of panel
+            display->drawText(x_ + 10, y_ + 15, title_, font, titleColor_);
+            
+            // Draw horizontal line under title
+            display->drawLine(x_ + 5, y_ + 25, x_ + width_ - 5, y_ + 25, borderColor_);
+        } else {
+            // Fallback rendering for title
+            display->fillRect(x_ + 5, y_ + 5, width_ - 10, 20, titleColor_);
+        }
+    }
+    
+    // Render children (knobs)
+    renderChildren(display);
+}
+
+bool ParameterPanel::handleInput(const InputEvent& event) {
+    // Let children (knobs) handle input first
+    if (handleChildrenInput(event)) {
+        return true;
+    }
+    
+    // Handle specific panel input if needed
+    return false;
+}
+
+void ParameterPanel::updateLayout() {
+    // Calculate cell dimensions
+    cellWidth_ = width_ / columns_;
+    cellHeight_ = height_ / rows_;
+    
+    // Adjust for title area if we have a title
+    int titleHeight = title_.empty() ? 0 : 30;
+    int contentHeight = height_ - titleHeight;
+    cellHeight_ = contentHeight / rows_;
+    
+    // Position all knobs according to their grid coordinates
+    for (auto& param : parameters_) {
+        if (param.knob) {
+            // Calculate position within grid
+            int knobX = x_ + param.gridX * cellWidth_;
+            int knobY = y_ + titleHeight + param.gridY * cellHeight_;
+            
+            // Set knob size and position
+            int knobSize = std::min(cellWidth_ - 20, cellHeight_ - 40);
+            param.knob->setBounds(knobX + (cellWidth_ - knobSize) / 2,
+                                  knobY + 10,
+                                  knobSize, knobSize);
+        }
+    }
+}
+
+ParameterPanel::ParameterItem* ParameterPanel::findParameter(const std::string& parameterId) {
+    for (auto& param : parameters_) {
+        if (param.parameterId == parameterId) {
+            return &param;
+        }
+    }
+    return nullptr;
+}
+
+//
+// TabView implementation
+//
+TabView::TabView(const std::string& id)
+    : UIComponent(id), activeTabIndex_(0),
+      tabBackgroundColor_(Color(50, 50, 50)),
+      tabActiveColor_(Color(80, 80, 100)),
+      tabTextColor_(Color(220, 220, 220)),
+      contentBackgroundColor_(Color(40, 40, 40)) {
+}
+
+TabView::~TabView() {
+    // Child components are cleaned up by UIComponent
+}
+
+void TabView::addTab(const std::string& tabId, const std::string& tabName) {
+    // Check if tab already exists
+    if (findTabIndex(tabId) >= 0) {
+        return; // Tab already exists
+    }
+    
+    // Create new tab
+    Tab newTab;
+    newTab.id = tabId;
+    newTab.name = tabName;
+    
+    // Add tab to list
+    tabs_.push_back(newTab);
+    
+    // If this is the first tab, make it active
+    if (tabs_.size() == 1) {
+        activeTabIndex_ = 0;
+    }
+    
+    // Update layout
+    updateTabLayout();
+    updateContentVisibility();
+}
+
+void TabView::addComponentToTab(const std::string& tabId, UIComponent* component) {
+    if (!component) {
+        return;
+    }
+    
+    // Find tab
+    int tabIndex = findTabIndex(tabId);
+    if (tabIndex < 0) {
+        return; // Tab not found
+    }
+    
+    // Add component to tab
+    tabs_[tabIndex].components.push_back(component);
+    
+    // Add component as child of TabView
+    addChild(component);
+    
+    // Update visibility based on active tab
+    updateContentVisibility();
+}
+
+void TabView::removeComponentFromTab(const std::string& tabId, UIComponent* component) {
+    if (!component) {
+        return;
+    }
+    
+    // Find tab
+    int tabIndex = findTabIndex(tabId);
+    if (tabIndex < 0) {
+        return; // Tab not found
+    }
+    
+    // Remove component from tab
+    auto& components = tabs_[tabIndex].components;
+    components.erase(std::remove(components.begin(), components.end(), component), components.end());
+    
+    // Remove component from children
+    removeChild(component);
+}
+
+void TabView::clearTabContent(const std::string& tabId) {
+    // Find tab
+    int tabIndex = findTabIndex(tabId);
+    if (tabIndex < 0) {
+        return; // Tab not found
+    }
+    
+    // Remove all components from the tab
+    for (auto* component : tabs_[tabIndex].components) {
+        removeChild(component);
+    }
+    
+    // Clear the components list
+    tabs_[tabIndex].components.clear();
+}
+
+int TabView::getTabCount() const {
+    return static_cast<int>(tabs_.size());
+}
+
+std::string TabView::getTabId(int index) const {
+    if (index >= 0 && index < static_cast<int>(tabs_.size())) {
+        return tabs_[index].id;
+    }
+    return "";
+}
+
+std::string TabView::getTabName(int index) const {
+    if (index >= 0 && index < static_cast<int>(tabs_.size())) {
+        return tabs_[index].name;
+    }
+    return "";
+}
+
+void TabView::setTabName(const std::string& tabId, const std::string& newName) {
+    int tabIndex = findTabIndex(tabId);
+    if (tabIndex >= 0) {
+        tabs_[tabIndex].name = newName;
+    }
+}
+
+void TabView::setActiveTab(const std::string& tabId) {
+    int tabIndex = findTabIndex(tabId);
+    if (tabIndex >= 0 && tabIndex != activeTabIndex_) {
+        activeTabIndex_ = tabIndex;
+        updateContentVisibility();
+    }
+}
+
+std::string TabView::getActiveTabId() const {
+    if (activeTabIndex_ >= 0 && activeTabIndex_ < static_cast<int>(tabs_.size())) {
+        return tabs_[activeTabIndex_].id;
+    }
+    return "";
+}
+
+int TabView::getActiveTabIndex() const {
+    return activeTabIndex_;
+}
+
+void TabView::nextTab() {
+    if (tabs_.empty()) {
+        return;
+    }
+    
+    activeTabIndex_ = (activeTabIndex_ + 1) % tabs_.size();
+    updateContentVisibility();
+}
+
+void TabView::previousTab() {
+    if (tabs_.empty()) {
+        return;
+    }
+    
+    activeTabIndex_ = (activeTabIndex_ + tabs_.size() - 1) % tabs_.size();
+    updateContentVisibility();
+}
+
+void TabView::setTabBackgroundColor(const Color& color) {
+    tabBackgroundColor_ = color;
+}
+
+void TabView::setTabActiveColor(const Color& color) {
+    tabActiveColor_ = color;
+}
+
+void TabView::setTabTextColor(const Color& color) {
+    tabTextColor_ = color;
+}
+
+void TabView::setContentBackgroundColor(const Color& color) {
+    contentBackgroundColor_ = color;
+}
+
+void TabView::update(float deltaTime) {
+    // Update all children, regardless of active tab
+    // This ensures animations continue even on hidden tabs
+    updateChildren(deltaTime);
+}
+
+void TabView::render(DisplayManager* display) {
+    if (!display) {
+        return;
+    }
+    
+    // Draw content background
+    display->fillRect(x_, y_ + 30, width_, height_ - 30, contentBackgroundColor_);
+    
+    // Draw tab bar background
+    display->fillRect(x_, y_, width_, 30, tabBackgroundColor_);
+    
+    // Draw tabs
+    if (!tabs_.empty()) {
+        int tabWidth = width_ / std::min(static_cast<int>(tabs_.size()), 6);
+        int tabHeight = 30;
+        
+        // Draw up to 6 tabs at a time
+        int startTab = 0;
+        if (tabs_.size() > 6) {
+            // If active tab would be outside visible range, adjust start tab
+            if (activeTabIndex_ >= startTab + 6) {
+                startTab = std::max(0, activeTabIndex_ - 5);
+            }
+        }
+        
+        for (int i = startTab; i < std::min(startTab + 6, static_cast<int>(tabs_.size())); i++) {
+            int tabX = x_ + (i - startTab) * tabWidth;
+            int tabY = y_;
+            
+            // Draw tab background (different color for active tab)
+            Color tabColor = (i == activeTabIndex_) ? tabActiveColor_ : tabBackgroundColor_;
+            display->fillRect(tabX, tabY, tabWidth, tabHeight, tabColor);
+            
+            // Draw tab border
+            display->drawRect(tabX, tabY, tabWidth, tabHeight, Color(100, 100, 100));
+            
+            // Draw tab text
+            Font* font = nullptr;
+            // TODO: Get font from context
+            
+            if (font) {
+                // Center text in tab
+                int textWidth = 0;
+                int textHeight = 0;
+                font->getTextDimensions(tabs_[i].name, textWidth, textHeight);
+                
+                int textX = tabX + (tabWidth - textWidth) / 2;
+                int textY = tabY + (tabHeight - textHeight) / 2;
+                
+                display->drawText(textX, textY, tabs_[i].name, font, tabTextColor_);
+            } else {
+                // Fallback rendering - just draw a colored rectangle for active tab
+                if (i == activeTabIndex_) {
+                    display->fillRect(tabX + 5, tabY + tabHeight - 5, tabWidth - 10, 3, tabTextColor_);
+                }
+            }
+        }
+        
+        // If we have more tabs than can fit, show navigation arrows
+        if (tabs_.size() > 6) {
+            // Left arrow
+            if (startTab > 0) {
+                display->fillTriangle(x_ + 10, y_ + 15, 
+                                   x_ + 20, y_ + 5, 
+                                   x_ + 20, y_ + 25, 
+                                   tabTextColor_);
+            }
+            
+            // Right arrow
+            if (startTab + 6 < static_cast<int>(tabs_.size())) {
+                display->fillTriangle(x_ + width_ - 10, y_ + 15, 
+                                   x_ + width_ - 20, y_ + 5, 
+                                   x_ + width_ - 20, y_ + 25, 
+                                   tabTextColor_);
+            }
+        }
+    }
+    
+    // Render visible children (those on the active tab)
+    renderChildren(display);
+}
+
+bool TabView::handleInput(const InputEvent& event) {
+    // First check if tab bar was clicked
+    if (event.type == InputEventType::TouchPress &&
+        event.value >= x_ && event.value < x_ + width_ &&
+        event.value2 >= y_ && event.value2 < y_ + 30) {
+        
+        if (!tabs_.empty()) {
+            int tabWidth = width_ / std::min(static_cast<int>(tabs_.size()), 6);
+            
+            // Calculate which tab was clicked
+            int clickedTab = (event.value - x_) / tabWidth;
+            
+            // Adjust for scrolling if we have more than 6 tabs
+            int startTab = 0;
+            if (tabs_.size() > 6) {
+                if (activeTabIndex_ >= startTab + 6) {
+                    startTab = std::max(0, activeTabIndex_ - 5);
+                }
+                
+                // Check if arrows were clicked
+                if (event.value < x_ + 20 && startTab > 0) {
+                    // Left arrow clicked
+                    startTab--;
+                    return true;
+                } else if (event.value > x_ + width_ - 20 && startTab + 6 < static_cast<int>(tabs_.size())) {
+                    // Right arrow clicked
+                    startTab++;
+                    return true;
+                }
+            }
+            
+            // Adjust clicked tab for scrolling
+            clickedTab += startTab;
+            
+            // Switch to the clicked tab if it's valid
+            if (clickedTab >= 0 && clickedTab < static_cast<int>(tabs_.size())) {
+                setActiveTab(tabs_[clickedTab].id);
+                return true;
+            }
+        }
+    }
+    
+    // Let children handle input
+    return handleChildrenInput(event);
+}
+
+int TabView::findTabIndex(const std::string& tabId) const {
+    for (size_t i = 0; i < tabs_.size(); i++) {
+        if (tabs_[i].id == tabId) {
+            return static_cast<int>(i);
+        }
+    }
+    return -1;
+}
+
+void TabView::updateTabLayout() {
+    // No specific layout updates needed for tabs currently
+}
+
+void TabView::updateContentVisibility() {
+    // Hide all components first
+    for (int i = 0; i < static_cast<int>(tabs_.size()); i++) {
+        for (auto* component : tabs_[i].components) {
+            component->setVisible(false);
+        }
+    }
+    
+    // Show components of active tab
+    if (activeTabIndex_ >= 0 && activeTabIndex_ < static_cast<int>(tabs_.size())) {
+        for (auto* component : tabs_[activeTabIndex_].components) {
+            component->setVisible(true);
+        }
+    }
 }
 
 } // namespace AIMusicHardware
