@@ -116,12 +116,34 @@ public:
     void processAllNotesOff(const MidiMessage& message, int samplePosition);
     void processSustain(const MidiMessage& message, int samplePosition);
 
-private:
-    // Maps a MIDI controller value (0-127) to a parameter value (0.0-1.0)
-    float midiValueToParameter(int value) const;
+public:
+    // Different scaling types for MIDI to parameter conversion
+    enum class ParameterScaling {
+        Linear,     // Linear mapping (default)
+        Logarithmic, // Logarithmic mapping (good for frequencies)
+        Exponential, // Exponential mapping (good for times)
+        Stepped      // Stepped mapping (for discrete values)
+    };
     
-    // Maps a parameter value (0.0-1.0) to a MIDI controller value (0-127)
+    // Parameter mapping information
+    struct ParameterMapping {
+        std::string paramId;
+        ParameterScaling scaling = ParameterScaling::Linear;
+        float min = 0.0f;  // Minimum parameter value
+        float max = 1.0f;  // Maximum parameter value
+        int steps = 0;     // For stepped parameters, number of discrete steps (0 = continuous)
+    };
+    
+private:
+    // Maps a MIDI controller value (0-127) to a parameter value
+    float midiValueToParameter(int value) const;
+    float midiValueToParameter(int value, ParameterScaling scaling, 
+                              float min, float max, int steps) const;
+    
+    // Maps a parameter value to a MIDI controller value (0-127)
     int parameterToMidiValue(float value) const;
+    int parameterToMidiValue(float value, ParameterScaling scaling, 
+                            float min, float max, int steps) const;
     
     // Handles parameter mapping for learning and updates
     void updateMappedParameter(int channel, int controller, int value);

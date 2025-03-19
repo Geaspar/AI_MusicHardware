@@ -168,6 +168,22 @@ void MidiManager::processControlChange(const MidiMessage& message, int samplePos
         if (!learnParamId_.empty()) {
             // Map this controller to the parameter being learned
             std::lock_guard<std::mutex> mappingLock(mappingMutex_);
+            
+            // First check if this parameter is already mapped elsewhere and clear that mapping
+            for (auto& channelMap : midiMappings_) {
+                for (auto it = channelMap.second.begin(); it != channelMap.second.end(); ) {
+                    if (it->second == learnParamId_) {
+                        std::cout << "Removing existing mapping for " << learnParamId_ 
+                                  << " from channel " << channelMap.first 
+                                  << ", controller " << it->first << std::endl;
+                        it = channelMap.second.erase(it);
+                    } else {
+                        ++it;
+                    }
+                }
+            }
+            
+            // Create new mapping
             midiMappings_[channel][controller] = learnParamId_;
             
             std::cout << "MIDI Learn: Channel " << channel << ", Controller " << controller 
@@ -178,6 +194,12 @@ void MidiManager::processControlChange(const MidiMessage& message, int samplePos
             
             // Also update the parameter value
             updateMappedParameter(channel, controller, value);
+            
+            // Notify listener if available
+            if (listener_) {
+                listener_->parameterChangedViaMidi("midi_learn_complete", 1.0f);
+            }
+            
             return;
         }
     }
@@ -204,6 +226,18 @@ void MidiManager::processControlChange(const MidiMessage& message, int samplePos
             if (listener_) {
                 listener_->modWheelChanged(channel, midiValueToParameter(value));
             }
+            // Also update any mapped parameter
+            updateMappedParameter(channel, controller, value);
+            break;
+            
+        case kExpression:
+            // Handle expression pedal (can be useful for volume/filter sweeps)
+            updateMappedParameter(channel, controller, value);
+            break;
+            
+        case kBreathController:
+            // Handle breath controller (useful for wind instrument modeling)
+            updateMappedParameter(channel, controller, value);
             break;
             
         default:
@@ -280,14 +314,92 @@ void MidiManager::processSustain(const MidiMessage& message, int samplePosition)
     }
 }
 
-float MidiManager::midiValueToParameter(int value) const {
-    // Convert MIDI value (0-127) to parameter value (0.0-1.0)
-    return value / 127.0f;
+// Scaling type implementation moved to header file
+
+float MidiManager::midiValueToParameter(int value, ParameterScaling scaling, 
+                                        float min, float max, int steps) const {
+    // Normalize to 0.0-1.0 range
+    float normalized = value / 127.0f;
+    
+    // Apply scaling
+    float scaled = 0.0f;
+    switch (scaling) {
+        case ParameterScaling::Linear:
+            scaled = normalized;
+            break;
+            
+        case ParameterScaling::Logarithmic:
+            // Log scaling for frequencies, etc.
+            // Avoid log(0) by adding a small value
+            scaled = std::log10(normalized * 0.9f + 0.1f) / std::log10(1.1f);
+            break;
+            
+        case ParameterScaling::Exponential:
+            // Exponential scaling for times, etc.
+            scaled = std::pow(normalized, 3.0f);  // Cubic for more sensitivity at low values
+            break;
+            
+        case ParameterScaling::Stepped:
+            if (steps > 1) {
+                // Convert to discrete steps
+                int step = static_cast<int>(normalized * steps);
+                scaled = static_cast<float>(step) / static_cast<float>(steps - 1);
+            } else {
+                scaled = normalized;
+            }
+            break;
+    }
+    
+    // Map to parameter range
+    return min + scaled * (max - min);
 }
 
+int MidiManager::parameterToMidiValue(float value, ParameterScaling scaling, 
+                                      float min, float max, int steps) const {
+    // Normalize to 0.0-1.0 range
+    float normalized = (value - min) / (max - min);
+    normalized = std::clamp(normalized, 0.0f, 1.0f);
+    
+    // Apply inverse scaling
+    float scaled = 0.0f;
+    switch (scaling) {
+        case ParameterScaling::Linear:
+            scaled = normalized;
+            break;
+            
+        case ParameterScaling::Logarithmic:
+            // Inverse log scaling
+            scaled = (std::pow(10.0f, normalized * std::log10(1.1f)) - 0.1f) / 0.9f;
+            break;
+            
+        case ParameterScaling::Exponential:
+            // Inverse exponential scaling
+            scaled = std::pow(normalized, 1.0f/3.0f);  // Cube root
+            break;
+            
+        case ParameterScaling::Stepped:
+            if (steps > 1) {
+                // Convert from discrete steps
+                int step = static_cast<int>(normalized * steps);
+                scaled = static_cast<float>(step) / static_cast<float>(steps - 1);
+            } else {
+                scaled = normalized;
+            }
+            break;
+    }
+    
+    // Convert to MIDI value (0-127)
+    return static_cast<int>(std::clamp(scaled * 127.0f, 0.0f, 127.0f));
+}
+
+// Simple version for backward compatibility
+float MidiManager::midiValueToParameter(int value) const {
+    return midiValueToParameter(value, ParameterScaling::Linear, 0.0f, 1.0f, 0);
+}
+
+// Simple version for backward compatibility
 int MidiManager::parameterToMidiValue(float value) const {
-    // Convert parameter value (0.0-1.0) to MIDI value (0-127)
-    return static_cast<int>(std::clamp(value * 127.0f, 0.0f, 127.0f));
+    return parameterToMidiValue(value, ParameterScaling::Linear, 0.0f, 1.0f, 0);
 }
 
 void MidiManager::updateMappedParameter(int channel, int controller, int value) {
@@ -300,16 +412,40 @@ void MidiManager::updateMappedParameter(int channel, int controller, int value) 
         if (controllerIt != channelIt->second.end()) {
             // Found a mapping
             const std::string& paramId = controllerIt->second;
-            float normalizedValue = midiValueToParameter(value);
+            
+            // Determine parameter range and scaling based on parameter ID
+            // This is where we would look up parameter metadata in a more complete system
+            ParameterScaling scaling = ParameterScaling::Linear;
+            float min = 0.0f;
+            float max = 1.0f;
+            int steps = 0;
+            
+            // Example parameter-specific mappings
+            // In a real implementation, this would come from a parameter registry
+            if (paramId == "filter_cutoff") {
+                scaling = ParameterScaling::Logarithmic;
+                min = 20.0f;    // 20Hz
+                max = 20000.0f; // 20kHz
+            } else if (paramId == "filter_resonance") {
+                scaling = ParameterScaling::Exponential;
+                min = 0.0f;
+                max = 0.99f;
+            } else if (paramId == "oscillator_type") {
+                scaling = ParameterScaling::Stepped;
+                steps = 5; // 5 waveform types
+            }
+            
+            // Convert MIDI value to parameter value
+            float paramValue = midiValueToParameter(value, scaling, min, max, steps);
             
             // Update the parameter in the synthesizer
             if (synthesizer_) {
-                synthesizer_->setParameter(paramId, normalizedValue);
+                synthesizer_->setParameter(paramId, paramValue);
             }
             
             // Notify the listener
             if (listener_) {
-                listener_->parameterChangedViaMidi(paramId, normalizedValue);
+                listener_->parameterChangedViaMidi(paramId, paramValue);
             }
         }
     }

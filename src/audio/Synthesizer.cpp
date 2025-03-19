@@ -166,15 +166,14 @@ void Synthesizer::setSampleRate(int sampleRate) {
 
 void Synthesizer::noteOn(int midiNote, float velocity, int channel) {
     if (voiceManager_) {
-        // For now, we'll ignore channel but in the future we could implement multi-channel support
-        voiceManager_->noteOn(midiNote, velocity);
+        voiceManager_->noteOn(midiNote, velocity, channel);
     }
 }
 
 void Synthesizer::noteOn(int midiNote, float velocity, const AIMusicHardware::Envelope& legacyEnv, int channel) {
     if (voiceManager_) {
         // Legacy support - first use standard noteOn
-        voiceManager_->noteOn(midiNote, velocity);
+        voiceManager_->noteOn(midiNote, velocity, channel);
         
         // Then find and update the envelope for this note
         // This is not implemented here since we don't have direct access to voice envelopes
@@ -185,54 +184,40 @@ void Synthesizer::noteOn(int midiNote, float velocity, const AIMusicHardware::En
 
 void Synthesizer::noteOff(int midiNote, int channel) {
     if (voiceManager_) {
-        // For now, we'll ignore channel
-        voiceManager_->noteOff(midiNote);
+        voiceManager_->noteOff(midiNote, channel);
     }
 }
 
 void Synthesizer::allNotesOff(int channel) {
     if (voiceManager_) {
-        // For now, channel parameter is ignored, all notes are turned off regardless of channel
-        voiceManager_->allNotesOff();
+        voiceManager_->allNotesOff(channel);
     }
 }
 
 void Synthesizer::sustainOn(int channel) {
     if (voiceManager_) {
-        // For future implementation - will need to add sustain functionality to VoiceManager
-        // voiceManager_->sustainOn(channel);
-        
-        // For now, just log the action
+        voiceManager_->sustainOn(channel);
         std::cout << "Sustain pedal on for channel " << channel << std::endl;
     }
 }
 
 void Synthesizer::sustainOff(int channel) {
     if (voiceManager_) {
-        // For future implementation - will need to add sustain functionality to VoiceManager
-        // voiceManager_->sustainOff(channel);
-        
-        // For now, just log the action
+        voiceManager_->sustainOff(channel);
         std::cout << "Sustain pedal off for channel " << channel << std::endl;
     }
 }
 
 void Synthesizer::setPitchBend(float value, int channel) {
     if (voiceManager_) {
-        // For future implementation - will need to add pitch bend to VoiceManager
-        // voiceManager_->setPitchBend(value, channel);
-        
-        // For now, just log the action
+        voiceManager_->setPitchBend(value, channel);
         std::cout << "Pitch bend value " << value << " for channel " << channel << std::endl;
     }
 }
 
 void Synthesizer::setAftertouch(int note, float pressure, int channel) {
     if (voiceManager_) {
-        // For future implementation - will need to add aftertouch to VoiceManager
-        // voiceManager_->setAftertouch(note, pressure, channel);
-        
-        // For now, just log the action
+        voiceManager_->setAftertouch(note, pressure, channel);
         std::cout << "Aftertouch for note " << note << " with pressure " << pressure 
                   << " on channel " << channel << std::endl;
     }
@@ -240,20 +225,14 @@ void Synthesizer::setAftertouch(int note, float pressure, int channel) {
 
 void Synthesizer::setChannelPressure(float pressure, int channel) {
     if (voiceManager_) {
-        // For future implementation - will need to add channel pressure to VoiceManager
-        // voiceManager_->setChannelPressure(pressure, channel);
-        
-        // For now, just log the action
+        voiceManager_->setChannelPressure(pressure, channel);
         std::cout << "Channel pressure " << pressure << " for channel " << channel << std::endl;
     }
 }
 
 void Synthesizer::resetAllControllers() {
     if (voiceManager_) {
-        // For future implementation - will need to add controller reset to VoiceManager
-        // voiceManager_->resetAllControllers();
-        
-        // For now, just log the action
+        voiceManager_->resetAllControllers();
         std::cout << "Resetting all controllers" << std::endl;
     }
 }

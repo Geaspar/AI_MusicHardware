@@ -17,9 +17,13 @@ Voice::Voice(int sampleRate)
     : midiNote_(-1),
       velocity_(0.0f),
       frequency_(440.0f),
+      baseFrequency_(440.0f),
       age_(0),
+      channel_(0),
       state_(State::Inactive),
-      sampleRate_(sampleRate) {
+      sampleRate_(sampleRate),
+      pitchBendSemitones_(0.0f),
+      pressure_(0.0f) {
     
     // Create oscillator and envelope
     oscillator_ = std::make_unique<WavetableOscillator>(sampleRate);
@@ -38,7 +42,14 @@ Voice::~Voice() {
 void Voice::noteOn(int midiNote, float velocity) {
     midiNote_ = midiNote;
     velocity_ = std::clamp(velocity, 0.0f, 1.0f);
-    frequency_ = midiNoteToFrequency(midiNote);
+    baseFrequency_ = midiNoteToFrequency(midiNote);
+    frequency_ = baseFrequency_;
+    
+    // Apply any active pitch bend
+    if (pitchBendSemitones_ != 0.0f) {
+        frequency_ = baseFrequency_ * std::pow(2.0f, pitchBendSemitones_ / 12.0f);
+    }
+    
     age_ = 0;
     
     // Set oscillator frequency
@@ -118,6 +129,19 @@ void Voice::setSampleRate(int sampleRate) {
     envelope_->setSampleRate(sampleRate);
 }
 
+void Voice::setPitchBend(float semitones) {
+    pitchBendSemitones_ = semitones;
+    
+    // Only update frequency if voice is active
+    if (state_ != State::Inactive && state_ != State::Finished) {
+        // Calculate new frequency with pitch bend
+        frequency_ = baseFrequency_ * std::pow(2.0f, pitchBendSemitones_ / 12.0f);
+        
+        // Update oscillator frequency
+        oscillator_->setFrequency(frequency_);
+    }
+}
+
 float Voice::midiNoteToFrequency(int midiNote) const {
     return midiNoteToFreq(midiNote);
 }
@@ -126,7 +150,8 @@ float Voice::midiNoteToFrequency(int midiNote) const {
 VoiceManager::VoiceManager(int sampleRate, int maxVoices)
     : sampleRate_(sampleRate),
       maxVoices_(maxVoices),
-      stealMode_(StealMode::Oldest) {
+      stealMode_(StealMode::Oldest),
+      pitchBendRange_(2.0f) {
     
     // Create initial voices
     for (int i = 0; i < maxVoices_; ++i) {
@@ -141,14 +166,25 @@ VoiceManager::VoiceManager(int sampleRate, int maxVoices)
     for (auto& voice : voices_) {
         voice->setWavetable(currentWavetable_);
     }
+    
+    // Initialize default channel state for channel 0
+    channelStates_[0] = ChannelState{};
 }
 
 VoiceManager::~VoiceManager() {
 }
 
-void VoiceManager::noteOn(int midiNote, float velocity) {
+void VoiceManager::noteOn(int midiNote, float velocity, int channel) {
+    // Ensure we have a channel state for this channel
+    if (channelStates_.find(channel) == channelStates_.end()) {
+        channelStates_[channel] = ChannelState{};
+    }
+    
+    // Create a unique key for this note and channel
+    int noteKey = (channel << 16) | midiNote;
+    
     // Check if this note is already playing
-    Voice* voice = findVoiceForNote(midiNote);
+    Voice* voice = findVoiceForNote(midiNote, channel);
     
     // If not playing, find an unused voice or steal one
     if (!voice) {
@@ -168,25 +204,72 @@ void VoiceManager::noteOn(int midiNote, float velocity) {
     
     // Trigger the voice with this note
     if (voice) {
+        voice->setChannel(channel);
         voice->noteOn(midiNote, velocity);
-        activeNotes_[midiNote] = voice;
+        
+        // Apply any active pitch bend for this channel
+        float pitchBendSemitones = channelStates_[channel].pitchBendValue * pitchBendRange_;
+        voice->setPitchBend(pitchBendSemitones);
+        
+        activeNotes_[noteKey] = voice;
     }
 }
 
-void VoiceManager::noteOff(int midiNote) {
-    // Find the voice playing this note
-    auto it = activeNotes_.find(midiNote);
+void VoiceManager::noteOff(int midiNote, int channel) {
+    // Create a unique key for this note and channel
+    int noteKey = (channel << 16) | midiNote;
+    
+    // Find the voice playing this note on this channel
+    auto it = activeNotes_.find(noteKey);
     if (it != activeNotes_.end()) {
-        it->second->noteOff();
-        activeNotes_.erase(it);
+        // Check for sustain pedal
+        if (channelStates_[channel].sustainPedalDown) {
+            // If sustain is active, mark the note as sustained but don't release it
+            channelStates_[channel].sustainedNotes[midiNote] = true;
+        } else {
+            // Otherwise, release the note normally
+            it->second->noteOff();
+            activeNotes_.erase(it);
+        }
     }
 }
 
-void VoiceManager::allNotesOff() {
-    for (auto& voice : voices_) {
-        voice->noteOff();
+void VoiceManager::allNotesOff(int channel) {
+    if (channel < 0) {
+        // Turn off all notes on all channels
+        for (auto& voice : voices_) {
+            voice->noteOff();
+        }
+        activeNotes_.clear();
+        
+        // Clear all sustained notes too
+        for (auto& channelState : channelStates_) {
+            channelState.second.sustainedNotes.clear();
+        }
+    } else {
+        // Turn off notes for a specific channel only
+        
+        // First collect keys to remove to avoid modifying during iteration
+        std::vector<int> keysToRemove;
+        
+        for (auto& pair : activeNotes_) {
+            int noteChannel = pair.first >> 16;
+            if (noteChannel == channel) {
+                pair.second->noteOff();
+                keysToRemove.push_back(pair.first);
+            }
+        }
+        
+        // Now remove the notes
+        for (int key : keysToRemove) {
+            activeNotes_.erase(key);
+        }
+        
+        // Clear sustained notes for this channel
+        if (channelStates_.find(channel) != channelStates_.end()) {
+            channelStates_[channel].sustainedNotes.clear();
+        }
     }
-    activeNotes_.clear();
 }
 
 void VoiceManager::process(float* buffer, int numFrames) {
@@ -342,9 +425,138 @@ Voice* VoiceManager::findVoiceToSteal() {
     }
 }
 
-Voice* VoiceManager::findVoiceForNote(int midiNote) {
-    auto it = activeNotes_.find(midiNote);
+Voice* VoiceManager::findVoiceForNote(int midiNote, int channel) {
+    // Create a unique key for this note and channel
+    int noteKey = (channel << 16) | midiNote;
+    
+    auto it = activeNotes_.find(noteKey);
     return (it != activeNotes_.end()) ? it->second : nullptr;
+}
+
+void VoiceManager::sustainOn(int channel) {
+    // Ensure we have a channel state for this channel
+    if (channelStates_.find(channel) == channelStates_.end()) {
+        channelStates_[channel] = ChannelState{};
+    }
+    
+    // Activate sustain pedal
+    channelStates_[channel].sustainPedalDown = true;
+}
+
+void VoiceManager::sustainOff(int channel) {
+    // Ensure we have a channel state for this channel
+    if (channelStates_.find(channel) == channelStates_.end()) {
+        return; // No active channel state
+    }
+    
+    // Deactivate sustain pedal
+    channelStates_[channel].sustainPedalDown = false;
+    
+    // Release all sustained notes
+    auto& sustainedNotes = channelStates_[channel].sustainedNotes;
+    
+    // Process all sustained notes for this channel
+    for (auto& notePair : sustainedNotes) {
+        int midiNote = notePair.first;
+        int noteKey = (channel << 16) | midiNote;
+        
+        // Find and release the voice
+        auto it = activeNotes_.find(noteKey);
+        if (it != activeNotes_.end()) {
+            it->second->noteOff();
+            activeNotes_.erase(it);
+        }
+    }
+    
+    // Clear the sustained notes list
+    sustainedNotes.clear();
+}
+
+void VoiceManager::setPitchBend(float value, int channel) {
+    // Normalize value to range -1.0 to 1.0
+    float normalizedValue = std::clamp(value, -1.0f, 1.0f);
+    
+    // Ensure we have a channel state for this channel
+    if (channelStates_.find(channel) == channelStates_.end()) {
+        channelStates_[channel] = ChannelState{};
+    }
+    
+    // Store pitch bend value
+    channelStates_[channel].pitchBendValue = normalizedValue;
+    
+    // Calculate bend in semitones
+    float semitones = normalizedValue * pitchBendRange_;
+    
+    // Apply to all active voices for this channel
+    for (auto& pair : activeNotes_) {
+        int noteChannel = pair.first >> 16;
+        if (noteChannel == channel) {
+            pair.second->setPitchBend(semitones);
+        }
+    }
+}
+
+void VoiceManager::setAftertouch(int note, float pressure, int channel) {
+    // Normalize pressure to range 0.0 to 1.0
+    float normalizedPressure = std::clamp(pressure, 0.0f, 1.0f);
+    
+    // Ensure we have a channel state for this channel
+    if (channelStates_.find(channel) == channelStates_.end()) {
+        channelStates_[channel] = ChannelState{};
+    }
+    
+    // Store aftertouch value
+    channelStates_[channel].noteAftertouch[note] = normalizedPressure;
+    
+    // Apply to the specific voice
+    int noteKey = (channel << 16) | note;
+    auto it = activeNotes_.find(noteKey);
+    if (it != activeNotes_.end()) {
+        it->second->setPressure(normalizedPressure);
+    }
+}
+
+void VoiceManager::setChannelPressure(float pressure, int channel) {
+    // Normalize pressure to range 0.0 to 1.0
+    float normalizedPressure = std::clamp(pressure, 0.0f, 1.0f);
+    
+    // Ensure we have a channel state for this channel
+    if (channelStates_.find(channel) == channelStates_.end()) {
+        channelStates_[channel] = ChannelState{};
+    }
+    
+    // Store channel pressure value
+    channelStates_[channel].channelPressure = normalizedPressure;
+    
+    // Apply to all active voices for this channel
+    for (auto& pair : activeNotes_) {
+        int noteChannel = pair.first >> 16;
+        if (noteChannel == channel) {
+            pair.second->setPressure(normalizedPressure);
+        }
+    }
+}
+
+void VoiceManager::resetAllControllers() {
+    // Reset all controllers for all channels
+    for (auto& channelPair : channelStates_) {
+        ChannelState& state = channelPair.second;
+        
+        // Reset pitch bend
+        state.pitchBendValue = 0.0f;
+        state.channelPressure = 0.0f;
+        
+        // Reset all note-specific aftertouch values
+        state.noteAftertouch.clear();
+        
+        // Don't release sustained notes or turn off sustain - that's a separate control
+    }
+    
+    // Apply zero pitch bend to all active voices
+    for (auto& pair : activeNotes_) {
+        pair.second->setPitchBend(0.0f);
+        pair.second->setPressure(0.0f);
+    }
 }
 
 std::unique_ptr<Voice> VoiceManager::createVoice() {
