@@ -55,13 +55,14 @@ void Label::update(float deltaTime) {
 }
 
 void Label::render(DisplayManager* display) {
-    if (!display) {
+    if (!display || !visible_) {
         return;
     }
     
     // Get font to use for rendering
+    // TODO: In a real implementation, this would come from UIContext
+    // For now, provide a better fallback rendering approach
     Font* font = nullptr;
-    // TODO: Get font from context
     
     if (font) {
         // Calculate text width for alignment
@@ -82,10 +83,35 @@ void Label::render(DisplayManager* display) {
         // Draw the text
         display->drawText(x, y, text_, font, textColor_);
     } else {
-        // Fallback rendering if no font is available
-        // Simple rectangle with different colors for debugging
-        display->fillRect(x_, y_, width_, height_, Color(50, 50, 50));
-        display->drawRect(x_, y_, width_, height_, textColor_);
+        // Improved fallback rendering if no font is available
+        // Use character count to estimate width
+        int approxCharWidth = 6; // Average character width in pixels
+        int approxCharHeight = 12; // Average character height in pixels
+        int estimatedTextWidth = text_.length() * approxCharWidth;
+        
+        // Calculate position based on alignment
+        int rectX = x_;
+        if (alignment_ == 1) { // Center
+            rectX = x_ + (width_ - estimatedTextWidth) / 2;
+        } else if (alignment_ == 2) { // Right
+            rectX = x_ + width_ - estimatedTextWidth;
+        }
+        
+        // Draw a filled rectangle for the text background
+        int rectWidth = std::max(estimatedTextWidth, 10);
+        int rectHeight = approxCharHeight;
+        int rectY = y_ + (height_ - rectHeight) / 2;
+        
+        display->fillRect(rectX, rectY, rectWidth, rectHeight, Color(50, 50, 50));
+        display->drawRect(rectX, rectY, rectWidth, rectHeight, textColor_);
+        
+        // Draw small lines to represent text
+        int lineY = rectY + rectHeight / 2;
+        for (size_t i = 0; i < text_.length() && i < 10; i++) {
+            int lineX = rectX + i * approxCharWidth + 3;
+            int lineW = (text_[i] == ' ') ? 1 : 4; // Make spaces smaller
+            display->fillRect(lineX, lineY, lineW, 1, textColor_);
+        }
     }
     
     // Render children
@@ -571,6 +597,15 @@ void Knob::render(DisplayManager* display) {
 bool Knob::handleInput(const InputEvent& event) {
     bool handled = false;
     
+    // Used in multiple event types
+    int centerX = x_ + width_ / 2;
+    int centerY = y_ + height_ / 2;
+    int radius = std::min(width_, height_) / 2;
+    
+    // Track if we're currently interacting with this knob
+    static bool isDragging = false;
+    static std::string activeDragKnob = "";
+    
     // Handle rotary encoder input
     if (event.type == InputEventType::EncoderRotate) {
         // Calculate delta based on step size
@@ -582,51 +617,125 @@ bool Knob::handleInput(const InputEvent& event) {
         handled = true;
     }
     
-    // Handle touch/drag input
-    else if (event.type == InputEventType::TouchMove) {
-        // Check if within knob bounds
-        int centerX = x_ + width_ / 2;
-        int centerY = y_ + height_ / 2;
-        int radius = std::min(width_, height_) / 2;
-        
+    // Handle touch press (start dragging)
+    else if (event.type == InputEventType::TouchPress) {
         int dx = event.value - centerX;
         int dy = event.value2 - centerY;
         float distance = std::sqrt(dx*dx + dy*dy);
         
+        // Check if press is within knob bounds
         if (distance <= radius) {
-            // Calculate angle
-            float angle = std::atan2(dy, dx) * 180.0f / 3.14159f;
+            // Start drag operation
+            isDragging = true;
+            activeDragKnob = id_;
             
-            // Normalize angle to 0-270 degrees clockwise starting from -135
-            if (angle < -135) angle += 360;
-            float normalizedAngle = (angle + 135) / 270.0f;
+            // Store the initial touch position for better relative movement
+            // in the TouchMove handler (this helps with logarithmic knobs like filter cutoff)
             
-            // Clamp to 0-1 range
-            normalizedAngle = std::clamp(normalizedAngle, 0.0f, 1.0f);
-            
-            // Set value based on angle
-            float newValue = minValue_ + normalizedAngle * (maxValue_ - minValue_);
-            setValue(newValue);
+            // Optional: Double-click detection could toggle MIDI learn mode
+            // For now, we'll use a regular click to toggle MIDI learn
+            setMidiLearnEnabled(!midiLearnEnabled_);
             
             handled = true;
         }
     }
-    // We don't have TouchDoublePress event type, so we'll simulate it with TouchPress
-    // In a real implementation, we would track press times to detect double-clicks
-    else if (event.type == InputEventType::TouchPress) {
-        // Check if within knob bounds
-        int centerX = x_ + width_ / 2;
-        int centerY = y_ + height_ / 2;
-        int radius = std::min(width_, height_) / 2;
-        
-        int dx = event.value - centerX;
-        int dy = event.value2 - centerY;
-        float distance = std::sqrt(dx*dx + dy*dy);
-        
-        if (distance <= radius) {
-            // Toggle MIDI learn mode - in a full implementation, this would check for double-click
-            // For now, we'll use a regular click for demonstration purposes
-            setMidiLearnEnabled(!midiLearnEnabled_);
+    
+    // Handle touch/drag input - improved for smoother control
+    else if (event.type == InputEventType::TouchMove) {
+        // Only process move events if we're currently dragging this specific knob
+        // This prevents erratic behavior when moving between knobs
+        if (isDragging && activeDragKnob == id_) {
+            int dx = event.value - centerX;
+            int dy = event.value2 - centerY;
+            
+            // Two control modes based on the parameter:
+            // 1. Angle-based for standard knobs (normal parameters)
+            // 2. Vertical-drag for filter controls (makes frequency easier to control)
+            
+            // For filter cutoff, use a logarithmic mapping with vertical drag
+            if (parameterId_ == "filter_cutoff" || label_ == "Cutoff") {
+                // Use vertical position for logarithmic parameter control
+                // Map vertical position to logarithmic value (better for filter cutoff)
+                // Higher on screen = higher cutoff
+                
+                // Calculate a normalized vertical position (-1 to 1)
+                float verticalPosition = std::clamp(
+                    (centerY - dy) / static_cast<float>(height_) * 2.0f, 
+                    -1.0f, 1.0f
+                );
+                
+                // Use logistic mapping for smoother control
+                float normalizedValue;
+                if (dy < 0) {  // Above center - map to 0.5-1.0
+                    normalizedValue = 0.5f + (verticalPosition * 0.5f);
+                } else {       // Below center - map to 0.0-0.5
+                    normalizedValue = 0.5f - (verticalPosition * -0.5f);
+                }
+                
+                // Apply logarithmic scaling for filter cutoff
+                float newValue;
+                if (minValue_ > 0 && maxValue_ > minValue_) {
+                    // For frequency-like parameters (20-20000Hz), use logarithmic scale
+                    float logMin = std::log(minValue_);
+                    float logMax = std::log(maxValue_);
+                    float logValue = logMin + normalizedValue * (logMax - logMin);
+                    newValue = std::exp(logValue);
+                } else {
+                    // Linear mapping for other parameters
+                    newValue = minValue_ + normalizedValue * (maxValue_ - minValue_);
+                }
+                
+                // Apply step quantization
+                if (step_ > 0.0f) {
+                    newValue = std::round(newValue / step_) * step_;
+                }
+                
+                // Set the value
+                setValue(newValue);
+            } 
+            else {
+                // Standard angle-based control for regular knobs
+                constexpr float PI = 3.14159265358979323846f;
+                float angle = std::atan2(dy, dx);
+                
+                // Convert to degrees and normalize
+                float angleDegrees = angle * 180.0f / PI;
+                if (angleDegrees < 0) angleDegrees += 360.0f;
+                
+                // Better mapping to knob's rotation range (270 degrees)
+                float normalizedAngle;
+                if (angleDegrees >= 225.0f && angleDegrees <= 360.0f) {
+                    // Top-left quadrant, map 225-360 to 0-0.5
+                    normalizedAngle = (angleDegrees - 225.0f) / 270.0f;
+                } else if (angleDegrees >= 0.0f && angleDegrees <= 135.0f) {
+                    // Top-right and bottom-right quadrants, map 0-135 to 0.5-1.0
+                    normalizedAngle = (angleDegrees + 135.0f) / 270.0f;
+                } else {
+                    // Positions outside the rotation range - maintain current
+                    normalizedAngle = (value_ - minValue_) / (maxValue_ - minValue_);
+                }
+                
+                // Make sure it's in valid range
+                normalizedAngle = std::clamp(normalizedAngle, 0.0f, 1.0f);
+                
+                // Set value with quantization
+                float newValue = minValue_ + normalizedAngle * (maxValue_ - minValue_);
+                if (step_ > 0.0f) {
+                    newValue = std::round(newValue / step_) * step_;
+                }
+                setValue(newValue);
+            }
+            
+            handled = true;
+        }
+    }
+    
+    // Handle touch release (end dragging)
+    else if (event.type == InputEventType::TouchRelease) {
+        // End drag if this is the active knob
+        if (isDragging && activeDragKnob == id_) {
+            isDragging = false;
+            activeDragKnob = "";
             handled = true;
         }
     }
@@ -727,15 +836,29 @@ void WaveformDisplay::render(DisplayManager* display) {
         
         float horizontalScale = static_cast<float>(width_) / samples_.size();
         
-        // Draw waveform connecting the points
-        for (size_t i = 1; i < samples_.size(); i++) {
-            int x1 = x_ + static_cast<int>((i - 1) * horizontalScale);
-            int y1 = centerY - static_cast<int>(samples_[i - 1] * verticalScale);
-            
+        // Performance optimization: Determine visible range and skip invisible sections
+        // Calculate sample index range that will be visible
+        size_t firstVisibleSample = 0;
+        size_t lastVisibleSample = samples_.size() - 1;
+        
+        // Only draw samples that will actually be visible on screen
+        int prevX = -1;
+        int prevY = -1;
+        
+        for (size_t i = firstVisibleSample; i <= lastVisibleSample; i++) {
+            // Calculate screen coordinates
             int x2 = x_ + static_cast<int>(i * horizontalScale);
             int y2 = centerY - static_cast<int>(samples_[i] * verticalScale);
             
-            display->drawLine(x1, y1, x2, y2, waveformColor_);
+            // Skip drawing if this pixel is at the same position as the previous one
+            // This avoids drawing overlapping lines when there are many samples
+            if (x2 != prevX || y2 != prevY) {
+                if (prevX >= 0) {
+                    display->drawLine(prevX, prevY, x2, y2, waveformColor_);
+                }
+                prevX = x2;
+                prevY = y2;
+            }
         }
     }
     

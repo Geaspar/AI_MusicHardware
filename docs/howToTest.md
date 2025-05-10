@@ -135,27 +135,40 @@ The UI component framework can be tested using the TestUI application, which pro
    - Use mouse wheel on knobs for fine adjustments
    - Double-click a knob to activate MIDI learn mode
    - Observe the visual feedback for parameter changes
+   - Verify improved angle calculation for more accurate rotation mapping
+   - Test step quantization for precise value settings
 
 2. **Tab Navigation**:
    - Click on different tabs to switch between parameter sections
    - Test tab scrolling arrows if more tabs are available than can fit
    - Verify tab highlighting works correctly
+   - Check that components show/hide correctly when switching tabs
+   - Verify proper event delegation to components in the active tab
 
 3. **Parameter Panels**:
    - Test grid-based layout with multiple parameters
    - Verify parameter titles and values display correctly
    - Check spacing and organization of controls
+   - Test parameter grouping and visual hierarchy
 
 4. **MIDI Learn**:
    - Enter MIDI learn mode by double-clicking on a knob
    - Send MIDI CC messages from a connected controller
    - Verify the knob shows the mapped CC number and responds to controller movements
    - Test clearing MIDI mappings
+   - Check enhanced visual feedback for MIDI mapping status
 
 5. **Modulation Visualization**:
-   - Observe modulation arcs showing parameter modulation range
+   - Observe improved modulation visualization using line segments
    - Test changes to modulation amount
    - Verify color coding for different modulation sources
+   - Check that modulation arcs update smoothly with parameter changes
+
+6. **Performance Optimizations**:
+   - Test UI responsiveness with many components
+   - Observe waveform display with large sample counts
+   - Verify rendering optimizations reduce CPU usage
+   - Check that visibility optimizations skip rendering off-screen components
 
 ### Keyboard Shortcuts
 

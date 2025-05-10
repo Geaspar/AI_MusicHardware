@@ -63,26 +63,26 @@ public:
     ~DisplayManager();
     
     // Initialization and shutdown
-    bool initialize(int width, int height);
-    void shutdown();
+    virtual bool initialize(int width, int height);
+    virtual void shutdown();
     
     // Basic framebuffer operations
-    void clear(const Color& color = Color::Black());
-    void swapBuffers();
-    void setPixel(int x, int y, const Color& color);
-    Color getPixel(int x, int y) const;
+    virtual void clear(const Color& color = Color::Black());
+    virtual void swapBuffers();
+    virtual void setPixel(int x, int y, const Color& color);
+    virtual Color getPixel(int x, int y) const;
     
     // Drawing primitives
-    void drawLine(int x1, int y1, int x2, int y2, const Color& color);
-    void drawRect(int x, int y, int width, int height, const Color& color);
-    void fillRect(int x, int y, int width, int height, const Color& color);
-    void drawCircle(int x, int y, int radius, const Color& color);
-    void fillCircle(int x, int y, int radius, const Color& color);
-    void drawTriangle(int x1, int y1, int x2, int y2, int x3, int y3, const Color& color);
-    void fillTriangle(int x1, int y1, int x2, int y2, int x3, int y3, const Color& color);
+    virtual void drawLine(int x1, int y1, int x2, int y2, const Color& color);
+    virtual void drawRect(int x, int y, int width, int height, const Color& color);
+    virtual void fillRect(int x, int y, int width, int height, const Color& color);
+    virtual void drawCircle(int x, int y, int radius, const Color& color);
+    virtual void fillCircle(int x, int y, int radius, const Color& color);
+    virtual void drawTriangle(int x1, int y1, int x2, int y2, int x3, int y3, const Color& color);
+    virtual void fillTriangle(int x1, int y1, int x2, int y2, int x3, int y3, const Color& color);
     
     // Text rendering (will work with Font class)
-    void drawText(int x, int y, const std::string& text, Font* font, const Color& color);
+    virtual void drawText(int x, int y, const std::string& text, Font* font, const Color& color);
     
     // Blending modes
     enum class BlendMode {
@@ -92,21 +92,21 @@ public:
         Multiply    // Multiplicative blending
     };
     
-    void setBlendMode(BlendMode mode);
-    BlendMode getBlendMode() const;
+    virtual void setBlendMode(BlendMode mode);
+    virtual BlendMode getBlendMode() const;
     
     // Image drawing
-    void drawImage(int x, int y, const uint8_t* imageData, int imgWidth, int imgHeight, 
+    virtual void drawImage(int x, int y, const uint8_t* imageData, int imgWidth, int imgHeight, 
                   int srcX = 0, int srcY = 0, int srcWidth = -1, int srcHeight = -1);
     
     // Clipping
-    void setClipRect(const Rect& rect);
-    void clearClipRect();
-    Rect getClipRect() const;
+    virtual void setClipRect(const Rect& rect);
+    virtual void clearClipRect();
+    virtual Rect getClipRect() const;
     
     // Utility
-    int getWidth() const { return width_; }
-    int getHeight() const { return height_; }
+    virtual int getWidth() const { return width_; }
+    virtual int getHeight() const { return height_; }
     
     // Direct access to framebuffer (use with care)
     uint8_t* getFramebuffer();

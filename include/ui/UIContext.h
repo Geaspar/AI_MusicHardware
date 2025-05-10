@@ -162,8 +162,18 @@ public:
     LLMInterface* getLLMInterface() const { return llmInterface_; }
     
 private:
+public:
+    // Helper method to set a custom DisplayManager (for testing)
+    void setDisplayManager(std::shared_ptr<DisplayManager> displayManager) {
+        if (displayManager) {
+            displayManager_ = displayManager;
+        }
+    }
+
+private:
+
     // Display manager for drawing
-    std::unique_ptr<DisplayManager> displayManager_;
+    std::shared_ptr<DisplayManager> displayManager_;
     
     // Screen management
     std::unordered_map<std::string, std::unique_ptr<Screen>> screens_;

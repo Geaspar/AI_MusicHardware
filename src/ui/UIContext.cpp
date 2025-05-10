@@ -112,7 +112,7 @@ UIContext::~UIContext() {
 
 bool UIContext::initialize(int width, int height) {
     // Create and initialize the display manager
-    displayManager_ = std::make_unique<DisplayManager>();
+    displayManager_ = std::make_shared<DisplayManager>();
     if (!displayManager_->initialize(width, height)) {
         return false;
     }

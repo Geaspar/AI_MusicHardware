@@ -103,6 +103,10 @@ public:
     bool shouldQuit() const;
     void setQuitFlag(bool quit);
     
+    // FOR TESTING ONLY: Get access to the underlying UIContext
+    // This method is only for test purposes and should not be used in production code
+    void* getUIContextForTesting() { return uiContext_.get(); }
+
 private:
     std::unique_ptr<UIContext> uiContext_;
     bool quitFlag_;
