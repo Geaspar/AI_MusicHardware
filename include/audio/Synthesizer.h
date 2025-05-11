@@ -38,10 +38,10 @@ public:
     bool initialize();
     
     // Basic note control
-    void noteOn(int midiNote, float velocity, int channel = 0);
-    void noteOn(int midiNote, float velocity, const AIMusicHardware::Envelope& env, int channel = 0);
-    void noteOff(int midiNote, int channel = 0);
-    void allNotesOff(int channel = -1);  // -1 means all channels
+    virtual void noteOn(int midiNote, float velocity, int channel = 0);
+    virtual void noteOn(int midiNote, float velocity, const AIMusicHardware::Envelope& env, int channel = 0);
+    virtual void noteOff(int midiNote, int channel = 0);
+    virtual void allNotesOff(int channel = -1);  // -1 means all channels
     
     // MIDI-specific control methods
     void sustainOn(int channel = 0);

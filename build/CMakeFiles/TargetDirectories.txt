@@ -1,5 +1,7 @@
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/AIMusicCore.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/PresetLib.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/SimplePresetManagerDemo.dir
+/Users/geaspar/AIMusicHardware/build/CMakeFiles/MultiTimbralDemo.dir
+/Users/geaspar/AIMusicHardware/build/CMakeFiles/TestMpeVoiceManager.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/edit_cache.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/rebuild_cache.dir

@@ -1,5 +1,43 @@
 # Project Updates
 
+## May 11, 2025 - MPE-Aware Voice Manager Implementation
+
+We've successfully implemented an MPE-aware Voice Manager to support MIDI Polyphonic Expression in our synthesizer:
+
+1. **MPE Architecture Implementation**
+   - Created `MpeAwareVoiceManager` class extending the standard `VoiceManager` with MPE capabilities
+   - Implemented channel-to-voice mapping for per-note expression control
+   - Built zone management supporting both Lower Zone (channels 1-8) and Upper Zone (channels 9-16)
+   - Developed thread-safe operations with mutex protection
+
+2. **MPE Expression Dimensions**
+   - Implemented all three MPE expression dimensions:
+     - Pitch Bend (X-axis) with configurable range (default ±48 semitones for MPE)
+     - Timbre (Y-axis) using filter cutoff modulation (CC74)
+     - Pressure (Z-axis) with amplitude modulation
+   - Designed specialized `MpeVoice` class with enhanced expression capabilities
+   - Created smooth parameter mapping for expressive performance
+
+3. **MPE Channel Management**
+   - Integrated with `MpeConfiguration` and `MpeChannelAllocator` for proper channel assignment
+   - Implemented dynamic channel discovery and allocation
+   - Created helper methods for zone membership checking
+   - Built intelligent routing of expression messages to the correct voices
+
+4. **Testing Infrastructure**
+   - Created `TestMpeVoiceManager` demonstration application
+   - Implemented expressive demo patterns showing all MPE capabilities
+   - Built visual console feedback for MPE parameters
+   - Added comprehensive testing guide
+
+5. **Documentation**
+   - Created detailed `MPE_VOICE_MANAGER.md` documentation
+   - Documented the architecture, all classes, and implementation details
+   - Added usage examples and integration guides
+   - Included troubleshooting and best practices
+
+This implementation completes our MPE support, enabling expressive performances with multi-dimensional control per note. The system now supports MPE-capable controllers like ROLI Seaboard, Linnstrument, and other modern MPE devices, significantly enhancing the expressivity of our synthesizer.
+
 ## May 11, 2025 - Preset Management System Implementation
 
 We've implemented a comprehensive preset management system that allows saving, loading, and browsing synthesizer presets:

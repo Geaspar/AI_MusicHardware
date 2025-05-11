@@ -50,10 +50,11 @@ public:
     
     // Sample rate control
     void setSampleRate(int sampleRate);
-    
+    int getSampleRate() const { return sampleRate_; }
+
     // Shared wavetable management
     void setWavetable(std::shared_ptr<Wavetable> wavetable);
-    
+
     // Pitch bend range control (in semitones, default = 2.0)
     void setPitchBendRange(float semitones) { pitchBendRange_ = semitones; }
     float getPitchBendRange() const { return pitchBendRange_; }
@@ -115,9 +116,9 @@ public:
         Released,   // Voice is in release stage
         Finished    // Voice has finished but not yet recycled
     };
-    
+
     Voice(int sampleRate = 44100);
-    ~Voice();
+    virtual ~Voice();
     
     // Note control
     void noteOn(int midiNote, float velocity);

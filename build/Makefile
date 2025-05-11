@@ -155,6 +155,56 @@ SimplePresetManagerDemo/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimplePresetManagerDemo.dir/build.make CMakeFiles/SimplePresetManagerDemo.dir/build
 .PHONY : SimplePresetManagerDemo/fast
 
+#=============================================================================
+# Target rules for targets named MultiTimbralDemo
+
+# Build rule for target.
+MultiTimbralDemo: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 MultiTimbralDemo
+.PHONY : MultiTimbralDemo
+
+# fast build rule for target.
+MultiTimbralDemo/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MultiTimbralDemo.dir/build.make CMakeFiles/MultiTimbralDemo.dir/build
+.PHONY : MultiTimbralDemo/fast
+
+#=============================================================================
+# Target rules for targets named TestMpeVoiceManager
+
+# Build rule for target.
+TestMpeVoiceManager: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 TestMpeVoiceManager
+.PHONY : TestMpeVoiceManager
+
+# fast build rule for target.
+TestMpeVoiceManager/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestMpeVoiceManager.dir/build.make CMakeFiles/TestMpeVoiceManager.dir/build
+.PHONY : TestMpeVoiceManager/fast
+
+examples/MultiTimbralDemo.o: examples/MultiTimbralDemo.cpp.o
+.PHONY : examples/MultiTimbralDemo.o
+
+# target to build an object file
+examples/MultiTimbralDemo.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MultiTimbralDemo.dir/build.make CMakeFiles/MultiTimbralDemo.dir/examples/MultiTimbralDemo.cpp.o
+.PHONY : examples/MultiTimbralDemo.cpp.o
+
+examples/MultiTimbralDemo.i: examples/MultiTimbralDemo.cpp.i
+.PHONY : examples/MultiTimbralDemo.i
+
+# target to preprocess a source file
+examples/MultiTimbralDemo.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MultiTimbralDemo.dir/build.make CMakeFiles/MultiTimbralDemo.dir/examples/MultiTimbralDemo.cpp.i
+.PHONY : examples/MultiTimbralDemo.cpp.i
+
+examples/MultiTimbralDemo.s: examples/MultiTimbralDemo.cpp.s
+.PHONY : examples/MultiTimbralDemo.s
+
+# target to generate assembly for a file
+examples/MultiTimbralDemo.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MultiTimbralDemo.dir/build.make CMakeFiles/MultiTimbralDemo.dir/examples/MultiTimbralDemo.cpp.s
+.PHONY : examples/MultiTimbralDemo.cpp.s
+
 examples/SimplePresetManagerDemo.o: examples/SimplePresetManagerDemo.cpp.o
 .PHONY : examples/SimplePresetManagerDemo.o
 
@@ -178,6 +228,30 @@ examples/SimplePresetManagerDemo.s: examples/SimplePresetManagerDemo.cpp.s
 examples/SimplePresetManagerDemo.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimplePresetManagerDemo.dir/build.make CMakeFiles/SimplePresetManagerDemo.dir/examples/SimplePresetManagerDemo.cpp.s
 .PHONY : examples/SimplePresetManagerDemo.cpp.s
+
+examples/TestMpeVoiceManager.o: examples/TestMpeVoiceManager.cpp.o
+.PHONY : examples/TestMpeVoiceManager.o
+
+# target to build an object file
+examples/TestMpeVoiceManager.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestMpeVoiceManager.dir/build.make CMakeFiles/TestMpeVoiceManager.dir/examples/TestMpeVoiceManager.cpp.o
+.PHONY : examples/TestMpeVoiceManager.cpp.o
+
+examples/TestMpeVoiceManager.i: examples/TestMpeVoiceManager.cpp.i
+.PHONY : examples/TestMpeVoiceManager.i
+
+# target to preprocess a source file
+examples/TestMpeVoiceManager.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestMpeVoiceManager.dir/build.make CMakeFiles/TestMpeVoiceManager.dir/examples/TestMpeVoiceManager.cpp.i
+.PHONY : examples/TestMpeVoiceManager.cpp.i
+
+examples/TestMpeVoiceManager.s: examples/TestMpeVoiceManager.cpp.s
+.PHONY : examples/TestMpeVoiceManager.s
+
+# target to generate assembly for a file
+examples/TestMpeVoiceManager.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestMpeVoiceManager.dir/build.make CMakeFiles/TestMpeVoiceManager.dir/examples/TestMpeVoiceManager.cpp.s
+.PHONY : examples/TestMpeVoiceManager.cpp.s
 
 src/audio/AudioEngine.o: src/audio/AudioEngine.cpp.o
 .PHONY : src/audio/AudioEngine.o
@@ -635,6 +709,78 @@ src/midi/MidiManager.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/midi/MidiManager.cpp.s
 .PHONY : src/midi/MidiManager.cpp.s
 
+src/midi/MpeChannelAllocator.o: src/midi/MpeChannelAllocator.cpp.o
+.PHONY : src/midi/MpeChannelAllocator.o
+
+# target to build an object file
+src/midi/MpeChannelAllocator.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/midi/MpeChannelAllocator.cpp.o
+.PHONY : src/midi/MpeChannelAllocator.cpp.o
+
+src/midi/MpeChannelAllocator.i: src/midi/MpeChannelAllocator.cpp.i
+.PHONY : src/midi/MpeChannelAllocator.i
+
+# target to preprocess a source file
+src/midi/MpeChannelAllocator.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/midi/MpeChannelAllocator.cpp.i
+.PHONY : src/midi/MpeChannelAllocator.cpp.i
+
+src/midi/MpeChannelAllocator.s: src/midi/MpeChannelAllocator.cpp.s
+.PHONY : src/midi/MpeChannelAllocator.s
+
+# target to generate assembly for a file
+src/midi/MpeChannelAllocator.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/midi/MpeChannelAllocator.cpp.s
+.PHONY : src/midi/MpeChannelAllocator.cpp.s
+
+src/midi/MpeConfiguration.o: src/midi/MpeConfiguration.cpp.o
+.PHONY : src/midi/MpeConfiguration.o
+
+# target to build an object file
+src/midi/MpeConfiguration.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/midi/MpeConfiguration.cpp.o
+.PHONY : src/midi/MpeConfiguration.cpp.o
+
+src/midi/MpeConfiguration.i: src/midi/MpeConfiguration.cpp.i
+.PHONY : src/midi/MpeConfiguration.i
+
+# target to preprocess a source file
+src/midi/MpeConfiguration.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/midi/MpeConfiguration.cpp.i
+.PHONY : src/midi/MpeConfiguration.cpp.i
+
+src/midi/MpeConfiguration.s: src/midi/MpeConfiguration.cpp.s
+.PHONY : src/midi/MpeConfiguration.s
+
+# target to generate assembly for a file
+src/midi/MpeConfiguration.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/midi/MpeConfiguration.cpp.s
+.PHONY : src/midi/MpeConfiguration.cpp.s
+
+src/midi/MultiTimbralMidiRouter.o: src/midi/MultiTimbralMidiRouter.cpp.o
+.PHONY : src/midi/MultiTimbralMidiRouter.o
+
+# target to build an object file
+src/midi/MultiTimbralMidiRouter.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/midi/MultiTimbralMidiRouter.cpp.o
+.PHONY : src/midi/MultiTimbralMidiRouter.cpp.o
+
+src/midi/MultiTimbralMidiRouter.i: src/midi/MultiTimbralMidiRouter.cpp.i
+.PHONY : src/midi/MultiTimbralMidiRouter.i
+
+# target to preprocess a source file
+src/midi/MultiTimbralMidiRouter.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/midi/MultiTimbralMidiRouter.cpp.i
+.PHONY : src/midi/MultiTimbralMidiRouter.cpp.i
+
+src/midi/MultiTimbralMidiRouter.s: src/midi/MultiTimbralMidiRouter.cpp.s
+.PHONY : src/midi/MultiTimbralMidiRouter.s
+
+# target to generate assembly for a file
+src/midi/MultiTimbralMidiRouter.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/midi/MultiTimbralMidiRouter.cpp.s
+.PHONY : src/midi/MultiTimbralMidiRouter.cpp.s
+
 src/sequencer/AdaptiveSequencer.o: src/sequencer/AdaptiveSequencer.cpp.o
 .PHONY : src/sequencer/AdaptiveSequencer.o
 
@@ -779,6 +925,102 @@ src/synthesis/modulators/modulation_matrix.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/modulation_matrix.cpp.s
 .PHONY : src/synthesis/modulators/modulation_matrix.cpp.s
 
+src/synthesis/multitimbral/ChannelSynthesizer.o: src/synthesis/multitimbral/ChannelSynthesizer.cpp.o
+.PHONY : src/synthesis/multitimbral/ChannelSynthesizer.o
+
+# target to build an object file
+src/synthesis/multitimbral/ChannelSynthesizer.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/multitimbral/ChannelSynthesizer.cpp.o
+.PHONY : src/synthesis/multitimbral/ChannelSynthesizer.cpp.o
+
+src/synthesis/multitimbral/ChannelSynthesizer.i: src/synthesis/multitimbral/ChannelSynthesizer.cpp.i
+.PHONY : src/synthesis/multitimbral/ChannelSynthesizer.i
+
+# target to preprocess a source file
+src/synthesis/multitimbral/ChannelSynthesizer.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/multitimbral/ChannelSynthesizer.cpp.i
+.PHONY : src/synthesis/multitimbral/ChannelSynthesizer.cpp.i
+
+src/synthesis/multitimbral/ChannelSynthesizer.s: src/synthesis/multitimbral/ChannelSynthesizer.cpp.s
+.PHONY : src/synthesis/multitimbral/ChannelSynthesizer.s
+
+# target to generate assembly for a file
+src/synthesis/multitimbral/ChannelSynthesizer.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/multitimbral/ChannelSynthesizer.cpp.s
+.PHONY : src/synthesis/multitimbral/ChannelSynthesizer.cpp.s
+
+src/synthesis/multitimbral/MultiTimbralEngine.o: src/synthesis/multitimbral/MultiTimbralEngine.cpp.o
+.PHONY : src/synthesis/multitimbral/MultiTimbralEngine.o
+
+# target to build an object file
+src/synthesis/multitimbral/MultiTimbralEngine.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/multitimbral/MultiTimbralEngine.cpp.o
+.PHONY : src/synthesis/multitimbral/MultiTimbralEngine.cpp.o
+
+src/synthesis/multitimbral/MultiTimbralEngine.i: src/synthesis/multitimbral/MultiTimbralEngine.cpp.i
+.PHONY : src/synthesis/multitimbral/MultiTimbralEngine.i
+
+# target to preprocess a source file
+src/synthesis/multitimbral/MultiTimbralEngine.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/multitimbral/MultiTimbralEngine.cpp.i
+.PHONY : src/synthesis/multitimbral/MultiTimbralEngine.cpp.i
+
+src/synthesis/multitimbral/MultiTimbralEngine.s: src/synthesis/multitimbral/MultiTimbralEngine.cpp.s
+.PHONY : src/synthesis/multitimbral/MultiTimbralEngine.s
+
+# target to generate assembly for a file
+src/synthesis/multitimbral/MultiTimbralEngine.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/multitimbral/MultiTimbralEngine.cpp.s
+.PHONY : src/synthesis/multitimbral/MultiTimbralEngine.cpp.s
+
+src/synthesis/voice/MpeAwareVoiceManager.o: src/synthesis/voice/MpeAwareVoiceManager.cpp.o
+.PHONY : src/synthesis/voice/MpeAwareVoiceManager.o
+
+# target to build an object file
+src/synthesis/voice/MpeAwareVoiceManager.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/voice/MpeAwareVoiceManager.cpp.o
+.PHONY : src/synthesis/voice/MpeAwareVoiceManager.cpp.o
+
+src/synthesis/voice/MpeAwareVoiceManager.i: src/synthesis/voice/MpeAwareVoiceManager.cpp.i
+.PHONY : src/synthesis/voice/MpeAwareVoiceManager.i
+
+# target to preprocess a source file
+src/synthesis/voice/MpeAwareVoiceManager.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/voice/MpeAwareVoiceManager.cpp.i
+.PHONY : src/synthesis/voice/MpeAwareVoiceManager.cpp.i
+
+src/synthesis/voice/MpeAwareVoiceManager.s: src/synthesis/voice/MpeAwareVoiceManager.cpp.s
+.PHONY : src/synthesis/voice/MpeAwareVoiceManager.s
+
+# target to generate assembly for a file
+src/synthesis/voice/MpeAwareVoiceManager.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/voice/MpeAwareVoiceManager.cpp.s
+.PHONY : src/synthesis/voice/MpeAwareVoiceManager.cpp.s
+
+src/synthesis/voice/MpeVoice.o: src/synthesis/voice/MpeVoice.cpp.o
+.PHONY : src/synthesis/voice/MpeVoice.o
+
+# target to build an object file
+src/synthesis/voice/MpeVoice.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/voice/MpeVoice.cpp.o
+.PHONY : src/synthesis/voice/MpeVoice.cpp.o
+
+src/synthesis/voice/MpeVoice.i: src/synthesis/voice/MpeVoice.cpp.i
+.PHONY : src/synthesis/voice/MpeVoice.i
+
+# target to preprocess a source file
+src/synthesis/voice/MpeVoice.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/voice/MpeVoice.cpp.i
+.PHONY : src/synthesis/voice/MpeVoice.cpp.i
+
+src/synthesis/voice/MpeVoice.s: src/synthesis/voice/MpeVoice.cpp.s
+.PHONY : src/synthesis/voice/MpeVoice.s
+
+# target to generate assembly for a file
+src/synthesis/voice/MpeVoice.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/voice/MpeVoice.cpp.s
+.PHONY : src/synthesis/voice/MpeVoice.cpp.s
+
 src/synthesis/voice/voice_manager.o: src/synthesis/voice/voice_manager.cpp.o
 .PHONY : src/synthesis/voice/voice_manager.o
 
@@ -860,11 +1102,19 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... AIMusicCore"
+	@echo "... MultiTimbralDemo"
 	@echo "... PresetLib"
 	@echo "... SimplePresetManagerDemo"
+	@echo "... TestMpeVoiceManager"
+	@echo "... examples/MultiTimbralDemo.o"
+	@echo "... examples/MultiTimbralDemo.i"
+	@echo "... examples/MultiTimbralDemo.s"
 	@echo "... examples/SimplePresetManagerDemo.o"
 	@echo "... examples/SimplePresetManagerDemo.i"
 	@echo "... examples/SimplePresetManagerDemo.s"
+	@echo "... examples/TestMpeVoiceManager.o"
+	@echo "... examples/TestMpeVoiceManager.i"
+	@echo "... examples/TestMpeVoiceManager.s"
 	@echo "... src/audio/AudioEngine.o"
 	@echo "... src/audio/AudioEngine.i"
 	@echo "... src/audio/AudioEngine.s"
@@ -922,6 +1172,15 @@ help:
 	@echo "... src/midi/MidiManager.o"
 	@echo "... src/midi/MidiManager.i"
 	@echo "... src/midi/MidiManager.s"
+	@echo "... src/midi/MpeChannelAllocator.o"
+	@echo "... src/midi/MpeChannelAllocator.i"
+	@echo "... src/midi/MpeChannelAllocator.s"
+	@echo "... src/midi/MpeConfiguration.o"
+	@echo "... src/midi/MpeConfiguration.i"
+	@echo "... src/midi/MpeConfiguration.s"
+	@echo "... src/midi/MultiTimbralMidiRouter.o"
+	@echo "... src/midi/MultiTimbralMidiRouter.i"
+	@echo "... src/midi/MultiTimbralMidiRouter.s"
 	@echo "... src/sequencer/AdaptiveSequencer.o"
 	@echo "... src/sequencer/AdaptiveSequencer.i"
 	@echo "... src/sequencer/AdaptiveSequencer.s"
@@ -940,6 +1199,18 @@ help:
 	@echo "... src/synthesis/modulators/modulation_matrix.o"
 	@echo "... src/synthesis/modulators/modulation_matrix.i"
 	@echo "... src/synthesis/modulators/modulation_matrix.s"
+	@echo "... src/synthesis/multitimbral/ChannelSynthesizer.o"
+	@echo "... src/synthesis/multitimbral/ChannelSynthesizer.i"
+	@echo "... src/synthesis/multitimbral/ChannelSynthesizer.s"
+	@echo "... src/synthesis/multitimbral/MultiTimbralEngine.o"
+	@echo "... src/synthesis/multitimbral/MultiTimbralEngine.i"
+	@echo "... src/synthesis/multitimbral/MultiTimbralEngine.s"
+	@echo "... src/synthesis/voice/MpeAwareVoiceManager.o"
+	@echo "... src/synthesis/voice/MpeAwareVoiceManager.i"
+	@echo "... src/synthesis/voice/MpeAwareVoiceManager.s"
+	@echo "... src/synthesis/voice/MpeVoice.o"
+	@echo "... src/synthesis/voice/MpeVoice.i"
+	@echo "... src/synthesis/voice/MpeVoice.s"
 	@echo "... src/synthesis/voice/voice_manager.o"
 	@echo "... src/synthesis/voice/voice_manager.i"
 	@echo "... src/synthesis/voice/voice_manager.s"

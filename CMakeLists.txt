@@ -64,6 +64,9 @@ set(BASIC_AUDIO_SOURCES
     src/hardware/HardwareInterface.cpp
     src/midi/MidiInterface.cpp
     src/midi/MidiManager.cpp
+    src/midi/MultiTimbralMidiRouter.cpp
+    src/midi/MpeConfiguration.cpp
+    src/midi/MpeChannelAllocator.cpp
     ${EFFECTS_SOURCES}
 )
 
@@ -84,6 +87,14 @@ set(SYNTHESIS_SOURCES
     src/synthesis/modulators/envelope.cpp
     src/synthesis/modulators/modulation_matrix.cpp
     src/synthesis/voice/voice_manager.cpp
+    src/synthesis/voice/MpeVoice.cpp
+    src/synthesis/voice/MpeAwareVoiceManager.cpp
+)
+
+# Multi-Timbral sources
+set(MULTITIMBRAL_SOURCES
+    src/synthesis/multitimbral/MultiTimbralEngine.cpp
+    src/synthesis/multitimbral/ChannelSynthesizer.cpp
 )
 
 # Set up RtAudio if found
@@ -126,6 +137,7 @@ add_library(AIMusicCore STATIC
     ${BASIC_AUDIO_SOURCES}
     ${SEQUENCER_SOURCES}
     ${SYNTHESIS_SOURCES}
+    ${MULTITIMBRAL_SOURCES}
 )
 
 target_link_libraries(AIMusicCore PRIVATE
@@ -153,5 +165,25 @@ message(STATUS "Building SimplePresetManagerDemo")
 # Print audio libs for debugging
 message(STATUS "Audio libraries: ${AUDIO_LIBS}")
 
+# Create Multi-Timbral Demo executable
+add_executable(MultiTimbralDemo examples/MultiTimbralDemo.cpp)
+target_link_libraries(MultiTimbralDemo PRIVATE
+    AIMusicCore
+    PresetLib
+)
+message(STATUS "Building MultiTimbralDemo")
+
+# Create MPE Voice Manager Test executable
+add_executable(TestMpeVoiceManager examples/TestMpeVoiceManager.cpp)
+target_link_libraries(TestMpeVoiceManager PRIVATE
+    AIMusicCore
+)
+message(STATUS "Building TestMpeVoiceManager")
+
+# List files we're not building for now due to issues
+set_target_properties(MultiTimbralDemo PROPERTIES EXCLUDE_FROM_ALL TRUE)
+
 message(STATUS "Available tests:")
 message(STATUS "- Run ./bin/SimplePresetManagerDemo to try the preset management system")
+message(STATUS "- Run ./bin/MultiTimbralDemo to try the multi-timbral capabilities")
+message(STATUS "- Run ./bin/TestMpeVoiceManager to try the MPE-aware voice manager")

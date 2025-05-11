@@ -255,9 +255,6 @@ RTMIDI_INCLUDE_DIR:PATH=/opt/homebrew/include/rtmidi
 //Path to a library.
 RTMIDI_LIBRARY:FILEPATH=/opt/homebrew/lib/librtmidi.dylib
 
-//The directory containing a CMake configuration file for SDL2.
-SDL2_DIR:PATH=/opt/homebrew/lib/cmake/SDL2
-
 //The directory containing a CMake configuration file for nlohmann_json.
 nlohmann_json_DIR:PATH=nlohmann_json_DIR-NOTFOUND
 
