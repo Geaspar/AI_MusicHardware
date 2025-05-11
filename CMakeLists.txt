@@ -170,6 +170,11 @@ if(RTMIDI_FOUND)
     add_executable(TestMidi examples/TestMidi.cpp)
     target_link_libraries(TestMidi PRIVATE AIMusicCore)
     message(STATUS "Building TestMidi (MIDI implementation test)")
+
+    # MIDI Keyboard Demo
+    add_executable(MidiKeyboardDemo examples/MidiKeyboardDemo.cpp)
+    target_link_libraries(MidiKeyboardDemo PRIVATE AIMusicCore)
+    message(STATUS "Building MidiKeyboardDemo (Play synth with MIDI keyboard)")
 endif()
 
 # Print audio libs for debugging
