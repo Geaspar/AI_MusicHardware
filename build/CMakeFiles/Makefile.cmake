@@ -69,4 +69,5 @@ set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/WavetableDemo.dir/DependInfo.cmake"
   "CMakeFiles/TestMidi.dir/DependInfo.cmake"
   "CMakeFiles/MidiKeyboardDemo.dir/DependInfo.cmake"
+  "CMakeFiles/MidiKeyboardEffectsDemo.dir/DependInfo.cmake"
   )

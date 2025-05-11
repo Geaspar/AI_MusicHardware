@@ -1,5 +1,114 @@
 # Project Updates
 
+## May 11, 2025 - MIDI Effect Control System
+
+We've successfully implemented a MIDI control system for effect parameters, allowing real-time control of effects via MIDI controllers:
+
+1. **MIDI Effect Control Architecture**
+   - Created `MidiEffectControl` class to bridge the MIDI system and effects chain
+   - Implemented a parameter mapping system with customizable scaling based on parameter types
+   - Developed a parameter ID schema using "effect{index}_{paramName}" format
+   - Built proper thread safety throughout the system with mutex protection
+
+2. **MIDI Learn Functionality**
+   - Implemented comprehensive MIDI learn for easy controller assignment
+   - Added interactive menu system for mapping and unmapping controls
+   - Created visual feedback for MIDI learn process
+   - Built parameter-specific scaling for intuitive control
+
+3. **Effect Parameter Control**
+   - Extended effects with standardized parameter interfaces
+   - Added support for all effect types in the MIDI mapping system
+   - Implemented parameter monitoring and live updates
+   - Created consistent parameter management with thread-safe operation
+
+4. **User Interface Enhancements**
+   - Updated `MidiKeyboardEffectsDemo` with MIDI learn menu
+   - Added commands for viewing and managing MIDI mappings
+   - Created parameter visualization for active mappings
+   - Enhanced help system with parameter-specific information
+
+5. **Documentation**
+   - Created comprehensive `MIDI_EFFECT_CONTROL.md` explaining the system
+   - Documented all supported effect parameters
+   - Added usage guide with examples
+   - Created parameter range and scaling information
+
+This implementation enables expressive real-time control of effect parameters using external MIDI controllers, significantly enhancing performance capabilities. Users can now control parameters like filter cutoff, delay time, and distortion amount with physical knobs and sliders for a more intuitive musical experience.
+
+## May 11, 2025 - ReorderableEffectsChain Implementation
+
+We've implemented a flexible effects processing system inspired by Vital's architecture:
+
+1. **Effects Chain Architecture**
+   - Created `ReorderableEffectsChain` class for dynamic effects management
+   - Implemented add, remove, reorder, and toggle operations for effects
+   - Built thread-safe real-time audio processing pipeline
+   - Designed a modular system allowing any combination of effects
+
+2. **Effect Factory System**
+   - Enhanced the effect creation system with a factory pattern
+   - Added type-based effect instantiation
+   - Implemented comprehensive effect categorization
+   - Created utility functions for effect management
+
+3. **Effects Demo Application**
+   - Developed `MidiKeyboardEffectsDemo` application for testing effects
+   - Added interactive menu for adding, removing, and configuring effects
+   - Implemented parameter editing functionality
+   - Created comprehensive testing UI with status feedback
+
+4. **Signal Processing Pipeline**
+   - Implemented proper effect sequencing for audio processing
+   - Optimized the processing loop for real-time performance
+   - Added safety with error handling during audio processing
+   - Created buffer management for efficient processing
+
+5. **Integration with Synthesizer**
+   - Connected the effects chain to the synthesizer output
+   - Created a flexible audio routing system
+   - Ensured sample rate synchronization between components
+   - Built proper initialization and cleanup processes
+
+This implementation enables a highly flexible effects processing system where effects can be added, removed, reordered, and toggled in real-time, significantly enhancing the sound design capabilities of the synthesizer.
+
+## May 11, 2025 - MIDI Keyboard Implementation
+
+We've successfully implemented MIDI keyboard support that allows playing the synthesizer with an external MIDI keyboard:
+
+1. **MIDI Keyboard Integration**
+   - Created `MidiKeyboardDemo` application for playing the synthesizer with a MIDI keyboard
+   - Implemented real-time note handling with velocity sensitivity
+   - Added oscillator type switching with keyboard commands
+   - Developed proper MIDI device selection and connection
+   - Created comprehensive error handling for stable performance
+
+2. **Wavetable Synthesis Enhancements**
+   - Fixed oscillator type changes to properly update all active voices
+   - Improved voice management system to track all active notes
+   - Enhanced the wavetable oscillator with frame position control
+   - Implemented proper propagation of changes to all active voices
+
+3. **Performance Improvements**
+   - Optimized the audio processing chain for real-time performance
+   - Implemented thread-safe note triggering and release
+   - Added proper buffer management for audio callback
+   - Created efficient MIDI message handling
+
+4. **Documentation**
+   - Created comprehensive `MIDI_KEYBOARD_GUIDE.md` documentation
+   - Added detailed explanations of the architecture
+   - Provided troubleshooting guidance
+   - Included instructions for building and running the demo
+
+5. **Advanced MIDI Features**
+   - Added support for pitch bend with appropriate scaling
+   - Implemented modulation wheel (CC 1) handling
+   - Added aftertouch/channel pressure support
+   - Implemented sustain pedal (CC 64) functionality
+
+This implementation provides a complete MIDI keyboard integration, allowing musicians to play the synthesizer expressively using standard MIDI controllers. The system handles note events, continuous controllers, and performance gestures while maintaining stable, low-latency audio output.
+
 ## May 9, 2025 - Preset Management System Design
 
 We've designed a comprehensive preset management system inspired by professional synthesizers like Vital. This system will allow users to save, load, and organize sound presets with metadata and categorization.

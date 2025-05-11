@@ -139,10 +139,192 @@ CMakeFiles/AIMusicCore.dir/src/midi/MidiManager.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/AIMusicCore.dir/src/midi/MidiManager.cpp.s"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/geaspar/AIMusicHardware/src/midi/MidiManager.cpp -o CMakeFiles/AIMusicCore.dir/src/midi/MidiManager.cpp.s
 
+CMakeFiles/AIMusicCore.dir/src/effects/EffectProcessor.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
+CMakeFiles/AIMusicCore.dir/src/effects/EffectProcessor.cpp.o: /Users/geaspar/AIMusicHardware/src/effects/EffectProcessor.cpp
+CMakeFiles/AIMusicCore.dir/src/effects/EffectProcessor.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/AIMusicCore.dir/src/effects/EffectProcessor.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/effects/EffectProcessor.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/effects/EffectProcessor.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/effects/EffectProcessor.cpp.o -c /Users/geaspar/AIMusicHardware/src/effects/EffectProcessor.cpp
+
+CMakeFiles/AIMusicCore.dir/src/effects/EffectProcessor.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/AIMusicCore.dir/src/effects/EffectProcessor.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/geaspar/AIMusicHardware/src/effects/EffectProcessor.cpp > CMakeFiles/AIMusicCore.dir/src/effects/EffectProcessor.cpp.i
+
+CMakeFiles/AIMusicCore.dir/src/effects/EffectProcessor.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/AIMusicCore.dir/src/effects/EffectProcessor.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/geaspar/AIMusicHardware/src/effects/EffectProcessor.cpp -o CMakeFiles/AIMusicCore.dir/src/effects/EffectProcessor.cpp.s
+
+CMakeFiles/AIMusicCore.dir/src/effects/BassBoost.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
+CMakeFiles/AIMusicCore.dir/src/effects/BassBoost.cpp.o: /Users/geaspar/AIMusicHardware/src/effects/BassBoost.cpp
+CMakeFiles/AIMusicCore.dir/src/effects/BassBoost.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/AIMusicCore.dir/src/effects/BassBoost.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/effects/BassBoost.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/effects/BassBoost.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/effects/BassBoost.cpp.o -c /Users/geaspar/AIMusicHardware/src/effects/BassBoost.cpp
+
+CMakeFiles/AIMusicCore.dir/src/effects/BassBoost.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/AIMusicCore.dir/src/effects/BassBoost.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/geaspar/AIMusicHardware/src/effects/BassBoost.cpp > CMakeFiles/AIMusicCore.dir/src/effects/BassBoost.cpp.i
+
+CMakeFiles/AIMusicCore.dir/src/effects/BassBoost.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/AIMusicCore.dir/src/effects/BassBoost.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/geaspar/AIMusicHardware/src/effects/BassBoost.cpp -o CMakeFiles/AIMusicCore.dir/src/effects/BassBoost.cpp.s
+
+CMakeFiles/AIMusicCore.dir/src/effects/BitCrusher.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
+CMakeFiles/AIMusicCore.dir/src/effects/BitCrusher.cpp.o: /Users/geaspar/AIMusicHardware/src/effects/BitCrusher.cpp
+CMakeFiles/AIMusicCore.dir/src/effects/BitCrusher.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/AIMusicCore.dir/src/effects/BitCrusher.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/effects/BitCrusher.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/effects/BitCrusher.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/effects/BitCrusher.cpp.o -c /Users/geaspar/AIMusicHardware/src/effects/BitCrusher.cpp
+
+CMakeFiles/AIMusicCore.dir/src/effects/BitCrusher.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/AIMusicCore.dir/src/effects/BitCrusher.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/geaspar/AIMusicHardware/src/effects/BitCrusher.cpp > CMakeFiles/AIMusicCore.dir/src/effects/BitCrusher.cpp.i
+
+CMakeFiles/AIMusicCore.dir/src/effects/BitCrusher.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/AIMusicCore.dir/src/effects/BitCrusher.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/geaspar/AIMusicHardware/src/effects/BitCrusher.cpp -o CMakeFiles/AIMusicCore.dir/src/effects/BitCrusher.cpp.s
+
+CMakeFiles/AIMusicCore.dir/src/effects/Compressor.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
+CMakeFiles/AIMusicCore.dir/src/effects/Compressor.cpp.o: /Users/geaspar/AIMusicHardware/src/effects/Compressor.cpp
+CMakeFiles/AIMusicCore.dir/src/effects/Compressor.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/AIMusicCore.dir/src/effects/Compressor.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/effects/Compressor.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/effects/Compressor.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/effects/Compressor.cpp.o -c /Users/geaspar/AIMusicHardware/src/effects/Compressor.cpp
+
+CMakeFiles/AIMusicCore.dir/src/effects/Compressor.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/AIMusicCore.dir/src/effects/Compressor.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/geaspar/AIMusicHardware/src/effects/Compressor.cpp > CMakeFiles/AIMusicCore.dir/src/effects/Compressor.cpp.i
+
+CMakeFiles/AIMusicCore.dir/src/effects/Compressor.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/AIMusicCore.dir/src/effects/Compressor.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/geaspar/AIMusicHardware/src/effects/Compressor.cpp -o CMakeFiles/AIMusicCore.dir/src/effects/Compressor.cpp.s
+
+CMakeFiles/AIMusicCore.dir/src/effects/Delay.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
+CMakeFiles/AIMusicCore.dir/src/effects/Delay.cpp.o: /Users/geaspar/AIMusicHardware/src/effects/Delay.cpp
+CMakeFiles/AIMusicCore.dir/src/effects/Delay.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/AIMusicCore.dir/src/effects/Delay.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/effects/Delay.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/effects/Delay.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/effects/Delay.cpp.o -c /Users/geaspar/AIMusicHardware/src/effects/Delay.cpp
+
+CMakeFiles/AIMusicCore.dir/src/effects/Delay.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/AIMusicCore.dir/src/effects/Delay.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/geaspar/AIMusicHardware/src/effects/Delay.cpp > CMakeFiles/AIMusicCore.dir/src/effects/Delay.cpp.i
+
+CMakeFiles/AIMusicCore.dir/src/effects/Delay.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/AIMusicCore.dir/src/effects/Delay.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/geaspar/AIMusicHardware/src/effects/Delay.cpp -o CMakeFiles/AIMusicCore.dir/src/effects/Delay.cpp.s
+
+CMakeFiles/AIMusicCore.dir/src/effects/Distortion.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
+CMakeFiles/AIMusicCore.dir/src/effects/Distortion.cpp.o: /Users/geaspar/AIMusicHardware/src/effects/Distortion.cpp
+CMakeFiles/AIMusicCore.dir/src/effects/Distortion.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/AIMusicCore.dir/src/effects/Distortion.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/effects/Distortion.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/effects/Distortion.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/effects/Distortion.cpp.o -c /Users/geaspar/AIMusicHardware/src/effects/Distortion.cpp
+
+CMakeFiles/AIMusicCore.dir/src/effects/Distortion.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/AIMusicCore.dir/src/effects/Distortion.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/geaspar/AIMusicHardware/src/effects/Distortion.cpp > CMakeFiles/AIMusicCore.dir/src/effects/Distortion.cpp.i
+
+CMakeFiles/AIMusicCore.dir/src/effects/Distortion.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/AIMusicCore.dir/src/effects/Distortion.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/geaspar/AIMusicHardware/src/effects/Distortion.cpp -o CMakeFiles/AIMusicCore.dir/src/effects/Distortion.cpp.s
+
+CMakeFiles/AIMusicCore.dir/src/effects/EQ.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
+CMakeFiles/AIMusicCore.dir/src/effects/EQ.cpp.o: /Users/geaspar/AIMusicHardware/src/effects/EQ.cpp
+CMakeFiles/AIMusicCore.dir/src/effects/EQ.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/AIMusicCore.dir/src/effects/EQ.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/effects/EQ.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/effects/EQ.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/effects/EQ.cpp.o -c /Users/geaspar/AIMusicHardware/src/effects/EQ.cpp
+
+CMakeFiles/AIMusicCore.dir/src/effects/EQ.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/AIMusicCore.dir/src/effects/EQ.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/geaspar/AIMusicHardware/src/effects/EQ.cpp > CMakeFiles/AIMusicCore.dir/src/effects/EQ.cpp.i
+
+CMakeFiles/AIMusicCore.dir/src/effects/EQ.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/AIMusicCore.dir/src/effects/EQ.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/geaspar/AIMusicHardware/src/effects/EQ.cpp -o CMakeFiles/AIMusicCore.dir/src/effects/EQ.cpp.s
+
+CMakeFiles/AIMusicCore.dir/src/effects/Filter.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
+CMakeFiles/AIMusicCore.dir/src/effects/Filter.cpp.o: /Users/geaspar/AIMusicHardware/src/effects/Filter.cpp
+CMakeFiles/AIMusicCore.dir/src/effects/Filter.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object CMakeFiles/AIMusicCore.dir/src/effects/Filter.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/effects/Filter.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/effects/Filter.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/effects/Filter.cpp.o -c /Users/geaspar/AIMusicHardware/src/effects/Filter.cpp
+
+CMakeFiles/AIMusicCore.dir/src/effects/Filter.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/AIMusicCore.dir/src/effects/Filter.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/geaspar/AIMusicHardware/src/effects/Filter.cpp > CMakeFiles/AIMusicCore.dir/src/effects/Filter.cpp.i
+
+CMakeFiles/AIMusicCore.dir/src/effects/Filter.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/AIMusicCore.dir/src/effects/Filter.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/geaspar/AIMusicHardware/src/effects/Filter.cpp -o CMakeFiles/AIMusicCore.dir/src/effects/Filter.cpp.s
+
+CMakeFiles/AIMusicCore.dir/src/effects/Modulation.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
+CMakeFiles/AIMusicCore.dir/src/effects/Modulation.cpp.o: /Users/geaspar/AIMusicHardware/src/effects/Modulation.cpp
+CMakeFiles/AIMusicCore.dir/src/effects/Modulation.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building CXX object CMakeFiles/AIMusicCore.dir/src/effects/Modulation.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/effects/Modulation.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/effects/Modulation.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/effects/Modulation.cpp.o -c /Users/geaspar/AIMusicHardware/src/effects/Modulation.cpp
+
+CMakeFiles/AIMusicCore.dir/src/effects/Modulation.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/AIMusicCore.dir/src/effects/Modulation.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/geaspar/AIMusicHardware/src/effects/Modulation.cpp > CMakeFiles/AIMusicCore.dir/src/effects/Modulation.cpp.i
+
+CMakeFiles/AIMusicCore.dir/src/effects/Modulation.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/AIMusicCore.dir/src/effects/Modulation.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/geaspar/AIMusicHardware/src/effects/Modulation.cpp -o CMakeFiles/AIMusicCore.dir/src/effects/Modulation.cpp.s
+
+CMakeFiles/AIMusicCore.dir/src/effects/Phaser.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
+CMakeFiles/AIMusicCore.dir/src/effects/Phaser.cpp.o: /Users/geaspar/AIMusicHardware/src/effects/Phaser.cpp
+CMakeFiles/AIMusicCore.dir/src/effects/Phaser.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building CXX object CMakeFiles/AIMusicCore.dir/src/effects/Phaser.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/effects/Phaser.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/effects/Phaser.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/effects/Phaser.cpp.o -c /Users/geaspar/AIMusicHardware/src/effects/Phaser.cpp
+
+CMakeFiles/AIMusicCore.dir/src/effects/Phaser.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/AIMusicCore.dir/src/effects/Phaser.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/geaspar/AIMusicHardware/src/effects/Phaser.cpp > CMakeFiles/AIMusicCore.dir/src/effects/Phaser.cpp.i
+
+CMakeFiles/AIMusicCore.dir/src/effects/Phaser.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/AIMusicCore.dir/src/effects/Phaser.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/geaspar/AIMusicHardware/src/effects/Phaser.cpp -o CMakeFiles/AIMusicCore.dir/src/effects/Phaser.cpp.s
+
+CMakeFiles/AIMusicCore.dir/src/effects/Reverb.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
+CMakeFiles/AIMusicCore.dir/src/effects/Reverb.cpp.o: /Users/geaspar/AIMusicHardware/src/effects/Reverb.cpp
+CMakeFiles/AIMusicCore.dir/src/effects/Reverb.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building CXX object CMakeFiles/AIMusicCore.dir/src/effects/Reverb.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/effects/Reverb.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/effects/Reverb.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/effects/Reverb.cpp.o -c /Users/geaspar/AIMusicHardware/src/effects/Reverb.cpp
+
+CMakeFiles/AIMusicCore.dir/src/effects/Reverb.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/AIMusicCore.dir/src/effects/Reverb.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/geaspar/AIMusicHardware/src/effects/Reverb.cpp > CMakeFiles/AIMusicCore.dir/src/effects/Reverb.cpp.i
+
+CMakeFiles/AIMusicCore.dir/src/effects/Reverb.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/AIMusicCore.dir/src/effects/Reverb.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/geaspar/AIMusicHardware/src/effects/Reverb.cpp -o CMakeFiles/AIMusicCore.dir/src/effects/Reverb.cpp.s
+
+CMakeFiles/AIMusicCore.dir/src/effects/Saturation.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
+CMakeFiles/AIMusicCore.dir/src/effects/Saturation.cpp.o: /Users/geaspar/AIMusicHardware/src/effects/Saturation.cpp
+CMakeFiles/AIMusicCore.dir/src/effects/Saturation.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building CXX object CMakeFiles/AIMusicCore.dir/src/effects/Saturation.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/effects/Saturation.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/effects/Saturation.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/effects/Saturation.cpp.o -c /Users/geaspar/AIMusicHardware/src/effects/Saturation.cpp
+
+CMakeFiles/AIMusicCore.dir/src/effects/Saturation.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/AIMusicCore.dir/src/effects/Saturation.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/geaspar/AIMusicHardware/src/effects/Saturation.cpp > CMakeFiles/AIMusicCore.dir/src/effects/Saturation.cpp.i
+
+CMakeFiles/AIMusicCore.dir/src/effects/Saturation.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/AIMusicCore.dir/src/effects/Saturation.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/geaspar/AIMusicHardware/src/effects/Saturation.cpp -o CMakeFiles/AIMusicCore.dir/src/effects/Saturation.cpp.s
+
+CMakeFiles/AIMusicCore.dir/src/effects/ReorderableEffectsChain.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
+CMakeFiles/AIMusicCore.dir/src/effects/ReorderableEffectsChain.cpp.o: /Users/geaspar/AIMusicHardware/src/effects/ReorderableEffectsChain.cpp
+CMakeFiles/AIMusicCore.dir/src/effects/ReorderableEffectsChain.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building CXX object CMakeFiles/AIMusicCore.dir/src/effects/ReorderableEffectsChain.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/effects/ReorderableEffectsChain.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/effects/ReorderableEffectsChain.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/effects/ReorderableEffectsChain.cpp.o -c /Users/geaspar/AIMusicHardware/src/effects/ReorderableEffectsChain.cpp
+
+CMakeFiles/AIMusicCore.dir/src/effects/ReorderableEffectsChain.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/AIMusicCore.dir/src/effects/ReorderableEffectsChain.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/geaspar/AIMusicHardware/src/effects/ReorderableEffectsChain.cpp > CMakeFiles/AIMusicCore.dir/src/effects/ReorderableEffectsChain.cpp.i
+
+CMakeFiles/AIMusicCore.dir/src/effects/ReorderableEffectsChain.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/AIMusicCore.dir/src/effects/ReorderableEffectsChain.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/geaspar/AIMusicHardware/src/effects/ReorderableEffectsChain.cpp -o CMakeFiles/AIMusicCore.dir/src/effects/ReorderableEffectsChain.cpp.s
+
 CMakeFiles/AIMusicCore.dir/src/sequencer/Sequencer.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
 CMakeFiles/AIMusicCore.dir/src/sequencer/Sequencer.cpp.o: /Users/geaspar/AIMusicHardware/src/sequencer/Sequencer.cpp
 CMakeFiles/AIMusicCore.dir/src/sequencer/Sequencer.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/AIMusicCore.dir/src/sequencer/Sequencer.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building CXX object CMakeFiles/AIMusicCore.dir/src/sequencer/Sequencer.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/sequencer/Sequencer.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/sequencer/Sequencer.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/sequencer/Sequencer.cpp.o -c /Users/geaspar/AIMusicHardware/src/sequencer/Sequencer.cpp
 
 CMakeFiles/AIMusicCore.dir/src/sequencer/Sequencer.cpp.i: cmake_force
@@ -156,7 +338,7 @@ CMakeFiles/AIMusicCore.dir/src/sequencer/Sequencer.cpp.s: cmake_force
 CMakeFiles/AIMusicCore.dir/src/sequencer/MidiFile.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
 CMakeFiles/AIMusicCore.dir/src/sequencer/MidiFile.cpp.o: /Users/geaspar/AIMusicHardware/src/sequencer/MidiFile.cpp
 CMakeFiles/AIMusicCore.dir/src/sequencer/MidiFile.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/AIMusicCore.dir/src/sequencer/MidiFile.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building CXX object CMakeFiles/AIMusicCore.dir/src/sequencer/MidiFile.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/sequencer/MidiFile.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/sequencer/MidiFile.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/sequencer/MidiFile.cpp.o -c /Users/geaspar/AIMusicHardware/src/sequencer/MidiFile.cpp
 
 CMakeFiles/AIMusicCore.dir/src/sequencer/MidiFile.cpp.i: cmake_force
@@ -170,7 +352,7 @@ CMakeFiles/AIMusicCore.dir/src/sequencer/MidiFile.cpp.s: cmake_force
 CMakeFiles/AIMusicCore.dir/src/sequencer/AdaptiveSequencer.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
 CMakeFiles/AIMusicCore.dir/src/sequencer/AdaptiveSequencer.cpp.o: /Users/geaspar/AIMusicHardware/src/sequencer/AdaptiveSequencer.cpp
 CMakeFiles/AIMusicCore.dir/src/sequencer/AdaptiveSequencer.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/AIMusicCore.dir/src/sequencer/AdaptiveSequencer.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_21) "Building CXX object CMakeFiles/AIMusicCore.dir/src/sequencer/AdaptiveSequencer.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/sequencer/AdaptiveSequencer.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/sequencer/AdaptiveSequencer.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/sequencer/AdaptiveSequencer.cpp.o -c /Users/geaspar/AIMusicHardware/src/sequencer/AdaptiveSequencer.cpp
 
 CMakeFiles/AIMusicCore.dir/src/sequencer/AdaptiveSequencer.cpp.i: cmake_force
@@ -184,7 +366,7 @@ CMakeFiles/AIMusicCore.dir/src/sequencer/AdaptiveSequencer.cpp.s: cmake_force
 CMakeFiles/AIMusicCore.dir/src/ui/DisplayManager.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
 CMakeFiles/AIMusicCore.dir/src/ui/DisplayManager.cpp.o: /Users/geaspar/AIMusicHardware/src/ui/DisplayManager.cpp
 CMakeFiles/AIMusicCore.dir/src/ui/DisplayManager.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/AIMusicCore.dir/src/ui/DisplayManager.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Building CXX object CMakeFiles/AIMusicCore.dir/src/ui/DisplayManager.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/ui/DisplayManager.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/ui/DisplayManager.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/ui/DisplayManager.cpp.o -c /Users/geaspar/AIMusicHardware/src/ui/DisplayManager.cpp
 
 CMakeFiles/AIMusicCore.dir/src/ui/DisplayManager.cpp.i: cmake_force
@@ -198,7 +380,7 @@ CMakeFiles/AIMusicCore.dir/src/ui/DisplayManager.cpp.s: cmake_force
 CMakeFiles/AIMusicCore.dir/src/ui/UIContext.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
 CMakeFiles/AIMusicCore.dir/src/ui/UIContext.cpp.o: /Users/geaspar/AIMusicHardware/src/ui/UIContext.cpp
 CMakeFiles/AIMusicCore.dir/src/ui/UIContext.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/AIMusicCore.dir/src/ui/UIContext.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_23) "Building CXX object CMakeFiles/AIMusicCore.dir/src/ui/UIContext.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/ui/UIContext.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/ui/UIContext.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/ui/UIContext.cpp.o -c /Users/geaspar/AIMusicHardware/src/ui/UIContext.cpp
 
 CMakeFiles/AIMusicCore.dir/src/ui/UIContext.cpp.i: cmake_force
@@ -212,7 +394,7 @@ CMakeFiles/AIMusicCore.dir/src/ui/UIContext.cpp.s: cmake_force
 CMakeFiles/AIMusicCore.dir/src/ui/UserInterface.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
 CMakeFiles/AIMusicCore.dir/src/ui/UserInterface.cpp.o: /Users/geaspar/AIMusicHardware/src/ui/UserInterface.cpp
 CMakeFiles/AIMusicCore.dir/src/ui/UserInterface.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/AIMusicCore.dir/src/ui/UserInterface.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_24) "Building CXX object CMakeFiles/AIMusicCore.dir/src/ui/UserInterface.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/ui/UserInterface.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/ui/UserInterface.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/ui/UserInterface.cpp.o -c /Users/geaspar/AIMusicHardware/src/ui/UserInterface.cpp
 
 CMakeFiles/AIMusicCore.dir/src/ui/UserInterface.cpp.i: cmake_force
@@ -226,7 +408,7 @@ CMakeFiles/AIMusicCore.dir/src/ui/UserInterface.cpp.s: cmake_force
 CMakeFiles/AIMusicCore.dir/src/ui/UIComponents.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
 CMakeFiles/AIMusicCore.dir/src/ui/UIComponents.cpp.o: /Users/geaspar/AIMusicHardware/src/ui/UIComponents.cpp
 CMakeFiles/AIMusicCore.dir/src/ui/UIComponents.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/AIMusicCore.dir/src/ui/UIComponents.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_25) "Building CXX object CMakeFiles/AIMusicCore.dir/src/ui/UIComponents.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/ui/UIComponents.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/ui/UIComponents.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/ui/UIComponents.cpp.o -c /Users/geaspar/AIMusicHardware/src/ui/UIComponents.cpp
 
 CMakeFiles/AIMusicCore.dir/src/ui/UIComponents.cpp.i: cmake_force
@@ -240,7 +422,7 @@ CMakeFiles/AIMusicCore.dir/src/ui/UIComponents.cpp.s: cmake_force
 CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
 CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.o: /Users/geaspar/AIMusicHardware/src/ui/Font.cpp
 CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_26) "Building CXX object CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.o -c /Users/geaspar/AIMusicHardware/src/ui/Font.cpp
 
 CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.i: cmake_force
@@ -254,7 +436,7 @@ CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.s: cmake_force
 CMakeFiles/AIMusicCore.dir/src/synthesis/framework/processor.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
 CMakeFiles/AIMusicCore.dir/src/synthesis/framework/processor.cpp.o: /Users/geaspar/AIMusicHardware/src/synthesis/framework/processor.cpp
 CMakeFiles/AIMusicCore.dir/src/synthesis/framework/processor.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building CXX object CMakeFiles/AIMusicCore.dir/src/synthesis/framework/processor.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_27) "Building CXX object CMakeFiles/AIMusicCore.dir/src/synthesis/framework/processor.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/synthesis/framework/processor.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/synthesis/framework/processor.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/synthesis/framework/processor.cpp.o -c /Users/geaspar/AIMusicHardware/src/synthesis/framework/processor.cpp
 
 CMakeFiles/AIMusicCore.dir/src/synthesis/framework/processor.cpp.i: cmake_force
@@ -268,7 +450,7 @@ CMakeFiles/AIMusicCore.dir/src/synthesis/framework/processor.cpp.s: cmake_force
 CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
 CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.o: /Users/geaspar/AIMusicHardware/src/synthesis/wavetable/wavetable.cpp
 CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building CXX object CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_28) "Building CXX object CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.o -c /Users/geaspar/AIMusicHardware/src/synthesis/wavetable/wavetable.cpp
 
 CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.i: cmake_force
@@ -282,7 +464,7 @@ CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.s: cmake_force
 CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/envelope.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
 CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/envelope.cpp.o: /Users/geaspar/AIMusicHardware/src/synthesis/modulators/envelope.cpp
 CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/envelope.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building CXX object CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/envelope.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_29) "Building CXX object CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/envelope.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/envelope.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/envelope.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/envelope.cpp.o -c /Users/geaspar/AIMusicHardware/src/synthesis/modulators/envelope.cpp
 
 CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/envelope.cpp.i: cmake_force
@@ -296,7 +478,7 @@ CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/envelope.cpp.s: cmake_force
 CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/modulation_matrix.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
 CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/modulation_matrix.cpp.o: /Users/geaspar/AIMusicHardware/src/synthesis/modulators/modulation_matrix.cpp
 CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/modulation_matrix.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building CXX object CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/modulation_matrix.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_30) "Building CXX object CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/modulation_matrix.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/modulation_matrix.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/modulation_matrix.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/modulation_matrix.cpp.o -c /Users/geaspar/AIMusicHardware/src/synthesis/modulators/modulation_matrix.cpp
 
 CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/modulation_matrix.cpp.i: cmake_force
@@ -310,7 +492,7 @@ CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/modulation_matrix.cpp.s: cma
 CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
 CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.o: /Users/geaspar/AIMusicHardware/src/synthesis/voice/voice_manager.cpp
 CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building CXX object CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_31) "Building CXX object CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.o -c /Users/geaspar/AIMusicHardware/src/synthesis/voice/voice_manager.cpp
 
 CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.i: cmake_force
@@ -328,6 +510,19 @@ AIMusicCore_OBJECTS = \
 "CMakeFiles/AIMusicCore.dir/src/hardware/HardwareInterface.cpp.o" \
 "CMakeFiles/AIMusicCore.dir/src/midi/MidiInterface.cpp.o" \
 "CMakeFiles/AIMusicCore.dir/src/midi/MidiManager.cpp.o" \
+"CMakeFiles/AIMusicCore.dir/src/effects/EffectProcessor.cpp.o" \
+"CMakeFiles/AIMusicCore.dir/src/effects/BassBoost.cpp.o" \
+"CMakeFiles/AIMusicCore.dir/src/effects/BitCrusher.cpp.o" \
+"CMakeFiles/AIMusicCore.dir/src/effects/Compressor.cpp.o" \
+"CMakeFiles/AIMusicCore.dir/src/effects/Delay.cpp.o" \
+"CMakeFiles/AIMusicCore.dir/src/effects/Distortion.cpp.o" \
+"CMakeFiles/AIMusicCore.dir/src/effects/EQ.cpp.o" \
+"CMakeFiles/AIMusicCore.dir/src/effects/Filter.cpp.o" \
+"CMakeFiles/AIMusicCore.dir/src/effects/Modulation.cpp.o" \
+"CMakeFiles/AIMusicCore.dir/src/effects/Phaser.cpp.o" \
+"CMakeFiles/AIMusicCore.dir/src/effects/Reverb.cpp.o" \
+"CMakeFiles/AIMusicCore.dir/src/effects/Saturation.cpp.o" \
+"CMakeFiles/AIMusicCore.dir/src/effects/ReorderableEffectsChain.cpp.o" \
 "CMakeFiles/AIMusicCore.dir/src/sequencer/Sequencer.cpp.o" \
 "CMakeFiles/AIMusicCore.dir/src/sequencer/MidiFile.cpp.o" \
 "CMakeFiles/AIMusicCore.dir/src/sequencer/AdaptiveSequencer.cpp.o" \
@@ -350,6 +545,19 @@ lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/audio/Synthesizer.cpp.o
 lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/hardware/HardwareInterface.cpp.o
 lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/midi/MidiInterface.cpp.o
 lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/midi/MidiManager.cpp.o
+lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/effects/EffectProcessor.cpp.o
+lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/effects/BassBoost.cpp.o
+lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/effects/BitCrusher.cpp.o
+lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/effects/Compressor.cpp.o
+lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/effects/Delay.cpp.o
+lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/effects/Distortion.cpp.o
+lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/effects/EQ.cpp.o
+lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/effects/Filter.cpp.o
+lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/effects/Modulation.cpp.o
+lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/effects/Phaser.cpp.o
+lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/effects/Reverb.cpp.o
+lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/effects/Saturation.cpp.o
+lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/effects/ReorderableEffectsChain.cpp.o
 lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/sequencer/Sequencer.cpp.o
 lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/sequencer/MidiFile.cpp.o
 lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/sequencer/AdaptiveSequencer.cpp.o
@@ -365,7 +573,7 @@ lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/modula
 lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.o
 lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/build.make
 lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Linking CXX static library lib/libAIMusicCore.a"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_32) "Linking CXX static library lib/libAIMusicCore.a"
 	$(CMAKE_COMMAND) -P CMakeFiles/AIMusicCore.dir/cmake_clean_target.cmake
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/AIMusicCore.dir/link.txt --verbose=$(VERBOSE)
 

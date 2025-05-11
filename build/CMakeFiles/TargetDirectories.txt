@@ -7,5 +7,6 @@
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/WavetableDemo.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/TestMidi.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/MidiKeyboardDemo.dir
+/Users/geaspar/AIMusicHardware/build/CMakeFiles/MidiKeyboardEffectsDemo.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/edit_cache.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/rebuild_cache.dir

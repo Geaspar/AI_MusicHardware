@@ -233,6 +233,19 @@ MidiKeyboardDemo/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiKeyboardDemo.dir/build.make CMakeFiles/MidiKeyboardDemo.dir/build
 .PHONY : MidiKeyboardDemo/fast
 
+#=============================================================================
+# Target rules for targets named MidiKeyboardEffectsDemo
+
+# Build rule for target.
+MidiKeyboardEffectsDemo: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 MidiKeyboardEffectsDemo
+.PHONY : MidiKeyboardEffectsDemo
+
+# fast build rule for target.
+MidiKeyboardEffectsDemo/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiKeyboardEffectsDemo.dir/build.make CMakeFiles/MidiKeyboardEffectsDemo.dir/build
+.PHONY : MidiKeyboardEffectsDemo/fast
+
 examples/MidiKeyboardDemo.o: examples/MidiKeyboardDemo.cpp.o
 .PHONY : examples/MidiKeyboardDemo.o
 
@@ -256,6 +269,30 @@ examples/MidiKeyboardDemo.s: examples/MidiKeyboardDemo.cpp.s
 examples/MidiKeyboardDemo.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiKeyboardDemo.dir/build.make CMakeFiles/MidiKeyboardDemo.dir/examples/MidiKeyboardDemo.cpp.s
 .PHONY : examples/MidiKeyboardDemo.cpp.s
+
+examples/MidiKeyboardEffectsDemo.o: examples/MidiKeyboardEffectsDemo.cpp.o
+.PHONY : examples/MidiKeyboardEffectsDemo.o
+
+# target to build an object file
+examples/MidiKeyboardEffectsDemo.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiKeyboardEffectsDemo.dir/build.make CMakeFiles/MidiKeyboardEffectsDemo.dir/examples/MidiKeyboardEffectsDemo.cpp.o
+.PHONY : examples/MidiKeyboardEffectsDemo.cpp.o
+
+examples/MidiKeyboardEffectsDemo.i: examples/MidiKeyboardEffectsDemo.cpp.i
+.PHONY : examples/MidiKeyboardEffectsDemo.i
+
+# target to preprocess a source file
+examples/MidiKeyboardEffectsDemo.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiKeyboardEffectsDemo.dir/build.make CMakeFiles/MidiKeyboardEffectsDemo.dir/examples/MidiKeyboardEffectsDemo.cpp.i
+.PHONY : examples/MidiKeyboardEffectsDemo.cpp.i
+
+examples/MidiKeyboardEffectsDemo.s: examples/MidiKeyboardEffectsDemo.cpp.s
+.PHONY : examples/MidiKeyboardEffectsDemo.s
+
+# target to generate assembly for a file
+examples/MidiKeyboardEffectsDemo.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiKeyboardEffectsDemo.dir/build.make CMakeFiles/MidiKeyboardEffectsDemo.dir/examples/MidiKeyboardEffectsDemo.cpp.s
+.PHONY : examples/MidiKeyboardEffectsDemo.cpp.s
 
 examples/SimpleTest.o: examples/SimpleTest.cpp.o
 .PHONY : examples/SimpleTest.o
@@ -472,6 +509,318 @@ src/audio/Synthesizer.s: src/audio/Synthesizer.cpp.s
 src/audio/Synthesizer.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/audio/Synthesizer.cpp.s
 .PHONY : src/audio/Synthesizer.cpp.s
+
+src/effects/BassBoost.o: src/effects/BassBoost.cpp.o
+.PHONY : src/effects/BassBoost.o
+
+# target to build an object file
+src/effects/BassBoost.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/BassBoost.cpp.o
+.PHONY : src/effects/BassBoost.cpp.o
+
+src/effects/BassBoost.i: src/effects/BassBoost.cpp.i
+.PHONY : src/effects/BassBoost.i
+
+# target to preprocess a source file
+src/effects/BassBoost.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/BassBoost.cpp.i
+.PHONY : src/effects/BassBoost.cpp.i
+
+src/effects/BassBoost.s: src/effects/BassBoost.cpp.s
+.PHONY : src/effects/BassBoost.s
+
+# target to generate assembly for a file
+src/effects/BassBoost.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/BassBoost.cpp.s
+.PHONY : src/effects/BassBoost.cpp.s
+
+src/effects/BitCrusher.o: src/effects/BitCrusher.cpp.o
+.PHONY : src/effects/BitCrusher.o
+
+# target to build an object file
+src/effects/BitCrusher.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/BitCrusher.cpp.o
+.PHONY : src/effects/BitCrusher.cpp.o
+
+src/effects/BitCrusher.i: src/effects/BitCrusher.cpp.i
+.PHONY : src/effects/BitCrusher.i
+
+# target to preprocess a source file
+src/effects/BitCrusher.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/BitCrusher.cpp.i
+.PHONY : src/effects/BitCrusher.cpp.i
+
+src/effects/BitCrusher.s: src/effects/BitCrusher.cpp.s
+.PHONY : src/effects/BitCrusher.s
+
+# target to generate assembly for a file
+src/effects/BitCrusher.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/BitCrusher.cpp.s
+.PHONY : src/effects/BitCrusher.cpp.s
+
+src/effects/Compressor.o: src/effects/Compressor.cpp.o
+.PHONY : src/effects/Compressor.o
+
+# target to build an object file
+src/effects/Compressor.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/Compressor.cpp.o
+.PHONY : src/effects/Compressor.cpp.o
+
+src/effects/Compressor.i: src/effects/Compressor.cpp.i
+.PHONY : src/effects/Compressor.i
+
+# target to preprocess a source file
+src/effects/Compressor.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/Compressor.cpp.i
+.PHONY : src/effects/Compressor.cpp.i
+
+src/effects/Compressor.s: src/effects/Compressor.cpp.s
+.PHONY : src/effects/Compressor.s
+
+# target to generate assembly for a file
+src/effects/Compressor.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/Compressor.cpp.s
+.PHONY : src/effects/Compressor.cpp.s
+
+src/effects/Delay.o: src/effects/Delay.cpp.o
+.PHONY : src/effects/Delay.o
+
+# target to build an object file
+src/effects/Delay.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/Delay.cpp.o
+.PHONY : src/effects/Delay.cpp.o
+
+src/effects/Delay.i: src/effects/Delay.cpp.i
+.PHONY : src/effects/Delay.i
+
+# target to preprocess a source file
+src/effects/Delay.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/Delay.cpp.i
+.PHONY : src/effects/Delay.cpp.i
+
+src/effects/Delay.s: src/effects/Delay.cpp.s
+.PHONY : src/effects/Delay.s
+
+# target to generate assembly for a file
+src/effects/Delay.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/Delay.cpp.s
+.PHONY : src/effects/Delay.cpp.s
+
+src/effects/Distortion.o: src/effects/Distortion.cpp.o
+.PHONY : src/effects/Distortion.o
+
+# target to build an object file
+src/effects/Distortion.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/Distortion.cpp.o
+.PHONY : src/effects/Distortion.cpp.o
+
+src/effects/Distortion.i: src/effects/Distortion.cpp.i
+.PHONY : src/effects/Distortion.i
+
+# target to preprocess a source file
+src/effects/Distortion.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/Distortion.cpp.i
+.PHONY : src/effects/Distortion.cpp.i
+
+src/effects/Distortion.s: src/effects/Distortion.cpp.s
+.PHONY : src/effects/Distortion.s
+
+# target to generate assembly for a file
+src/effects/Distortion.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/Distortion.cpp.s
+.PHONY : src/effects/Distortion.cpp.s
+
+src/effects/EQ.o: src/effects/EQ.cpp.o
+.PHONY : src/effects/EQ.o
+
+# target to build an object file
+src/effects/EQ.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/EQ.cpp.o
+.PHONY : src/effects/EQ.cpp.o
+
+src/effects/EQ.i: src/effects/EQ.cpp.i
+.PHONY : src/effects/EQ.i
+
+# target to preprocess a source file
+src/effects/EQ.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/EQ.cpp.i
+.PHONY : src/effects/EQ.cpp.i
+
+src/effects/EQ.s: src/effects/EQ.cpp.s
+.PHONY : src/effects/EQ.s
+
+# target to generate assembly for a file
+src/effects/EQ.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/EQ.cpp.s
+.PHONY : src/effects/EQ.cpp.s
+
+src/effects/EffectProcessor.o: src/effects/EffectProcessor.cpp.o
+.PHONY : src/effects/EffectProcessor.o
+
+# target to build an object file
+src/effects/EffectProcessor.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/EffectProcessor.cpp.o
+.PHONY : src/effects/EffectProcessor.cpp.o
+
+src/effects/EffectProcessor.i: src/effects/EffectProcessor.cpp.i
+.PHONY : src/effects/EffectProcessor.i
+
+# target to preprocess a source file
+src/effects/EffectProcessor.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/EffectProcessor.cpp.i
+.PHONY : src/effects/EffectProcessor.cpp.i
+
+src/effects/EffectProcessor.s: src/effects/EffectProcessor.cpp.s
+.PHONY : src/effects/EffectProcessor.s
+
+# target to generate assembly for a file
+src/effects/EffectProcessor.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/EffectProcessor.cpp.s
+.PHONY : src/effects/EffectProcessor.cpp.s
+
+src/effects/Filter.o: src/effects/Filter.cpp.o
+.PHONY : src/effects/Filter.o
+
+# target to build an object file
+src/effects/Filter.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/Filter.cpp.o
+.PHONY : src/effects/Filter.cpp.o
+
+src/effects/Filter.i: src/effects/Filter.cpp.i
+.PHONY : src/effects/Filter.i
+
+# target to preprocess a source file
+src/effects/Filter.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/Filter.cpp.i
+.PHONY : src/effects/Filter.cpp.i
+
+src/effects/Filter.s: src/effects/Filter.cpp.s
+.PHONY : src/effects/Filter.s
+
+# target to generate assembly for a file
+src/effects/Filter.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/Filter.cpp.s
+.PHONY : src/effects/Filter.cpp.s
+
+src/effects/Modulation.o: src/effects/Modulation.cpp.o
+.PHONY : src/effects/Modulation.o
+
+# target to build an object file
+src/effects/Modulation.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/Modulation.cpp.o
+.PHONY : src/effects/Modulation.cpp.o
+
+src/effects/Modulation.i: src/effects/Modulation.cpp.i
+.PHONY : src/effects/Modulation.i
+
+# target to preprocess a source file
+src/effects/Modulation.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/Modulation.cpp.i
+.PHONY : src/effects/Modulation.cpp.i
+
+src/effects/Modulation.s: src/effects/Modulation.cpp.s
+.PHONY : src/effects/Modulation.s
+
+# target to generate assembly for a file
+src/effects/Modulation.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/Modulation.cpp.s
+.PHONY : src/effects/Modulation.cpp.s
+
+src/effects/Phaser.o: src/effects/Phaser.cpp.o
+.PHONY : src/effects/Phaser.o
+
+# target to build an object file
+src/effects/Phaser.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/Phaser.cpp.o
+.PHONY : src/effects/Phaser.cpp.o
+
+src/effects/Phaser.i: src/effects/Phaser.cpp.i
+.PHONY : src/effects/Phaser.i
+
+# target to preprocess a source file
+src/effects/Phaser.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/Phaser.cpp.i
+.PHONY : src/effects/Phaser.cpp.i
+
+src/effects/Phaser.s: src/effects/Phaser.cpp.s
+.PHONY : src/effects/Phaser.s
+
+# target to generate assembly for a file
+src/effects/Phaser.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/Phaser.cpp.s
+.PHONY : src/effects/Phaser.cpp.s
+
+src/effects/ReorderableEffectsChain.o: src/effects/ReorderableEffectsChain.cpp.o
+.PHONY : src/effects/ReorderableEffectsChain.o
+
+# target to build an object file
+src/effects/ReorderableEffectsChain.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/ReorderableEffectsChain.cpp.o
+.PHONY : src/effects/ReorderableEffectsChain.cpp.o
+
+src/effects/ReorderableEffectsChain.i: src/effects/ReorderableEffectsChain.cpp.i
+.PHONY : src/effects/ReorderableEffectsChain.i
+
+# target to preprocess a source file
+src/effects/ReorderableEffectsChain.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/ReorderableEffectsChain.cpp.i
+.PHONY : src/effects/ReorderableEffectsChain.cpp.i
+
+src/effects/ReorderableEffectsChain.s: src/effects/ReorderableEffectsChain.cpp.s
+.PHONY : src/effects/ReorderableEffectsChain.s
+
+# target to generate assembly for a file
+src/effects/ReorderableEffectsChain.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/ReorderableEffectsChain.cpp.s
+.PHONY : src/effects/ReorderableEffectsChain.cpp.s
+
+src/effects/Reverb.o: src/effects/Reverb.cpp.o
+.PHONY : src/effects/Reverb.o
+
+# target to build an object file
+src/effects/Reverb.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/Reverb.cpp.o
+.PHONY : src/effects/Reverb.cpp.o
+
+src/effects/Reverb.i: src/effects/Reverb.cpp.i
+.PHONY : src/effects/Reverb.i
+
+# target to preprocess a source file
+src/effects/Reverb.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/Reverb.cpp.i
+.PHONY : src/effects/Reverb.cpp.i
+
+src/effects/Reverb.s: src/effects/Reverb.cpp.s
+.PHONY : src/effects/Reverb.s
+
+# target to generate assembly for a file
+src/effects/Reverb.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/Reverb.cpp.s
+.PHONY : src/effects/Reverb.cpp.s
+
+src/effects/Saturation.o: src/effects/Saturation.cpp.o
+.PHONY : src/effects/Saturation.o
+
+# target to build an object file
+src/effects/Saturation.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/Saturation.cpp.o
+.PHONY : src/effects/Saturation.cpp.o
+
+src/effects/Saturation.i: src/effects/Saturation.cpp.i
+.PHONY : src/effects/Saturation.i
+
+# target to preprocess a source file
+src/effects/Saturation.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/Saturation.cpp.i
+.PHONY : src/effects/Saturation.cpp.i
+
+src/effects/Saturation.s: src/effects/Saturation.cpp.s
+.PHONY : src/effects/Saturation.s
+
+# target to generate assembly for a file
+src/effects/Saturation.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/Saturation.cpp.s
+.PHONY : src/effects/Saturation.cpp.s
 
 src/hardware/HardwareInterface.o: src/hardware/HardwareInterface.cpp.o
 .PHONY : src/hardware/HardwareInterface.o
@@ -867,6 +1216,7 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... AIMusicCore"
 	@echo "... MidiKeyboardDemo"
+	@echo "... MidiKeyboardEffectsDemo"
 	@echo "... SimpleTest"
 	@echo "... TestAdaptiveSequencer"
 	@echo "... TestAudio"
@@ -877,6 +1227,9 @@ help:
 	@echo "... examples/MidiKeyboardDemo.o"
 	@echo "... examples/MidiKeyboardDemo.i"
 	@echo "... examples/MidiKeyboardDemo.s"
+	@echo "... examples/MidiKeyboardEffectsDemo.o"
+	@echo "... examples/MidiKeyboardEffectsDemo.i"
+	@echo "... examples/MidiKeyboardEffectsDemo.s"
 	@echo "... examples/SimpleTest.o"
 	@echo "... examples/SimpleTest.i"
 	@echo "... examples/SimpleTest.s"
@@ -904,6 +1257,45 @@ help:
 	@echo "... src/audio/Synthesizer.o"
 	@echo "... src/audio/Synthesizer.i"
 	@echo "... src/audio/Synthesizer.s"
+	@echo "... src/effects/BassBoost.o"
+	@echo "... src/effects/BassBoost.i"
+	@echo "... src/effects/BassBoost.s"
+	@echo "... src/effects/BitCrusher.o"
+	@echo "... src/effects/BitCrusher.i"
+	@echo "... src/effects/BitCrusher.s"
+	@echo "... src/effects/Compressor.o"
+	@echo "... src/effects/Compressor.i"
+	@echo "... src/effects/Compressor.s"
+	@echo "... src/effects/Delay.o"
+	@echo "... src/effects/Delay.i"
+	@echo "... src/effects/Delay.s"
+	@echo "... src/effects/Distortion.o"
+	@echo "... src/effects/Distortion.i"
+	@echo "... src/effects/Distortion.s"
+	@echo "... src/effects/EQ.o"
+	@echo "... src/effects/EQ.i"
+	@echo "... src/effects/EQ.s"
+	@echo "... src/effects/EffectProcessor.o"
+	@echo "... src/effects/EffectProcessor.i"
+	@echo "... src/effects/EffectProcessor.s"
+	@echo "... src/effects/Filter.o"
+	@echo "... src/effects/Filter.i"
+	@echo "... src/effects/Filter.s"
+	@echo "... src/effects/Modulation.o"
+	@echo "... src/effects/Modulation.i"
+	@echo "... src/effects/Modulation.s"
+	@echo "... src/effects/Phaser.o"
+	@echo "... src/effects/Phaser.i"
+	@echo "... src/effects/Phaser.s"
+	@echo "... src/effects/ReorderableEffectsChain.o"
+	@echo "... src/effects/ReorderableEffectsChain.i"
+	@echo "... src/effects/ReorderableEffectsChain.s"
+	@echo "... src/effects/Reverb.o"
+	@echo "... src/effects/Reverb.i"
+	@echo "... src/effects/Reverb.s"
+	@echo "... src/effects/Saturation.o"
+	@echo "... src/effects/Saturation.i"
+	@echo "... src/effects/Saturation.s"
 	@echo "... src/hardware/HardwareInterface.o"
 	@echo "... src/hardware/HardwareInterface.i"
 	@echo "... src/hardware/HardwareInterface.s"

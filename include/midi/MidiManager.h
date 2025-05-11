@@ -81,6 +81,12 @@ public:
     MidiManager(Synthesizer* synthesizer, Listener* listener = nullptr);
     ~MidiManager() override;
 
+    /**
+     * Set a listener for MIDI-triggered events
+     * @param listener The listener to set (can be nullptr to remove)
+     */
+    void setListener(Listener* listener) { listener_ = listener; }
+
     // MidiInputCallback implementation
     void handleIncomingMidiMessage(const MidiMessage& message) override;
 

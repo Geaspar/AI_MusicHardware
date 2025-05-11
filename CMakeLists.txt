@@ -25,12 +25,30 @@ find_package(RtAudio QUIET)
 find_package(RtMidi QUIET)
 
 # Define basic source files
+set(EFFECTS_SOURCES
+    src/effects/EffectProcessor.cpp
+    src/effects/BassBoost.cpp
+    src/effects/BitCrusher.cpp
+    src/effects/Compressor.cpp
+    src/effects/Delay.cpp
+    src/effects/Distortion.cpp
+    src/effects/EQ.cpp
+    src/effects/Filter.cpp
+    src/effects/Modulation.cpp
+    src/effects/Phaser.cpp
+    src/effects/Reverb.cpp
+    src/effects/Saturation.cpp
+    src/effects/ReorderableEffectsChain.cpp
+    src/effects/MidiEffectControl.cpp
+)
+
 set(BASIC_AUDIO_SOURCES
     src/audio/AudioEngine.cpp
     src/audio/Synthesizer.cpp
     src/hardware/HardwareInterface.cpp
     src/midi/MidiInterface.cpp
     src/midi/MidiManager.cpp
+    ${EFFECTS_SOURCES}
 )
 
 set(SEQUENCER_SOURCES
@@ -175,6 +193,11 @@ if(RTMIDI_FOUND)
     add_executable(MidiKeyboardDemo examples/MidiKeyboardDemo.cpp)
     target_link_libraries(MidiKeyboardDemo PRIVATE AIMusicCore)
     message(STATUS "Building MidiKeyboardDemo (Play synth with MIDI keyboard)")
+
+    # MIDI Keyboard with Effects Demo
+    add_executable(MidiKeyboardEffectsDemo examples/MidiKeyboardEffectsDemo.cpp)
+    target_link_libraries(MidiKeyboardEffectsDemo PRIVATE AIMusicCore)
+    message(STATUS "Building MidiKeyboardEffectsDemo (Synth with effects chain)")
 endif()
 
 # Print audio libs for debugging
