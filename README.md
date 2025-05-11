@@ -33,7 +33,12 @@ The architecture consists of the following core components:
    - Per-note timbre control (Y-axis)
    - Per-note pressure sensitivity (Z-axis)
 9. **Hardware Interface**: Physical controls and display interface
-10. **LLM Integration**:
+10. **IoT Integration**: Connect with other devices through MQTT protocol:
+   - Discover and connect to IoT sensors and controllers
+   - Map sensor data to synthesis parameters
+   - Create interactive environments that respond to real-world data
+   - Control synthesizer remotely via IoT devices
+11. **LLM Integration**:
     - Voice/text to synthesizer parameter suggestions
     - Pattern completion and suggestion for sequencer
     - User preference learning for customized assistance
@@ -170,6 +175,57 @@ The AdaptiveSequencer is a state-based music sequencing system inspired by game 
 
 For more information, see [Adaptive Sequencer Documentation](docs/ADAPTIVE_SEQUENCER.md).
 
+## IoT Integration
+
+The IoT integration capabilities allow the AIMusicHardware to interact with external devices:
+
+1. **MQTT Protocol**:
+   - Connect to MQTT brokers for IoT device discovery and messaging
+   - Support for standard MQTT features (QoS, retained messages, wildcards)
+
+2. **Device Discovery**:
+   - Automatically discover IoT devices on the network
+   - Support for HomeAssistant and Homie device discovery formats
+
+3. **Parameter Mapping**:
+   - Map IoT sensor data to synthesis parameters
+   - Two-way binding between hardware controls and IoT devices
+   - Preset management for sensor mappings
+
+4. **Adaptive Music Response**:
+   - Trigger state changes in the adaptive sequencer based on sensor data
+   - Create responsive soundscapes that evolve with the environment
+
+To install MQTT libraries locally and enable IoT functionality:
+```bash
+# Install MQTT libraries locally
+chmod +x tools/install_mqtt_libs.sh
+./tools/install_mqtt_libs.sh
+
+# Rebuild the project
+./build.sh
+```
+
+For testing MQTT functionality:
+```bash
+# Basic testing with mock implementation
+./build/bin/SimpleMQTTTest
+
+# Test MQTTInterface with mock implementation
+./build/bin/SimpleMQTTInterfaceTest
+
+# Test with real MQTT broker (using mock implementation, will work with the real
+# implementation once Paho libraries are properly installed)
+./build/bin/RealMQTTTest [broker_host] [port] [client_id]
+
+# Note: PahoMQTTCTest is currently disabled until Paho MQTT C library is properly installed
+```
+
+For the full IoT Configuration Manager demo:
+```bash
+./build/bin/IoTConfigManagerDemo
+```
+
 ## Documentation
 For detailed information about specific components, see the following guides:
 
@@ -178,6 +234,9 @@ For detailed information about specific components, see the following guides:
 - **Adaptive Sequencer**: [ADAPTIVE_SEQUENCER.md](docs/ADAPTIVE_SEQUENCER.md)
 - **Sequencer Testing**: [SEQUENCER_TESTING_GUIDE.md](docs/SEQUENCER_TESTING_GUIDE.md)
 - **UI Implementation**: [UI_IMPLEMENTATION.md](docs/UI_IMPLEMENTATION.md)
+- **IoT Integration**: [IOT_INTEGRATION.md](docs/IOT_INTEGRATION.md)
+- **MQTT Interface**: [MQTT_INTERFACE.md](docs/MQTT_INTERFACE.md)
+- **MQTT Implementation Guide**: [MQTT_IMPLEMENTATION_GUIDE.md](docs/MQTT_IMPLEMENTATION_GUIDE.md)
 - **Project Updates**: [PROJECT_UPDATES.md](docs/PROJECT_UPDATES.md)
 - **Next Steps**: [next_steps.md](docs/next_steps.md)
 - **Commercialization**: [commercialization_guide.md](docs/commercialization_guide.md)

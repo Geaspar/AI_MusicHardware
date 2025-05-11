@@ -92,7 +92,6 @@ SimplePresetManagerDemo_EXTERNAL_OBJECTS =
 
 bin/SimplePresetManagerDemo: CMakeFiles/SimplePresetManagerDemo.dir/examples/SimplePresetManagerDemo.cpp.o
 bin/SimplePresetManagerDemo: CMakeFiles/SimplePresetManagerDemo.dir/build.make
-bin/SimplePresetManagerDemo: lib/libAIMusicCore.a
 bin/SimplePresetManagerDemo: lib/libPresetLib.a
 bin/SimplePresetManagerDemo: lib/libAIMusicCore.a
 bin/SimplePresetManagerDemo: /opt/homebrew/lib/librtaudio.dylib

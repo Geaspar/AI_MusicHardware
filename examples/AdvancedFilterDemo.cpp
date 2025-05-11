@@ -8,6 +8,11 @@
 #include <thread>
 #include <RtAudio.h>
 
+// Define PI if not available
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 #include "effects/AdvancedFilter.h"
 #include "effects/LadderFilter.h"
 #include "effects/CombFilter.h"
@@ -69,7 +74,7 @@ int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBufferFra
         
         switch (g_sourceType) {
             case SourceType::Sine:
-                sample = 0.5f * std::sin(g_phase * 2.0f * PI);
+                sample = 0.5f * std::sin(g_phase * 2.0f * M_PI);
                 break;
                 
             case SourceType::Sawtooth:
@@ -128,29 +133,41 @@ void updateFilterParameters() {
     
     // Type-specific parameters (can add more as needed)
     switch (g_currentFilterType) {
+        // Standard biquad filters don't need special parameters
+        case AdvancedFilter::Type::LowPass:
+        case AdvancedFilter::Type::HighPass:
+        case AdvancedFilter::Type::BandPass:
+        case AdvancedFilter::Type::Notch:
+            // Use default parameters
+            break;
+
         case AdvancedFilter::Type::LadderLowPass:
         case AdvancedFilter::Type::LadderHighPass:
             g_filter->setParameter("drive", 1.5f);  // Slight overdrive for ladder filter
             break;
-            
+
         case AdvancedFilter::Type::Comb:
             g_filter->setParameter("delay_time", 5.0f);          // 5ms delay
             g_filter->setParameter("feedback", 0.7f);            // Medium feedback
             g_filter->setParameter("mod_amount", 0.0f);          // No modulation
             break;
-            
+
         case AdvancedFilter::Type::Phaser:
             g_filter->setParameter("delay_time", 2.0f);          // 2ms delay
             g_filter->setParameter("feedback", 0.7f);            // Medium feedback
             g_filter->setParameter("mod_amount", 1.5f);          // Some modulation
             g_filter->setParameter("mod_rate", 0.2f);            // Slow modulation
             break;
-            
+
         case AdvancedFilter::Type::Formant:
             g_filter->setParameter("vowel", 0.0f);               // 'A' vowel
             g_filter->setParameter("morph", 0.0f);               // No morphing
             g_filter->setParameter("gender", 0.5f);              // Neutral gender
             g_filter->setParameter("resonance", 0.8f);           // High resonance
+            break;
+
+        case AdvancedFilter::Type::NumTypes:
+            // This is just a count, not an actual filter type
             break;
     }
 }

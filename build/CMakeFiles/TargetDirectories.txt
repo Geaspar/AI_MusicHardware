@@ -5,5 +5,16 @@
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/TestMpeVoiceManager.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/TestAudio.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/OscillatorStackDemo.dir
+/Users/geaspar/AIMusicHardware/build/CMakeFiles/AdvancedFilterDemo.dir
+/Users/geaspar/AIMusicHardware/build/CMakeFiles/SynchronizedSequencerDemo.dir
+/Users/geaspar/AIMusicHardware/build/CMakeFiles/IoTParameterDemo.dir
+/Users/geaspar/AIMusicHardware/build/CMakeFiles/IoTParameterIntegrationTest.dir
+/Users/geaspar/AIMusicHardware/build/CMakeFiles/IoTEventIntegrationTest.dir
+/Users/geaspar/AIMusicHardware/build/CMakeFiles/IoTConfigManagerDemo.dir
+/Users/geaspar/AIMusicHardware/build/CMakeFiles/TestMQTTIntegration.dir
+/Users/geaspar/AIMusicHardware/build/CMakeFiles/SimpleMQTTTest.dir
+/Users/geaspar/AIMusicHardware/build/CMakeFiles/SimpleMQTTInterfaceTest.dir
+/Users/geaspar/AIMusicHardware/build/CMakeFiles/RealMQTTTest.dir
+/Users/geaspar/AIMusicHardware/build/CMakeFiles/SimpleAudioTest.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/edit_cache.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/rebuild_cache.dir

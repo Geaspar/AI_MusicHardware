@@ -92,7 +92,6 @@ MultiTimbralDemo_EXTERNAL_OBJECTS =
 
 bin/MultiTimbralDemo: CMakeFiles/MultiTimbralDemo.dir/examples/MultiTimbralDemo.cpp.o
 bin/MultiTimbralDemo: CMakeFiles/MultiTimbralDemo.dir/build.make
-bin/MultiTimbralDemo: lib/libAIMusicCore.a
 bin/MultiTimbralDemo: lib/libPresetLib.a
 bin/MultiTimbralDemo: lib/libAIMusicCore.a
 bin/MultiTimbralDemo: /opt/homebrew/lib/librtaudio.dylib

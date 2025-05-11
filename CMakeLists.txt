@@ -40,6 +40,95 @@ else()
     message(STATUS "Found system nlohmann/json")
 endif()
 
+# Find Paho MQTT C++ library
+# First check if we can use a simplified approach for testing
+set(MQTT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor)
+if(EXISTS "${MQTT_SOURCE_DIR}/paho.mqtt.c" AND EXISTS "${MQTT_SOURCE_DIR}/paho.mqtt.cpp")
+    message(STATUS "Found Paho MQTT libraries in vendor directory")
+
+    # Include directories directly from the source
+    include_directories(
+        ${MQTT_SOURCE_DIR}/paho.mqtt.c/src
+        ${MQTT_SOURCE_DIR}/paho.mqtt.cpp/src
+    )
+
+    # Define that we have the MQTT libraries
+    add_definitions(-DHAVE_PAHO_MQTT)
+    set(PAHO_MQTT_CPP_FOUND TRUE)
+
+    # Mock libraries for linking
+    set(PAHO_MQTT_CPP_LIBRARY "")
+    set(PAHO_MQTT_C_LIBRARY "")
+else()
+    # Set paths to our local installations
+    set(PAHO_MQTT_C_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/paho.mqtt.c/local_install)
+    set(PAHO_MQTT_CPP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/paho.mqtt.cpp/local_install)
+
+    # First try to find the C library
+    find_package(eclipse-paho-mqtt-c QUIET
+        PATHS
+        ${PAHO_MQTT_C_DIR}/lib/cmake/eclipse-paho-mqtt-c
+        NO_DEFAULT_PATH
+    )
+
+    # Then try to find the C++ library with our local path hints
+    find_package(PahoMqttCpp QUIET
+        PATHS
+        ${PAHO_MQTT_CPP_DIR}/lib/cmake/PahoMqttCpp
+        NO_DEFAULT_PATH
+    )
+
+    # If not found via package config, try traditional methods
+    if(NOT PahoMqttCpp_FOUND)
+        # First, find the C library
+        find_library(PAHO_MQTT_C_LIBRARY paho-mqtt3a
+            PATHS
+            ${PAHO_MQTT_C_DIR}/lib
+            NO_DEFAULT_PATH
+        )
+
+        # Try to find in our local installation first, then fall back to common locations
+        find_path(PAHO_MQTT_CPP_INCLUDE_DIR mqtt/async_client.h
+            PATHS
+            ${PAHO_MQTT_CPP_DIR}/include
+            ${CMAKE_CURRENT_SOURCE_DIR}/vendor/paho.mqtt.cpp/include
+            /usr/include
+            /usr/local/include
+            /opt/local/include
+            /opt/include
+        )
+
+        find_library(PAHO_MQTT_CPP_LIBRARY paho-mqttpp3
+            PATHS
+            ${PAHO_MQTT_CPP_DIR}/lib
+            ${CMAKE_CURRENT_SOURCE_DIR}/vendor/paho.mqtt.cpp/lib
+            /usr/lib
+            /usr/local/lib
+            /opt/local/lib
+            /opt/lib
+        )
+
+        if(PAHO_MQTT_CPP_INCLUDE_DIR AND PAHO_MQTT_CPP_LIBRARY AND PAHO_MQTT_C_LIBRARY)
+            set(PAHO_MQTT_CPP_FOUND TRUE)
+            message(STATUS "Found Paho MQTT C++ library: ${PAHO_MQTT_CPP_LIBRARY}")
+            message(STATUS "Found Paho MQTT C library: ${PAHO_MQTT_C_LIBRARY}")
+            include_directories(${PAHO_MQTT_CPP_INCLUDE_DIR})
+            add_definitions(-DHAVE_PAHO_MQTT)
+        else()
+            message(WARNING "Paho MQTT C++ library not found. IoT functionality will be limited.")
+        endif()
+    else()
+        message(STATUS "Found Paho MQTT C++ package: ${PahoMqttCpp_DIR}")
+        # Add both the C and C++ include directories
+        include_directories(
+            ${PAHO_MQTT_CPP_DIR}/include
+            ${PAHO_MQTT_C_DIR}/include
+        )
+        set(PAHO_MQTT_CPP_LIBRARY ${PahoMqttCpp_LIBRARIES})
+        add_definitions(-DHAVE_PAHO_MQTT)
+    endif()
+endif()
+
 # Define basic source files
 set(EFFECTS_SOURCES
     src/effects/EffectProcessor.cpp
@@ -105,6 +194,36 @@ set(MULTITIMBRAL_SOURCES
     src/synthesis/multitimbral/ChannelSynthesizer.cpp
 )
 
+# IoT sources
+if(PAHO_MQTT_CPP_FOUND)
+    set(IOT_SOURCES
+        src/iot/MQTTInterface.cpp
+        src/iot/IoTParameterConverter.cpp
+        src/iot/IoTEventAdapter.cpp
+        src/iot/IoTDevice.cpp
+        src/iot/IoTConfigManager.cpp
+    )
+else()
+    set(IOT_SOURCES
+        src/iot/IoTParameterConverter.cpp
+        src/iot/IoTDevice.cpp
+    )
+    # Disable MQTT for now - we'll use dummy implementations
+    add_definitions(-DDISABLE_MQTT)
+endif()
+
+# Parameter System sources
+set(PARAMETER_SYSTEM_SOURCES
+    src/ui/ParameterManager.cpp
+    src/ui/parameters/ParameterManager.cpp
+)
+
+# Event System sources
+set(EVENT_SYSTEM_SOURCES
+    src/events/Event.cpp
+    src/events/EventBus.cpp
+)
+
 # Set up RtAudio if found
 if(RTAUDIO_FOUND)
     message(STATUS "Found RtAudio: ${RTAUDIO_INCLUDE_DIRS}")
@@ -146,12 +265,25 @@ add_library(AIMusicCore STATIC
     ${SEQUENCER_SOURCES}
     ${SYNTHESIS_SOURCES}
     ${MULTITIMBRAL_SOURCES}
+    ${IOT_SOURCES}
+    ${PARAMETER_SYSTEM_SOURCES}
+    ${EVENT_SYSTEM_SOURCES}
 )
 
-target_link_libraries(AIMusicCore PRIVATE
-    Threads::Threads
-    ${AUDIO_LIBS}
-)
+# Add IoT library link if found
+if(PAHO_MQTT_CPP_FOUND)
+    target_link_libraries(AIMusicCore PRIVATE
+        Threads::Threads
+        ${AUDIO_LIBS}
+        ${PAHO_MQTT_CPP_LIBRARY}
+        ${PAHO_MQTT_C_LIBRARY} # Use our found C library
+    )
+else()
+    target_link_libraries(AIMusicCore PRIVATE
+        Threads::Threads
+        ${AUDIO_LIBS}
+    )
+endif()
 
 # Create minimal preset library (without UI dependencies)
 add_library(PresetLib STATIC
@@ -164,9 +296,9 @@ target_link_libraries(PresetLib PRIVATE
 
 # Simple Preset Manager Demo (no UI or audio requirements)
 add_executable(SimplePresetManagerDemo examples/SimplePresetManagerDemo.cpp)
-target_link_libraries(SimplePresetManagerDemo PRIVATE 
-    AIMusicCore
+target_link_libraries(SimplePresetManagerDemo PRIVATE
     PresetLib
+    # AIMusicCore is already included via PresetLib
 )
 message(STATUS "Building SimplePresetManagerDemo")
 
@@ -176,8 +308,8 @@ message(STATUS "Audio libraries: ${AUDIO_LIBS}")
 # Create Multi-Timbral Demo executable
 add_executable(MultiTimbralDemo examples/MultiTimbralDemo.cpp)
 target_link_libraries(MultiTimbralDemo PRIVATE
-    AIMusicCore
     PresetLib
+    # AIMusicCore is already included via PresetLib
 )
 message(STATUS "Building MultiTimbralDemo")
 
@@ -227,3 +359,97 @@ target_link_libraries(SynchronizedSequencerDemo PRIVATE
 )
 message(STATUS "Building SynchronizedSequencerDemo")
 message(STATUS "- Run ./bin/SynchronizedSequencerDemo to test the improved sequencer-audio engine synchronization")
+
+# Create IoT Parameter Demo executable
+if(PAHO_MQTT_CPP_FOUND)
+    add_executable(IoTParameterDemo examples/IoTParameterDemo.cpp)
+    target_link_libraries(IoTParameterDemo PRIVATE
+        AIMusicCore
+    )
+    message(STATUS "Building IoTParameterDemo")
+    message(STATUS "- Run ./bin/IoTParameterDemo to test the IoT message handling")
+
+    # Create IoT Parameter Integration Test
+    add_executable(IoTParameterIntegrationTest examples/IoTParameterIntegrationTest.cpp)
+    target_link_libraries(IoTParameterIntegrationTest PRIVATE
+        AIMusicCore
+    )
+    message(STATUS "Building IoTParameterIntegrationTest")
+    message(STATUS "- Run ./bin/IoTParameterIntegrationTest to test the full IoT-Parameter System integration")
+
+    # Create IoT Event Integration Test
+    add_executable(IoTEventIntegrationTest examples/IoTEventIntegrationTest.cpp)
+    target_link_libraries(IoTEventIntegrationTest PRIVATE
+        AIMusicCore
+    )
+    message(STATUS "Building IoTEventIntegrationTest")
+    message(STATUS "- Run ./bin/IoTEventIntegrationTest to test the IoT-Event System integration")
+
+    # Create IoT Configuration Manager Demo
+    add_executable(IoTConfigManagerDemo examples/IoTConfigManagerDemo.cpp)
+    target_link_libraries(IoTConfigManagerDemo PRIVATE
+        AIMusicCore
+    )
+    message(STATUS "Building IoTConfigManagerDemo")
+    message(STATUS "- Run ./bin/IoTConfigManagerDemo to test the IoT Configuration Manager with device discovery and configuration")
+
+    # Create MQTT Integration Test
+    add_executable(TestMQTTIntegration examples/TestMQTTIntegration.cpp)
+    target_link_libraries(TestMQTTIntegration PRIVATE
+        AIMusicCore
+    )
+    message(STATUS "Building TestMQTTIntegration")
+    message(STATUS "- Run ./bin/TestMQTTIntegration to test basic MQTT connectivity and message handling")
+else()
+    # Create installation guide executables for IoT tools
+    add_executable(IoTConfigManagerDemo examples/VerySimpleMQTTTest.cpp)
+    add_executable(MQTTGuide examples/VerySimpleMQTTTest.cpp)
+    add_executable(TestMQTTIntegration examples/VerySimpleMQTTTest.cpp)
+
+    message(STATUS "Building installation guides for MQTT tools (Paho MQTT C++ library not found)")
+    message(STATUS "- Run bin/IoTConfigManagerDemo, bin/MQTTGuide, or bin/TestMQTTIntegration")
+    message(STATUS "  to see MQTT installation instructions")
+endif()
+
+# Create Simple MQTT Test executable
+add_executable(SimpleMQTTTest examples/SimpleMQTTTest.cpp)
+target_link_libraries(SimpleMQTTTest PRIVATE
+    # No need to link to AIMusicCore, since it only tests MQTT
+)
+message(STATUS "Building SimpleMQTTTest")
+message(STATUS "- Run ./bin/SimpleMQTTTest to test the basic MQTT mock implementation and messaging")
+
+# Create Simple MQTT Interface Test executable
+add_executable(SimpleMQTTInterfaceTest examples/SimpleMQTTInterfaceTest.cpp)
+target_link_libraries(SimpleMQTTInterfaceTest PRIVATE
+    AIMusicCore
+)
+message(STATUS "Building SimpleMQTTInterfaceTest")
+message(STATUS "- Run ./bin/SimpleMQTTInterfaceTest to test the MQTTInterface class with mock implementation")
+
+# Create Real MQTT Test executable
+add_executable(RealMQTTTest examples/RealMQTTTest.cpp)
+target_link_libraries(RealMQTTTest PRIVATE
+    AIMusicCore
+)
+message(STATUS "Building RealMQTTTest")
+message(STATUS "- Run ./bin/RealMQTTTest to test the MQTTInterface class with real MQTT implementation")
+
+# Create Paho MQTT C Test executable (for testing the C implementation)
+if(FALSE) # Disable for now until we have the proper Paho MQTT C library
+    add_executable(PahoMQTTCTest examples/PahoMQTTCTest.cpp)
+    # Link directly with the C library for this test
+    target_link_libraries(PahoMQTTCTest PRIVATE
+        ${PAHO_MQTT_C_LIBRARY}
+    )
+    message(STATUS "Building PahoMQTTCTest")
+    message(STATUS "- Run ./bin/PahoMQTTCTest to test the Paho MQTT C implementation directly")
+endif()
+
+# Create Simple Audio Test executable
+add_executable(SimpleAudioTest examples/SimpleAudioTest.cpp)
+target_link_libraries(SimpleAudioTest PRIVATE
+    AIMusicCore
+)
+message(STATUS "Building SimpleAudioTest")
+message(STATUS "- Run ./bin/SimpleAudioTest to play a C major scale and test basic audio functionality")

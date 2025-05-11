@@ -1,2 +1,18 @@
 SynthExample-Vital/
 rtmidi/
+
+# MQTT libraries
+vendor/paho.mqtt.c/
+vendor/paho.mqtt.cpp/
+vendor/mqtt/
+
+# Claude settings
+**/.claude/settings.local.json
+
+# Build artifacts
+build/
+*.o
+*.a
+*.so
+*.dylib
+*.dll

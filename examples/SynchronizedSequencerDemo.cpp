@@ -4,6 +4,7 @@
 #include <chrono>
 #include <atomic>
 #include <csignal>
+#include <iomanip>
 
 #include "../include/audio/AudioEngine.h"
 #include "../include/audio/Synthesizer.h"

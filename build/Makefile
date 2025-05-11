@@ -207,6 +207,269 @@ OscillatorStackDemo/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/OscillatorStackDemo.dir/build.make CMakeFiles/OscillatorStackDemo.dir/build
 .PHONY : OscillatorStackDemo/fast
 
+#=============================================================================
+# Target rules for targets named AdvancedFilterDemo
+
+# Build rule for target.
+AdvancedFilterDemo: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 AdvancedFilterDemo
+.PHONY : AdvancedFilterDemo
+
+# fast build rule for target.
+AdvancedFilterDemo/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AdvancedFilterDemo.dir/build.make CMakeFiles/AdvancedFilterDemo.dir/build
+.PHONY : AdvancedFilterDemo/fast
+
+#=============================================================================
+# Target rules for targets named SynchronizedSequencerDemo
+
+# Build rule for target.
+SynchronizedSequencerDemo: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 SynchronizedSequencerDemo
+.PHONY : SynchronizedSequencerDemo
+
+# fast build rule for target.
+SynchronizedSequencerDemo/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/SynchronizedSequencerDemo.dir/build.make CMakeFiles/SynchronizedSequencerDemo.dir/build
+.PHONY : SynchronizedSequencerDemo/fast
+
+#=============================================================================
+# Target rules for targets named IoTParameterDemo
+
+# Build rule for target.
+IoTParameterDemo: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 IoTParameterDemo
+.PHONY : IoTParameterDemo
+
+# fast build rule for target.
+IoTParameterDemo/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/IoTParameterDemo.dir/build.make CMakeFiles/IoTParameterDemo.dir/build
+.PHONY : IoTParameterDemo/fast
+
+#=============================================================================
+# Target rules for targets named IoTParameterIntegrationTest
+
+# Build rule for target.
+IoTParameterIntegrationTest: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 IoTParameterIntegrationTest
+.PHONY : IoTParameterIntegrationTest
+
+# fast build rule for target.
+IoTParameterIntegrationTest/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/IoTParameterIntegrationTest.dir/build.make CMakeFiles/IoTParameterIntegrationTest.dir/build
+.PHONY : IoTParameterIntegrationTest/fast
+
+#=============================================================================
+# Target rules for targets named IoTEventIntegrationTest
+
+# Build rule for target.
+IoTEventIntegrationTest: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 IoTEventIntegrationTest
+.PHONY : IoTEventIntegrationTest
+
+# fast build rule for target.
+IoTEventIntegrationTest/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/IoTEventIntegrationTest.dir/build.make CMakeFiles/IoTEventIntegrationTest.dir/build
+.PHONY : IoTEventIntegrationTest/fast
+
+#=============================================================================
+# Target rules for targets named IoTConfigManagerDemo
+
+# Build rule for target.
+IoTConfigManagerDemo: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 IoTConfigManagerDemo
+.PHONY : IoTConfigManagerDemo
+
+# fast build rule for target.
+IoTConfigManagerDemo/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/IoTConfigManagerDemo.dir/build.make CMakeFiles/IoTConfigManagerDemo.dir/build
+.PHONY : IoTConfigManagerDemo/fast
+
+#=============================================================================
+# Target rules for targets named TestMQTTIntegration
+
+# Build rule for target.
+TestMQTTIntegration: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 TestMQTTIntegration
+.PHONY : TestMQTTIntegration
+
+# fast build rule for target.
+TestMQTTIntegration/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestMQTTIntegration.dir/build.make CMakeFiles/TestMQTTIntegration.dir/build
+.PHONY : TestMQTTIntegration/fast
+
+#=============================================================================
+# Target rules for targets named SimpleMQTTTest
+
+# Build rule for target.
+SimpleMQTTTest: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 SimpleMQTTTest
+.PHONY : SimpleMQTTTest
+
+# fast build rule for target.
+SimpleMQTTTest/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimpleMQTTTest.dir/build.make CMakeFiles/SimpleMQTTTest.dir/build
+.PHONY : SimpleMQTTTest/fast
+
+#=============================================================================
+# Target rules for targets named SimpleMQTTInterfaceTest
+
+# Build rule for target.
+SimpleMQTTInterfaceTest: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 SimpleMQTTInterfaceTest
+.PHONY : SimpleMQTTInterfaceTest
+
+# fast build rule for target.
+SimpleMQTTInterfaceTest/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimpleMQTTInterfaceTest.dir/build.make CMakeFiles/SimpleMQTTInterfaceTest.dir/build
+.PHONY : SimpleMQTTInterfaceTest/fast
+
+#=============================================================================
+# Target rules for targets named RealMQTTTest
+
+# Build rule for target.
+RealMQTTTest: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 RealMQTTTest
+.PHONY : RealMQTTTest
+
+# fast build rule for target.
+RealMQTTTest/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RealMQTTTest.dir/build.make CMakeFiles/RealMQTTTest.dir/build
+.PHONY : RealMQTTTest/fast
+
+#=============================================================================
+# Target rules for targets named SimpleAudioTest
+
+# Build rule for target.
+SimpleAudioTest: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 SimpleAudioTest
+.PHONY : SimpleAudioTest
+
+# fast build rule for target.
+SimpleAudioTest/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimpleAudioTest.dir/build.make CMakeFiles/SimpleAudioTest.dir/build
+.PHONY : SimpleAudioTest/fast
+
+examples/AdvancedFilterDemo.o: examples/AdvancedFilterDemo.cpp.o
+.PHONY : examples/AdvancedFilterDemo.o
+
+# target to build an object file
+examples/AdvancedFilterDemo.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AdvancedFilterDemo.dir/build.make CMakeFiles/AdvancedFilterDemo.dir/examples/AdvancedFilterDemo.cpp.o
+.PHONY : examples/AdvancedFilterDemo.cpp.o
+
+examples/AdvancedFilterDemo.i: examples/AdvancedFilterDemo.cpp.i
+.PHONY : examples/AdvancedFilterDemo.i
+
+# target to preprocess a source file
+examples/AdvancedFilterDemo.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AdvancedFilterDemo.dir/build.make CMakeFiles/AdvancedFilterDemo.dir/examples/AdvancedFilterDemo.cpp.i
+.PHONY : examples/AdvancedFilterDemo.cpp.i
+
+examples/AdvancedFilterDemo.s: examples/AdvancedFilterDemo.cpp.s
+.PHONY : examples/AdvancedFilterDemo.s
+
+# target to generate assembly for a file
+examples/AdvancedFilterDemo.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AdvancedFilterDemo.dir/build.make CMakeFiles/AdvancedFilterDemo.dir/examples/AdvancedFilterDemo.cpp.s
+.PHONY : examples/AdvancedFilterDemo.cpp.s
+
+examples/IoTConfigManagerDemo.o: examples/IoTConfigManagerDemo.cpp.o
+.PHONY : examples/IoTConfigManagerDemo.o
+
+# target to build an object file
+examples/IoTConfigManagerDemo.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/IoTConfigManagerDemo.dir/build.make CMakeFiles/IoTConfigManagerDemo.dir/examples/IoTConfigManagerDemo.cpp.o
+.PHONY : examples/IoTConfigManagerDemo.cpp.o
+
+examples/IoTConfigManagerDemo.i: examples/IoTConfigManagerDemo.cpp.i
+.PHONY : examples/IoTConfigManagerDemo.i
+
+# target to preprocess a source file
+examples/IoTConfigManagerDemo.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/IoTConfigManagerDemo.dir/build.make CMakeFiles/IoTConfigManagerDemo.dir/examples/IoTConfigManagerDemo.cpp.i
+.PHONY : examples/IoTConfigManagerDemo.cpp.i
+
+examples/IoTConfigManagerDemo.s: examples/IoTConfigManagerDemo.cpp.s
+.PHONY : examples/IoTConfigManagerDemo.s
+
+# target to generate assembly for a file
+examples/IoTConfigManagerDemo.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/IoTConfigManagerDemo.dir/build.make CMakeFiles/IoTConfigManagerDemo.dir/examples/IoTConfigManagerDemo.cpp.s
+.PHONY : examples/IoTConfigManagerDemo.cpp.s
+
+examples/IoTEventIntegrationTest.o: examples/IoTEventIntegrationTest.cpp.o
+.PHONY : examples/IoTEventIntegrationTest.o
+
+# target to build an object file
+examples/IoTEventIntegrationTest.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/IoTEventIntegrationTest.dir/build.make CMakeFiles/IoTEventIntegrationTest.dir/examples/IoTEventIntegrationTest.cpp.o
+.PHONY : examples/IoTEventIntegrationTest.cpp.o
+
+examples/IoTEventIntegrationTest.i: examples/IoTEventIntegrationTest.cpp.i
+.PHONY : examples/IoTEventIntegrationTest.i
+
+# target to preprocess a source file
+examples/IoTEventIntegrationTest.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/IoTEventIntegrationTest.dir/build.make CMakeFiles/IoTEventIntegrationTest.dir/examples/IoTEventIntegrationTest.cpp.i
+.PHONY : examples/IoTEventIntegrationTest.cpp.i
+
+examples/IoTEventIntegrationTest.s: examples/IoTEventIntegrationTest.cpp.s
+.PHONY : examples/IoTEventIntegrationTest.s
+
+# target to generate assembly for a file
+examples/IoTEventIntegrationTest.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/IoTEventIntegrationTest.dir/build.make CMakeFiles/IoTEventIntegrationTest.dir/examples/IoTEventIntegrationTest.cpp.s
+.PHONY : examples/IoTEventIntegrationTest.cpp.s
+
+examples/IoTParameterDemo.o: examples/IoTParameterDemo.cpp.o
+.PHONY : examples/IoTParameterDemo.o
+
+# target to build an object file
+examples/IoTParameterDemo.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/IoTParameterDemo.dir/build.make CMakeFiles/IoTParameterDemo.dir/examples/IoTParameterDemo.cpp.o
+.PHONY : examples/IoTParameterDemo.cpp.o
+
+examples/IoTParameterDemo.i: examples/IoTParameterDemo.cpp.i
+.PHONY : examples/IoTParameterDemo.i
+
+# target to preprocess a source file
+examples/IoTParameterDemo.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/IoTParameterDemo.dir/build.make CMakeFiles/IoTParameterDemo.dir/examples/IoTParameterDemo.cpp.i
+.PHONY : examples/IoTParameterDemo.cpp.i
+
+examples/IoTParameterDemo.s: examples/IoTParameterDemo.cpp.s
+.PHONY : examples/IoTParameterDemo.s
+
+# target to generate assembly for a file
+examples/IoTParameterDemo.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/IoTParameterDemo.dir/build.make CMakeFiles/IoTParameterDemo.dir/examples/IoTParameterDemo.cpp.s
+.PHONY : examples/IoTParameterDemo.cpp.s
+
+examples/IoTParameterIntegrationTest.o: examples/IoTParameterIntegrationTest.cpp.o
+.PHONY : examples/IoTParameterIntegrationTest.o
+
+# target to build an object file
+examples/IoTParameterIntegrationTest.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/IoTParameterIntegrationTest.dir/build.make CMakeFiles/IoTParameterIntegrationTest.dir/examples/IoTParameterIntegrationTest.cpp.o
+.PHONY : examples/IoTParameterIntegrationTest.cpp.o
+
+examples/IoTParameterIntegrationTest.i: examples/IoTParameterIntegrationTest.cpp.i
+.PHONY : examples/IoTParameterIntegrationTest.i
+
+# target to preprocess a source file
+examples/IoTParameterIntegrationTest.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/IoTParameterIntegrationTest.dir/build.make CMakeFiles/IoTParameterIntegrationTest.dir/examples/IoTParameterIntegrationTest.cpp.i
+.PHONY : examples/IoTParameterIntegrationTest.cpp.i
+
+examples/IoTParameterIntegrationTest.s: examples/IoTParameterIntegrationTest.cpp.s
+.PHONY : examples/IoTParameterIntegrationTest.s
+
+# target to generate assembly for a file
+examples/IoTParameterIntegrationTest.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/IoTParameterIntegrationTest.dir/build.make CMakeFiles/IoTParameterIntegrationTest.dir/examples/IoTParameterIntegrationTest.cpp.s
+.PHONY : examples/IoTParameterIntegrationTest.cpp.s
+
 examples/MultiTimbralDemo.o: examples/MultiTimbralDemo.cpp.o
 .PHONY : examples/MultiTimbralDemo.o
 
@@ -255,6 +518,102 @@ examples/OscillatorStackDemo.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/OscillatorStackDemo.dir/build.make CMakeFiles/OscillatorStackDemo.dir/examples/OscillatorStackDemo.cpp.s
 .PHONY : examples/OscillatorStackDemo.cpp.s
 
+examples/RealMQTTTest.o: examples/RealMQTTTest.cpp.o
+.PHONY : examples/RealMQTTTest.o
+
+# target to build an object file
+examples/RealMQTTTest.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RealMQTTTest.dir/build.make CMakeFiles/RealMQTTTest.dir/examples/RealMQTTTest.cpp.o
+.PHONY : examples/RealMQTTTest.cpp.o
+
+examples/RealMQTTTest.i: examples/RealMQTTTest.cpp.i
+.PHONY : examples/RealMQTTTest.i
+
+# target to preprocess a source file
+examples/RealMQTTTest.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RealMQTTTest.dir/build.make CMakeFiles/RealMQTTTest.dir/examples/RealMQTTTest.cpp.i
+.PHONY : examples/RealMQTTTest.cpp.i
+
+examples/RealMQTTTest.s: examples/RealMQTTTest.cpp.s
+.PHONY : examples/RealMQTTTest.s
+
+# target to generate assembly for a file
+examples/RealMQTTTest.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RealMQTTTest.dir/build.make CMakeFiles/RealMQTTTest.dir/examples/RealMQTTTest.cpp.s
+.PHONY : examples/RealMQTTTest.cpp.s
+
+examples/SimpleAudioTest.o: examples/SimpleAudioTest.cpp.o
+.PHONY : examples/SimpleAudioTest.o
+
+# target to build an object file
+examples/SimpleAudioTest.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimpleAudioTest.dir/build.make CMakeFiles/SimpleAudioTest.dir/examples/SimpleAudioTest.cpp.o
+.PHONY : examples/SimpleAudioTest.cpp.o
+
+examples/SimpleAudioTest.i: examples/SimpleAudioTest.cpp.i
+.PHONY : examples/SimpleAudioTest.i
+
+# target to preprocess a source file
+examples/SimpleAudioTest.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimpleAudioTest.dir/build.make CMakeFiles/SimpleAudioTest.dir/examples/SimpleAudioTest.cpp.i
+.PHONY : examples/SimpleAudioTest.cpp.i
+
+examples/SimpleAudioTest.s: examples/SimpleAudioTest.cpp.s
+.PHONY : examples/SimpleAudioTest.s
+
+# target to generate assembly for a file
+examples/SimpleAudioTest.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimpleAudioTest.dir/build.make CMakeFiles/SimpleAudioTest.dir/examples/SimpleAudioTest.cpp.s
+.PHONY : examples/SimpleAudioTest.cpp.s
+
+examples/SimpleMQTTInterfaceTest.o: examples/SimpleMQTTInterfaceTest.cpp.o
+.PHONY : examples/SimpleMQTTInterfaceTest.o
+
+# target to build an object file
+examples/SimpleMQTTInterfaceTest.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimpleMQTTInterfaceTest.dir/build.make CMakeFiles/SimpleMQTTInterfaceTest.dir/examples/SimpleMQTTInterfaceTest.cpp.o
+.PHONY : examples/SimpleMQTTInterfaceTest.cpp.o
+
+examples/SimpleMQTTInterfaceTest.i: examples/SimpleMQTTInterfaceTest.cpp.i
+.PHONY : examples/SimpleMQTTInterfaceTest.i
+
+# target to preprocess a source file
+examples/SimpleMQTTInterfaceTest.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimpleMQTTInterfaceTest.dir/build.make CMakeFiles/SimpleMQTTInterfaceTest.dir/examples/SimpleMQTTInterfaceTest.cpp.i
+.PHONY : examples/SimpleMQTTInterfaceTest.cpp.i
+
+examples/SimpleMQTTInterfaceTest.s: examples/SimpleMQTTInterfaceTest.cpp.s
+.PHONY : examples/SimpleMQTTInterfaceTest.s
+
+# target to generate assembly for a file
+examples/SimpleMQTTInterfaceTest.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimpleMQTTInterfaceTest.dir/build.make CMakeFiles/SimpleMQTTInterfaceTest.dir/examples/SimpleMQTTInterfaceTest.cpp.s
+.PHONY : examples/SimpleMQTTInterfaceTest.cpp.s
+
+examples/SimpleMQTTTest.o: examples/SimpleMQTTTest.cpp.o
+.PHONY : examples/SimpleMQTTTest.o
+
+# target to build an object file
+examples/SimpleMQTTTest.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimpleMQTTTest.dir/build.make CMakeFiles/SimpleMQTTTest.dir/examples/SimpleMQTTTest.cpp.o
+.PHONY : examples/SimpleMQTTTest.cpp.o
+
+examples/SimpleMQTTTest.i: examples/SimpleMQTTTest.cpp.i
+.PHONY : examples/SimpleMQTTTest.i
+
+# target to preprocess a source file
+examples/SimpleMQTTTest.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimpleMQTTTest.dir/build.make CMakeFiles/SimpleMQTTTest.dir/examples/SimpleMQTTTest.cpp.i
+.PHONY : examples/SimpleMQTTTest.cpp.i
+
+examples/SimpleMQTTTest.s: examples/SimpleMQTTTest.cpp.s
+.PHONY : examples/SimpleMQTTTest.s
+
+# target to generate assembly for a file
+examples/SimpleMQTTTest.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimpleMQTTTest.dir/build.make CMakeFiles/SimpleMQTTTest.dir/examples/SimpleMQTTTest.cpp.s
+.PHONY : examples/SimpleMQTTTest.cpp.s
+
 examples/SimplePresetManagerDemo.o: examples/SimplePresetManagerDemo.cpp.o
 .PHONY : examples/SimplePresetManagerDemo.o
 
@@ -279,6 +638,30 @@ examples/SimplePresetManagerDemo.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimplePresetManagerDemo.dir/build.make CMakeFiles/SimplePresetManagerDemo.dir/examples/SimplePresetManagerDemo.cpp.s
 .PHONY : examples/SimplePresetManagerDemo.cpp.s
 
+examples/SynchronizedSequencerDemo.o: examples/SynchronizedSequencerDemo.cpp.o
+.PHONY : examples/SynchronizedSequencerDemo.o
+
+# target to build an object file
+examples/SynchronizedSequencerDemo.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/SynchronizedSequencerDemo.dir/build.make CMakeFiles/SynchronizedSequencerDemo.dir/examples/SynchronizedSequencerDemo.cpp.o
+.PHONY : examples/SynchronizedSequencerDemo.cpp.o
+
+examples/SynchronizedSequencerDemo.i: examples/SynchronizedSequencerDemo.cpp.i
+.PHONY : examples/SynchronizedSequencerDemo.i
+
+# target to preprocess a source file
+examples/SynchronizedSequencerDemo.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/SynchronizedSequencerDemo.dir/build.make CMakeFiles/SynchronizedSequencerDemo.dir/examples/SynchronizedSequencerDemo.cpp.i
+.PHONY : examples/SynchronizedSequencerDemo.cpp.i
+
+examples/SynchronizedSequencerDemo.s: examples/SynchronizedSequencerDemo.cpp.s
+.PHONY : examples/SynchronizedSequencerDemo.s
+
+# target to generate assembly for a file
+examples/SynchronizedSequencerDemo.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/SynchronizedSequencerDemo.dir/build.make CMakeFiles/SynchronizedSequencerDemo.dir/examples/SynchronizedSequencerDemo.cpp.s
+.PHONY : examples/SynchronizedSequencerDemo.cpp.s
+
 examples/TestAudio.o: examples/TestAudio.cpp.o
 .PHONY : examples/TestAudio.o
 
@@ -302,6 +685,30 @@ examples/TestAudio.s: examples/TestAudio.cpp.s
 examples/TestAudio.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestAudio.dir/build.make CMakeFiles/TestAudio.dir/examples/TestAudio.cpp.s
 .PHONY : examples/TestAudio.cpp.s
+
+examples/TestMQTTIntegration.o: examples/TestMQTTIntegration.cpp.o
+.PHONY : examples/TestMQTTIntegration.o
+
+# target to build an object file
+examples/TestMQTTIntegration.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestMQTTIntegration.dir/build.make CMakeFiles/TestMQTTIntegration.dir/examples/TestMQTTIntegration.cpp.o
+.PHONY : examples/TestMQTTIntegration.cpp.o
+
+examples/TestMQTTIntegration.i: examples/TestMQTTIntegration.cpp.i
+.PHONY : examples/TestMQTTIntegration.i
+
+# target to preprocess a source file
+examples/TestMQTTIntegration.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestMQTTIntegration.dir/build.make CMakeFiles/TestMQTTIntegration.dir/examples/TestMQTTIntegration.cpp.i
+.PHONY : examples/TestMQTTIntegration.cpp.i
+
+examples/TestMQTTIntegration.s: examples/TestMQTTIntegration.cpp.s
+.PHONY : examples/TestMQTTIntegration.s
+
+# target to generate assembly for a file
+examples/TestMQTTIntegration.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestMQTTIntegration.dir/build.make CMakeFiles/TestMQTTIntegration.dir/examples/TestMQTTIntegration.cpp.s
+.PHONY : examples/TestMQTTIntegration.cpp.s
 
 examples/TestMpeVoiceManager.o: examples/TestMpeVoiceManager.cpp.o
 .PHONY : examples/TestMpeVoiceManager.o
@@ -375,6 +782,30 @@ src/audio/Synthesizer.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/audio/Synthesizer.cpp.s
 .PHONY : src/audio/Synthesizer.cpp.s
 
+src/effects/AdvancedFilter.o: src/effects/AdvancedFilter.cpp.o
+.PHONY : src/effects/AdvancedFilter.o
+
+# target to build an object file
+src/effects/AdvancedFilter.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/AdvancedFilter.cpp.o
+.PHONY : src/effects/AdvancedFilter.cpp.o
+
+src/effects/AdvancedFilter.i: src/effects/AdvancedFilter.cpp.i
+.PHONY : src/effects/AdvancedFilter.i
+
+# target to preprocess a source file
+src/effects/AdvancedFilter.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/AdvancedFilter.cpp.i
+.PHONY : src/effects/AdvancedFilter.cpp.i
+
+src/effects/AdvancedFilter.s: src/effects/AdvancedFilter.cpp.s
+.PHONY : src/effects/AdvancedFilter.s
+
+# target to generate assembly for a file
+src/effects/AdvancedFilter.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/AdvancedFilter.cpp.s
+.PHONY : src/effects/AdvancedFilter.cpp.s
+
 src/effects/BassBoost.o: src/effects/BassBoost.cpp.o
 .PHONY : src/effects/BassBoost.o
 
@@ -422,6 +853,30 @@ src/effects/BitCrusher.s: src/effects/BitCrusher.cpp.s
 src/effects/BitCrusher.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/BitCrusher.cpp.s
 .PHONY : src/effects/BitCrusher.cpp.s
+
+src/effects/CombFilter.o: src/effects/CombFilter.cpp.o
+.PHONY : src/effects/CombFilter.o
+
+# target to build an object file
+src/effects/CombFilter.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/CombFilter.cpp.o
+.PHONY : src/effects/CombFilter.cpp.o
+
+src/effects/CombFilter.i: src/effects/CombFilter.cpp.i
+.PHONY : src/effects/CombFilter.i
+
+# target to preprocess a source file
+src/effects/CombFilter.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/CombFilter.cpp.i
+.PHONY : src/effects/CombFilter.cpp.i
+
+src/effects/CombFilter.s: src/effects/CombFilter.cpp.s
+.PHONY : src/effects/CombFilter.s
+
+# target to generate assembly for a file
+src/effects/CombFilter.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/CombFilter.cpp.s
+.PHONY : src/effects/CombFilter.cpp.s
 
 src/effects/Compressor.o: src/effects/Compressor.cpp.o
 .PHONY : src/effects/Compressor.o
@@ -567,6 +1022,54 @@ src/effects/Filter.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/Filter.cpp.s
 .PHONY : src/effects/Filter.cpp.s
 
+src/effects/FormantFilter.o: src/effects/FormantFilter.cpp.o
+.PHONY : src/effects/FormantFilter.o
+
+# target to build an object file
+src/effects/FormantFilter.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/FormantFilter.cpp.o
+.PHONY : src/effects/FormantFilter.cpp.o
+
+src/effects/FormantFilter.i: src/effects/FormantFilter.cpp.i
+.PHONY : src/effects/FormantFilter.i
+
+# target to preprocess a source file
+src/effects/FormantFilter.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/FormantFilter.cpp.i
+.PHONY : src/effects/FormantFilter.cpp.i
+
+src/effects/FormantFilter.s: src/effects/FormantFilter.cpp.s
+.PHONY : src/effects/FormantFilter.s
+
+# target to generate assembly for a file
+src/effects/FormantFilter.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/FormantFilter.cpp.s
+.PHONY : src/effects/FormantFilter.cpp.s
+
+src/effects/LadderFilter.o: src/effects/LadderFilter.cpp.o
+.PHONY : src/effects/LadderFilter.o
+
+# target to build an object file
+src/effects/LadderFilter.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/LadderFilter.cpp.o
+.PHONY : src/effects/LadderFilter.cpp.o
+
+src/effects/LadderFilter.i: src/effects/LadderFilter.cpp.i
+.PHONY : src/effects/LadderFilter.i
+
+# target to preprocess a source file
+src/effects/LadderFilter.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/LadderFilter.cpp.i
+.PHONY : src/effects/LadderFilter.cpp.i
+
+src/effects/LadderFilter.s: src/effects/LadderFilter.cpp.s
+.PHONY : src/effects/LadderFilter.s
+
+# target to generate assembly for a file
+src/effects/LadderFilter.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/LadderFilter.cpp.s
+.PHONY : src/effects/LadderFilter.cpp.s
+
 src/effects/MidiEffectControl.o: src/effects/MidiEffectControl.cpp.o
 .PHONY : src/effects/MidiEffectControl.o
 
@@ -711,6 +1214,54 @@ src/effects/Saturation.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/Saturation.cpp.s
 .PHONY : src/effects/Saturation.cpp.s
 
+src/events/Event.o: src/events/Event.cpp.o
+.PHONY : src/events/Event.o
+
+# target to build an object file
+src/events/Event.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/events/Event.cpp.o
+.PHONY : src/events/Event.cpp.o
+
+src/events/Event.i: src/events/Event.cpp.i
+.PHONY : src/events/Event.i
+
+# target to preprocess a source file
+src/events/Event.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/events/Event.cpp.i
+.PHONY : src/events/Event.cpp.i
+
+src/events/Event.s: src/events/Event.cpp.s
+.PHONY : src/events/Event.s
+
+# target to generate assembly for a file
+src/events/Event.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/events/Event.cpp.s
+.PHONY : src/events/Event.cpp.s
+
+src/events/EventBus.o: src/events/EventBus.cpp.o
+.PHONY : src/events/EventBus.o
+
+# target to build an object file
+src/events/EventBus.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/events/EventBus.cpp.o
+.PHONY : src/events/EventBus.cpp.o
+
+src/events/EventBus.i: src/events/EventBus.cpp.i
+.PHONY : src/events/EventBus.i
+
+# target to preprocess a source file
+src/events/EventBus.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/events/EventBus.cpp.i
+.PHONY : src/events/EventBus.cpp.i
+
+src/events/EventBus.s: src/events/EventBus.cpp.s
+.PHONY : src/events/EventBus.s
+
+# target to generate assembly for a file
+src/events/EventBus.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/events/EventBus.cpp.s
+.PHONY : src/events/EventBus.cpp.s
+
 src/hardware/HardwareInterface.o: src/hardware/HardwareInterface.cpp.o
 .PHONY : src/hardware/HardwareInterface.o
 
@@ -734,6 +1285,126 @@ src/hardware/HardwareInterface.s: src/hardware/HardwareInterface.cpp.s
 src/hardware/HardwareInterface.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/hardware/HardwareInterface.cpp.s
 .PHONY : src/hardware/HardwareInterface.cpp.s
+
+src/iot/IoTConfigManager.o: src/iot/IoTConfigManager.cpp.o
+.PHONY : src/iot/IoTConfigManager.o
+
+# target to build an object file
+src/iot/IoTConfigManager.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/iot/IoTConfigManager.cpp.o
+.PHONY : src/iot/IoTConfigManager.cpp.o
+
+src/iot/IoTConfigManager.i: src/iot/IoTConfigManager.cpp.i
+.PHONY : src/iot/IoTConfigManager.i
+
+# target to preprocess a source file
+src/iot/IoTConfigManager.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/iot/IoTConfigManager.cpp.i
+.PHONY : src/iot/IoTConfigManager.cpp.i
+
+src/iot/IoTConfigManager.s: src/iot/IoTConfigManager.cpp.s
+.PHONY : src/iot/IoTConfigManager.s
+
+# target to generate assembly for a file
+src/iot/IoTConfigManager.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/iot/IoTConfigManager.cpp.s
+.PHONY : src/iot/IoTConfigManager.cpp.s
+
+src/iot/IoTDevice.o: src/iot/IoTDevice.cpp.o
+.PHONY : src/iot/IoTDevice.o
+
+# target to build an object file
+src/iot/IoTDevice.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/iot/IoTDevice.cpp.o
+.PHONY : src/iot/IoTDevice.cpp.o
+
+src/iot/IoTDevice.i: src/iot/IoTDevice.cpp.i
+.PHONY : src/iot/IoTDevice.i
+
+# target to preprocess a source file
+src/iot/IoTDevice.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/iot/IoTDevice.cpp.i
+.PHONY : src/iot/IoTDevice.cpp.i
+
+src/iot/IoTDevice.s: src/iot/IoTDevice.cpp.s
+.PHONY : src/iot/IoTDevice.s
+
+# target to generate assembly for a file
+src/iot/IoTDevice.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/iot/IoTDevice.cpp.s
+.PHONY : src/iot/IoTDevice.cpp.s
+
+src/iot/IoTEventAdapter.o: src/iot/IoTEventAdapter.cpp.o
+.PHONY : src/iot/IoTEventAdapter.o
+
+# target to build an object file
+src/iot/IoTEventAdapter.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/iot/IoTEventAdapter.cpp.o
+.PHONY : src/iot/IoTEventAdapter.cpp.o
+
+src/iot/IoTEventAdapter.i: src/iot/IoTEventAdapter.cpp.i
+.PHONY : src/iot/IoTEventAdapter.i
+
+# target to preprocess a source file
+src/iot/IoTEventAdapter.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/iot/IoTEventAdapter.cpp.i
+.PHONY : src/iot/IoTEventAdapter.cpp.i
+
+src/iot/IoTEventAdapter.s: src/iot/IoTEventAdapter.cpp.s
+.PHONY : src/iot/IoTEventAdapter.s
+
+# target to generate assembly for a file
+src/iot/IoTEventAdapter.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/iot/IoTEventAdapter.cpp.s
+.PHONY : src/iot/IoTEventAdapter.cpp.s
+
+src/iot/IoTParameterConverter.o: src/iot/IoTParameterConverter.cpp.o
+.PHONY : src/iot/IoTParameterConverter.o
+
+# target to build an object file
+src/iot/IoTParameterConverter.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/iot/IoTParameterConverter.cpp.o
+.PHONY : src/iot/IoTParameterConverter.cpp.o
+
+src/iot/IoTParameterConverter.i: src/iot/IoTParameterConverter.cpp.i
+.PHONY : src/iot/IoTParameterConverter.i
+
+# target to preprocess a source file
+src/iot/IoTParameterConverter.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/iot/IoTParameterConverter.cpp.i
+.PHONY : src/iot/IoTParameterConverter.cpp.i
+
+src/iot/IoTParameterConverter.s: src/iot/IoTParameterConverter.cpp.s
+.PHONY : src/iot/IoTParameterConverter.s
+
+# target to generate assembly for a file
+src/iot/IoTParameterConverter.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/iot/IoTParameterConverter.cpp.s
+.PHONY : src/iot/IoTParameterConverter.cpp.s
+
+src/iot/MQTTInterface.o: src/iot/MQTTInterface.cpp.o
+.PHONY : src/iot/MQTTInterface.o
+
+# target to build an object file
+src/iot/MQTTInterface.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/iot/MQTTInterface.cpp.o
+.PHONY : src/iot/MQTTInterface.cpp.o
+
+src/iot/MQTTInterface.i: src/iot/MQTTInterface.cpp.i
+.PHONY : src/iot/MQTTInterface.i
+
+# target to preprocess a source file
+src/iot/MQTTInterface.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/iot/MQTTInterface.cpp.i
+.PHONY : src/iot/MQTTInterface.cpp.i
+
+src/iot/MQTTInterface.s: src/iot/MQTTInterface.cpp.s
+.PHONY : src/iot/MQTTInterface.s
+
+# target to generate assembly for a file
+src/iot/MQTTInterface.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/iot/MQTTInterface.cpp.s
+.PHONY : src/iot/MQTTInterface.cpp.s
 
 src/midi/MidiInterface.o: src/midi/MidiInterface.cpp.o
 .PHONY : src/midi/MidiInterface.o
@@ -1215,6 +1886,54 @@ src/synthesis/wavetable/wavetable.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.s
 .PHONY : src/synthesis/wavetable/wavetable.cpp.s
 
+src/ui/ParameterManager.o: src/ui/ParameterManager.cpp.o
+.PHONY : src/ui/ParameterManager.o
+
+# target to build an object file
+src/ui/ParameterManager.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/ParameterManager.cpp.o
+.PHONY : src/ui/ParameterManager.cpp.o
+
+src/ui/ParameterManager.i: src/ui/ParameterManager.cpp.i
+.PHONY : src/ui/ParameterManager.i
+
+# target to preprocess a source file
+src/ui/ParameterManager.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/ParameterManager.cpp.i
+.PHONY : src/ui/ParameterManager.cpp.i
+
+src/ui/ParameterManager.s: src/ui/ParameterManager.cpp.s
+.PHONY : src/ui/ParameterManager.s
+
+# target to generate assembly for a file
+src/ui/ParameterManager.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/ParameterManager.cpp.s
+.PHONY : src/ui/ParameterManager.cpp.s
+
+src/ui/parameters/ParameterManager.o: src/ui/parameters/ParameterManager.cpp.o
+.PHONY : src/ui/parameters/ParameterManager.o
+
+# target to build an object file
+src/ui/parameters/ParameterManager.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/parameters/ParameterManager.cpp.o
+.PHONY : src/ui/parameters/ParameterManager.cpp.o
+
+src/ui/parameters/ParameterManager.i: src/ui/parameters/ParameterManager.cpp.i
+.PHONY : src/ui/parameters/ParameterManager.i
+
+# target to preprocess a source file
+src/ui/parameters/ParameterManager.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/parameters/ParameterManager.cpp.i
+.PHONY : src/ui/parameters/ParameterManager.cpp.i
+
+src/ui/parameters/ParameterManager.s: src/ui/parameters/ParameterManager.cpp.s
+.PHONY : src/ui/parameters/ParameterManager.s
+
+# target to generate assembly for a file
+src/ui/parameters/ParameterManager.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/parameters/ParameterManager.cpp.s
+.PHONY : src/ui/parameters/ParameterManager.cpp.s
+
 src/ui/presets/PresetManager.o: src/ui/presets/PresetManager.cpp.o
 .PHONY : src/ui/presets/PresetManager.o
 
@@ -1248,24 +1967,68 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... AIMusicCore"
+	@echo "... AdvancedFilterDemo"
+	@echo "... IoTConfigManagerDemo"
+	@echo "... IoTEventIntegrationTest"
+	@echo "... IoTParameterDemo"
+	@echo "... IoTParameterIntegrationTest"
 	@echo "... MultiTimbralDemo"
 	@echo "... OscillatorStackDemo"
 	@echo "... PresetLib"
+	@echo "... RealMQTTTest"
+	@echo "... SimpleAudioTest"
+	@echo "... SimpleMQTTInterfaceTest"
+	@echo "... SimpleMQTTTest"
 	@echo "... SimplePresetManagerDemo"
+	@echo "... SynchronizedSequencerDemo"
 	@echo "... TestAudio"
+	@echo "... TestMQTTIntegration"
 	@echo "... TestMpeVoiceManager"
+	@echo "... examples/AdvancedFilterDemo.o"
+	@echo "... examples/AdvancedFilterDemo.i"
+	@echo "... examples/AdvancedFilterDemo.s"
+	@echo "... examples/IoTConfigManagerDemo.o"
+	@echo "... examples/IoTConfigManagerDemo.i"
+	@echo "... examples/IoTConfigManagerDemo.s"
+	@echo "... examples/IoTEventIntegrationTest.o"
+	@echo "... examples/IoTEventIntegrationTest.i"
+	@echo "... examples/IoTEventIntegrationTest.s"
+	@echo "... examples/IoTParameterDemo.o"
+	@echo "... examples/IoTParameterDemo.i"
+	@echo "... examples/IoTParameterDemo.s"
+	@echo "... examples/IoTParameterIntegrationTest.o"
+	@echo "... examples/IoTParameterIntegrationTest.i"
+	@echo "... examples/IoTParameterIntegrationTest.s"
 	@echo "... examples/MultiTimbralDemo.o"
 	@echo "... examples/MultiTimbralDemo.i"
 	@echo "... examples/MultiTimbralDemo.s"
 	@echo "... examples/OscillatorStackDemo.o"
 	@echo "... examples/OscillatorStackDemo.i"
 	@echo "... examples/OscillatorStackDemo.s"
+	@echo "... examples/RealMQTTTest.o"
+	@echo "... examples/RealMQTTTest.i"
+	@echo "... examples/RealMQTTTest.s"
+	@echo "... examples/SimpleAudioTest.o"
+	@echo "... examples/SimpleAudioTest.i"
+	@echo "... examples/SimpleAudioTest.s"
+	@echo "... examples/SimpleMQTTInterfaceTest.o"
+	@echo "... examples/SimpleMQTTInterfaceTest.i"
+	@echo "... examples/SimpleMQTTInterfaceTest.s"
+	@echo "... examples/SimpleMQTTTest.o"
+	@echo "... examples/SimpleMQTTTest.i"
+	@echo "... examples/SimpleMQTTTest.s"
 	@echo "... examples/SimplePresetManagerDemo.o"
 	@echo "... examples/SimplePresetManagerDemo.i"
 	@echo "... examples/SimplePresetManagerDemo.s"
+	@echo "... examples/SynchronizedSequencerDemo.o"
+	@echo "... examples/SynchronizedSequencerDemo.i"
+	@echo "... examples/SynchronizedSequencerDemo.s"
 	@echo "... examples/TestAudio.o"
 	@echo "... examples/TestAudio.i"
 	@echo "... examples/TestAudio.s"
+	@echo "... examples/TestMQTTIntegration.o"
+	@echo "... examples/TestMQTTIntegration.i"
+	@echo "... examples/TestMQTTIntegration.s"
 	@echo "... examples/TestMpeVoiceManager.o"
 	@echo "... examples/TestMpeVoiceManager.i"
 	@echo "... examples/TestMpeVoiceManager.s"
@@ -1275,12 +2038,18 @@ help:
 	@echo "... src/audio/Synthesizer.o"
 	@echo "... src/audio/Synthesizer.i"
 	@echo "... src/audio/Synthesizer.s"
+	@echo "... src/effects/AdvancedFilter.o"
+	@echo "... src/effects/AdvancedFilter.i"
+	@echo "... src/effects/AdvancedFilter.s"
 	@echo "... src/effects/BassBoost.o"
 	@echo "... src/effects/BassBoost.i"
 	@echo "... src/effects/BassBoost.s"
 	@echo "... src/effects/BitCrusher.o"
 	@echo "... src/effects/BitCrusher.i"
 	@echo "... src/effects/BitCrusher.s"
+	@echo "... src/effects/CombFilter.o"
+	@echo "... src/effects/CombFilter.i"
+	@echo "... src/effects/CombFilter.s"
 	@echo "... src/effects/Compressor.o"
 	@echo "... src/effects/Compressor.i"
 	@echo "... src/effects/Compressor.s"
@@ -1299,6 +2068,12 @@ help:
 	@echo "... src/effects/Filter.o"
 	@echo "... src/effects/Filter.i"
 	@echo "... src/effects/Filter.s"
+	@echo "... src/effects/FormantFilter.o"
+	@echo "... src/effects/FormantFilter.i"
+	@echo "... src/effects/FormantFilter.s"
+	@echo "... src/effects/LadderFilter.o"
+	@echo "... src/effects/LadderFilter.i"
+	@echo "... src/effects/LadderFilter.s"
 	@echo "... src/effects/MidiEffectControl.o"
 	@echo "... src/effects/MidiEffectControl.i"
 	@echo "... src/effects/MidiEffectControl.s"
@@ -1317,9 +2092,30 @@ help:
 	@echo "... src/effects/Saturation.o"
 	@echo "... src/effects/Saturation.i"
 	@echo "... src/effects/Saturation.s"
+	@echo "... src/events/Event.o"
+	@echo "... src/events/Event.i"
+	@echo "... src/events/Event.s"
+	@echo "... src/events/EventBus.o"
+	@echo "... src/events/EventBus.i"
+	@echo "... src/events/EventBus.s"
 	@echo "... src/hardware/HardwareInterface.o"
 	@echo "... src/hardware/HardwareInterface.i"
 	@echo "... src/hardware/HardwareInterface.s"
+	@echo "... src/iot/IoTConfigManager.o"
+	@echo "... src/iot/IoTConfigManager.i"
+	@echo "... src/iot/IoTConfigManager.s"
+	@echo "... src/iot/IoTDevice.o"
+	@echo "... src/iot/IoTDevice.i"
+	@echo "... src/iot/IoTDevice.s"
+	@echo "... src/iot/IoTEventAdapter.o"
+	@echo "... src/iot/IoTEventAdapter.i"
+	@echo "... src/iot/IoTEventAdapter.s"
+	@echo "... src/iot/IoTParameterConverter.o"
+	@echo "... src/iot/IoTParameterConverter.i"
+	@echo "... src/iot/IoTParameterConverter.s"
+	@echo "... src/iot/MQTTInterface.o"
+	@echo "... src/iot/MQTTInterface.i"
+	@echo "... src/iot/MQTTInterface.s"
 	@echo "... src/midi/MidiInterface.o"
 	@echo "... src/midi/MidiInterface.i"
 	@echo "... src/midi/MidiInterface.s"
@@ -1380,6 +2176,12 @@ help:
 	@echo "... src/synthesis/wavetable/wavetable.o"
 	@echo "... src/synthesis/wavetable/wavetable.i"
 	@echo "... src/synthesis/wavetable/wavetable.s"
+	@echo "... src/ui/ParameterManager.o"
+	@echo "... src/ui/ParameterManager.i"
+	@echo "... src/ui/ParameterManager.s"
+	@echo "... src/ui/parameters/ParameterManager.o"
+	@echo "... src/ui/parameters/ParameterManager.i"
+	@echo "... src/ui/parameters/ParameterManager.s"
 	@echo "... src/ui/presets/PresetManager.o"
 	@echo "... src/ui/presets/PresetManager.i"
 	@echo "... src/ui/presets/PresetManager.s"

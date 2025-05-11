@@ -1,4 +1,5 @@
 #include "../../include/audio/AudioEngine.h"
+#include "../../include/sequencer/Sequencer.h" // Include Sequencer.h early to avoid forward declaration issues
 
 // RtAudio header can be in different locations depending on installation method
 // Try standard includes first, then fallback to rtaudio subdirectory
@@ -278,9 +279,6 @@ double AudioEngine::getStreamTime() const {
         return 0.0;
     }
 }
-
-// Forward declaration of Sequencer to avoid circular includes
-#include "../../include/sequencer/Sequencer.h"
 
 // Synchronize a sequencer with the audio engine's timing
 void AudioEngine::synchronizeSequencer(std::shared_ptr<Sequencer> sequencer) {

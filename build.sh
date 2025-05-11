@@ -16,8 +16,8 @@ print_message() {
     esac
 }
 
-print_message blue "=== AIMusicHardware Audio Test Build ==="
-print_message blue "======================================"
+print_message blue "=== AIMusicHardware Build System ==="
+print_message blue "=================================="
 
 # Function to check if RtAudio is installed at common paths
 check_rtaudio_installed() {
@@ -61,6 +61,17 @@ if [[ "$(uname)" == "Darwin" ]]; then
             print_message yellow "Homebrew not found. Will use file-based audio test only."
         fi
     fi
+fi
+
+# Check for MQTT libraries
+mqtt_available=false
+if [ -d "vendor/paho.mqtt.c/local_install" ] && [ -d "vendor/paho.mqtt.cpp/local_install" ]; then
+    print_message green "Found MQTT libraries in vendor directory."
+    mqtt_available=true
+else
+    print_message yellow "MQTT libraries not found in vendor directory."
+    print_message yellow "IoT functionality will be limited."
+    print_message yellow "To enable full IoT functionality, run: ./tools/install_mqtt_libs.sh"
 fi
 
 # Clean build directory first to avoid any cached issues
@@ -108,6 +119,18 @@ else
     has_audio_test=false
 fi
 
+if [ -f "./bin/TestMQTTIntegration" ]; then
+    has_mqtt_test=true
+else
+    has_mqtt_test=false
+fi
+
+if [ -f "./bin/IoTConfigManagerDemo" ]; then
+    has_iot_demo=true
+else
+    has_iot_demo=false
+fi
+
 # Display instructions based on available programs
 print_message blue "==========================================="
 print_message blue "Available Test Applications:"
@@ -141,4 +164,39 @@ else
     print_message yellow "Real-time audio test (TestAudio) was not built due to missing RtAudio."
 fi
 
+if [ "$has_mqtt_test" = true ]; then
+    if [ "$mqtt_available" = true ]; then
+        print_message cyan "MQTT Integration Test:"
+        print_message yellow "          ./bin/TestMQTTIntegration"
+        print_message cyan "          Test basic MQTT connectivity and message handling"
+        echo ""
+    else
+        print_message yellow "MQTT Integration Test (TestMQTTIntegration) built with limited functionality."
+        print_message yellow "For full functionality, install MQTT libraries with ./tools/install_mqtt_libs.sh"
+        echo ""
+    fi
+fi
+
+if [ "$has_iot_demo" = true ]; then
+    if [ "$mqtt_available" = true ]; then
+        print_message cyan "IoT Configuration Manager Demo:"
+        print_message yellow "          ./bin/IoTConfigManagerDemo"
+        print_message cyan "          Interactive demo for IoT device discovery and configuration"
+        echo ""
+    else
+        print_message yellow "IoT Configuration Manager Demo (IoTConfigManagerDemo) built with limited functionality."
+        print_message yellow "For full functionality, install MQTT libraries with ./tools/install_mqtt_libs.sh"
+        echo ""
+    fi
+fi
+
 print_message blue "==========================================="
+
+# Show IoT-specific instructions if MQTT is not available but IoT demos are
+if [ "$mqtt_available" = false ] && ([ "$has_mqtt_test" = true ] || [ "$has_iot_demo" = true ]); then
+    print_message blue "==========================================="
+    print_message blue "To enable full IoT functionality:"
+    print_message yellow "1. Install MQTT libraries:     ./tools/install_mqtt_libs.sh"
+    print_message yellow "2. Rebuild the project:        ./build.sh"
+    print_message blue "==========================================="
+fi
