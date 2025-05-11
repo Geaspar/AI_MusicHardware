@@ -29,7 +29,6 @@ set(CMAKE_MAKEFILE_DEPENDS
   "/opt/homebrew/Cellar/cmake/3.30.2/share/cmake/Modules/Compiler/CMakeCommonCompilerMacros.cmake"
   "/opt/homebrew/Cellar/cmake/3.30.2/share/cmake/Modules/Compiler/Clang.cmake"
   "/opt/homebrew/Cellar/cmake/3.30.2/share/cmake/Modules/Compiler/GNU.cmake"
-  "/opt/homebrew/Cellar/cmake/3.30.2/share/cmake/Modules/FeatureSummary.cmake"
   "/opt/homebrew/Cellar/cmake/3.30.2/share/cmake/Modules/FindPackageHandleStandardArgs.cmake"
   "/opt/homebrew/Cellar/cmake/3.30.2/share/cmake/Modules/FindPackageMessage.cmake"
   "/opt/homebrew/Cellar/cmake/3.30.2/share/cmake/Modules/FindPkgConfig.cmake"
@@ -43,8 +42,6 @@ set(CMAKE_MAKEFILE_DEPENDS
   "/opt/homebrew/Cellar/cmake/3.30.2/share/cmake/Modules/Platform/Darwin-Initialize.cmake"
   "/opt/homebrew/Cellar/cmake/3.30.2/share/cmake/Modules/Platform/Darwin.cmake"
   "/opt/homebrew/Cellar/cmake/3.30.2/share/cmake/Modules/Platform/UnixPaths.cmake"
-  "/opt/homebrew/lib/cmake/SDL2/sdl2-config-version.cmake"
-  "/opt/homebrew/lib/cmake/SDL2/sdl2-config.cmake"
   )
 
 # The corresponding makefile is:
@@ -61,13 +58,6 @@ set(CMAKE_MAKEFILE_PRODUCTS
 # Dependency information for all targets:
 set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/AIMusicCore.dir/DependInfo.cmake"
-  "CMakeFiles/TestAudio.dir/DependInfo.cmake"
-  "CMakeFiles/TestSequencer.dir/DependInfo.cmake"
-  "CMakeFiles/SimpleTest.dir/DependInfo.cmake"
-  "CMakeFiles/TestAdaptiveSequencer.dir/DependInfo.cmake"
-  "CMakeFiles/TestUI.dir/DependInfo.cmake"
-  "CMakeFiles/WavetableDemo.dir/DependInfo.cmake"
-  "CMakeFiles/TestMidi.dir/DependInfo.cmake"
-  "CMakeFiles/MidiKeyboardDemo.dir/DependInfo.cmake"
-  "CMakeFiles/MidiKeyboardEffectsDemo.dir/DependInfo.cmake"
+  "CMakeFiles/PresetLib.dir/DependInfo.cmake"
+  "CMakeFiles/SimplePresetManagerDemo.dir/DependInfo.cmake"
   )

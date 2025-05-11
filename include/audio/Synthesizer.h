@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <map>
 #include "../sequencer/Sequencer.h" // Include for Envelope struct
 
 // Include the new architecture
@@ -53,6 +54,10 @@ public:
     // Parameter system
     void setParameter(const std::string& paramId, float value);
     float getParameter(const std::string& paramId) const;
+
+    // Parameter methods for preset management
+    std::map<std::string, float> getAllParameters() const;
+    void setAllParameters(const std::map<std::string, float>& parameters);
     
     // Legacy oscillator type for backward compatibility
     void setOscillatorType(OscillatorType type);
@@ -85,7 +90,7 @@ public:
     
 private:
     // Convert legacy oscillator type to wavetable frame position
-    float oscTypeToFramePosition(OscillatorType type);
+    float oscTypeToFramePosition(OscillatorType type) const;
     
     // Convert legacy envelope to new envelope parameters
     void legacyEnvelopeToNew(const AIMusicHardware::Envelope& legacyEnv, 

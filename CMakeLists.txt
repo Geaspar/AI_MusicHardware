@@ -24,6 +24,22 @@ find_package(Threads REQUIRED)
 find_package(RtAudio QUIET)
 find_package(RtMidi QUIET)
 
+# Find nlohmann/json
+find_package(nlohmann_json QUIET)
+if(NOT nlohmann_json_FOUND)
+    # If not found, include from vendor
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/vendor/json/include)
+    message(STATUS "Using bundled nlohmann/json")
+
+    # Create directory if it doesn't exist
+    if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/vendor/json/include")
+        file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/vendor/json/include")
+        message(STATUS "Created vendor/json directory")
+    endif()
+else()
+    message(STATUS "Found system nlohmann/json")
+endif()
+
 # Define basic source files
 set(EFFECTS_SOURCES
     src/effects/EffectProcessor.cpp
@@ -57,12 +73,8 @@ set(SEQUENCER_SOURCES
     src/sequencer/AdaptiveSequencer.cpp
 )
 
-set(UI_SOURCES
-    src/ui/DisplayManager.cpp
-    src/ui/UIContext.cpp
-    src/ui/UserInterface.cpp
-    src/ui/UIComponents.cpp
-    src/ui/Font.cpp
+set(PRESET_SOURCES
+    src/ui/presets/PresetManager.cpp
 )
 
 # New modular synthesis framework sources
@@ -109,18 +121,10 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-# Create necessary directories if they don't exist
-foreach(DIR "cmake" "examples" "output")
-    if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${DIR}")
-        file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${DIR}")
-    endif()
-endforeach()
-
 # Create core library
 add_library(AIMusicCore STATIC
     ${BASIC_AUDIO_SOURCES}
     ${SEQUENCER_SOURCES}
-    ${UI_SOURCES}
     ${SYNTHESIS_SOURCES}
 )
 
@@ -129,91 +133,25 @@ target_link_libraries(AIMusicCore PRIVATE
     ${AUDIO_LIBS}
 )
 
-# RtAudio-based test (requires RtAudio library)
-if(RTAUDIO_FOUND)
-    add_executable(TestAudio examples/TestAudio.cpp)
-    target_link_libraries(TestAudio PRIVATE AIMusicCore)
-    message(STATUS "Building TestAudio (real-time audio test)")
-    
-    add_executable(TestSequencer examples/TestSequencer.cpp)
-    target_link_libraries(TestSequencer PRIVATE AIMusicCore)
-    message(STATUS "Building TestSequencer (sequencer test)")
-else()
-    message(STATUS "Skipping real-time audio tests due to missing RtAudio dependency")
-endif()
+# Create minimal preset library (without UI dependencies)
+add_library(PresetLib STATIC
+    ${PRESET_SOURCES}
+)
 
-# SimpleTest (generates WAV files, doesn't require RtAudio)
-add_executable(SimpleTest examples/SimpleTest.cpp)
-target_link_libraries(SimpleTest PRIVATE Threads::Threads)
-message(STATUS "Building SimpleTest (WAV file generation test)")
+target_link_libraries(PresetLib PRIVATE
+    AIMusicCore
+)
 
-# TestSequencerFile (temporarily disabled due to linking issues with new synth architecture)
-#add_executable(TestSequencerFile examples/TestSequencerFile.cpp ${SEQUENCER_SOURCES} ${BASIC_AUDIO_SOURCES})
-#target_link_libraries(TestSequencerFile PRIVATE Threads::Threads)
-message(STATUS "Skipping TestSequencerFile temporarily due to linking issues with new synth architecture")
-
-# TestSequencerAdvanced (temporarily disabled due to linking issues with new synth architecture)
-#add_executable(TestSequencerAdvanced examples/TestSequencerAdvanced.cpp ${SEQUENCER_SOURCES} ${BASIC_AUDIO_SOURCES})
-#target_link_libraries(TestSequencerAdvanced PRIVATE Threads::Threads)
-message(STATUS "Skipping TestSequencerAdvanced temporarily due to linking issues with new synth architecture")
-
-# TestAdaptiveSequencer (adaptive sequencer features, requires RtAudio)
-if(RTAUDIO_FOUND)
-    add_executable(TestAdaptiveSequencer examples/TestAdaptiveSequencer.cpp)
-    target_link_libraries(TestAdaptiveSequencer PRIVATE AIMusicCore)
-    message(STATUS "Building TestAdaptiveSequencer (adaptive sequencer test)")
-endif()
-
-# TestUI (UI visualization with SDL2)
-# Check for SDL2
-find_package(SDL2 QUIET)
-if(SDL2_FOUND)
-    add_executable(TestUI examples/TestUI.cpp)
-    target_link_libraries(TestUI PRIVATE AIMusicCore ${SDL2_LIBRARIES})
-    target_include_directories(TestUI PRIVATE ${SDL2_INCLUDE_DIRS})
-    message(STATUS "Building TestUI (UI visualization test)")
-else()
-    message(STATUS "Skipping TestUI due to missing SDL2 dependency")
-endif()
-
-# Add the wavetable demo (requires RtAudio)
-if(RTAUDIO_FOUND)
-    add_executable(WavetableDemo examples/WavetableDemo.cpp)
-    target_link_libraries(WavetableDemo PRIVATE AIMusicCore)
-    message(STATUS "Building WavetableDemo (wavetable synthesizer demo)")
-endif()
-
-# Add MIDI test (requires RtMidi)
-if(RTMIDI_FOUND)
-    add_executable(TestMidi examples/TestMidi.cpp)
-    target_link_libraries(TestMidi PRIVATE AIMusicCore)
-    message(STATUS "Building TestMidi (MIDI implementation test)")
-
-    # MIDI Keyboard Demo
-    add_executable(MidiKeyboardDemo examples/MidiKeyboardDemo.cpp)
-    target_link_libraries(MidiKeyboardDemo PRIVATE AIMusicCore)
-    message(STATUS "Building MidiKeyboardDemo (Play synth with MIDI keyboard)")
-
-    # MIDI Keyboard with Effects Demo
-    add_executable(MidiKeyboardEffectsDemo examples/MidiKeyboardEffectsDemo.cpp)
-    target_link_libraries(MidiKeyboardEffectsDemo PRIVATE AIMusicCore)
-    message(STATUS "Building MidiKeyboardEffectsDemo (Synth with effects chain)")
-endif()
+# Simple Preset Manager Demo (no UI or audio requirements)
+add_executable(SimplePresetManagerDemo examples/SimplePresetManagerDemo.cpp)
+target_link_libraries(SimplePresetManagerDemo PRIVATE 
+    AIMusicCore
+    PresetLib
+)
+message(STATUS "Building SimplePresetManagerDemo")
 
 # Print audio libs for debugging
 message(STATUS "Audio libraries: ${AUDIO_LIBS}")
 
-# Update the readme
 message(STATUS "Available tests:")
-message(STATUS "1. Run ./bin/SimpleTest to generate WAV files in the output directory")
-message(STATUS "2. Run ./bin/TestSequencerFile to generate sequencer pattern WAV files")
-message(STATUS "3. Run ./bin/TestSequencerAdvanced to explore advanced sequencer features")
-if(RTAUDIO_FOUND)
-    message(STATUS "4. Run ./bin/TestAudio for real-time audio playback")
-    message(STATUS "5. Run ./bin/TestSequencer to test the sequencer component with real-time audio")
-    message(STATUS "6. Run ./bin/TestAdaptiveSequencer to explore the adaptive sequencer system")
-    message(STATUS "7. Run ./bin/WavetableDemo to try the wavetable synthesizer implementation")
-endif()
-if(RTMIDI_FOUND)
-    message(STATUS "8. Run ./bin/TestMidi to test MIDI input/output functionality")
-endif()
+message(STATUS "- Run ./bin/SimplePresetManagerDemo to try the preset management system")

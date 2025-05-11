@@ -1,12 +1,5 @@
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/AIMusicCore.dir
-/Users/geaspar/AIMusicHardware/build/CMakeFiles/TestAudio.dir
-/Users/geaspar/AIMusicHardware/build/CMakeFiles/TestSequencer.dir
-/Users/geaspar/AIMusicHardware/build/CMakeFiles/SimpleTest.dir
-/Users/geaspar/AIMusicHardware/build/CMakeFiles/TestAdaptiveSequencer.dir
-/Users/geaspar/AIMusicHardware/build/CMakeFiles/TestUI.dir
-/Users/geaspar/AIMusicHardware/build/CMakeFiles/WavetableDemo.dir
-/Users/geaspar/AIMusicHardware/build/CMakeFiles/TestMidi.dir
-/Users/geaspar/AIMusicHardware/build/CMakeFiles/MidiKeyboardDemo.dir
-/Users/geaspar/AIMusicHardware/build/CMakeFiles/MidiKeyboardEffectsDemo.dir
+/Users/geaspar/AIMusicHardware/build/CMakeFiles/PresetLib.dir
+/Users/geaspar/AIMusicHardware/build/CMakeFiles/SimplePresetManagerDemo.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/edit_cache.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/rebuild_cache.dir

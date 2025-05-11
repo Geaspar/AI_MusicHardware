@@ -18,6 +18,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/Users/geaspar/AIMusicHardware/src/effects/EQ.cpp" "CMakeFiles/AIMusicCore.dir/src/effects/EQ.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/effects/EQ.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/effects/EffectProcessor.cpp" "CMakeFiles/AIMusicCore.dir/src/effects/EffectProcessor.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/effects/EffectProcessor.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/effects/Filter.cpp" "CMakeFiles/AIMusicCore.dir/src/effects/Filter.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/effects/Filter.cpp.o.d"
+  "/Users/geaspar/AIMusicHardware/src/effects/MidiEffectControl.cpp" "CMakeFiles/AIMusicCore.dir/src/effects/MidiEffectControl.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/effects/MidiEffectControl.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/effects/Modulation.cpp" "CMakeFiles/AIMusicCore.dir/src/effects/Modulation.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/effects/Modulation.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/effects/Phaser.cpp" "CMakeFiles/AIMusicCore.dir/src/effects/Phaser.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/effects/Phaser.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/effects/ReorderableEffectsChain.cpp" "CMakeFiles/AIMusicCore.dir/src/effects/ReorderableEffectsChain.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/effects/ReorderableEffectsChain.cpp.o.d"
@@ -34,11 +35,6 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/Users/geaspar/AIMusicHardware/src/synthesis/modulators/modulation_matrix.cpp" "CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/modulation_matrix.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/modulation_matrix.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/synthesis/voice/voice_manager.cpp" "CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/synthesis/wavetable/wavetable.cpp" "CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.o.d"
-  "/Users/geaspar/AIMusicHardware/src/ui/DisplayManager.cpp" "CMakeFiles/AIMusicCore.dir/src/ui/DisplayManager.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/ui/DisplayManager.cpp.o.d"
-  "/Users/geaspar/AIMusicHardware/src/ui/Font.cpp" "CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.o.d"
-  "/Users/geaspar/AIMusicHardware/src/ui/UIComponents.cpp" "CMakeFiles/AIMusicCore.dir/src/ui/UIComponents.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/ui/UIComponents.cpp.o.d"
-  "/Users/geaspar/AIMusicHardware/src/ui/UIContext.cpp" "CMakeFiles/AIMusicCore.dir/src/ui/UIContext.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/ui/UIContext.cpp.o.d"
-  "/Users/geaspar/AIMusicHardware/src/ui/UserInterface.cpp" "CMakeFiles/AIMusicCore.dir/src/ui/UserInterface.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/ui/UserInterface.cpp.o.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

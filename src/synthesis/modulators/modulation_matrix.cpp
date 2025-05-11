@@ -91,6 +91,11 @@ ModulationSource* ModulationMatrix::getSource(const std::string& name) {
     return (it != sourceMap_.end()) ? it->second : nullptr;
 }
 
+ModulationSource* ModulationMatrix::getSource(const std::string& name) const {
+    auto it = sourceMap_.find(name);
+    return (it != sourceMap_.end()) ? it->second : nullptr;
+}
+
 void ModulationMatrix::addDestination(std::unique_ptr<ModulationDestination> destination) {
     if (destination) {
         const std::string& name = destination->getName();

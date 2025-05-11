@@ -145,13 +145,14 @@ void Synthesizer::createModulationSources() {
 }
 
 void Synthesizer::setSampleRate(int sampleRate) {
+    // Call base class method
     Processor::setSampleRate(sampleRate);
-    
+
     // Update components
     if (voiceManager_) {
         voiceManager_->setSampleRate(sampleRate);
     }
-    
+
     effectChain_.setSampleRate(sampleRate);
     
     // Update LFOs
@@ -240,18 +241,71 @@ void Synthesizer::resetAllControllers() {
 void Synthesizer::setParameter(const std::string& paramId, float value) {
     // We'll need a parameter system for this in the future
     // For now, just handle a few basic parameters
-    
+
     if (paramId == "oscillator_frame") {
         if (voiceManager_) {
-            // For future implementation - will need to add parameter control to VoiceManager
+            // Update oscillator frame position in all voices
+            for (int i = 0; i < voiceManager_->getMaxVoices(); ++i) {
+                if (auto* voice = voiceManager_->getVoice(i)) {
+                    if (auto* osc = voice->getOscillator()) {
+                        osc->setFramePosition(value);
+                    }
+                }
+            }
             std::cout << "Setting oscillator frame to " << value << std::endl;
         }
     }
+    else if (paramId == "oscillator_type") {
+        // Convert 0-4 float value to oscillator type
+        int typeIndex = static_cast<int>(value);
+        if (typeIndex >= 0 && typeIndex <= 4) {
+            setOscillatorType(static_cast<OscillatorType>(typeIndex));
+        }
+    }
     else if (paramId == "filter_cutoff") {
+        // For future implementation - will need to add filter to VoiceManager
         std::cout << "Setting filter cutoff to " << value << std::endl;
     }
     else if (paramId == "filter_resonance") {
+        // For future implementation - will need to add filter to VoiceManager
         std::cout << "Setting filter resonance to " << value << std::endl;
+    }
+    else if (paramId == "master_volume") {
+        // For future implementation - adjust master volume
+        std::cout << "Setting master volume to " << value << std::endl;
+    }
+    else if (paramId == "voice_count") {
+        // Set number of voices
+        int count = static_cast<int>(value);
+        if (count > 0) {
+            setVoiceCount(count);
+        }
+    }
+    else if (paramId.find("lfo") == 0) {
+        // Handle LFO parameters (lfo1_rate, lfo1_shape, etc.)
+        std::cout << "Setting " << paramId << " to " << value << std::endl;
+
+        // Parse LFO index and parameter name
+        size_t underscorePos = paramId.find('_');
+        if (underscorePos != std::string::npos && underscorePos < paramId.size() - 1) {
+            std::string lfoName = paramId.substr(0, underscorePos); // "lfo1", "lfo2", etc.
+            std::string paramName = paramId.substr(underscorePos + 1); // "rate", "shape", etc.
+
+            if (auto* source = modulationMatrix_.getSource(lfoName)) {
+                if (auto* lfo = dynamic_cast<LfoSource*>(source)) {
+                    if (paramName == "rate") {
+                        lfo->setFrequency(value);
+                    }
+                    else if (paramName == "shape") {
+                        // Convert 0-4 float value to LFO shape
+                        int shapeIndex = static_cast<int>(value);
+                        if (shapeIndex >= 0 && shapeIndex <= 4) {
+                            lfo->setShape(static_cast<LfoSource::WaveShape>(shapeIndex));
+                        }
+                    }
+                }
+            }
+        }
     }
     else {
         std::cout << "Unknown parameter: " << paramId << std::endl;
@@ -259,21 +313,88 @@ void Synthesizer::setParameter(const std::string& paramId, float value) {
 }
 
 float Synthesizer::getParameter(const std::string& paramId) const {
-    // Stub implementation - we'll need a proper parameter system later
-    
-    // Return default values for some recognized parameters
+    // Getting actual parameters
+
     if (paramId == "oscillator_frame") {
-        return 0.0f;
+        // In a real implementation, we'd get this from the first voice or from a stored value
+        // For now, return based on current oscillator type
+        return oscTypeToFramePosition(currentOscType_);
+    }
+    else if (paramId == "oscillator_type") {
+        return static_cast<float>(currentOscType_);
     }
     else if (paramId == "filter_cutoff") {
-        return 1.0f;
+        // For future implementation - will need to add filter to VoiceManager
+        return 1.0f; // Default value
     }
     else if (paramId == "filter_resonance") {
-        return 0.5f;
+        // For future implementation - will need to add filter to VoiceManager
+        return 0.5f; // Default value
     }
-    
+    else if (paramId == "master_volume") {
+        // For future implementation - get master volume
+        return 0.7f; // Default value
+    }
+    else if (paramId == "voice_count") {
+        return static_cast<float>(getVoiceCount());
+    }
+    else if (paramId.find("lfo") == 0) {
+        // Handle LFO parameters (lfo1_rate, lfo1_shape, etc.)
+
+        // Parse LFO index and parameter name
+        size_t underscorePos = paramId.find('_');
+        if (underscorePos != std::string::npos && underscorePos < paramId.size() - 1) {
+            std::string lfoName = paramId.substr(0, underscorePos); // "lfo1", "lfo2", etc.
+            std::string paramName = paramId.substr(underscorePos + 1); // "rate", "shape", etc.
+
+            if (auto* source = modulationMatrix_.getSource(lfoName)) {
+                if (auto* lfo = dynamic_cast<LfoSource*>(source)) {
+                    if (paramName == "rate") {
+                        // LFO frequency is private, we would need a getter
+                        return 1.0f; // Default value
+                    }
+                    else if (paramName == "shape") {
+                        // LFO shape is private, we would need a getter
+                        return 0.0f; // Default value (sine)
+                    }
+                }
+            }
+        }
+    }
+
     // Unknown parameter
     return 0.0f;
+}
+
+std::map<std::string, float> Synthesizer::getAllParameters() const {
+    std::map<std::string, float> parameters;
+
+    // Store core synthesizer parameters
+    parameters["oscillator_type"] = static_cast<float>(currentOscType_);
+    parameters["oscillator_frame"] = oscTypeToFramePosition(currentOscType_);
+    parameters["voice_count"] = static_cast<float>(getVoiceCount());
+    parameters["master_volume"] = 0.7f; // Default value for now
+
+    // Future parameters to add when implemented:
+    parameters["filter_cutoff"] = 1.0f;
+    parameters["filter_resonance"] = 0.5f;
+
+    // LFO Parameters
+    parameters["lfo1_rate"] = 1.0f;
+    parameters["lfo1_shape"] = 0.0f; // Sine
+    parameters["lfo2_rate"] = 0.5f;
+    parameters["lfo2_shape"] = 0.0f; // Sine
+
+    // Add modulation connections when implemented
+
+    return parameters;
+}
+
+void Synthesizer::setAllParameters(const std::map<std::string, float>& parameters) {
+    // Apply all parameters at once
+    for (const auto& [paramId, value] : parameters) {
+        setParameter(paramId, value);
+    }
 }
 
 void Synthesizer::setOscillatorType(OscillatorType type) {
@@ -298,7 +419,7 @@ void Synthesizer::setOscillatorType(OscillatorType type) {
               << " (frame position: " << framePos << ")" << std::endl;
 }
 
-float Synthesizer::oscTypeToFramePosition(OscillatorType type) {
+float Synthesizer::oscTypeToFramePosition(OscillatorType type) const {
     // Map oscillator type to frame position (0-1)
     switch (type) {
         case OscillatorType::Sine:

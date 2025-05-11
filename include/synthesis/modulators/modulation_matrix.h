@@ -110,6 +110,7 @@ public:
     // Source management
     void addSource(std::unique_ptr<ModulationSource> source);
     ModulationSource* getSource(const std::string& name);
+    ModulationSource* getSource(const std::string& name) const;
     
     // Destination management
     void addDestination(std::unique_ptr<ModulationDestination> destination);

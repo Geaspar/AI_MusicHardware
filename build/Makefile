@@ -130,337 +130,54 @@ AIMusicCore/fast:
 .PHONY : AIMusicCore/fast
 
 #=============================================================================
-# Target rules for targets named TestAudio
+# Target rules for targets named PresetLib
 
 # Build rule for target.
-TestAudio: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 TestAudio
-.PHONY : TestAudio
+PresetLib: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 PresetLib
+.PHONY : PresetLib
 
 # fast build rule for target.
-TestAudio/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestAudio.dir/build.make CMakeFiles/TestAudio.dir/build
-.PHONY : TestAudio/fast
+PresetLib/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/PresetLib.dir/build.make CMakeFiles/PresetLib.dir/build
+.PHONY : PresetLib/fast
 
 #=============================================================================
-# Target rules for targets named TestSequencer
+# Target rules for targets named SimplePresetManagerDemo
 
 # Build rule for target.
-TestSequencer: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 TestSequencer
-.PHONY : TestSequencer
+SimplePresetManagerDemo: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 SimplePresetManagerDemo
+.PHONY : SimplePresetManagerDemo
 
 # fast build rule for target.
-TestSequencer/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencer.dir/build.make CMakeFiles/TestSequencer.dir/build
-.PHONY : TestSequencer/fast
+SimplePresetManagerDemo/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimplePresetManagerDemo.dir/build.make CMakeFiles/SimplePresetManagerDemo.dir/build
+.PHONY : SimplePresetManagerDemo/fast
 
-#=============================================================================
-# Target rules for targets named SimpleTest
-
-# Build rule for target.
-SimpleTest: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 SimpleTest
-.PHONY : SimpleTest
-
-# fast build rule for target.
-SimpleTest/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimpleTest.dir/build.make CMakeFiles/SimpleTest.dir/build
-.PHONY : SimpleTest/fast
-
-#=============================================================================
-# Target rules for targets named TestAdaptiveSequencer
-
-# Build rule for target.
-TestAdaptiveSequencer: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 TestAdaptiveSequencer
-.PHONY : TestAdaptiveSequencer
-
-# fast build rule for target.
-TestAdaptiveSequencer/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestAdaptiveSequencer.dir/build.make CMakeFiles/TestAdaptiveSequencer.dir/build
-.PHONY : TestAdaptiveSequencer/fast
-
-#=============================================================================
-# Target rules for targets named TestUI
-
-# Build rule for target.
-TestUI: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 TestUI
-.PHONY : TestUI
-
-# fast build rule for target.
-TestUI/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestUI.dir/build.make CMakeFiles/TestUI.dir/build
-.PHONY : TestUI/fast
-
-#=============================================================================
-# Target rules for targets named WavetableDemo
-
-# Build rule for target.
-WavetableDemo: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 WavetableDemo
-.PHONY : WavetableDemo
-
-# fast build rule for target.
-WavetableDemo/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/WavetableDemo.dir/build.make CMakeFiles/WavetableDemo.dir/build
-.PHONY : WavetableDemo/fast
-
-#=============================================================================
-# Target rules for targets named TestMidi
-
-# Build rule for target.
-TestMidi: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 TestMidi
-.PHONY : TestMidi
-
-# fast build rule for target.
-TestMidi/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestMidi.dir/build.make CMakeFiles/TestMidi.dir/build
-.PHONY : TestMidi/fast
-
-#=============================================================================
-# Target rules for targets named MidiKeyboardDemo
-
-# Build rule for target.
-MidiKeyboardDemo: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 MidiKeyboardDemo
-.PHONY : MidiKeyboardDemo
-
-# fast build rule for target.
-MidiKeyboardDemo/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiKeyboardDemo.dir/build.make CMakeFiles/MidiKeyboardDemo.dir/build
-.PHONY : MidiKeyboardDemo/fast
-
-#=============================================================================
-# Target rules for targets named MidiKeyboardEffectsDemo
-
-# Build rule for target.
-MidiKeyboardEffectsDemo: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 MidiKeyboardEffectsDemo
-.PHONY : MidiKeyboardEffectsDemo
-
-# fast build rule for target.
-MidiKeyboardEffectsDemo/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiKeyboardEffectsDemo.dir/build.make CMakeFiles/MidiKeyboardEffectsDemo.dir/build
-.PHONY : MidiKeyboardEffectsDemo/fast
-
-examples/MidiKeyboardDemo.o: examples/MidiKeyboardDemo.cpp.o
-.PHONY : examples/MidiKeyboardDemo.o
+examples/SimplePresetManagerDemo.o: examples/SimplePresetManagerDemo.cpp.o
+.PHONY : examples/SimplePresetManagerDemo.o
 
 # target to build an object file
-examples/MidiKeyboardDemo.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiKeyboardDemo.dir/build.make CMakeFiles/MidiKeyboardDemo.dir/examples/MidiKeyboardDemo.cpp.o
-.PHONY : examples/MidiKeyboardDemo.cpp.o
+examples/SimplePresetManagerDemo.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimplePresetManagerDemo.dir/build.make CMakeFiles/SimplePresetManagerDemo.dir/examples/SimplePresetManagerDemo.cpp.o
+.PHONY : examples/SimplePresetManagerDemo.cpp.o
 
-examples/MidiKeyboardDemo.i: examples/MidiKeyboardDemo.cpp.i
-.PHONY : examples/MidiKeyboardDemo.i
-
-# target to preprocess a source file
-examples/MidiKeyboardDemo.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiKeyboardDemo.dir/build.make CMakeFiles/MidiKeyboardDemo.dir/examples/MidiKeyboardDemo.cpp.i
-.PHONY : examples/MidiKeyboardDemo.cpp.i
-
-examples/MidiKeyboardDemo.s: examples/MidiKeyboardDemo.cpp.s
-.PHONY : examples/MidiKeyboardDemo.s
-
-# target to generate assembly for a file
-examples/MidiKeyboardDemo.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiKeyboardDemo.dir/build.make CMakeFiles/MidiKeyboardDemo.dir/examples/MidiKeyboardDemo.cpp.s
-.PHONY : examples/MidiKeyboardDemo.cpp.s
-
-examples/MidiKeyboardEffectsDemo.o: examples/MidiKeyboardEffectsDemo.cpp.o
-.PHONY : examples/MidiKeyboardEffectsDemo.o
-
-# target to build an object file
-examples/MidiKeyboardEffectsDemo.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiKeyboardEffectsDemo.dir/build.make CMakeFiles/MidiKeyboardEffectsDemo.dir/examples/MidiKeyboardEffectsDemo.cpp.o
-.PHONY : examples/MidiKeyboardEffectsDemo.cpp.o
-
-examples/MidiKeyboardEffectsDemo.i: examples/MidiKeyboardEffectsDemo.cpp.i
-.PHONY : examples/MidiKeyboardEffectsDemo.i
+examples/SimplePresetManagerDemo.i: examples/SimplePresetManagerDemo.cpp.i
+.PHONY : examples/SimplePresetManagerDemo.i
 
 # target to preprocess a source file
-examples/MidiKeyboardEffectsDemo.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiKeyboardEffectsDemo.dir/build.make CMakeFiles/MidiKeyboardEffectsDemo.dir/examples/MidiKeyboardEffectsDemo.cpp.i
-.PHONY : examples/MidiKeyboardEffectsDemo.cpp.i
+examples/SimplePresetManagerDemo.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimplePresetManagerDemo.dir/build.make CMakeFiles/SimplePresetManagerDemo.dir/examples/SimplePresetManagerDemo.cpp.i
+.PHONY : examples/SimplePresetManagerDemo.cpp.i
 
-examples/MidiKeyboardEffectsDemo.s: examples/MidiKeyboardEffectsDemo.cpp.s
-.PHONY : examples/MidiKeyboardEffectsDemo.s
-
-# target to generate assembly for a file
-examples/MidiKeyboardEffectsDemo.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiKeyboardEffectsDemo.dir/build.make CMakeFiles/MidiKeyboardEffectsDemo.dir/examples/MidiKeyboardEffectsDemo.cpp.s
-.PHONY : examples/MidiKeyboardEffectsDemo.cpp.s
-
-examples/SimpleTest.o: examples/SimpleTest.cpp.o
-.PHONY : examples/SimpleTest.o
-
-# target to build an object file
-examples/SimpleTest.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimpleTest.dir/build.make CMakeFiles/SimpleTest.dir/examples/SimpleTest.cpp.o
-.PHONY : examples/SimpleTest.cpp.o
-
-examples/SimpleTest.i: examples/SimpleTest.cpp.i
-.PHONY : examples/SimpleTest.i
-
-# target to preprocess a source file
-examples/SimpleTest.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimpleTest.dir/build.make CMakeFiles/SimpleTest.dir/examples/SimpleTest.cpp.i
-.PHONY : examples/SimpleTest.cpp.i
-
-examples/SimpleTest.s: examples/SimpleTest.cpp.s
-.PHONY : examples/SimpleTest.s
+examples/SimplePresetManagerDemo.s: examples/SimplePresetManagerDemo.cpp.s
+.PHONY : examples/SimplePresetManagerDemo.s
 
 # target to generate assembly for a file
-examples/SimpleTest.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimpleTest.dir/build.make CMakeFiles/SimpleTest.dir/examples/SimpleTest.cpp.s
-.PHONY : examples/SimpleTest.cpp.s
-
-examples/TestAdaptiveSequencer.o: examples/TestAdaptiveSequencer.cpp.o
-.PHONY : examples/TestAdaptiveSequencer.o
-
-# target to build an object file
-examples/TestAdaptiveSequencer.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestAdaptiveSequencer.dir/build.make CMakeFiles/TestAdaptiveSequencer.dir/examples/TestAdaptiveSequencer.cpp.o
-.PHONY : examples/TestAdaptiveSequencer.cpp.o
-
-examples/TestAdaptiveSequencer.i: examples/TestAdaptiveSequencer.cpp.i
-.PHONY : examples/TestAdaptiveSequencer.i
-
-# target to preprocess a source file
-examples/TestAdaptiveSequencer.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestAdaptiveSequencer.dir/build.make CMakeFiles/TestAdaptiveSequencer.dir/examples/TestAdaptiveSequencer.cpp.i
-.PHONY : examples/TestAdaptiveSequencer.cpp.i
-
-examples/TestAdaptiveSequencer.s: examples/TestAdaptiveSequencer.cpp.s
-.PHONY : examples/TestAdaptiveSequencer.s
-
-# target to generate assembly for a file
-examples/TestAdaptiveSequencer.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestAdaptiveSequencer.dir/build.make CMakeFiles/TestAdaptiveSequencer.dir/examples/TestAdaptiveSequencer.cpp.s
-.PHONY : examples/TestAdaptiveSequencer.cpp.s
-
-examples/TestAudio.o: examples/TestAudio.cpp.o
-.PHONY : examples/TestAudio.o
-
-# target to build an object file
-examples/TestAudio.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestAudio.dir/build.make CMakeFiles/TestAudio.dir/examples/TestAudio.cpp.o
-.PHONY : examples/TestAudio.cpp.o
-
-examples/TestAudio.i: examples/TestAudio.cpp.i
-.PHONY : examples/TestAudio.i
-
-# target to preprocess a source file
-examples/TestAudio.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestAudio.dir/build.make CMakeFiles/TestAudio.dir/examples/TestAudio.cpp.i
-.PHONY : examples/TestAudio.cpp.i
-
-examples/TestAudio.s: examples/TestAudio.cpp.s
-.PHONY : examples/TestAudio.s
-
-# target to generate assembly for a file
-examples/TestAudio.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestAudio.dir/build.make CMakeFiles/TestAudio.dir/examples/TestAudio.cpp.s
-.PHONY : examples/TestAudio.cpp.s
-
-examples/TestMidi.o: examples/TestMidi.cpp.o
-.PHONY : examples/TestMidi.o
-
-# target to build an object file
-examples/TestMidi.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestMidi.dir/build.make CMakeFiles/TestMidi.dir/examples/TestMidi.cpp.o
-.PHONY : examples/TestMidi.cpp.o
-
-examples/TestMidi.i: examples/TestMidi.cpp.i
-.PHONY : examples/TestMidi.i
-
-# target to preprocess a source file
-examples/TestMidi.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestMidi.dir/build.make CMakeFiles/TestMidi.dir/examples/TestMidi.cpp.i
-.PHONY : examples/TestMidi.cpp.i
-
-examples/TestMidi.s: examples/TestMidi.cpp.s
-.PHONY : examples/TestMidi.s
-
-# target to generate assembly for a file
-examples/TestMidi.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestMidi.dir/build.make CMakeFiles/TestMidi.dir/examples/TestMidi.cpp.s
-.PHONY : examples/TestMidi.cpp.s
-
-examples/TestSequencer.o: examples/TestSequencer.cpp.o
-.PHONY : examples/TestSequencer.o
-
-# target to build an object file
-examples/TestSequencer.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencer.dir/build.make CMakeFiles/TestSequencer.dir/examples/TestSequencer.cpp.o
-.PHONY : examples/TestSequencer.cpp.o
-
-examples/TestSequencer.i: examples/TestSequencer.cpp.i
-.PHONY : examples/TestSequencer.i
-
-# target to preprocess a source file
-examples/TestSequencer.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencer.dir/build.make CMakeFiles/TestSequencer.dir/examples/TestSequencer.cpp.i
-.PHONY : examples/TestSequencer.cpp.i
-
-examples/TestSequencer.s: examples/TestSequencer.cpp.s
-.PHONY : examples/TestSequencer.s
-
-# target to generate assembly for a file
-examples/TestSequencer.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencer.dir/build.make CMakeFiles/TestSequencer.dir/examples/TestSequencer.cpp.s
-.PHONY : examples/TestSequencer.cpp.s
-
-examples/TestUI.o: examples/TestUI.cpp.o
-.PHONY : examples/TestUI.o
-
-# target to build an object file
-examples/TestUI.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestUI.dir/build.make CMakeFiles/TestUI.dir/examples/TestUI.cpp.o
-.PHONY : examples/TestUI.cpp.o
-
-examples/TestUI.i: examples/TestUI.cpp.i
-.PHONY : examples/TestUI.i
-
-# target to preprocess a source file
-examples/TestUI.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestUI.dir/build.make CMakeFiles/TestUI.dir/examples/TestUI.cpp.i
-.PHONY : examples/TestUI.cpp.i
-
-examples/TestUI.s: examples/TestUI.cpp.s
-.PHONY : examples/TestUI.s
-
-# target to generate assembly for a file
-examples/TestUI.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestUI.dir/build.make CMakeFiles/TestUI.dir/examples/TestUI.cpp.s
-.PHONY : examples/TestUI.cpp.s
-
-examples/WavetableDemo.o: examples/WavetableDemo.cpp.o
-.PHONY : examples/WavetableDemo.o
-
-# target to build an object file
-examples/WavetableDemo.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/WavetableDemo.dir/build.make CMakeFiles/WavetableDemo.dir/examples/WavetableDemo.cpp.o
-.PHONY : examples/WavetableDemo.cpp.o
-
-examples/WavetableDemo.i: examples/WavetableDemo.cpp.i
-.PHONY : examples/WavetableDemo.i
-
-# target to preprocess a source file
-examples/WavetableDemo.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/WavetableDemo.dir/build.make CMakeFiles/WavetableDemo.dir/examples/WavetableDemo.cpp.i
-.PHONY : examples/WavetableDemo.cpp.i
-
-examples/WavetableDemo.s: examples/WavetableDemo.cpp.s
-.PHONY : examples/WavetableDemo.s
-
-# target to generate assembly for a file
-examples/WavetableDemo.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/WavetableDemo.dir/build.make CMakeFiles/WavetableDemo.dir/examples/WavetableDemo.cpp.s
-.PHONY : examples/WavetableDemo.cpp.s
+examples/SimplePresetManagerDemo.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimplePresetManagerDemo.dir/build.make CMakeFiles/SimplePresetManagerDemo.dir/examples/SimplePresetManagerDemo.cpp.s
+.PHONY : examples/SimplePresetManagerDemo.cpp.s
 
 src/audio/AudioEngine.o: src/audio/AudioEngine.cpp.o
 .PHONY : src/audio/AudioEngine.o
@@ -701,6 +418,30 @@ src/effects/Filter.s: src/effects/Filter.cpp.s
 src/effects/Filter.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/Filter.cpp.s
 .PHONY : src/effects/Filter.cpp.s
+
+src/effects/MidiEffectControl.o: src/effects/MidiEffectControl.cpp.o
+.PHONY : src/effects/MidiEffectControl.o
+
+# target to build an object file
+src/effects/MidiEffectControl.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/MidiEffectControl.cpp.o
+.PHONY : src/effects/MidiEffectControl.cpp.o
+
+src/effects/MidiEffectControl.i: src/effects/MidiEffectControl.cpp.i
+.PHONY : src/effects/MidiEffectControl.i
+
+# target to preprocess a source file
+src/effects/MidiEffectControl.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/MidiEffectControl.cpp.i
+.PHONY : src/effects/MidiEffectControl.cpp.i
+
+src/effects/MidiEffectControl.s: src/effects/MidiEffectControl.cpp.s
+.PHONY : src/effects/MidiEffectControl.s
+
+# target to generate assembly for a file
+src/effects/MidiEffectControl.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/effects/MidiEffectControl.cpp.s
+.PHONY : src/effects/MidiEffectControl.cpp.s
 
 src/effects/Modulation.o: src/effects/Modulation.cpp.o
 .PHONY : src/effects/Modulation.o
@@ -1086,125 +827,29 @@ src/synthesis/wavetable/wavetable.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.s
 .PHONY : src/synthesis/wavetable/wavetable.cpp.s
 
-src/ui/DisplayManager.o: src/ui/DisplayManager.cpp.o
-.PHONY : src/ui/DisplayManager.o
+src/ui/presets/PresetManager.o: src/ui/presets/PresetManager.cpp.o
+.PHONY : src/ui/presets/PresetManager.o
 
 # target to build an object file
-src/ui/DisplayManager.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/DisplayManager.cpp.o
-.PHONY : src/ui/DisplayManager.cpp.o
+src/ui/presets/PresetManager.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/PresetLib.dir/build.make CMakeFiles/PresetLib.dir/src/ui/presets/PresetManager.cpp.o
+.PHONY : src/ui/presets/PresetManager.cpp.o
 
-src/ui/DisplayManager.i: src/ui/DisplayManager.cpp.i
-.PHONY : src/ui/DisplayManager.i
-
-# target to preprocess a source file
-src/ui/DisplayManager.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/DisplayManager.cpp.i
-.PHONY : src/ui/DisplayManager.cpp.i
-
-src/ui/DisplayManager.s: src/ui/DisplayManager.cpp.s
-.PHONY : src/ui/DisplayManager.s
-
-# target to generate assembly for a file
-src/ui/DisplayManager.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/DisplayManager.cpp.s
-.PHONY : src/ui/DisplayManager.cpp.s
-
-src/ui/Font.o: src/ui/Font.cpp.o
-.PHONY : src/ui/Font.o
-
-# target to build an object file
-src/ui/Font.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.o
-.PHONY : src/ui/Font.cpp.o
-
-src/ui/Font.i: src/ui/Font.cpp.i
-.PHONY : src/ui/Font.i
+src/ui/presets/PresetManager.i: src/ui/presets/PresetManager.cpp.i
+.PHONY : src/ui/presets/PresetManager.i
 
 # target to preprocess a source file
-src/ui/Font.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.i
-.PHONY : src/ui/Font.cpp.i
+src/ui/presets/PresetManager.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/PresetLib.dir/build.make CMakeFiles/PresetLib.dir/src/ui/presets/PresetManager.cpp.i
+.PHONY : src/ui/presets/PresetManager.cpp.i
 
-src/ui/Font.s: src/ui/Font.cpp.s
-.PHONY : src/ui/Font.s
-
-# target to generate assembly for a file
-src/ui/Font.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.s
-.PHONY : src/ui/Font.cpp.s
-
-src/ui/UIComponents.o: src/ui/UIComponents.cpp.o
-.PHONY : src/ui/UIComponents.o
-
-# target to build an object file
-src/ui/UIComponents.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/UIComponents.cpp.o
-.PHONY : src/ui/UIComponents.cpp.o
-
-src/ui/UIComponents.i: src/ui/UIComponents.cpp.i
-.PHONY : src/ui/UIComponents.i
-
-# target to preprocess a source file
-src/ui/UIComponents.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/UIComponents.cpp.i
-.PHONY : src/ui/UIComponents.cpp.i
-
-src/ui/UIComponents.s: src/ui/UIComponents.cpp.s
-.PHONY : src/ui/UIComponents.s
+src/ui/presets/PresetManager.s: src/ui/presets/PresetManager.cpp.s
+.PHONY : src/ui/presets/PresetManager.s
 
 # target to generate assembly for a file
-src/ui/UIComponents.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/UIComponents.cpp.s
-.PHONY : src/ui/UIComponents.cpp.s
-
-src/ui/UIContext.o: src/ui/UIContext.cpp.o
-.PHONY : src/ui/UIContext.o
-
-# target to build an object file
-src/ui/UIContext.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/UIContext.cpp.o
-.PHONY : src/ui/UIContext.cpp.o
-
-src/ui/UIContext.i: src/ui/UIContext.cpp.i
-.PHONY : src/ui/UIContext.i
-
-# target to preprocess a source file
-src/ui/UIContext.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/UIContext.cpp.i
-.PHONY : src/ui/UIContext.cpp.i
-
-src/ui/UIContext.s: src/ui/UIContext.cpp.s
-.PHONY : src/ui/UIContext.s
-
-# target to generate assembly for a file
-src/ui/UIContext.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/UIContext.cpp.s
-.PHONY : src/ui/UIContext.cpp.s
-
-src/ui/UserInterface.o: src/ui/UserInterface.cpp.o
-.PHONY : src/ui/UserInterface.o
-
-# target to build an object file
-src/ui/UserInterface.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/UserInterface.cpp.o
-.PHONY : src/ui/UserInterface.cpp.o
-
-src/ui/UserInterface.i: src/ui/UserInterface.cpp.i
-.PHONY : src/ui/UserInterface.i
-
-# target to preprocess a source file
-src/ui/UserInterface.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/UserInterface.cpp.i
-.PHONY : src/ui/UserInterface.cpp.i
-
-src/ui/UserInterface.s: src/ui/UserInterface.cpp.s
-.PHONY : src/ui/UserInterface.s
-
-# target to generate assembly for a file
-src/ui/UserInterface.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/UserInterface.cpp.s
-.PHONY : src/ui/UserInterface.cpp.s
+src/ui/presets/PresetManager.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/PresetLib.dir/build.make CMakeFiles/PresetLib.dir/src/ui/presets/PresetManager.cpp.s
+.PHONY : src/ui/presets/PresetManager.cpp.s
 
 # Help Target
 help:
@@ -1215,42 +860,11 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... AIMusicCore"
-	@echo "... MidiKeyboardDemo"
-	@echo "... MidiKeyboardEffectsDemo"
-	@echo "... SimpleTest"
-	@echo "... TestAdaptiveSequencer"
-	@echo "... TestAudio"
-	@echo "... TestMidi"
-	@echo "... TestSequencer"
-	@echo "... TestUI"
-	@echo "... WavetableDemo"
-	@echo "... examples/MidiKeyboardDemo.o"
-	@echo "... examples/MidiKeyboardDemo.i"
-	@echo "... examples/MidiKeyboardDemo.s"
-	@echo "... examples/MidiKeyboardEffectsDemo.o"
-	@echo "... examples/MidiKeyboardEffectsDemo.i"
-	@echo "... examples/MidiKeyboardEffectsDemo.s"
-	@echo "... examples/SimpleTest.o"
-	@echo "... examples/SimpleTest.i"
-	@echo "... examples/SimpleTest.s"
-	@echo "... examples/TestAdaptiveSequencer.o"
-	@echo "... examples/TestAdaptiveSequencer.i"
-	@echo "... examples/TestAdaptiveSequencer.s"
-	@echo "... examples/TestAudio.o"
-	@echo "... examples/TestAudio.i"
-	@echo "... examples/TestAudio.s"
-	@echo "... examples/TestMidi.o"
-	@echo "... examples/TestMidi.i"
-	@echo "... examples/TestMidi.s"
-	@echo "... examples/TestSequencer.o"
-	@echo "... examples/TestSequencer.i"
-	@echo "... examples/TestSequencer.s"
-	@echo "... examples/TestUI.o"
-	@echo "... examples/TestUI.i"
-	@echo "... examples/TestUI.s"
-	@echo "... examples/WavetableDemo.o"
-	@echo "... examples/WavetableDemo.i"
-	@echo "... examples/WavetableDemo.s"
+	@echo "... PresetLib"
+	@echo "... SimplePresetManagerDemo"
+	@echo "... examples/SimplePresetManagerDemo.o"
+	@echo "... examples/SimplePresetManagerDemo.i"
+	@echo "... examples/SimplePresetManagerDemo.s"
 	@echo "... src/audio/AudioEngine.o"
 	@echo "... src/audio/AudioEngine.i"
 	@echo "... src/audio/AudioEngine.s"
@@ -1281,6 +895,9 @@ help:
 	@echo "... src/effects/Filter.o"
 	@echo "... src/effects/Filter.i"
 	@echo "... src/effects/Filter.s"
+	@echo "... src/effects/MidiEffectControl.o"
+	@echo "... src/effects/MidiEffectControl.i"
+	@echo "... src/effects/MidiEffectControl.s"
 	@echo "... src/effects/Modulation.o"
 	@echo "... src/effects/Modulation.i"
 	@echo "... src/effects/Modulation.s"
@@ -1329,21 +946,9 @@ help:
 	@echo "... src/synthesis/wavetable/wavetable.o"
 	@echo "... src/synthesis/wavetable/wavetable.i"
 	@echo "... src/synthesis/wavetable/wavetable.s"
-	@echo "... src/ui/DisplayManager.o"
-	@echo "... src/ui/DisplayManager.i"
-	@echo "... src/ui/DisplayManager.s"
-	@echo "... src/ui/Font.o"
-	@echo "... src/ui/Font.i"
-	@echo "... src/ui/Font.s"
-	@echo "... src/ui/UIComponents.o"
-	@echo "... src/ui/UIComponents.i"
-	@echo "... src/ui/UIComponents.s"
-	@echo "... src/ui/UIContext.o"
-	@echo "... src/ui/UIContext.i"
-	@echo "... src/ui/UIContext.s"
-	@echo "... src/ui/UserInterface.o"
-	@echo "... src/ui/UserInterface.i"
-	@echo "... src/ui/UserInterface.s"
+	@echo "... src/ui/presets/PresetManager.o"
+	@echo "... src/ui/presets/PresetManager.i"
+	@echo "... src/ui/presets/PresetManager.s"
 .PHONY : help
 
 
