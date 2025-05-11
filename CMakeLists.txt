@@ -56,6 +56,11 @@ set(EFFECTS_SOURCES
     src/effects/Saturation.cpp
     src/effects/ReorderableEffectsChain.cpp
     src/effects/MidiEffectControl.cpp
+    # Advanced filter system
+    src/effects/AdvancedFilter.cpp
+    src/effects/LadderFilter.cpp
+    src/effects/CombFilter.cpp
+    src/effects/FormantFilter.cpp
 )
 
 set(BASIC_AUDIO_SOURCES
@@ -200,9 +205,17 @@ target_link_libraries(OscillatorStackDemo PRIVATE
 )
 message(STATUS "Building OscillatorStackDemo")
 
+# Create Advanced Filter Demo executable
+add_executable(AdvancedFilterDemo examples/AdvancedFilterDemo.cpp)
+target_link_libraries(AdvancedFilterDemo PRIVATE
+    AIMusicCore
+)
+message(STATUS "Building AdvancedFilterDemo")
+
 message(STATUS "Available tests:")
 message(STATUS "- Run ./bin/SimplePresetManagerDemo to try the preset management system")
 message(STATUS "- Run ./bin/MultiTimbralDemo to try the multi-timbral capabilities")
 message(STATUS "- Run ./bin/TestMpeVoiceManager to try the MPE-aware voice manager")
 message(STATUS "- Run ./bin/TestAudio to test real-time audio generation")
 message(STATUS "- Run ./bin/OscillatorStackDemo to try the oscillator stacking capabilities")
+message(STATUS "- Run ./bin/AdvancedFilterDemo to try the enhanced filter system with multiple filter types")
