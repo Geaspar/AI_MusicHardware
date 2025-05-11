@@ -219,3 +219,11 @@ message(STATUS "- Run ./bin/TestMpeVoiceManager to try the MPE-aware voice manag
 message(STATUS "- Run ./bin/TestAudio to test real-time audio generation")
 message(STATUS "- Run ./bin/OscillatorStackDemo to try the oscillator stacking capabilities")
 message(STATUS "- Run ./bin/AdvancedFilterDemo to try the enhanced filter system with multiple filter types")
+
+# Create Synchronized Sequencer Demo executable
+add_executable(SynchronizedSequencerDemo examples/SynchronizedSequencerDemo.cpp)
+target_link_libraries(SynchronizedSequencerDemo PRIVATE
+    AIMusicCore
+)
+message(STATUS "Building SynchronizedSequencerDemo")
+message(STATUS "- Run ./bin/SynchronizedSequencerDemo to test the improved sequencer-audio engine synchronization")

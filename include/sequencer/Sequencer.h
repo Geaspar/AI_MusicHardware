@@ -86,16 +86,16 @@ public:
     using NoteOnCallback = std::function<void(int pitch, float velocity, int channel, const Envelope& env)>;
     using NoteOffCallback = std::function<void(int pitch, int channel)>;
     using TransportCallback = std::function<void(double positionInBeats, int bar, int beat)>;
-    
+
     Sequencer(double tempo = 120.0, int beatsPerBar = 4);
     ~Sequencer();
-    
+
     bool initialize();
     void start();
     void stop();
     void reset();
     bool isPlaying() const;
-    
+
     void setTempo(double bpm);
     double getTempo() const;
     
@@ -140,41 +140,49 @@ public:
     
     // Call this at regular intervals from the audio thread
     void process(double sampleTime);
+
+    // Synchronize with audio engine - allows accurate timing coordination
+    void synchronizeWithAudioEngine(double audioEngineTimeInSeconds, double engineSampleRate);
+
+    // Get precise timing information
+    double getPrecisePositionInBeats() const;
+    double getPreciseBeatTime() const;  // Returns time in seconds per beat
     
 private:
     // Pattern processing method for audio thread
     void processSinglePattern(double deltaBeats);
     void processSongArrangement(double deltaBeats);
-    
+
     // Find the pattern instances that should be playing at the current position
     std::vector<PatternInstance*> getActivePatternInstances();
-    
+
     // Update song length based on pattern instances
     void updateSongLength();
-    
+
     std::atomic<double> tempo_;  // Make tempo atomic for lock-free access
     int beatsPerBar_;
     std::vector<std::unique_ptr<Pattern>> patterns_;
-    
+
     // Song arrangement
     PlaybackMode playbackMode_;
     std::vector<PatternInstance> songArrangement_;
     double songLength_;
-    
+
     std::atomic<bool> isPlaying_;
     std::atomic<bool> looping_;
     std::atomic<size_t> currentPatternIndex_;  // Make thread-safe
     double positionInBeats_;
     mutable std::mutex positionMutex_;  // Protect position access
-    
+    mutable std::mutex timingMutex_;    // Protect timing calculations
+
     // Callbacks
     NoteOnCallback noteOnCallback_;
     NoteOffCallback noteOffCallback_;
     TransportCallback transportCallback_;
-    
+
     mutable std::mutex patternMutex_;
     mutable std::mutex arrangementMutex_;
-    
+
     struct ActiveNote {
         int pitch;
         int channel;
@@ -182,6 +190,13 @@ private:
     };
     std::vector<ActiveNote> activeNotes_;
     mutable std::mutex activeNotesMutex_; // Protect active notes
+
+    // Audio engine synchronization
+    double audioEngineSampleRate_;
+    double audioEngineTimeOffset_;
+    double lastSyncTimeSeconds_;
+    double beatTimeSeconds_;       // Time in seconds for one beat at current tempo
+    mutable std::mutex syncMutex_; // Protect synchronization state
 };
 
 } // namespace AIMusicHardware

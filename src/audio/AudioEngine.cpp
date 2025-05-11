@@ -265,4 +265,34 @@ AudioEngine::AudioCallback AudioEngine::getCallback() const {
     return callback_; // Return a copy of the callback
 }
 
+// Get current audio stream time in seconds (since stream started)
+double AudioEngine::getStreamTime() const {
+    if (!isInitialized_.load(std::memory_order_acquire) || !pimpl_ || !pimpl_->audio) {
+        return 0.0;
+    }
+
+    try {
+        return pimpl_->audio->getStreamTime();
+    } catch (const std::exception& e) {
+        std::cerr << "Error getting stream time: " << e.what() << std::endl;
+        return 0.0;
+    }
+}
+
+// Forward declaration of Sequencer to avoid circular includes
+#include "../../include/sequencer/Sequencer.h"
+
+// Synchronize a sequencer with the audio engine's timing
+void AudioEngine::synchronizeSequencer(std::shared_ptr<Sequencer> sequencer) {
+    if (!sequencer || !isInitialized_.load(std::memory_order_acquire)) {
+        return;
+    }
+
+    // Get current audio stream time
+    double streamTime = getStreamTime();
+
+    // Synchronize the sequencer with the audio engine's timing
+    sequencer->synchronizeWithAudioEngine(streamTime, static_cast<double>(sampleRate_));
+}
+
 } // namespace AIMusicHardware

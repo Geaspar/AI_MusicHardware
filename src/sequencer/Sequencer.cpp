@@ -176,7 +176,11 @@ Sequencer::Sequencer(double tempo, int beatsPerBar)
       isPlaying_(false),
       looping_(true),
       currentPatternIndex_(0),  // Now atomic
-      positionInBeats_(0.0) {
+      positionInBeats_(0.0),
+      audioEngineSampleRate_(44100.0),  // Default sample rate
+      audioEngineTimeOffset_(0.0),
+      lastSyncTimeSeconds_(0.0),
+      beatTimeSeconds_(60.0 / tempo) {  // Initialize beat time based on tempo
 }
 
 Sequencer::~Sequencer() {
@@ -269,13 +273,57 @@ bool Sequencer::isPlaying() const {
 }
 
 void Sequencer::setTempo(double bpm) {
-    // Use atomic store with explicit memory ordering - no locks needed
+    // Use atomic store with explicit memory ordering
     tempo_.store(bpm, std::memory_order_release);
+
+    // Update beat time when tempo changes
+    double newBeatTime = 60.0 / bpm;
+
+    {
+        std::lock_guard<std::mutex> lock(syncMutex_);
+        beatTimeSeconds_ = newBeatTime;
+    }
 }
 
 double Sequencer::getTempo() const {
-    // Use atomic load with explicit memory ordering - no locks needed
+    // Use atomic load with explicit memory ordering
     return tempo_.load(std::memory_order_acquire);
+}
+
+void Sequencer::synchronizeWithAudioEngine(double audioEngineTimeInSeconds, double engineSampleRate) {
+    std::lock_guard<std::mutex> lock(syncMutex_);
+
+    // Store the sample rate for future calculations
+    audioEngineSampleRate_ = engineSampleRate;
+
+    // Compute the time offset between sequencer and audio engine
+    double currentTempo = tempo_.load(std::memory_order_acquire);
+    double currentPositionInBeats;
+
+    {
+        std::lock_guard<std::mutex> posLock(positionMutex_);
+        currentPositionInBeats = positionInBeats_;
+    }
+
+    // Calculate the beat time in seconds
+    beatTimeSeconds_ = 60.0 / currentTempo;
+
+    // Calculate what time the audio engine thinks beat 0 occurred
+    audioEngineTimeOffset_ = audioEngineTimeInSeconds - (currentPositionInBeats * beatTimeSeconds_);
+
+    // Store the sync time for drift compensation
+    lastSyncTimeSeconds_ = audioEngineTimeInSeconds;
+}
+
+double Sequencer::getPrecisePositionInBeats() const {
+    std::lock_guard<std::mutex> lock(syncMutex_);
+    std::lock_guard<std::mutex> posLock(positionMutex_);
+    return positionInBeats_;
+}
+
+double Sequencer::getPreciseBeatTime() const {
+    std::lock_guard<std::mutex> lock(syncMutex_);
+    return beatTimeSeconds_;
 }
 
 void Sequencer::addPattern(std::unique_ptr<Pattern> pattern) {
@@ -485,35 +533,116 @@ void Sequencer::process(double deltaTime) {
     if (!isPlaying_.load(std::memory_order_acquire)) {
         return;
     }
-    
-    // Convert delta time to beats - no locks needed for tempo_
-    double beatsPerSecond = tempo_ / 60.0;
+
+    // Get synchronized timing information
+    double currentBeatTime;
+    double audioTimeOffset;
+    double sampleRate;
+
+    {
+        std::lock_guard<std::mutex> lock(syncMutex_);
+        currentBeatTime = beatTimeSeconds_;
+        audioTimeOffset = audioEngineTimeOffset_;
+        sampleRate = audioEngineSampleRate_;
+    }
+
+    // Calculate beats per second from the current tempo
+    const double beatsPerSecond = 1.0 / currentBeatTime;
+
+    // Convert delta time to beats with high precision using synchronized timing
     double deltaBeats = deltaTime * beatsPerSecond;
-    
+
+    // Apply timing correction to compensate for drift
+    static double accumulatedError = 0.0;
+    double adjustedDeltaBeats = deltaBeats;
+
+    {
+        std::lock_guard<std::mutex> lock(timingMutex_);
+
+        // Use high-precision quantization for timing correction
+        // Quantize to 1/960th note precision (standard MIDI tick resolution)
+        const double quantizationFactor = 960.0;
+        double quantizedDeltaBeats = std::round(deltaBeats * quantizationFactor) / quantizationFactor;
+
+        // Accumulate tiny errors for future correction
+        accumulatedError += deltaBeats - quantizedDeltaBeats;
+
+        // When accumulated error gets large enough, apply the correction
+        // Use a threshold that corresponds to less than 1ms at typical tempos
+        if (std::abs(accumulatedError) >= 0.0005) {
+            adjustedDeltaBeats = quantizedDeltaBeats + accumulatedError;
+            accumulatedError = 0.0;
+        } else {
+            adjustedDeltaBeats = quantizedDeltaBeats;
+        }
+    }
+
+    // Use synchronized audio timing if available
+    if (std::abs(audioTimeOffset) > 0.0001) {
+        // Check if we need to adjust for drift between audio engine and sequencer
+        // This keeps the sequencer locked to the audio engine's timing
+        std::lock_guard<std::mutex> lock(syncMutex_);
+
+        // Calculate the time elapsed since last sync in the audio engine's timeline
+        double currentAudioTime = lastSyncTimeSeconds_ + deltaTime;
+        lastSyncTimeSeconds_ = currentAudioTime;
+
+        // Calculate what the beat position should be based on the audio engine's timing
+        double expectedPositionInBeats = (currentAudioTime - audioTimeOffset) / currentBeatTime;
+
+        // Get the current beat position
+        double currentPositionInBeats;
+        {
+            std::lock_guard<std::mutex> posLock(positionMutex_);
+            currentPositionInBeats = positionInBeats_;
+        }
+
+        // If the difference is significant, adjust the delta to converge
+        double positionDifference = expectedPositionInBeats - currentPositionInBeats;
+        if (std::abs(positionDifference) > 0.001) {
+            // Adjust by moving up to 10% of the way toward the correct position each frame
+            // This prevents sudden jumps while still converging to the right timing
+            double correctionFactor = 0.1;
+            double correction = positionDifference * correctionFactor;
+
+            // Add the correction to the delta beats
+            adjustedDeltaBeats += correction;
+        }
+    }
+
     // Process based on playback mode
     PlaybackMode mode = playbackMode_; // Make a local copy to avoid repeated access
     if (mode == PlaybackMode::SinglePattern) {
-        processSinglePattern(deltaBeats);
+        processSinglePattern(adjustedDeltaBeats);
     } else {
-        processSongArrangement(deltaBeats);
+        processSongArrangement(adjustedDeltaBeats);
     }
-    
-    // Only capture values needed for callback, minimize lock duration
+
+    // Prepare transport information for callback
     if (transportCallback_) {
         double safePosition;
-        int bar, beat;
-        
+        int bar, beat, ticksPerBeat = 960; // High-resolution MIDI ticks per beat
+        int tick;
+
         // Minimize critical section - only capture necessary values
         {
             std::lock_guard<std::mutex> lock(positionMutex_);
             safePosition = positionInBeats_;
-            
+
             // Compute derived values inside lock to ensure consistency
             bar = static_cast<int>(std::floor(safePosition / beatsPerBar_)) + 1;
-            double beatInBar = fmod(safePosition, static_cast<double>(beatsPerBar_));
+
+            // Calculate beat with higher precision
+            double beatInBar = std::fmod(safePosition, static_cast<double>(beatsPerBar_));
+            if (beatInBar < 0.0) beatInBar += beatsPerBar_; // Handle negative modulo correctly
+
             beat = static_cast<int>(std::floor(beatInBar)) + 1;
+
+            // Calculate tick with high precision for smoother timing display
+            double tickPosition = std::fmod(safePosition * ticksPerBeat, ticksPerBeat);
+            tick = static_cast<int>(std::round(tickPosition));
         } // Lock released as soon as possible
-        
+
         // Call callback outside the lock
         transportCallback_(safePosition, bar, beat);
     }
@@ -522,96 +651,155 @@ void Sequencer::process(double deltaTime) {
 void Sequencer::processSinglePattern(double deltaBeats) {
     // Store previous and current positions
     double previousPosition;
+    double currentPosition;
     {
         std::lock_guard<std::mutex> lock(positionMutex_);
         previousPosition = positionInBeats_;
         positionInBeats_ += deltaBeats;
+        currentPosition = positionInBeats_;
     }
-    
-    // Define a small epsilon for floating-point comparisons
-    constexpr double EPSILON = 1e-6;
-    
+
+    // Define a small epsilon for floating-point comparisons with better precision
+    constexpr double EPSILON = 1e-9; // Smaller epsilon for more precise comparisons
+
     // Check if we need to loop
     std::lock_guard<std::mutex> lock(patternMutex_);
     if (patterns_.empty()) {
         return;
     }
-    
+
     // Use atomic for thread safety
-    size_t patternIndex = currentPatternIndex_.load();
+    size_t patternIndex = currentPatternIndex_.load(std::memory_order_acquire);
     if (patternIndex >= patterns_.size()) {
         return;
     }
-    
+
     Pattern* currentPattern = patterns_[patternIndex].get();
     double patternLength = currentPattern->getLength();
-    
-    if (positionInBeats_ >= patternLength - EPSILON) {
-        if (looping_) {
-            // Loop back to beginning
+
+    // Check for pattern end/loop condition with higher precision
+    if (currentPosition >= patternLength - EPSILON) {
+        if (looping_.load(std::memory_order_acquire)) {
+            // Loop back to beginning with more accurate reset
             std::lock_guard<std::mutex> posLock(positionMutex_);
-            // Use careful modulo to avoid precision errors
-            if (fabs(positionInBeats_ - patternLength) < EPSILON) {
+            // Use precise comparison and correctly handle the modulo
+            if (std::abs(currentPosition - patternLength) < EPSILON) {
                 positionInBeats_ = 0.0;  // Exactly at the end, reset to beginning
             } else {
-                positionInBeats_ = fmod(positionInBeats_, patternLength);
+                // Precise modulo calculation that avoids accumulating errors
+                double numPatterns = std::floor(currentPosition / patternLength);
+                positionInBeats_ = currentPosition - (numPatterns * patternLength);
+
+                // Avoid floating point precision issues with extremely small values
+                if (std::abs(positionInBeats_) < EPSILON) {
+                    positionInBeats_ = 0.0;
+                } else if (std::abs(positionInBeats_ - patternLength) < EPSILON) {
+                    positionInBeats_ = 0.0;
+                }
             }
+            // Update with the corrected position after looping
+            currentPosition = positionInBeats_;
+            // At the loop point, we're starting from the beginning
             previousPosition = 0.0;
         } else {
-            // Stop at the end
+            // Stop at the end with precise positioning
             std::lock_guard<std::mutex> posLock(positionMutex_);
             positionInBeats_ = patternLength;
+            currentPosition = patternLength;
             isPlaying_ = false;
             return;
         }
     }
-    
-    // Check for notes to start in this time slice
+
+    // Create a local vector to store notes that need to be started in this frame
+    // This minimizes the time we hold locks while calling callbacks
+    struct NoteToStart {
+        int pitch;
+        float velocity;
+        int channel;
+        Envelope env;
+        double endTime;
+    };
+    std::vector<NoteToStart> notesToStart;
+
+    // Check for notes to start in this time slice with improved timing precision
     for (size_t i = 0; i < currentPattern->getNumNotes(); ++i) {
         Note* note = currentPattern->getNote(i);
         if (!note) continue;
-        
+
         double noteStartTime = note->startTime;
         double noteEndTime = noteStartTime + note->duration;
-        
-        // Note starting in this time slice
-        if (noteStartTime >= previousPosition && noteStartTime < positionInBeats_) {
-            if (noteOnCallback_) {
-                noteOnCallback_(note->pitch, note->velocity, note->channel, note->env);
-            }
-            
-            // Add to active notes
-            ActiveNote activeNote;
-            activeNote.pitch = note->pitch;
-            activeNote.channel = note->channel;
-            activeNote.endTime = noteEndTime;
-            
-            {
-                std::lock_guard<std::mutex> lock(activeNotesMutex_);
-                activeNotes_.push_back(activeNote);
-            }
+
+        // Note starting in this time slice - use a more precise check
+        // Handle edge cases like notes exactly at frame boundaries
+        bool noteStartsInFrame = (noteStartTime >= previousPosition - EPSILON) &&
+                                 (noteStartTime < currentPosition + EPSILON);
+
+        // Special case for looping - handle notes at the start of the pattern
+        if (previousPosition > currentPosition && noteStartTime < currentPosition) {
+            noteStartsInFrame = true;
+        }
+
+        if (noteStartsInFrame) {
+            // Add to queue of notes to start
+            NoteToStart noteStart;
+            noteStart.pitch = note->pitch;
+            noteStart.velocity = note->velocity;
+            noteStart.channel = note->channel;
+            noteStart.env = note->env;
+            noteStart.endTime = noteEndTime;
+            notesToStart.push_back(noteStart);
         }
     }
-    
-    // Check for notes to stop in this time slice
-    double currentPosition;
-    {
-        std::lock_guard<std::mutex> lock(positionMutex_);
-        currentPosition = positionInBeats_;
+
+    // Start notes outside of pattern lock
+    for (const auto& noteToStart : notesToStart) {
+        if (noteOnCallback_) {
+            noteOnCallback_(noteToStart.pitch, noteToStart.velocity, noteToStart.channel, noteToStart.env);
+        }
+
+        // Add to active notes
+        ActiveNote activeNote;
+        activeNote.pitch = noteToStart.pitch;
+        activeNote.channel = noteToStart.channel;
+        activeNote.endTime = noteToStart.endTime;
+
+        {
+            std::lock_guard<std::mutex> lock(activeNotesMutex_);
+            activeNotes_.push_back(activeNote);
+        }
     }
-    
+
+    // Queue notes to stop in this time slice to avoid callbacks within locks
+    std::vector<ActiveNote> notesToStop;
+
     {
         std::lock_guard<std::mutex> lock(activeNotesMutex_);
         auto it = activeNotes_.begin();
         while (it != activeNotes_.end()) {
-            if (it->endTime <= currentPosition) {
-                if (noteOffCallback_) {
-                    noteOffCallback_(it->pitch, it->channel);
-                }
+            // More accurate comparison for note end times
+            // A note should end if its end time is in this frame
+            // or if we looped and the note end time was beyond the loop point
+            bool noteEndsInFrame = (it->endTime <= currentPosition + EPSILON);
+
+            // Special case for looping - if we wrapped around, also check notes that should have ended
+            if (previousPosition > currentPosition && it->endTime > previousPosition) {
+                noteEndsInFrame = true;
+            }
+
+            if (noteEndsInFrame) {
+                notesToStop.push_back(*it);
                 it = activeNotes_.erase(it);
             } else {
                 ++it;
             }
+        }
+    }
+
+    // Call note off callbacks outside the lock
+    for (const auto& noteToStop : notesToStop) {
+        if (noteOffCallback_) {
+            noteOffCallback_(noteToStop.pitch, noteToStop.channel);
         }
     }
 }
@@ -619,114 +807,200 @@ void Sequencer::processSinglePattern(double deltaBeats) {
 void Sequencer::processSongArrangement(double deltaBeats) {
     // Store previous and current positions
     double previousPosition;
+    double currentPosition;
     {
         std::lock_guard<std::mutex> lock(positionMutex_);
         previousPosition = positionInBeats_;
         positionInBeats_ += deltaBeats;
+        currentPosition = positionInBeats_;
     }
-    
-    // Define a small epsilon for floating-point comparisons
-    constexpr double EPSILON = 1e-6;
-    
+
+    // Define a small epsilon for floating-point comparisons with better precision
+    constexpr double EPSILON = 1e-9; // Smaller epsilon for more precise comparisons
+
     // Check if we need to loop
-    if (positionInBeats_ >= songLength_ - EPSILON) {
-        if (looping_ && songLength_ > EPSILON) {
-            // Loop back to beginning
+    if (currentPosition >= songLength_ - EPSILON) {
+        if (looping_.load(std::memory_order_acquire) && songLength_ > EPSILON) {
+            // Loop back to beginning with more accurate reset
             std::lock_guard<std::mutex> lock(positionMutex_);
-            // Use careful modulo to avoid precision errors
-            if (fabs(positionInBeats_ - songLength_) < EPSILON) {
+
+            // Use precise comparison and correctly handle the modulo
+            if (std::abs(currentPosition - songLength_) < EPSILON) {
                 positionInBeats_ = 0.0;  // Exactly at the end, reset to beginning
             } else {
-                positionInBeats_ = fmod(positionInBeats_, songLength_);
+                // Precise modulo calculation that avoids accumulating errors
+                double numLoops = std::floor(currentPosition / songLength_);
+                positionInBeats_ = currentPosition - (numLoops * songLength_);
+
+                // Avoid floating point precision issues with extremely small values
+                if (std::abs(positionInBeats_) < EPSILON) {
+                    positionInBeats_ = 0.0;
+                } else if (std::abs(positionInBeats_ - songLength_) < EPSILON) {
+                    positionInBeats_ = 0.0;
+                }
             }
+
+            // Update with the corrected position after looping
+            currentPosition = positionInBeats_;
+            // At the loop point, we're starting from the beginning
             previousPosition = 0.0;
         } else if (songLength_ > EPSILON) {
-            // Stop at the end
+            // Stop at the end with precise positioning
             std::lock_guard<std::mutex> lock(positionMutex_);
             positionInBeats_ = songLength_;
+            currentPosition = songLength_;
             isPlaying_ = false;
             return;
         }
     }
-    
+
+    // Create data structures to collect notes to process
+    struct NoteToStart {
+        int pitch;
+        float velocity;
+        int channel;
+        Envelope env;
+        double endTime;
+    };
+    std::vector<NoteToStart> notesToStart;
+
     // Find active pattern instances for this time slice
     std::vector<PatternInstance*> activeInstances = getActivePatternInstances();
-    
+
     // Process each active pattern instance
     for (auto* instance : activeInstances) {
-        // Get the pattern
-        std::lock_guard<std::mutex> lock(patternMutex_);
-        if (instance->patternIndex >= patterns_.size()) {
+        // Get the pattern with proper locking
+        std::shared_ptr<Pattern> patternPtr;
+        {
+            std::lock_guard<std::mutex> lock(patternMutex_);
+            if (instance->patternIndex >= patterns_.size()) {
+                continue;
+            }
+
+            // Use a shared_ptr to keep the pattern alive while processing
+            patternPtr = std::shared_ptr<Pattern>(patterns_[instance->patternIndex].get(),
+                                                 [](Pattern*) {}); // Non-owning deleter
+        }
+
+        // Skip if pattern is invalid
+        if (!patternPtr) {
             continue;
         }
-        
-        Pattern* pattern = patterns_[instance->patternIndex].get();
-        
-        // Calculate local pattern position (relative to pattern start)
+
+        Pattern* pattern = patternPtr.get();
+
+        // Calculate local pattern position (relative to pattern start) with higher precision
         double patternStart = instance->startBeat;
         double localPreviousPos = previousPosition - patternStart;
-        double localCurrentPos = positionInBeats_ - patternStart;
-        
-        // Skip if we're before the pattern start or after pattern end
-        if (localCurrentPos < 0.0 || localPreviousPos >= pattern->getLength()) {
+        double localCurrentPos = currentPosition - patternStart;
+
+        // Skip if we're completely outside the pattern boundaries
+        // Use a more robust check that handles corner cases
+        if ((localCurrentPos < -EPSILON) || (localPreviousPos >= pattern->getLength() + EPSILON)) {
             continue;
         }
-        
-        // Clamp positions to pattern boundaries
+
+        // Clamp positions to pattern boundaries with improved precision
         if (localPreviousPos < 0.0) {
             localPreviousPos = 0.0;
         }
         if (localCurrentPos > pattern->getLength()) {
             localCurrentPos = pattern->getLength();
         }
-        
-        // Check for notes to start in this time slice
+
+        // Check for notes to start in this time slice with improved precision
         for (size_t i = 0; i < pattern->getNumNotes(); ++i) {
             Note* note = pattern->getNote(i);
             if (!note) continue;
-            
+
             double noteStartTime = note->startTime;
             double noteEndTime = noteStartTime + note->duration;
-            
-            // Note starting in this time slice
-            if (noteStartTime >= localPreviousPos && noteStartTime < localCurrentPos) {
-                if (noteOnCallback_) {
-                    noteOnCallback_(note->pitch, note->velocity, note->channel, note->env);
+
+            // Note starting in this time slice - use a more precise check
+            // Handle edge cases like notes exactly at frame boundaries
+            bool noteStartsInFrame = (noteStartTime >= localPreviousPos - EPSILON) &&
+                                     (noteStartTime < localCurrentPos + EPSILON);
+
+            // Handle song loop case - notes at pattern start after song loop
+            if (previousPosition > currentPosition &&
+                ((patternStart <= currentPosition + EPSILON) &&
+                 (patternStart + noteStartTime < currentPosition + EPSILON))) {
+                noteStartsInFrame = true;
+            }
+
+            if (noteStartsInFrame) {
+                // Add to queue of notes to start
+                NoteToStart noteStart;
+                noteStart.pitch = note->pitch;
+                noteStart.velocity = note->velocity;
+                noteStart.channel = note->channel;
+                noteStart.env = note->env;
+
+                // The end time is in global song time, not pattern-local time
+                noteStart.endTime = patternStart + noteEndTime;
+
+                // Ensure end time is properly bounded by song loop if applicable
+                if (looping_.load(std::memory_order_acquire) &&
+                    songLength_ > EPSILON &&
+                    noteStart.endTime > songLength_) {
+                    // Handle note that extends beyond the song loop point
+                    // This is a design choice - could also wrap the end time
+                    // but here we just clamp it to the end of the song
+                    noteStart.endTime = songLength_;
                 }
-                
-                // Add to active notes (with global time)
-                ActiveNote activeNote;
-                activeNote.pitch = note->pitch;
-                activeNote.channel = note->channel;
-                activeNote.endTime = patternStart + noteEndTime;
-                
-                {
-                    std::lock_guard<std::mutex> lock(activeNotesMutex_);
-                    activeNotes_.push_back(activeNote);
-                }
+
+                notesToStart.push_back(noteStart);
             }
         }
     }
-    
-    // Check for notes to stop in this time slice
-    double currentPosition;
-    {
-        std::lock_guard<std::mutex> lock(positionMutex_);
-        currentPosition = positionInBeats_;
+
+    // Process notes to start outside of pattern lock
+    for (const auto& noteToStart : notesToStart) {
+        if (noteOnCallback_) {
+            noteOnCallback_(noteToStart.pitch, noteToStart.velocity, noteToStart.channel, noteToStart.env);
+        }
+
+        // Add to active notes
+        ActiveNote activeNote;
+        activeNote.pitch = noteToStart.pitch;
+        activeNote.channel = noteToStart.channel;
+        activeNote.endTime = noteToStart.endTime;
+
+        {
+            std::lock_guard<std::mutex> lock(activeNotesMutex_);
+            activeNotes_.push_back(activeNote);
+        }
     }
-    
+
+    // Queue notes to stop in this time slice to avoid callbacks within locks
+    std::vector<ActiveNote> notesToStop;
+
     {
         std::lock_guard<std::mutex> lock(activeNotesMutex_);
         auto it = activeNotes_.begin();
         while (it != activeNotes_.end()) {
-            if (it->endTime <= currentPosition) {
-                if (noteOffCallback_) {
-                    noteOffCallback_(it->pitch, it->channel);
-                }
+            // More accurate comparison for note end times
+            // A note should end if its end time is in this frame
+            bool noteEndsInFrame = (it->endTime <= currentPosition + EPSILON);
+
+            // Special case for song looping - if we wrapped around, also check notes that would have ended
+            if (previousPosition > currentPosition && it->endTime > previousPosition) {
+                noteEndsInFrame = true;
+            }
+
+            if (noteEndsInFrame) {
+                notesToStop.push_back(*it);
                 it = activeNotes_.erase(it);
             } else {
                 ++it;
             }
+        }
+    }
+
+    // Call note off callbacks outside the lock
+    for (const auto& noteToStop : notesToStop) {
+        if (noteOffCallback_) {
+            noteOffCallback_(noteToStop.pitch, noteToStop.channel);
         }
     }
 }

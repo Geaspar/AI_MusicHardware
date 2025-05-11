@@ -30,6 +30,12 @@ public:
     // Accessor methods
     int getSampleRate() const { return sampleRate_; }
     int getBufferSize() const { return bufferSize_; }
+
+    // Get current audio stream time in seconds (since stream started)
+    double getStreamTime() const;
+
+    // Synchronize a sequencer with the audio engine's timing
+    void synchronizeSequencer(std::shared_ptr<class Sequencer> sequencer);
     
 private:
     int sampleRate_;
