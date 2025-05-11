@@ -84,11 +84,14 @@ set(PRESET_SOURCES
 set(SYNTHESIS_SOURCES
     src/synthesis/framework/processor.cpp
     src/synthesis/wavetable/wavetable.cpp
+    src/synthesis/wavetable/oscillator_stack.cpp
     src/synthesis/modulators/envelope.cpp
     src/synthesis/modulators/modulation_matrix.cpp
     src/synthesis/voice/voice_manager.cpp
     src/synthesis/voice/MpeVoice.cpp
     src/synthesis/voice/MpeAwareVoiceManager.cpp
+    src/synthesis/voice/stacked_voice.cpp
+    src/synthesis/voice/stacked_voice_manager.cpp
 )
 
 # Multi-Timbral sources
@@ -190,8 +193,16 @@ message(STATUS "Building TestAudio")
 # List files we're not building for now due to issues
 set_target_properties(MultiTimbralDemo PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
+# Create Oscillator Stack Demo executable
+add_executable(OscillatorStackDemo examples/OscillatorStackDemo.cpp)
+target_link_libraries(OscillatorStackDemo PRIVATE
+    AIMusicCore
+)
+message(STATUS "Building OscillatorStackDemo")
+
 message(STATUS "Available tests:")
 message(STATUS "- Run ./bin/SimplePresetManagerDemo to try the preset management system")
 message(STATUS "- Run ./bin/MultiTimbralDemo to try the multi-timbral capabilities")
 message(STATUS "- Run ./bin/TestMpeVoiceManager to try the MPE-aware voice manager")
 message(STATUS "- Run ./bin/TestAudio to test real-time audio generation")
+message(STATUS "- Run ./bin/OscillatorStackDemo to try the oscillator stacking capabilities")

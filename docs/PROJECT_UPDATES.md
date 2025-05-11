@@ -1,5 +1,46 @@
 # Project Updates
 
+## May 11, 2025 - Advanced Oscillator Stacking Implementation
+
+We've successfully implemented oscillator stacking with detune capabilities to create richer and wider sounds:
+
+1. **Oscillator Stack Architecture**
+   - Created `OscillatorStack` class to manage multiple oscillators per voice (up to 8)
+   - Implemented detune spread with various distribution types (even, center-weighted, alternating)
+   - Added stereo width control through oscillator panning
+   - Implemented level convergence for more focused unison sounds
+   - Built configurable presets for common unison configurations
+
+2. **Voice Architecture Extensions**
+   - Implemented `StackedVoice` class extending the base `Voice` class
+   - Created stereo output capabilities with proper panning
+   - Added comprehensive parameter control for detune and stereo width
+   - Implemented real-time parameter adjustment capabilities
+   - Built backward compatibility with existing voice architecture
+
+3. **Voice Manager Integration**
+   - Created `StackedVoiceManager` to generate and control stacked voices
+   - Implemented global control of oscillator stacking parameters
+   - Added automatic configuration of new voices with current settings
+   - Maintained compatibility with existing VoiceManager API
+   - Built thread-safe parameter updates for all voices
+
+4. **Testing and Demonstration**
+   - Created `OscillatorStackDemo` application for interactive testing
+   - Implemented real-time parameter control with console interface
+   - Added comprehensive demonstration of all unison capabilities
+   - Created audio test patterns for various configurations
+   - Built command-based interface for exploring parameters
+
+5. **Documentation**
+   - Created detailed `OSCILLATOR_STACKING.md` documentation
+   - Documented the architecture, classes, and implementation
+   - Added usage examples and best practices
+   - Included technical details and integration guidance
+   - Added audio considerations and optimization notes
+
+This implementation significantly enhances the sound design capabilities of our synthesizer with rich, professional-quality unison and stacking features comparable to high-end soft synths. The architecture is designed for efficiency and seamless integration with our existing voice management system. The OscillatorStackDemo application provides an interactive test environment for exploring the sonic possibilities of the stacked oscillator system.
+
 ## May 11, 2025 - MPE-Aware Voice Manager Implementation
 
 We've successfully implemented an MPE-aware Voice Manager to support MIDI Polyphonic Expression in our synthesizer:

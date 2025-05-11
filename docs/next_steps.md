@@ -1,5 +1,5 @@
 # Next Steps for AIMusicHardware Project
-*May 11, 2025 - Updated*
+*May 11, 2025 - Updated with Oscillator Stacking Implementation*
 
 Based on our progress with implementing MIDI keyboard functionality, ReorderableEffectsChain, and MIDI effect control, we're ready to focus on the next phases of development. This document outlines our immediate priorities and implementation strategies.
 
@@ -130,9 +130,13 @@ Add advanced sound design capabilities to the synthesizer.
    - Add complex modulation types (step sequencers, random generators)
    - Implement modulation visualization with signal path display
 
-2. **Extended Oscillator Capabilities**
+2. **Extended Oscillator Capabilities** ✅ PARTIALLY COMPLETED
    - Add more synthesis types (FM, additive, granular)
-   - Implement oscillator stacking with detune
+   - ✅ Implemented oscillator stacking with detune
+     - ✅ Created OscillatorStack class with detune spread, stereo width, and level convergence
+     - ✅ Implemented StackedVoice class for extended voice capabilities
+     - ✅ Added StackedVoiceManager with global stacking parameters
+     - ✅ Created comprehensive testing application (OscillatorStackDemo)
    - Add wavetable morphing and editing
 
 3. **Filter Enhancements**
@@ -209,8 +213,9 @@ Improve both audio performance and expressive capabilities.
 - Improve UI performance and responsiveness
 
 ### Phase 2: Sound Design Enhancements (Weeks 3-4)
+- ✅ Add oscillator stacking with unison, detune spread, and stereo width
 - Expand modulation capabilities
-- Add advanced synthesis features
+- Add additional advanced synthesis features (FM, additive synthesis)
 - Implement LLM-assisted sound design
 - Enhance filter and effect options
 - Create sound design templates and starting points

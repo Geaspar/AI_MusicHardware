@@ -40,7 +40,10 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/Users/geaspar/AIMusicHardware/src/synthesis/multitimbral/MultiTimbralEngine.cpp" "CMakeFiles/AIMusicCore.dir/src/synthesis/multitimbral/MultiTimbralEngine.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/synthesis/multitimbral/MultiTimbralEngine.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/synthesis/voice/MpeAwareVoiceManager.cpp" "CMakeFiles/AIMusicCore.dir/src/synthesis/voice/MpeAwareVoiceManager.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/synthesis/voice/MpeAwareVoiceManager.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/synthesis/voice/MpeVoice.cpp" "CMakeFiles/AIMusicCore.dir/src/synthesis/voice/MpeVoice.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/synthesis/voice/MpeVoice.cpp.o.d"
+  "/Users/geaspar/AIMusicHardware/src/synthesis/voice/stacked_voice.cpp" "CMakeFiles/AIMusicCore.dir/src/synthesis/voice/stacked_voice.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/synthesis/voice/stacked_voice.cpp.o.d"
+  "/Users/geaspar/AIMusicHardware/src/synthesis/voice/stacked_voice_manager.cpp" "CMakeFiles/AIMusicCore.dir/src/synthesis/voice/stacked_voice_manager.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/synthesis/voice/stacked_voice_manager.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/synthesis/voice/voice_manager.cpp" "CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.o.d"
+  "/Users/geaspar/AIMusicHardware/src/synthesis/wavetable/oscillator_stack.cpp" "CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/oscillator_stack.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/oscillator_stack.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/synthesis/wavetable/wavetable.cpp" "CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.o.d"
   )
 

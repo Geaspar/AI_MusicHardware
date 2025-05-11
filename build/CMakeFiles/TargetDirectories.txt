@@ -4,5 +4,6 @@
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/MultiTimbralDemo.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/TestMpeVoiceManager.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/TestAudio.dir
+/Users/geaspar/AIMusicHardware/build/CMakeFiles/OscillatorStackDemo.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/edit_cache.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/rebuild_cache.dir

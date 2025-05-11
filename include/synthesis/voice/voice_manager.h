@@ -49,7 +49,7 @@ public:
     StealMode getStealMode() const { return stealMode_; }
     
     // Sample rate control
-    void setSampleRate(int sampleRate);
+    virtual void setSampleRate(int sampleRate);
     int getSampleRate() const { return sampleRate_; }
 
     // Shared wavetable management
@@ -75,10 +75,13 @@ private:
     Voice* findVoiceForNote(int midiNote, int channel = 0);
     
     // Create a new voice instance
-    std::unique_ptr<Voice> createVoice();
-    
-    // Voice management
+    virtual std::unique_ptr<Voice> createVoice();
+
+protected:
+    // Voice management (made protected for derived classes)
     std::vector<std::unique_ptr<Voice>> voices_;
+
+private:
     std::unordered_map<int, Voice*> activeNotes_; // Maps MIDI note to active voice
     
     // Basic settings
@@ -126,8 +129,8 @@ public:
     void reset();
     
     // Sound generation
-    float generateSample();
-    void process(float* buffer, int numFrames);
+    virtual float generateSample();
+    virtual void process(float* buffer, int numFrames);
 
     // State access
     State getState() const { return state_; }
@@ -148,36 +151,38 @@ public:
     float getCurrentAmplitude() const;
     
     // Oscillator access
-    void setWavetable(std::shared_ptr<Wavetable> wavetable);
+    virtual void setWavetable(std::shared_ptr<Wavetable> wavetable);
     
     // Pitch adjustment
     void setPitchBend(float semitones);
     void setPressure(float pressure) { pressure_ = pressure; }
     
     // Sample rate control
-    void setSampleRate(int sampleRate);
-    
-private:
-    // Helper to convert MIDI note to frequency
-    float midiNoteToFrequency(int midiNote) const;
-    
-    int midiNote_;
+    virtual void setSampleRate(int sampleRate);
+
+protected:
+    // Voice components that derived classes might need access to
+    std::unique_ptr<WavetableOscillator> oscillator_;
+    std::unique_ptr<ModEnvelope> envelope_;
+
+    // State data that derived classes might need access to
+    State state_;
     float velocity_;
     float frequency_;
     float baseFrequency_;     // Frequency without any pitch bend
+
+    // Helper to convert MIDI note to frequency
+    float midiNoteToFrequency(int midiNote) const;
+
+private:
+    int midiNote_;
     int age_;                 // Number of samples this voice has been active
     int channel_ = 0;         // MIDI channel for this voice
-    
-    State state_;
     int sampleRate_;
-    
+
     // MIDI expression parameters
     float pitchBendSemitones_ = 0.0f;  // Current pitch bend in semitones
     float pressure_ = 0.0f;            // Pressure/aftertouch (0.0-1.0)
-    
-    // Voice components
-    std::unique_ptr<WavetableOscillator> oscillator_;
-    std::unique_ptr<ModEnvelope> envelope_;
 };
 
 } // namespace AIMusicHardware

@@ -194,6 +194,19 @@ TestAudio/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestAudio.dir/build.make CMakeFiles/TestAudio.dir/build
 .PHONY : TestAudio/fast
 
+#=============================================================================
+# Target rules for targets named OscillatorStackDemo
+
+# Build rule for target.
+OscillatorStackDemo: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 OscillatorStackDemo
+.PHONY : OscillatorStackDemo
+
+# fast build rule for target.
+OscillatorStackDemo/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/OscillatorStackDemo.dir/build.make CMakeFiles/OscillatorStackDemo.dir/build
+.PHONY : OscillatorStackDemo/fast
+
 examples/MultiTimbralDemo.o: examples/MultiTimbralDemo.cpp.o
 .PHONY : examples/MultiTimbralDemo.o
 
@@ -217,6 +230,30 @@ examples/MultiTimbralDemo.s: examples/MultiTimbralDemo.cpp.s
 examples/MultiTimbralDemo.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MultiTimbralDemo.dir/build.make CMakeFiles/MultiTimbralDemo.dir/examples/MultiTimbralDemo.cpp.s
 .PHONY : examples/MultiTimbralDemo.cpp.s
+
+examples/OscillatorStackDemo.o: examples/OscillatorStackDemo.cpp.o
+.PHONY : examples/OscillatorStackDemo.o
+
+# target to build an object file
+examples/OscillatorStackDemo.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/OscillatorStackDemo.dir/build.make CMakeFiles/OscillatorStackDemo.dir/examples/OscillatorStackDemo.cpp.o
+.PHONY : examples/OscillatorStackDemo.cpp.o
+
+examples/OscillatorStackDemo.i: examples/OscillatorStackDemo.cpp.i
+.PHONY : examples/OscillatorStackDemo.i
+
+# target to preprocess a source file
+examples/OscillatorStackDemo.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/OscillatorStackDemo.dir/build.make CMakeFiles/OscillatorStackDemo.dir/examples/OscillatorStackDemo.cpp.i
+.PHONY : examples/OscillatorStackDemo.cpp.i
+
+examples/OscillatorStackDemo.s: examples/OscillatorStackDemo.cpp.s
+.PHONY : examples/OscillatorStackDemo.s
+
+# target to generate assembly for a file
+examples/OscillatorStackDemo.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/OscillatorStackDemo.dir/build.make CMakeFiles/OscillatorStackDemo.dir/examples/OscillatorStackDemo.cpp.s
+.PHONY : examples/OscillatorStackDemo.cpp.s
 
 examples/SimplePresetManagerDemo.o: examples/SimplePresetManagerDemo.cpp.o
 .PHONY : examples/SimplePresetManagerDemo.o
@@ -1058,6 +1095,54 @@ src/synthesis/voice/MpeVoice.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/voice/MpeVoice.cpp.s
 .PHONY : src/synthesis/voice/MpeVoice.cpp.s
 
+src/synthesis/voice/stacked_voice.o: src/synthesis/voice/stacked_voice.cpp.o
+.PHONY : src/synthesis/voice/stacked_voice.o
+
+# target to build an object file
+src/synthesis/voice/stacked_voice.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/voice/stacked_voice.cpp.o
+.PHONY : src/synthesis/voice/stacked_voice.cpp.o
+
+src/synthesis/voice/stacked_voice.i: src/synthesis/voice/stacked_voice.cpp.i
+.PHONY : src/synthesis/voice/stacked_voice.i
+
+# target to preprocess a source file
+src/synthesis/voice/stacked_voice.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/voice/stacked_voice.cpp.i
+.PHONY : src/synthesis/voice/stacked_voice.cpp.i
+
+src/synthesis/voice/stacked_voice.s: src/synthesis/voice/stacked_voice.cpp.s
+.PHONY : src/synthesis/voice/stacked_voice.s
+
+# target to generate assembly for a file
+src/synthesis/voice/stacked_voice.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/voice/stacked_voice.cpp.s
+.PHONY : src/synthesis/voice/stacked_voice.cpp.s
+
+src/synthesis/voice/stacked_voice_manager.o: src/synthesis/voice/stacked_voice_manager.cpp.o
+.PHONY : src/synthesis/voice/stacked_voice_manager.o
+
+# target to build an object file
+src/synthesis/voice/stacked_voice_manager.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/voice/stacked_voice_manager.cpp.o
+.PHONY : src/synthesis/voice/stacked_voice_manager.cpp.o
+
+src/synthesis/voice/stacked_voice_manager.i: src/synthesis/voice/stacked_voice_manager.cpp.i
+.PHONY : src/synthesis/voice/stacked_voice_manager.i
+
+# target to preprocess a source file
+src/synthesis/voice/stacked_voice_manager.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/voice/stacked_voice_manager.cpp.i
+.PHONY : src/synthesis/voice/stacked_voice_manager.cpp.i
+
+src/synthesis/voice/stacked_voice_manager.s: src/synthesis/voice/stacked_voice_manager.cpp.s
+.PHONY : src/synthesis/voice/stacked_voice_manager.s
+
+# target to generate assembly for a file
+src/synthesis/voice/stacked_voice_manager.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/voice/stacked_voice_manager.cpp.s
+.PHONY : src/synthesis/voice/stacked_voice_manager.cpp.s
+
 src/synthesis/voice/voice_manager.o: src/synthesis/voice/voice_manager.cpp.o
 .PHONY : src/synthesis/voice/voice_manager.o
 
@@ -1081,6 +1166,30 @@ src/synthesis/voice/voice_manager.s: src/synthesis/voice/voice_manager.cpp.s
 src/synthesis/voice/voice_manager.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.s
 .PHONY : src/synthesis/voice/voice_manager.cpp.s
+
+src/synthesis/wavetable/oscillator_stack.o: src/synthesis/wavetable/oscillator_stack.cpp.o
+.PHONY : src/synthesis/wavetable/oscillator_stack.o
+
+# target to build an object file
+src/synthesis/wavetable/oscillator_stack.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/oscillator_stack.cpp.o
+.PHONY : src/synthesis/wavetable/oscillator_stack.cpp.o
+
+src/synthesis/wavetable/oscillator_stack.i: src/synthesis/wavetable/oscillator_stack.cpp.i
+.PHONY : src/synthesis/wavetable/oscillator_stack.i
+
+# target to preprocess a source file
+src/synthesis/wavetable/oscillator_stack.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/oscillator_stack.cpp.i
+.PHONY : src/synthesis/wavetable/oscillator_stack.cpp.i
+
+src/synthesis/wavetable/oscillator_stack.s: src/synthesis/wavetable/oscillator_stack.cpp.s
+.PHONY : src/synthesis/wavetable/oscillator_stack.s
+
+# target to generate assembly for a file
+src/synthesis/wavetable/oscillator_stack.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/oscillator_stack.cpp.s
+.PHONY : src/synthesis/wavetable/oscillator_stack.cpp.s
 
 src/synthesis/wavetable/wavetable.o: src/synthesis/wavetable/wavetable.cpp.o
 .PHONY : src/synthesis/wavetable/wavetable.o
@@ -1140,6 +1249,7 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... AIMusicCore"
 	@echo "... MultiTimbralDemo"
+	@echo "... OscillatorStackDemo"
 	@echo "... PresetLib"
 	@echo "... SimplePresetManagerDemo"
 	@echo "... TestAudio"
@@ -1147,6 +1257,9 @@ help:
 	@echo "... examples/MultiTimbralDemo.o"
 	@echo "... examples/MultiTimbralDemo.i"
 	@echo "... examples/MultiTimbralDemo.s"
+	@echo "... examples/OscillatorStackDemo.o"
+	@echo "... examples/OscillatorStackDemo.i"
+	@echo "... examples/OscillatorStackDemo.s"
 	@echo "... examples/SimplePresetManagerDemo.o"
 	@echo "... examples/SimplePresetManagerDemo.i"
 	@echo "... examples/SimplePresetManagerDemo.s"
@@ -1252,9 +1365,18 @@ help:
 	@echo "... src/synthesis/voice/MpeVoice.o"
 	@echo "... src/synthesis/voice/MpeVoice.i"
 	@echo "... src/synthesis/voice/MpeVoice.s"
+	@echo "... src/synthesis/voice/stacked_voice.o"
+	@echo "... src/synthesis/voice/stacked_voice.i"
+	@echo "... src/synthesis/voice/stacked_voice.s"
+	@echo "... src/synthesis/voice/stacked_voice_manager.o"
+	@echo "... src/synthesis/voice/stacked_voice_manager.i"
+	@echo "... src/synthesis/voice/stacked_voice_manager.s"
 	@echo "... src/synthesis/voice/voice_manager.o"
 	@echo "... src/synthesis/voice/voice_manager.i"
 	@echo "... src/synthesis/voice/voice_manager.s"
+	@echo "... src/synthesis/wavetable/oscillator_stack.o"
+	@echo "... src/synthesis/wavetable/oscillator_stack.i"
+	@echo "... src/synthesis/wavetable/oscillator_stack.s"
 	@echo "... src/synthesis/wavetable/wavetable.o"
 	@echo "... src/synthesis/wavetable/wavetable.i"
 	@echo "... src/synthesis/wavetable/wavetable.s"
