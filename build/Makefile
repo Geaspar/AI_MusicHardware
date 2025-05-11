@@ -220,6 +220,43 @@ TestMidi/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestMidi.dir/build.make CMakeFiles/TestMidi.dir/build
 .PHONY : TestMidi/fast
 
+#=============================================================================
+# Target rules for targets named MidiKeyboardDemo
+
+# Build rule for target.
+MidiKeyboardDemo: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 MidiKeyboardDemo
+.PHONY : MidiKeyboardDemo
+
+# fast build rule for target.
+MidiKeyboardDemo/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiKeyboardDemo.dir/build.make CMakeFiles/MidiKeyboardDemo.dir/build
+.PHONY : MidiKeyboardDemo/fast
+
+examples/MidiKeyboardDemo.o: examples/MidiKeyboardDemo.cpp.o
+.PHONY : examples/MidiKeyboardDemo.o
+
+# target to build an object file
+examples/MidiKeyboardDemo.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiKeyboardDemo.dir/build.make CMakeFiles/MidiKeyboardDemo.dir/examples/MidiKeyboardDemo.cpp.o
+.PHONY : examples/MidiKeyboardDemo.cpp.o
+
+examples/MidiKeyboardDemo.i: examples/MidiKeyboardDemo.cpp.i
+.PHONY : examples/MidiKeyboardDemo.i
+
+# target to preprocess a source file
+examples/MidiKeyboardDemo.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiKeyboardDemo.dir/build.make CMakeFiles/MidiKeyboardDemo.dir/examples/MidiKeyboardDemo.cpp.i
+.PHONY : examples/MidiKeyboardDemo.cpp.i
+
+examples/MidiKeyboardDemo.s: examples/MidiKeyboardDemo.cpp.s
+.PHONY : examples/MidiKeyboardDemo.s
+
+# target to generate assembly for a file
+examples/MidiKeyboardDemo.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiKeyboardDemo.dir/build.make CMakeFiles/MidiKeyboardDemo.dir/examples/MidiKeyboardDemo.cpp.s
+.PHONY : examples/MidiKeyboardDemo.cpp.s
+
 examples/SimpleTest.o: examples/SimpleTest.cpp.o
 .PHONY : examples/SimpleTest.o
 
@@ -829,6 +866,7 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... AIMusicCore"
+	@echo "... MidiKeyboardDemo"
 	@echo "... SimpleTest"
 	@echo "... TestAdaptiveSequencer"
 	@echo "... TestAudio"
@@ -836,6 +874,9 @@ help:
 	@echo "... TestSequencer"
 	@echo "... TestUI"
 	@echo "... WavetableDemo"
+	@echo "... examples/MidiKeyboardDemo.o"
+	@echo "... examples/MidiKeyboardDemo.i"
+	@echo "... examples/MidiKeyboardDemo.s"
 	@echo "... examples/SimpleTest.o"
 	@echo "... examples/SimpleTest.i"
 	@echo "... examples/SimpleTest.s"

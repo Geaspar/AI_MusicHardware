@@ -278,13 +278,24 @@ float Synthesizer::getParameter(const std::string& paramId) const {
 
 void Synthesizer::setOscillatorType(OscillatorType type) {
     currentOscType_ = type;
-    
+
     // Convert oscillator type to wavetable frame position
     float framePos = oscTypeToFramePosition(type);
-    
-    // Update wavetable frame position for all voices
-    // In a real implementation, we'd need to extend VoiceManager to support this
-    // For now, createDefaultWavetable() already creates frames in the right order
+
+    // Update frame position in all active voices
+    if (voiceManager_) {
+        // Iterate through all voices and set their oscillator's frame position
+        for (int i = 0; i < voiceManager_->getMaxVoices(); ++i) {
+            if (auto* voice = voiceManager_->getVoice(i)) {
+                if (auto* osc = voice->getOscillator()) {
+                    osc->setFramePosition(framePos);
+                }
+            }
+        }
+    }
+
+    std::cout << "Oscillator type changed to " << static_cast<int>(type)
+              << " (frame position: " << framePos << ")" << std::endl;
 }
 
 float Synthesizer::oscTypeToFramePosition(OscillatorType type) {

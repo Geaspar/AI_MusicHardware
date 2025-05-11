@@ -57,6 +57,14 @@ public:
     // Pitch bend range control (in semitones, default = 2.0)
     void setPitchBendRange(float semitones) { pitchBendRange_ = semitones; }
     float getPitchBendRange() const { return pitchBendRange_; }
+
+    // Access individual voices for advanced control
+    Voice* getVoice(int index) {
+        if (index >= 0 && index < static_cast<int>(voices_.size())) {
+            return voices_[index].get();
+        }
+        return nullptr;
+    }
     
 private:
     // Find voice to steal based on current policy
@@ -119,7 +127,7 @@ public:
     // Sound generation
     float generateSample();
     void process(float* buffer, int numFrames);
-    
+
     // State access
     State getState() const { return state_; }
     bool isActive() const { return state_ != State::Inactive && state_ != State::Finished; }
@@ -127,6 +135,9 @@ public:
     int getMidiNote() const { return midiNote_; }
     int getChannel() const { return channel_; }
     void setChannel(int channel) { channel_ = channel; }
+
+    // Oscillator access
+    WavetableOscillator* getOscillator() { return oscillator_.get(); }
     
     // Age tracking for voice stealing
     int getAge() const { return age_; }

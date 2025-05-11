@@ -71,6 +71,7 @@ all: CMakeFiles/TestAdaptiveSequencer.dir/all
 all: CMakeFiles/TestUI.dir/all
 all: CMakeFiles/WavetableDemo.dir/all
 all: CMakeFiles/TestMidi.dir/all
+all: CMakeFiles/MidiKeyboardDemo.dir/all
 .PHONY : all
 
 # The main recursive "preinstall" target.
@@ -86,6 +87,7 @@ clean: CMakeFiles/TestAdaptiveSequencer.dir/clean
 clean: CMakeFiles/TestUI.dir/clean
 clean: CMakeFiles/WavetableDemo.dir/clean
 clean: CMakeFiles/TestMidi.dir/clean
+clean: CMakeFiles/MidiKeyboardDemo.dir/clean
 .PHONY : clean
 
 #=============================================================================
@@ -121,7 +123,7 @@ CMakeFiles/AIMusicCore.dir/clean:
 CMakeFiles/TestAudio.dir/all: CMakeFiles/AIMusicCore.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestAudio.dir/build.make CMakeFiles/TestAudio.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestAudio.dir/build.make CMakeFiles/TestAudio.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=24,25 "Built target TestAudio"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=26,27 "Built target TestAudio"
 .PHONY : CMakeFiles/TestAudio.dir/all
 
 # Build rule for subdir invocation for target.
@@ -147,7 +149,7 @@ CMakeFiles/TestAudio.dir/clean:
 CMakeFiles/TestSequencer.dir/all: CMakeFiles/AIMusicCore.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencer.dir/build.make CMakeFiles/TestSequencer.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestSequencer.dir/build.make CMakeFiles/TestSequencer.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=28,29 "Built target TestSequencer"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=30,31 "Built target TestSequencer"
 .PHONY : CMakeFiles/TestSequencer.dir/all
 
 # Build rule for subdir invocation for target.
@@ -173,7 +175,7 @@ CMakeFiles/TestSequencer.dir/clean:
 CMakeFiles/SimpleTest.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimpleTest.dir/build.make CMakeFiles/SimpleTest.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimpleTest.dir/build.make CMakeFiles/SimpleTest.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=20,21 "Built target SimpleTest"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=22,23 "Built target SimpleTest"
 .PHONY : CMakeFiles/SimpleTest.dir/all
 
 # Build rule for subdir invocation for target.
@@ -199,7 +201,7 @@ CMakeFiles/SimpleTest.dir/clean:
 CMakeFiles/TestAdaptiveSequencer.dir/all: CMakeFiles/AIMusicCore.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestAdaptiveSequencer.dir/build.make CMakeFiles/TestAdaptiveSequencer.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestAdaptiveSequencer.dir/build.make CMakeFiles/TestAdaptiveSequencer.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=22,23 "Built target TestAdaptiveSequencer"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=24,25 "Built target TestAdaptiveSequencer"
 .PHONY : CMakeFiles/TestAdaptiveSequencer.dir/all
 
 # Build rule for subdir invocation for target.
@@ -225,7 +227,7 @@ CMakeFiles/TestAdaptiveSequencer.dir/clean:
 CMakeFiles/TestUI.dir/all: CMakeFiles/AIMusicCore.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestUI.dir/build.make CMakeFiles/TestUI.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestUI.dir/build.make CMakeFiles/TestUI.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=30,31 "Built target TestUI"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=32,33 "Built target TestUI"
 .PHONY : CMakeFiles/TestUI.dir/all
 
 # Build rule for subdir invocation for target.
@@ -251,7 +253,7 @@ CMakeFiles/TestUI.dir/clean:
 CMakeFiles/WavetableDemo.dir/all: CMakeFiles/AIMusicCore.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/WavetableDemo.dir/build.make CMakeFiles/WavetableDemo.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/WavetableDemo.dir/build.make CMakeFiles/WavetableDemo.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=32,33 "Built target WavetableDemo"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=34,35 "Built target WavetableDemo"
 .PHONY : CMakeFiles/WavetableDemo.dir/all
 
 # Build rule for subdir invocation for target.
@@ -277,7 +279,7 @@ CMakeFiles/WavetableDemo.dir/clean:
 CMakeFiles/TestMidi.dir/all: CMakeFiles/AIMusicCore.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestMidi.dir/build.make CMakeFiles/TestMidi.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestMidi.dir/build.make CMakeFiles/TestMidi.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=26,27 "Built target TestMidi"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=28,29 "Built target TestMidi"
 .PHONY : CMakeFiles/TestMidi.dir/all
 
 # Build rule for subdir invocation for target.
@@ -295,6 +297,32 @@ TestMidi: CMakeFiles/TestMidi.dir/rule
 CMakeFiles/TestMidi.dir/clean:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestMidi.dir/build.make CMakeFiles/TestMidi.dir/clean
 .PHONY : CMakeFiles/TestMidi.dir/clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/MidiKeyboardDemo.dir
+
+# All Build rule for target.
+CMakeFiles/MidiKeyboardDemo.dir/all: CMakeFiles/AIMusicCore.dir/all
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiKeyboardDemo.dir/build.make CMakeFiles/MidiKeyboardDemo.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiKeyboardDemo.dir/build.make CMakeFiles/MidiKeyboardDemo.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=20,21 "Built target MidiKeyboardDemo"
+.PHONY : CMakeFiles/MidiKeyboardDemo.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/MidiKeyboardDemo.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 21
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/MidiKeyboardDemo.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 0
+.PHONY : CMakeFiles/MidiKeyboardDemo.dir/rule
+
+# Convenience name for target.
+MidiKeyboardDemo: CMakeFiles/MidiKeyboardDemo.dir/rule
+.PHONY : MidiKeyboardDemo
+
+# clean rule for target.
+CMakeFiles/MidiKeyboardDemo.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiKeyboardDemo.dir/build.make CMakeFiles/MidiKeyboardDemo.dir/clean
+.PHONY : CMakeFiles/MidiKeyboardDemo.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.

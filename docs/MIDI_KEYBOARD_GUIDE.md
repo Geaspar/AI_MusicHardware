@@ -88,6 +88,24 @@ The basic flow is:
 3. Synthesizer generates audio samples based on the active notes and parameters
 4. AudioEngine delivers these samples to your audio output device
 
+### Oscillator Types
+
+The synthesizer uses a wavetable synthesis approach where different waveforms are stored in a single wavetable at different "frame positions":
+
+1. **Sine wave** (position 0.0): Smooth, pure tone with no harmonics
+2. **Saw wave** (position 0.25): Bright sound rich in harmonics
+3. **Square wave** (position 0.5): Hollow sound with only odd harmonics
+4. **Triangle wave** (position 0.75): Softer than square but with some odd harmonics
+5. **Noise** (position 1.0): Random values for percussion or special effects
+
+When you press keys 1-5 on your computer keyboard, the synthesizer updates the wavetable frame position in all active voices through these steps:
+
+1. The `setOscillatorType()` method updates the current oscillator type
+2. It calculates the appropriate frame position value (0.0 to 1.0)
+3. It iterates through all voices in the VoiceManager
+4. For each voice, it accesses the WavetableOscillator and updates its frame position
+5. The change takes effect immediately for all currently playing notes
+
 ## Extending the Demo
 
 You can extend this demo by:
@@ -120,6 +138,12 @@ Common issues and solutions:
    - Check for proper initialization of all components
    - Ensure thread safety in audio callback
    - Verify correct resource cleanup on shutdown
+
+5. **Oscillator type not changing**
+   - Make sure the `setOscillatorType` method properly propagates changes to all voices
+   - Check that `VoiceManager` provides access to individual voices
+   - Ensure each `Voice` provides access to its oscillator
+   - Verify that the wavetable contains all the required waveforms at the correct positions
 
 ## Next Steps
 
@@ -157,6 +181,31 @@ audioEngine->setAudioCallback([&](float* outputBuffer, int numFrames) {
 ```
 
 This function is called by the audio driver whenever it needs more audio samples. The synthesizer generates the audio based on the current state of active notes and parameters.
+
+### Wavetable Synthesis
+
+The synthesizer uses a wavetable synthesis architecture that implements:
+
+1. **Wavetable Class**: Contains multiple waveform frames (sine, saw, square, triangle, noise)
+2. **WavetableOscillator**: Renders audio by interpolating between wavetable frames
+3. **Voice Class**: Manages an oscillator, envelope, and other per-note components
+4. **VoiceManager**: Allocates and tracks multiple voices for polyphony
+
+The wavetable architecture follows professional synthesizer design patterns:
+
+```cpp
+// In Synthesizer::setOscillatorType()
+float framePos = oscTypeToFramePosition(type);
+
+// Iterate through all voices and update their oscillators
+for (int i = 0; i < voiceManager_->getMaxVoices(); ++i) {
+    if (auto* voice = voiceManager_->getVoice(i)) {
+        if (auto* osc = voice->getOscillator()) {
+            osc->setFramePosition(framePos);
+        }
+    }
+}
+```
 
 ### Event Handling
 
