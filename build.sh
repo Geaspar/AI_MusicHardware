@@ -90,10 +90,16 @@ fi
 print_message green "Build completed successfully!"
 
 # Check which test programs were built
-if [ -f "./bin/SimpleTest" ]; then
-    has_simple_test=true
+if [ -f "./bin/SimplePresetManagerDemo" ]; then
+    has_preset_demo=true
 else
-    has_simple_test=false
+    has_preset_demo=false
+fi
+
+if [ -f "./bin/TestMpeVoiceManager" ]; then
+    has_mpe_test=true
+else
+    has_mpe_test=false
 fi
 
 if [ -f "./bin/TestAudio" ]; then
@@ -104,30 +110,35 @@ fi
 
 # Display instructions based on available programs
 print_message blue "==========================================="
-print_message blue "Audio Test Options:"
+print_message blue "Available Test Applications:"
 print_message blue "==========================================="
 
-if [ "$has_simple_test" = true ]; then
-    print_message cyan "Option 1: Generate WAV files to test audio synthesis"
-    print_message yellow "          ./bin/SimpleTest"
-    print_message cyan "          This will create WAV files in the 'output' directory"
-    print_message cyan "          You can play these files with any audio player"
+if [ "$has_preset_demo" = true ]; then
+    print_message cyan "Preset Management Demo:"
+    print_message yellow "          ./bin/SimplePresetManagerDemo"
+    print_message cyan "          Test the preset management system"
+    echo ""
+fi
+
+if [ "$has_mpe_test" = true ]; then
+    print_message cyan "MPE Voice Manager Demo:"
+    print_message yellow "          ./bin/TestMpeVoiceManager"
+    print_message cyan "          Test the MPE-aware voice manager with expression control"
     echo ""
 fi
 
 if [ "$has_audio_test" = true ]; then
-    print_message cyan "Option 2: Test real-time audio playback"
+    print_message cyan "Real-Time Audio Test:"
     print_message yellow "          ./bin/TestAudio"
-    print_message cyan "          This will play audio through your speakers"
+    print_message cyan "          Interactive demo of sound generation capabilities"
     echo ""
-    
+
     print_message blue "Tip: If you're not hearing sound, check that:"
     print_message blue "  1. Your system volume is turned up"
     print_message blue "  2. The correct audio output device is selected"
     print_message blue "  3. No other application is using the audio device"
 else
     print_message yellow "Real-time audio test (TestAudio) was not built due to missing RtAudio."
-    print_message yellow "You can only use the WAV file generation test (SimpleTest)."
 fi
 
 print_message blue "==========================================="

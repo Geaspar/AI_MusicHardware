@@ -180,6 +180,13 @@ target_link_libraries(TestMpeVoiceManager PRIVATE
 )
 message(STATUS "Building TestMpeVoiceManager")
 
+# Create TestAudio executable for real-time audio testing
+add_executable(TestAudio examples/TestAudio.cpp)
+target_link_libraries(TestAudio PRIVATE
+    AIMusicCore
+)
+message(STATUS "Building TestAudio")
+
 # List files we're not building for now due to issues
 set_target_properties(MultiTimbralDemo PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
@@ -187,3 +194,4 @@ message(STATUS "Available tests:")
 message(STATUS "- Run ./bin/SimplePresetManagerDemo to try the preset management system")
 message(STATUS "- Run ./bin/MultiTimbralDemo to try the multi-timbral capabilities")
 message(STATUS "- Run ./bin/TestMpeVoiceManager to try the MPE-aware voice manager")
+message(STATUS "- Run ./bin/TestAudio to test real-time audio generation")

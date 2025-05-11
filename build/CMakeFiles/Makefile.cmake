@@ -144,4 +144,5 @@ set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/SimplePresetManagerDemo.dir/DependInfo.cmake"
   "CMakeFiles/MultiTimbralDemo.dir/DependInfo.cmake"
   "CMakeFiles/TestMpeVoiceManager.dir/DependInfo.cmake"
+  "CMakeFiles/TestAudio.dir/DependInfo.cmake"
   )

@@ -67,6 +67,7 @@ all: CMakeFiles/AIMusicCore.dir/all
 all: CMakeFiles/PresetLib.dir/all
 all: CMakeFiles/SimplePresetManagerDemo.dir/all
 all: CMakeFiles/TestMpeVoiceManager.dir/all
+all: CMakeFiles/TestAudio.dir/all
 .PHONY : all
 
 # The main recursive "preinstall" target.
@@ -79,6 +80,7 @@ clean: CMakeFiles/PresetLib.dir/clean
 clean: CMakeFiles/SimplePresetManagerDemo.dir/clean
 clean: CMakeFiles/MultiTimbralDemo.dir/clean
 clean: CMakeFiles/TestMpeVoiceManager.dir/clean
+clean: CMakeFiles/TestAudio.dir/clean
 .PHONY : clean
 
 #=============================================================================
@@ -137,8 +139,8 @@ CMakeFiles/PresetLib.dir/clean:
 # Target rules for target CMakeFiles/SimplePresetManagerDemo.dir
 
 # All Build rule for target.
-CMakeFiles/SimplePresetManagerDemo.dir/all: CMakeFiles/PresetLib.dir/all
 CMakeFiles/SimplePresetManagerDemo.dir/all: CMakeFiles/AIMusicCore.dir/all
+CMakeFiles/SimplePresetManagerDemo.dir/all: CMakeFiles/PresetLib.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimplePresetManagerDemo.dir/build.make CMakeFiles/SimplePresetManagerDemo.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimplePresetManagerDemo.dir/build.make CMakeFiles/SimplePresetManagerDemo.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=40,41 "Built target SimplePresetManagerDemo"
@@ -164,8 +166,8 @@ CMakeFiles/SimplePresetManagerDemo.dir/clean:
 # Target rules for target CMakeFiles/MultiTimbralDemo.dir
 
 # All Build rule for target.
-CMakeFiles/MultiTimbralDemo.dir/all: CMakeFiles/PresetLib.dir/all
 CMakeFiles/MultiTimbralDemo.dir/all: CMakeFiles/AIMusicCore.dir/all
+CMakeFiles/MultiTimbralDemo.dir/all: CMakeFiles/PresetLib.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MultiTimbralDemo.dir/build.make CMakeFiles/MultiTimbralDemo.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MultiTimbralDemo.dir/build.make CMakeFiles/MultiTimbralDemo.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=36,37 "Built target MultiTimbralDemo"
@@ -194,7 +196,7 @@ CMakeFiles/MultiTimbralDemo.dir/clean:
 CMakeFiles/TestMpeVoiceManager.dir/all: CMakeFiles/AIMusicCore.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestMpeVoiceManager.dir/build.make CMakeFiles/TestMpeVoiceManager.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestMpeVoiceManager.dir/build.make CMakeFiles/TestMpeVoiceManager.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=42,43 "Built target TestMpeVoiceManager"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=44,45 "Built target TestMpeVoiceManager"
 .PHONY : CMakeFiles/TestMpeVoiceManager.dir/all
 
 # Build rule for subdir invocation for target.
@@ -212,6 +214,32 @@ TestMpeVoiceManager: CMakeFiles/TestMpeVoiceManager.dir/rule
 CMakeFiles/TestMpeVoiceManager.dir/clean:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestMpeVoiceManager.dir/build.make CMakeFiles/TestMpeVoiceManager.dir/clean
 .PHONY : CMakeFiles/TestMpeVoiceManager.dir/clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/TestAudio.dir
+
+# All Build rule for target.
+CMakeFiles/TestAudio.dir/all: CMakeFiles/AIMusicCore.dir/all
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestAudio.dir/build.make CMakeFiles/TestAudio.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestAudio.dir/build.make CMakeFiles/TestAudio.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=42,43 "Built target TestAudio"
+.PHONY : CMakeFiles/TestAudio.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/TestAudio.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 37
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/TestAudio.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 0
+.PHONY : CMakeFiles/TestAudio.dir/rule
+
+# Convenience name for target.
+TestAudio: CMakeFiles/TestAudio.dir/rule
+.PHONY : TestAudio
+
+# clean rule for target.
+CMakeFiles/TestAudio.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestAudio.dir/build.make CMakeFiles/TestAudio.dir/clean
+.PHONY : CMakeFiles/TestAudio.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.

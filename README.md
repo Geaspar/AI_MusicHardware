@@ -22,16 +22,22 @@ An electronic musical instrument with LLM-assisted composition capabilities, dig
 The architecture consists of the following core components:
 
 1. **Audio Engine**: Real-time C++ audio processing with digital synthesis
-2. **Effects System**: Modular audio effects chain
+2. **Effects System**: Modular audio effects chain with reordering capabilities
 3. **Sequencer**: Pattern-based sequencer with timing and note events
 4. **Adaptive Sequencer**: Game audio-inspired dynamic music system with state transitions
-5. **MIDI Integration**: Hardware connectivity via MIDI protocol
-6. **Hardware Interface**: Physical controls and display interface
-7. **LLM Integration**:
-   - Voice/text to synthesizer parameter suggestions
-   - Pattern completion and suggestion for sequencer
-   - User preference learning for customized assistance
-   - Musical context awareness
+5. **MIDI Integration**: Hardware connectivity via MIDI protocol with MPE support
+6. **Multi-Timbral Engine**: Support for multiple simultaneous instruments on different MIDI channels
+7. **Preset Management**: Comprehensive system for saving and loading synthesizer settings
+8. **MPE Support**: MIDI Polyphonic Expression for expressive control with three dimensions:
+   - Per-note pitch bend (X-axis)
+   - Per-note timbre control (Y-axis)
+   - Per-note pressure sensitivity (Z-axis)
+9. **Hardware Interface**: Physical controls and display interface
+10. **LLM Integration**:
+    - Voice/text to synthesizer parameter suggestions
+    - Pattern completion and suggestion for sequencer
+    - User preference learning for customized assistance
+    - Musical context awareness
 
 ## LLM Features
 
@@ -102,41 +108,43 @@ The LLM component acts as a creative copilot with these capabilities:
 1. Install dependencies:
    - C++ compiler with C++17 support
    - CMake 3.14 or higher
-   - RtAudio library (optional but recommended for real-time audio)
+   - RtAudio library (for real-time audio)
+   - RtMidi library (for MIDI support)
 
-2. Build the project:
+2. Build the project using the build script:
    ```bash
-   mkdir -p build
-   cd build
-   cmake ..
-   make
+   # Make the build script executable
+   chmod +x build.sh
+
+   # Run the build script
+   ./build.sh
+   ```
+   This will:
+   - Check for dependencies and install them if possible
+   - Configure the project with CMake
+   - Build all test applications
+   - Display available test options
+
+3. Run the test applications:
+   ```bash
+   # Real-time audio test with interactive demo
+   ./build/bin/TestAudio
+
+   # Test MPE capabilities
+   ./build/bin/TestMpeVoiceManager
+
+   # Try the preset management system
+   ./build/bin/SimplePresetManagerDemo
+
+   # (Other test applications may be available based on your build)
    ```
 
-3. Run examples:
-   ```bash
-   # Simple audio test (generates WAV files)
-   ./bin/SimpleTest
-   
-   # Sequencer test (generates sequencer patterns as WAV files)
-   ./bin/TestSequencerFile
-   
-   # Advanced sequencer features
-   ./bin/TestSequencerAdvanced
-   
-   # If RtAudio is available:
-   # Real-time audio playback
-   ./bin/TestAudio
-   
-   # Sequencer with real-time audio
-   ./bin/TestSequencer
-   
-   # Adaptive Sequencer demo
-   ./bin/TestAdaptiveSequencer
-   
-   # If SDL2 is available:
-   # UI visualization test
-   ./bin/TestUI
-   ```
+## Key Test Applications
+- **TestAudio**: Interactive demo of sound generation with different waveforms, scales, chords, and arpeggios
+- **TestMpeVoiceManager**: Demo of MPE (MIDI Polyphonic Expression) with expressive per-note control
+- **SimplePresetManagerDemo**: Test the preset management system for saving and loading sound settings
+- **TestSequencer**: Demonstrates sequencer capabilities with pattern playback
+- **TestAdaptiveSequencer**: Shows the adaptive sequencing system inspired by game audio
 
 ## Key Features
 
@@ -163,4 +171,13 @@ The AdaptiveSequencer is a state-based music sequencing system inspired by game 
 For more information, see [Adaptive Sequencer Documentation](docs/ADAPTIVE_SEQUENCER.md).
 
 ## Documentation
-For detailed information about commercialization strategy, manufacturing considerations, and cost breakdowns, see the [Commercialization Guide](docs/commercialization_guide.md).
+For detailed information about specific components, see the following guides:
+
+- **Real-time Audio**: [TESTAUDIO_GUIDE.md](docs/TESTAUDIO_GUIDE.md)
+- **MPE Implementation**: [MPE_VOICE_MANAGER.md](docs/MPE_VOICE_MANAGER.md)
+- **Adaptive Sequencer**: [ADAPTIVE_SEQUENCER.md](docs/ADAPTIVE_SEQUENCER.md)
+- **Sequencer Testing**: [SEQUENCER_TESTING_GUIDE.md](docs/SEQUENCER_TESTING_GUIDE.md)
+- **UI Implementation**: [UI_IMPLEMENTATION.md](docs/UI_IMPLEMENTATION.md)
+- **Project Updates**: [PROJECT_UPDATES.md](docs/PROJECT_UPDATES.md)
+- **Next Steps**: [next_steps.md](docs/next_steps.md)
+- **Commercialization**: [commercialization_guide.md](docs/commercialization_guide.md)

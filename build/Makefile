@@ -181,6 +181,19 @@ TestMpeVoiceManager/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestMpeVoiceManager.dir/build.make CMakeFiles/TestMpeVoiceManager.dir/build
 .PHONY : TestMpeVoiceManager/fast
 
+#=============================================================================
+# Target rules for targets named TestAudio
+
+# Build rule for target.
+TestAudio: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 TestAudio
+.PHONY : TestAudio
+
+# fast build rule for target.
+TestAudio/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestAudio.dir/build.make CMakeFiles/TestAudio.dir/build
+.PHONY : TestAudio/fast
+
 examples/MultiTimbralDemo.o: examples/MultiTimbralDemo.cpp.o
 .PHONY : examples/MultiTimbralDemo.o
 
@@ -228,6 +241,30 @@ examples/SimplePresetManagerDemo.s: examples/SimplePresetManagerDemo.cpp.s
 examples/SimplePresetManagerDemo.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimplePresetManagerDemo.dir/build.make CMakeFiles/SimplePresetManagerDemo.dir/examples/SimplePresetManagerDemo.cpp.s
 .PHONY : examples/SimplePresetManagerDemo.cpp.s
+
+examples/TestAudio.o: examples/TestAudio.cpp.o
+.PHONY : examples/TestAudio.o
+
+# target to build an object file
+examples/TestAudio.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestAudio.dir/build.make CMakeFiles/TestAudio.dir/examples/TestAudio.cpp.o
+.PHONY : examples/TestAudio.cpp.o
+
+examples/TestAudio.i: examples/TestAudio.cpp.i
+.PHONY : examples/TestAudio.i
+
+# target to preprocess a source file
+examples/TestAudio.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestAudio.dir/build.make CMakeFiles/TestAudio.dir/examples/TestAudio.cpp.i
+.PHONY : examples/TestAudio.cpp.i
+
+examples/TestAudio.s: examples/TestAudio.cpp.s
+.PHONY : examples/TestAudio.s
+
+# target to generate assembly for a file
+examples/TestAudio.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestAudio.dir/build.make CMakeFiles/TestAudio.dir/examples/TestAudio.cpp.s
+.PHONY : examples/TestAudio.cpp.s
 
 examples/TestMpeVoiceManager.o: examples/TestMpeVoiceManager.cpp.o
 .PHONY : examples/TestMpeVoiceManager.o
@@ -1105,6 +1142,7 @@ help:
 	@echo "... MultiTimbralDemo"
 	@echo "... PresetLib"
 	@echo "... SimplePresetManagerDemo"
+	@echo "... TestAudio"
 	@echo "... TestMpeVoiceManager"
 	@echo "... examples/MultiTimbralDemo.o"
 	@echo "... examples/MultiTimbralDemo.i"
@@ -1112,6 +1150,9 @@ help:
 	@echo "... examples/SimplePresetManagerDemo.o"
 	@echo "... examples/SimplePresetManagerDemo.i"
 	@echo "... examples/SimplePresetManagerDemo.s"
+	@echo "... examples/TestAudio.o"
+	@echo "... examples/TestAudio.i"
+	@echo "... examples/TestAudio.s"
 	@echo "... examples/TestMpeVoiceManager.o"
 	@echo "... examples/TestMpeVoiceManager.i"
 	@echo "... examples/TestMpeVoiceManager.s"
