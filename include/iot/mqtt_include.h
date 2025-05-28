@@ -139,6 +139,11 @@ namespace mqtt {
             return std::make_shared<delivery_token>();
         }
 
+        token_ptr publish(const std::string& topic, const std::string& payload) {
+            std::cout << "MQTT Mock: Publishing to topic: " << topic << ", payload: " << payload << std::endl;
+            return std::make_shared<delivery_token>();
+        }
+
         token_ptr publish(const message_ptr& message) {
             std::cout << "MQTT Mock: Publishing message to topic: " << message->get_topic() << std::endl;
             return std::make_shared<delivery_token>();

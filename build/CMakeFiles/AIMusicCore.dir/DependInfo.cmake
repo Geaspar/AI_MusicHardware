@@ -8,6 +8,9 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
+  "/Users/geaspar/AIMusicHardware/src/ai/PresetMLAnalyzer.cpp" "CMakeFiles/AIMusicCore.dir/src/ai/PresetMLAnalyzer.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/ai/PresetMLAnalyzer.cpp.o.d"
+  "/Users/geaspar/AIMusicHardware/src/ai/PresetRecommendationEngine.cpp" "CMakeFiles/AIMusicCore.dir/src/ai/PresetRecommendationEngine.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/ai/PresetRecommendationEngine.cpp.o.d"
+  "/Users/geaspar/AIMusicHardware/src/ai/SmartCollectionManager.cpp" "CMakeFiles/AIMusicCore.dir/src/ai/SmartCollectionManager.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/ai/SmartCollectionManager.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/audio/AudioEngine.cpp" "CMakeFiles/AIMusicCore.dir/src/audio/AudioEngine.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/audio/AudioEngine.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/audio/Synthesizer.cpp" "CMakeFiles/AIMusicCore.dir/src/audio/Synthesizer.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/audio/Synthesizer.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/effects/AdvancedFilter.cpp" "CMakeFiles/AIMusicCore.dir/src/effects/AdvancedFilter.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/effects/AdvancedFilter.cpp.o.d"
@@ -58,6 +61,10 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/Users/geaspar/AIMusicHardware/src/synthesis/wavetable/wavetable.cpp" "CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/ui/ParameterManager.cpp" "CMakeFiles/AIMusicCore.dir/src/ui/ParameterManager.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/ui/ParameterManager.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/ui/parameters/ParameterManager.cpp" "CMakeFiles/AIMusicCore.dir/src/ui/parameters/ParameterManager.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/ui/parameters/ParameterManager.cpp.o.d"
+  "/Users/geaspar/AIMusicHardware/src/ui/presets/PresetBrowserUI.cpp" "CMakeFiles/AIMusicCore.dir/src/ui/presets/PresetBrowserUI.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/ui/presets/PresetBrowserUI.cpp.o.d"
+  "/Users/geaspar/AIMusicHardware/src/ui/presets/PresetDatabase.cpp" "CMakeFiles/AIMusicCore.dir/src/ui/presets/PresetDatabase.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/ui/presets/PresetDatabase.cpp.o.d"
+  "/Users/geaspar/AIMusicHardware/src/ui/presets/PresetInfo.cpp" "CMakeFiles/AIMusicCore.dir/src/ui/presets/PresetInfo.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/ui/presets/PresetInfo.cpp.o.d"
+  "/Users/geaspar/AIMusicHardware/src/ui/presets/PresetManager.cpp" "CMakeFiles/AIMusicCore.dir/src/ui/presets/PresetManager.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/ui/presets/PresetManager.cpp.o.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

@@ -8,8 +8,8 @@
 
 namespace AIMusicHardware {
 
-#if defined(HAVE_PAHO_MQTT)
-// MQTT callback handler implementation for Paho
+#if defined(HAVE_PAHO_MQTT) && !defined(DISABLE_MQTT)
+// MQTT callback handler implementation for real Paho
 class MQTTCallbackHandler : public virtual mqtt::callback {
 public:
     MQTTCallbackHandler(MQTTInterface& interface) : interface_(interface) {}
@@ -32,10 +32,11 @@ MQTTInterface::MQTTInterface() :
     port_(1883),
     defaultQoS_(0)
 {
-#if defined(HAVE_PAHO_MQTT)
+#if defined(HAVE_PAHO_MQTT) && !defined(DISABLE_MQTT)
     connectOptions_ = std::make_unique<mqtt::connect_options>();
 #else
-    std::cerr << "Warning: MQTT functionality is disabled (library not found)." << std::endl;
+    connectOptions_ = std::make_unique<mqtt::connect_options>();
+    std::cerr << "Note: Using MQTT mock implementation." << std::endl;
 #endif
 }
 
@@ -51,15 +52,19 @@ bool MQTTInterface::connect(const std::string& host, int port, const std::string
     port_ = port;
     clientId_ = clientId;
 
-#if defined(HAVE_PAHO_MQTT)
     try {
         // Create MQTT client
         std::string serverURI = getServerURI();
         client_ = std::make_unique<mqtt::async_client>(serverURI, clientId);
 
-        // Set callback handler
+#if defined(HAVE_PAHO_MQTT) && !defined(DISABLE_MQTT)
+        // Set callback handler for real MQTT
         auto callback = std::make_shared<MQTTCallbackHandler>(*this);
         client_->set_callback(*callback);
+#else
+        // Set callback handler for mock MQTT
+        // The mock implementation doesn't need a separate callback handler
+#endif
 
         // Configure connection options
         connectOptions_->set_keep_alive_interval(keepAliveInterval_);
@@ -90,17 +95,11 @@ bool MQTTInterface::connect(const std::string& host, int port, const std::string
         isConnected_ = false;
         return false;
     }
-#else
-    std::cerr << "MQTT connection not available - library not found." << std::endl;
-    isConnected_ = false;
-    return false;
-#endif
 }
 
 void MQTTInterface::disconnect() {
     std::lock_guard<std::mutex> lock(mutex_);
 
-#if defined(HAVE_PAHO_MQTT)
     if (client_ && client_->is_connected()) {
         try {
             client_->disconnect()->wait();
@@ -109,18 +108,13 @@ void MQTTInterface::disconnect() {
             std::cerr << "MQTT disconnect error: " << exc.what() << std::endl;
         }
     }
-#endif
 
     isConnected_ = false;
 }
 
 bool MQTTInterface::isConnected() const {
     std::lock_guard<std::mutex> lock(mutex_);
-#if defined(HAVE_PAHO_MQTT)
     return client_ && client_->is_connected();
-#else
-    return false;
-#endif
 }
 
 void MQTTInterface::update() {
@@ -144,7 +138,6 @@ bool MQTTInterface::subscribe(const std::string& topic) {
         return false;
     }
 
-#if defined(HAVE_PAHO_MQTT)
     try {
         client_->subscribe(topic, defaultQoS_)->wait();
         return true;
@@ -153,9 +146,6 @@ bool MQTTInterface::subscribe(const std::string& topic) {
         std::cerr << "MQTT subscribe failed: " << exc.what() << std::endl;
         return false;
     }
-#else
-    return false;
-#endif
 }
 
 bool MQTTInterface::unsubscribe(const std::string& topic) {
@@ -168,7 +158,6 @@ bool MQTTInterface::unsubscribe(const std::string& topic) {
         return false;
     }
 
-#if defined(HAVE_PAHO_MQTT)
     try {
         client_->unsubscribe(topic)->wait();
         return true;
@@ -177,9 +166,6 @@ bool MQTTInterface::unsubscribe(const std::string& topic) {
         std::cerr << "MQTT unsubscribe failed: " << exc.what() << std::endl;
         return false;
     }
-#else
-    return false;
-#endif
 }
 
 bool MQTTInterface::publish(const std::string& topic, const std::string& payload) {
@@ -194,7 +180,6 @@ bool MQTTInterface::publish(const std::string& topic, const std::string& payload
         return false;
     }
 
-#if defined(HAVE_PAHO_MQTT)
     try {
         mqtt::message_ptr pubmsg = mqtt::make_message(topic, payload, qos, retain);
         client_->publish(pubmsg)->wait();
@@ -204,10 +189,6 @@ bool MQTTInterface::publish(const std::string& topic, const std::string& payload
         std::cerr << "MQTT publish failed: " << exc.what() << std::endl;
         return false;
     }
-#else
-    std::cerr << "MQTT publish not available - library not found." << std::endl;
-    return false;
-#endif
 }
 
 void MQTTInterface::setMessageCallback(MessageCallback callback) {
@@ -266,7 +247,6 @@ void MQTTInterface::setDefaultQoS(int qos) {
     defaultQoS_ = qos;
 }
 
-#if defined(HAVE_PAHO_MQTT)
 void MQTTInterface::onMessage(const mqtt::const_message_ptr& msg) {
     std::string topic = msg->get_topic();
     std::string payload = msg->get_payload_str();
@@ -314,9 +294,6 @@ void MQTTInterface::onMessage(const mqtt::const_message_ptr& msg) {
         }
     }
 }
-#else
-// Stub implementation when MQTT is not available
-#endif
 
 bool MQTTInterface::matchTopicPattern(const std::string& topic, const std::string& pattern) const {
     // Simple wildcard matching for MQTT topics

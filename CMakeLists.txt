@@ -224,6 +224,21 @@ set(EVENT_SYSTEM_SOURCES
     src/events/EventBus.cpp
 )
 
+# Preset Management System sources
+set(PRESET_SYSTEM_SOURCES
+    src/ui/presets/PresetInfo.cpp
+    src/ui/presets/PresetDatabase.cpp
+    src/ui/presets/PresetManager.cpp
+    src/ui/presets/PresetBrowserUI.cpp
+)
+
+# AI and Smart Features sources
+set(AI_SMART_FEATURES_SOURCES
+    src/ai/PresetMLAnalyzer.cpp
+    src/ai/PresetRecommendationEngine.cpp
+    src/ai/SmartCollectionManager.cpp
+)
+
 # Set up RtAudio if found
 if(RTAUDIO_FOUND)
     message(STATUS "Found RtAudio: ${RTAUDIO_INCLUDE_DIRS}")
@@ -268,6 +283,8 @@ add_library(AIMusicCore STATIC
     ${IOT_SOURCES}
     ${PARAMETER_SYSTEM_SOURCES}
     ${EVENT_SYSTEM_SOURCES}
+    ${PRESET_SYSTEM_SOURCES}
+    ${AI_SMART_FEATURES_SOURCES}
 )
 
 # Add IoT library link if found
@@ -435,6 +452,22 @@ target_link_libraries(RealMQTTTest PRIVATE
 message(STATUS "Building RealMQTTTest")
 message(STATUS "- Run ./bin/RealMQTTTest to test the MQTTInterface class with real MQTT implementation")
 
+# Create Comprehensive MQTT Test executable
+add_executable(ComprehensiveMQTTTest examples/ComprehensiveMQTTTest.cpp)
+target_link_libraries(ComprehensiveMQTTTest PRIVATE
+    AIMusicCore
+)
+message(STATUS "Building ComprehensiveMQTTTest")
+message(STATUS "- Run ./bin/ComprehensiveMQTTTest to thoroughly test all MQTT mock implementation functionality")
+
+# Create Quick MQTT Test executable
+add_executable(QuickMQTTTest examples/QuickMQTTTest.cpp)
+target_link_libraries(QuickMQTTTest PRIVATE
+    # No need to link to AIMusicCore, since it only tests basic MQTT mock
+)
+message(STATUS "Building QuickMQTTTest")
+message(STATUS "- Run ./bin/QuickMQTTTest for fast validation of MQTT mock implementation")
+
 # Create Paho MQTT C Test executable (for testing the C implementation)
 if(FALSE) # Disable for now until we have the proper Paho MQTT C library
     add_executable(PahoMQTTCTest examples/PahoMQTTCTest.cpp)
@@ -453,3 +486,27 @@ target_link_libraries(SimpleAudioTest PRIVATE
 )
 message(STATUS "Building SimpleAudioTest")
 message(STATUS "- Run ./bin/SimpleAudioTest to play a C major scale and test basic audio functionality")
+
+# Create Enhanced Preset Database Test executable
+add_executable(EnhancedPresetDatabaseTest examples/EnhancedPresetDatabaseTest.cpp)
+target_link_libraries(EnhancedPresetDatabaseTest PRIVATE
+    AIMusicCore
+)
+message(STATUS "Building EnhancedPresetDatabaseTest")
+message(STATUS "- Run ./bin/EnhancedPresetDatabaseTest to test the enhanced preset database system with performance benchmarking")
+
+# Create Preset Browser UI Demo executable
+add_executable(PresetBrowserUIDemo examples/PresetBrowserUIDemo.cpp)
+target_link_libraries(PresetBrowserUIDemo PRIVATE
+    AIMusicCore
+)
+message(STATUS "Building PresetBrowserUIDemo")
+message(STATUS "- Run ./bin/PresetBrowserUIDemo to test the Phase 2 preset browser UI with multi-panel interface")
+
+# Create Phase 3 Smart Features Demo executable
+add_executable(Phase3SmartFeaturesDemo examples/Phase3SmartFeaturesDemo.cpp)
+target_link_libraries(Phase3SmartFeaturesDemo PRIVATE
+    AIMusicCore
+)
+message(STATUS "Building Phase3SmartFeaturesDemo")
+message(STATUS "- Run ./bin/Phase3SmartFeaturesDemo to test Phase 3 smart features with ML analysis and intelligent recommendations")

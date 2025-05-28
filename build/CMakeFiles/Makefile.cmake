@@ -156,5 +156,10 @@ set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/SimpleMQTTTest.dir/DependInfo.cmake"
   "CMakeFiles/SimpleMQTTInterfaceTest.dir/DependInfo.cmake"
   "CMakeFiles/RealMQTTTest.dir/DependInfo.cmake"
+  "CMakeFiles/ComprehensiveMQTTTest.dir/DependInfo.cmake"
+  "CMakeFiles/QuickMQTTTest.dir/DependInfo.cmake"
   "CMakeFiles/SimpleAudioTest.dir/DependInfo.cmake"
+  "CMakeFiles/EnhancedPresetDatabaseTest.dir/DependInfo.cmake"
+  "CMakeFiles/PresetBrowserUIDemo.dir/DependInfo.cmake"
+  "CMakeFiles/Phase3SmartFeaturesDemo.dir/DependInfo.cmake"
   )

@@ -1,0 +1,29 @@
+{
+  "metadata": {
+    "author": "Sarah Wilson",
+    "category": "Lead",
+    "comments": "Smooth warm lead tone",
+    "created": 1748433477,
+    "tags": [
+      "electronic",
+      "synth"
+    ]
+  },
+  "modulations": [
+    {
+      "amount": 0.3,
+      "destination": "filter_cutoff",
+      "source": "lfo1"
+    }
+  ],
+  "parameters": {
+    "env_attack": 0.01,
+    "env_decay": 0.3,
+    "env_release": 0.5,
+    "env_sustain": 0.5,
+    "filter_cutoff": 4000.0,
+    "filter_resonance": 0.4,
+    "osc1_level": 0.8,
+    "osc1_waveform": 0
+  }
+}
