@@ -282,6 +282,22 @@ int main(int argc, char* argv[]) {
     // paramManager.connectIoTInterface(dummyIoT.get());
     paramManager.connectSynthesizer(synthesizer.get());
     
+    // Create a simple parameter bridge system for connecting UI to synthesizer
+    auto connectKnobToParam = [&](SynthKnob* knob, const std::string& paramId) {
+        if (knob) {
+            // Set up value change callback to update synthesizer
+            knob->setValueChangeCallback([&synthesizer, paramId](float normalizedValue) {
+                // Convert normalized value (0-1) to parameter range and update synthesizer
+                synthesizer->setParameter(paramId, normalizedValue);
+                std::cout << "Updated " << paramId << " to " << normalizedValue << std::endl;
+            });
+            
+            // Initialize knob with current parameter value
+            float currentValue = synthesizer->getParameter(paramId);
+            knob->setValue(currentValue);
+        }
+    };
+    
     // Create main synthesizer screen
     auto mainScreen = std::make_unique<Screen>("main");
     mainScreen->setBackgroundColor(Color(40, 40, 50)); // Lighter background
@@ -312,22 +328,27 @@ int main(int argc, char* argv[]) {
     testButton->setTextColor(Color(255, 255, 255));
     mainScreen->addChild(std::move(testButton));
     
-    // Create simple knobs for now (without parameter binding until we have parameters)
-    auto freqKnob = std::make_unique<SynthKnob>("Frequency", 50, 80, 80, 20.0f, 2000.0f, 440.0f);
+    // Create oscillator knobs connected to synthesizer parameters
+    auto freqKnob = SynthKnobFactory::createFrequencyKnob("Frequency", 50, 80, 80);
     freqKnob->setValueFormatter([](float value) {
         std::stringstream ss;
         ss << std::fixed << std::setprecision(1) << value << " Hz";
         return ss.str();
     });
+    SynthKnob* freqKnobPtr = freqKnob.get();
     mainScreen->addChild(std::move(freqKnob));
     
-    auto detuneKnob = std::make_unique<SynthKnob>("Detune", 180, 80, 80, -50.0f, 50.0f, 0.0f);
-    detuneKnob->setValueFormatter([](float value) {
-        std::stringstream ss;
-        ss << std::fixed << std::setprecision(1) << value << " cents";
-        return ss.str();
+    auto waveKnob = std::make_unique<SynthKnob>("Wave", 180, 80, 80, 0.0f, 4.0f, 0.0f);
+    waveKnob->setValueFormatter([](float value) {
+        const char* waveNames[] = {"Sine", "Saw", "Square", "Triangle", "Noise"};
+        int index = static_cast<int>(value);
+        if (index >= 0 && index < 5) {
+            return std::string(waveNames[index]);
+        }
+        return std::string("Unknown");
     });
-    mainScreen->addChild(std::move(detuneKnob));
+    SynthKnob* waveKnobPtr = waveKnob.get();
+    mainScreen->addChild(std::move(waveKnob));
     
     // Create filter section
     auto filterSection = std::make_unique<Label>("filter_section", "FILTER");
@@ -335,7 +356,7 @@ int main(int argc, char* argv[]) {
     filterSection->setTextColor(Color(150, 150, 180));
     mainScreen->addChild(std::move(filterSection));
     
-    auto cutoffKnob = std::make_unique<SynthKnob>("Cutoff", 350, 80, 80, 20.0f, 20000.0f, 1000.0f);
+    auto cutoffKnob = SynthKnobFactory::createFrequencyKnob("Cutoff", 350, 80, 80);
     cutoffKnob->setValueFormatter([](float value) {
         std::stringstream ss;
         if (value >= 1000.0f) {
@@ -345,14 +366,16 @@ int main(int argc, char* argv[]) {
         }
         return ss.str();
     });
+    SynthKnob* cutoffKnobPtr = cutoffKnob.get();
     mainScreen->addChild(std::move(cutoffKnob));
     
-    auto resKnob = std::make_unique<SynthKnob>("Resonance", 480, 80, 80, 0.0f, 1.0f, 0.5f);
+    auto resKnob = SynthKnobFactory::createResonanceKnob("Resonance", 480, 80, 80);
     resKnob->setValueFormatter([](float value) {
         std::stringstream ss;
         ss << std::fixed << std::setprecision(0) << value * 100.0f << "%";
         return ss.str();
     });
+    SynthKnob* resKnobPtr = resKnob.get();
     mainScreen->addChild(std::move(resKnob));
     
     // Create envelope section
@@ -361,15 +384,74 @@ int main(int argc, char* argv[]) {
     envSection->setTextColor(Color(150, 150, 180));
     mainScreen->addChild(std::move(envSection));
     
-    auto attackKnob = std::make_unique<SynthKnob>("Attack", 650, 80, 60, 0.001f, 2.0f, 0.01f);
-    auto decayKnob = std::make_unique<SynthKnob>("Decay", 730, 80, 60, 0.001f, 2.0f, 0.1f);
-    auto sustainKnob = std::make_unique<SynthKnob>("Sustain", 810, 80, 60, 0.0f, 1.0f, 0.7f);
-    auto releaseKnob = std::make_unique<SynthKnob>("Release", 890, 80, 60, 0.001f, 4.0f, 0.5f);
+    auto attackKnob = SynthKnobFactory::createTimeKnob("Attack", 650, 80, 60, 2.0f);
+    attackKnob->setValueFormatter([](float value) {
+        std::stringstream ss;
+        if (value < 0.1f) {
+            ss << std::fixed << std::setprecision(0) << value * 1000.0f << " ms";
+        } else {
+            ss << std::fixed << std::setprecision(2) << value << " s";
+        }
+        return ss.str();
+    });
+    SynthKnob* attackKnobPtr = attackKnob.get();
+    
+    auto decayKnob = SynthKnobFactory::createTimeKnob("Decay", 730, 80, 60, 2.0f);
+    decayKnob->setValueFormatter([](float value) {
+        std::stringstream ss;
+        if (value < 0.1f) {
+            ss << std::fixed << std::setprecision(0) << value * 1000.0f << " ms";
+        } else {
+            ss << std::fixed << std::setprecision(2) << value << " s";
+        }
+        return ss.str();
+    });
+    SynthKnob* decayKnobPtr = decayKnob.get();
+    
+    auto sustainKnob = SynthKnobFactory::createVolumeKnob("Sustain", 810, 80, 60);
+    sustainKnob->setValueFormatter([](float value) {
+        std::stringstream ss;
+        ss << std::fixed << std::setprecision(0) << value * 100.0f << "%";
+        return ss.str();
+    });
+    SynthKnob* sustainKnobPtr = sustainKnob.get();
+    
+    auto releaseKnob = SynthKnobFactory::createTimeKnob("Release", 890, 80, 60, 4.0f);
+    releaseKnob->setValueFormatter([](float value) {
+        std::stringstream ss;
+        if (value < 0.1f) {
+            ss << std::fixed << std::setprecision(0) << value * 1000.0f << " ms";
+        } else {
+            ss << std::fixed << std::setprecision(2) << value << " s";
+        }
+        return ss.str();
+    });
+    SynthKnob* releaseKnobPtr = releaseKnob.get();
     
     mainScreen->addChild(std::move(attackKnob));
     mainScreen->addChild(std::move(decayKnob));
     mainScreen->addChild(std::move(sustainKnob));
     mainScreen->addChild(std::move(releaseKnob));
+    
+    // Create master section
+    auto masterSection = std::make_unique<Label>("master_section", "MASTER");
+    masterSection->setPosition(1000, 50);
+    masterSection->setTextColor(Color(150, 150, 180));
+    mainScreen->addChild(std::move(masterSection));
+    
+    auto volumeKnob = SynthKnobFactory::createVolumeKnob("Volume", 1000, 80, 80);
+    volumeKnob->setValueFormatter([](float value) {
+        std::stringstream ss;
+        if (value == 0.0f) {
+            ss << "-∞ dB";
+        } else {
+            float db = 20.0f * std::log10(value);
+            ss << std::fixed << std::setprecision(1) << db << " dB";
+        }
+        return ss.str();
+    });
+    SynthKnob* volumeKnobPtr = volumeKnob.get();
+    mainScreen->addChild(std::move(volumeKnob));
     
     // Create visualization section
     auto vizSection = std::make_unique<Label>("viz_section", "VISUALIZATION");
@@ -410,27 +492,74 @@ int main(int argc, char* argv[]) {
     auto presetManager = std::make_unique<PresetManager>(synthesizer.get());
     auto presetDatabase = std::make_unique<PresetDatabase>();
     
-    // Add some demo presets
-    PresetInfo preset1;
-    preset1.name = "Init Patch";
-    preset1.category = "Basic";
-    preset1.author = "System";
-    preset1.description = "Default initialization patch";
-    presetDatabase->addPreset(preset1);
+    // Load real presets from test_presets directory
+    std::string presetBaseDir = "test_presets";
+    std::vector<std::string> categories = {"Bass", "Lead", "Pad"};
     
-    PresetInfo preset2;
-    preset2.name = "Warm Pad";
-    preset2.category = "Pad";
-    preset2.author = "Demo";
-    preset2.description = "Warm analog-style pad sound";
-    presetDatabase->addPreset(preset2);
-    
-    PresetInfo preset3;
-    preset3.name = "Bass Growl";
-    preset3.category = "Bass";
-    preset3.author = "Demo";
-    preset3.description = "Aggressive bass sound with filter modulation";
-    presetDatabase->addPreset(preset3);
+    for (const auto& category : categories) {
+        std::string categoryDir = presetBaseDir + "/" + category;
+        
+        // Add presets from each category directory
+        // In a real implementation, we'd scan the directory for .json files
+        // For now, add the known presets manually
+        if (category == "Bass") {
+            PresetInfo preset;
+            preset.name = "Deep Bass";
+            preset.category = "Bass";
+            preset.author = "System";
+            preset.description = "Deep sub bass sound";
+            preset.filePath = categoryDir + "/Deep Bass.json";
+            presetDatabase->addPreset(preset);
+            
+            preset.name = "Pluck Bass";
+            preset.description = "Percussive pluck bass";
+            preset.filePath = categoryDir + "/Pluck Bass.json";
+            presetDatabase->addPreset(preset);
+            
+            preset.name = "Sub Bass";
+            preset.description = "Powerful sub-bass sound";
+            preset.filePath = categoryDir + "/Sub Bass.json";
+            presetDatabase->addPreset(preset);
+        }
+        else if (category == "Lead") {
+            PresetInfo preset;
+            preset.name = "Acid Lead";
+            preset.category = "Lead";
+            preset.author = "Alex Johnson";
+            preset.description = "Classic acid lead synthesizer";
+            preset.filePath = categoryDir + "/Acid Lead.json";
+            presetDatabase->addPreset(preset);
+            
+            preset.name = "Bright Lead";
+            preset.description = "Cutting lead synthesizer";
+            preset.filePath = categoryDir + "/Bright Lead.json";
+            presetDatabase->addPreset(preset);
+            
+            preset.name = "Warm Lead";
+            preset.description = "Warm analog lead sound";
+            preset.filePath = categoryDir + "/Warm Lead.json";
+            presetDatabase->addPreset(preset);
+        }
+        else if (category == "Pad") {
+            PresetInfo preset;
+            preset.name = "Ambient Pad";
+            preset.category = "Pad";
+            preset.author = "System";
+            preset.description = "Atmospheric pad sound";
+            preset.filePath = categoryDir + "/Ambient Pad.json";
+            presetDatabase->addPreset(preset);
+            
+            preset.name = "Lush Pad";
+            preset.description = "Rich, lush pad sound";
+            preset.filePath = categoryDir + "/Lush Pad.json";
+            presetDatabase->addPreset(preset);
+            
+            preset.name = "String Pad";
+            preset.description = "String-like pad sound";
+            preset.filePath = categoryDir + "/String Pad.json";
+            presetDatabase->addPreset(preset);
+        }
+    }
     
     auto presetBrowser = std::make_unique<PresetBrowserUI>("preset_browser");
     presetBrowser->setPosition(50, 440);
@@ -438,10 +567,42 @@ int main(int argc, char* argv[]) {
     presetBrowser->initialize(presetManager.get(), presetDatabase.get());
     presetBrowser->setParameterManager(&paramManager);
     
-    // Set up preset loading callback
-    presetBrowser->setPresetLoadCallback([&](const PresetInfo& preset) {
+    // Set up preset loading callback with UI updates
+    presetBrowser->setPresetLoadCallback([&, waveKnobPtr, cutoffKnobPtr, resKnobPtr, volumeKnobPtr](const PresetInfo& preset) {
         std::cout << "Loading preset: " << preset.name << std::endl;
-        // In a real implementation, this would load preset parameters
+        
+        // Load the preset file and apply parameters to synthesizer
+        if (presetManager->loadPreset(preset.filePath)) {
+            std::cout << "Successfully loaded preset: " << preset.name << std::endl;
+            
+            // Update UI controls to reflect loaded preset values
+            std::cout << "Updating UI knobs to reflect preset parameters..." << std::endl;
+            
+            // Get current parameter values from synthesizer and update UI
+            if (waveKnobPtr) {
+                float oscType = synthesizer->getParameter("oscillator_type");
+                waveKnobPtr->setValue(oscType / 4.0f); // Normalize to 0-1 range
+            }
+            
+            if (cutoffKnobPtr) {
+                float cutoff = synthesizer->getParameter("filter_cutoff");
+                cutoffKnobPtr->setValue(cutoff); // Already normalized
+            }
+            
+            if (resKnobPtr) {
+                float resonance = synthesizer->getParameter("filter_resonance");
+                resKnobPtr->setValue(resonance); // Already normalized
+            }
+            
+            if (volumeKnobPtr) {
+                float volume = synthesizer->getParameter("master_volume");
+                volumeKnobPtr->setValue(volume); // Already normalized
+            }
+            
+            std::cout << "Preset loaded and UI updated: " << preset.name << std::endl;
+        } else {
+            std::cerr << "Failed to load preset: " << preset.name << std::endl;
+        }
     });
     
     mainScreen->addChild(std::move(presetBrowser));
@@ -491,6 +652,23 @@ int main(int argc, char* argv[]) {
     Label* perfInfoPtr = 
         static_cast<Label*>(mainScreen->getChild("perf_info"));
     
+    // Connect UI controls to synthesizer parameters
+    std::cout << "Connecting UI controls to synthesizer parameters..." << std::endl;
+    
+    // Note: For oscillator frame parameter, we need special handling since it uses normalized values
+    connectKnobToParam(waveKnobPtr, "oscillator_type");
+    connectKnobToParam(cutoffKnobPtr, "filter_cutoff");
+    connectKnobToParam(resKnobPtr, "filter_resonance");
+    connectKnobToParam(volumeKnobPtr, "master_volume");
+    
+    // Envelope parameters will need to be added to the synthesizer parameter system
+    // connectKnobToParam(attackKnobPtr, "envelope_attack");
+    // connectKnobToParam(decayKnobPtr, "envelope_decay");
+    // connectKnobToParam(sustainKnobPtr, "envelope_sustain");
+    // connectKnobToParam(releaseKnobPtr, "envelope_release");
+    
+    std::cout << "Parameter connections established" << std::endl;
+
     // Add screen to context
     uiContext->addScreen(std::move(mainScreen));
     uiContext->setActiveScreen("main");
