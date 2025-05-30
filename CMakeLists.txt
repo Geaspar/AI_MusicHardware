@@ -159,6 +159,7 @@ set(BASIC_AUDIO_SOURCES
     src/hardware/HardwareInterface.cpp
     src/midi/MidiInterface.cpp
     src/midi/MidiManager.cpp
+    src/midi/MidiCCLearning.cpp
     src/midi/MultiTimbralMidiRouter.cpp
     src/midi/MpeConfiguration.cpp
     src/midi/MpeChannelAllocator.cpp
@@ -516,6 +517,14 @@ target_link_libraries(AudioEngineStressTest PRIVATE
 )
 message(STATUS "Building AudioEngineStressTest")
 message(STATUS "- Run ./bin/AudioEngineStressTest to validate enterprise-grade error handling and performance monitoring")
+
+# MIDI CC Learning System Test
+add_executable(MidiCCLearningTest examples/MidiCCLearningTest.cpp)
+target_link_libraries(MidiCCLearningTest PRIVATE
+    AIMusicCore
+)
+message(STATUS "Building MidiCCLearningTest")
+message(STATUS "- Run ./bin/MidiCCLearningTest to test the complete MIDI CC learning and parameter automation system")
 
 # Create Enhanced Preset Database Test executable
 add_executable(EnhancedPresetDatabaseTest examples/EnhancedPresetDatabaseTest.cpp)

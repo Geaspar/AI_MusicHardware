@@ -25,6 +25,7 @@
 #include "../include/ui/parameters/ParameterManager.h"
 #include "../include/ui/presets/PresetManager.h"
 #include "../include/ui/presets/PresetDatabase.h"
+#include "../include/midi/MidiCCLearning.h"
 
 // IoT support
 // #include "../include/iot/DummyIoTInterface.h" // Disabled to avoid crash
@@ -282,9 +283,49 @@ int main(int argc, char* argv[]) {
     // paramManager.connectIoTInterface(dummyIoT.get());
     paramManager.connectSynthesizer(synthesizer.get());
     
-    // Create a simple parameter bridge system for connecting UI to synthesizer
+    // Initialize MIDI CC Learning system
+    auto& ccLearning = MidiCCLearningManager::getInstance();
+    ccLearning.initialize();
+    
+    // Create parameter mapping storage for CC learning integration
+    std::map<std::string, SynthKnob*> parameterKnobs; // Map parameter IDs to knobs
+    
+    // Set up CC learning to update synthesizer parameters and UI
+    ccLearning.getLearning().setParameterChangeCallback([&synthesizer, &parameterKnobs](const std::string& parameterId, float value) {
+        // Update synthesizer
+        synthesizer->setParameter(parameterId, value);
+        
+        // Update corresponding UI knob if it exists
+        auto knobIt = parameterKnobs.find(parameterId);
+        if (knobIt != parameterKnobs.end() && knobIt->second) {
+            knobIt->second->setValue(value);
+        }
+        
+        std::cout << "CC Learning -> " << parameterId << " = " << value << std::endl;
+    });
+    
+    // Create main synthesizer screen first
+    auto mainScreen = std::make_unique<Screen>("main");
+    
+    // Forward declare status label pointer for callback
+    Label* ccStatusPtr = nullptr;
+    
+    // Set up learning state callback for UI feedback
+    ccLearning.getLearning().setLearningStateCallback([&ccStatusPtr](MidiCCLearning::LearningState state, const std::string& message) {
+        std::cout << "Learning State: " << message << std::endl;
+        
+        // Update status label if available
+        if (ccStatusPtr) {
+            std::string statusText = "CC Status: " + message;
+            ccStatusPtr->setText(statusText);
+        }
+    });
+    
     auto connectKnobToParam = [&](SynthKnob* knob, const std::string& paramId) {
         if (knob) {
+            // Store knob reference for CC learning updates
+            parameterKnobs[paramId] = knob;
+            
             // Set up value change callback to update synthesizer
             knob->setValueChangeCallback([&synthesizer, paramId](float normalizedValue) {
                 // Convert normalized value (0-1) to parameter range and update synthesizer
@@ -298,8 +339,27 @@ int main(int argc, char* argv[]) {
         }
     };
     
-    // Create main synthesizer screen
-    auto mainScreen = std::make_unique<Screen>("main");
+    // Helper to add parameter-specific learning functionality
+    auto addParameterLearning = [&](SynthKnob* knob, const std::string& paramId, int x, int y) {
+        if (knob) {
+            // Add a small learn button next to the knob
+            auto learnButton = std::make_unique<Button>("learn_" + paramId, "L");
+            learnButton->setPosition(x + 85, y + 30); // Position next to knob
+            learnButton->setSize(20, 20);
+            learnButton->setBackgroundColor(Color(80, 80, 120));
+            learnButton->setTextColor(Color(255, 255, 255));
+            learnButton->setClickCallback([&ccLearning, paramId]() {
+                auto& learning = ccLearning.getLearning();
+                if (learning.getLearningState() == MidiCCLearning::LearningState::Idle) {
+                    learning.startLearning(paramId, std::chrono::milliseconds{5000});
+                    std::cout << "Started learning for parameter: " << paramId << std::endl;
+                } else {
+                    learning.stopLearning();
+                }
+            });
+            mainScreen->addChild(std::move(learnButton));
+        }
+    };
     mainScreen->setBackgroundColor(Color(40, 40, 50)); // Lighter background
     mainScreen->setPosition(0, 0);
     mainScreen->setSize(1280, 800);
@@ -607,14 +667,51 @@ int main(int argc, char* argv[]) {
     
     mainScreen->addChild(std::move(presetBrowser));
     
-    // Create transport controls
+    // Create MIDI CC learning controls
+    auto ccLearningSection = std::make_unique<Label>("cc_section", "MIDI CC LEARNING");
+    ccLearningSection->setPosition(600, 410);
+    ccLearningSection->setTextColor(Color(150, 150, 180));
+    mainScreen->addChild(std::move(ccLearningSection));
+    
+    auto learnButton = std::make_unique<Button>("learn_cc", "LEARN CC");
+    learnButton->setPosition(600, 440);
+    learnButton->setSize(120, 40);
+    learnButton->setToggleMode(true);
+    learnButton->setClickCallback([&ccLearning]() {
+        auto& learning = ccLearning.getLearning();
+        if (learning.getLearningState() == MidiCCLearning::LearningState::Idle) {
+            learning.startAutoLearning(std::chrono::milliseconds{10000});
+        } else {
+            learning.stopLearning();
+        }
+    });
+    mainScreen->addChild(std::move(learnButton));
+    
+    auto clearCCButton = std::make_unique<Button>("clear_cc", "CLEAR CC");
+    clearCCButton->setPosition(730, 440);
+    clearCCButton->setSize(100, 40);
+    clearCCButton->setClickCallback([&ccLearning]() {
+        ccLearning.getLearning().clearAllMappings();
+        std::cout << "Cleared all CC mappings" << std::endl;
+    });
+    mainScreen->addChild(std::move(clearCCButton));
+    
+    // CC Learning status display
+    auto ccStatusLabel = std::make_unique<Label>("cc_status", "CC Status: Ready");
+    ccStatusLabel->setPosition(600, 490);
+    ccStatusLabel->setSize(250, 20);
+    ccStatusLabel->setTextColor(Color(150, 200, 150));
+    ccStatusPtr = ccStatusLabel.get(); // Store pointer for callback updates
+    mainScreen->addChild(std::move(ccStatusLabel));
+    
+    // Create transport controls  
     auto transportSection = std::make_unique<Label>("transport_section", "TRANSPORT");
-    transportSection->setPosition(600, 410);
+    transportSection->setPosition(600, 540);
     transportSection->setTextColor(Color(150, 150, 180));
     mainScreen->addChild(std::move(transportSection));
     
     auto playButton = std::make_unique<Button>("play", "PLAY");
-    playButton->setPosition(600, 440);
+    playButton->setPosition(600, 570);
     playButton->setSize(80, 40);
     playButton->setToggleMode(true);
     playButton->setClickCallback([&sequencer]() {
@@ -627,7 +724,7 @@ int main(int argc, char* argv[]) {
     mainScreen->addChild(std::move(playButton));
     
     auto stopButton = std::make_unique<Button>("stop", "STOP");
-    stopButton->setPosition(690, 440);
+    stopButton->setPosition(690, 570);
     stopButton->setSize(80, 40);
     stopButton->setClickCallback([&sequencer]() {
         sequencer->stop();
@@ -636,12 +733,12 @@ int main(int argc, char* argv[]) {
     
     // Create performance info
     auto perfSection = std::make_unique<Label>("perf_section", "PERFORMANCE");
-    perfSection->setPosition(600, 520);
+    perfSection->setPosition(600, 650);
     perfSection->setTextColor(Color(150, 150, 180));
     mainScreen->addChild(std::move(perfSection));
     
     auto perfInfo = std::make_unique<Label>("perf_info", "CPU: 0.0% | FPS: 60 | Audio: OK");
-    perfInfo->setPosition(600, 550);
+    perfInfo->setPosition(600, 680);
     mainScreen->addChild(std::move(perfInfo));
     
     // Get pointers to visualization components for audio thread
@@ -661,13 +758,19 @@ int main(int argc, char* argv[]) {
     connectKnobToParam(resKnobPtr, "filter_resonance");
     connectKnobToParam(volumeKnobPtr, "master_volume");
     
+    // Add CC learning buttons for each parameter
+    addParameterLearning(waveKnobPtr, "oscillator_type", 180, 80);
+    addParameterLearning(cutoffKnobPtr, "filter_cutoff", 350, 80);
+    addParameterLearning(resKnobPtr, "filter_resonance", 480, 80);
+    addParameterLearning(volumeKnobPtr, "master_volume", 1000, 80);
+    
     // Envelope parameters will need to be added to the synthesizer parameter system
     // connectKnobToParam(attackKnobPtr, "envelope_attack");
     // connectKnobToParam(decayKnobPtr, "envelope_decay");
     // connectKnobToParam(sustainKnobPtr, "envelope_sustain");
     // connectKnobToParam(releaseKnobPtr, "envelope_release");
     
-    std::cout << "Parameter connections established" << std::endl;
+    std::cout << "Parameter connections and CC learning established" << std::endl;
 
     // Add screen to context
     uiContext->addScreen(std::move(mainScreen));
@@ -683,6 +786,11 @@ int main(int argc, char* argv[]) {
     
     midiHandler->setNoteOffCallback([&](int channel, int note) {
         synthesizer->noteOff(note);
+    });
+    
+    // Set up MIDI CC processing for CC learning
+    midiHandler->setControlChangeCallback([&](int channel, int ccNumber, int value) {
+        ccLearning.getLearning().processMidiCC(channel, ccNumber, value, "MIDI Input");
     });
     
     // Set up sequencer callbacks
