@@ -22,6 +22,7 @@
 #include "../include/ui/PresetBrowserUIComponent.h"
 #include "../include/ui/VisualizationComponents.h"
 #include "../include/ui/ParameterUpdateQueue.h"
+#include "../include/ui/MidiKeyboard.h"
 #include "../include/ui/parameters/ParameterManager.h"
 #include "../include/ui/presets/PresetManager.h"
 #include "../include/ui/presets/PresetDatabase.h"
@@ -542,9 +543,110 @@ int main(int argc, char* argv[]) {
     levelMeter->setSize(30, 150);
     mainScreen->addChild(std::move(levelMeter));
     
-    // Create preset browser section
+    // Create MIDI keyboard section
+    auto keyboardSection = std::make_unique<Label>("keyboard_section", "MIDI KEYBOARD");
+    keyboardSection->setPosition(50, 410);
+    keyboardSection->setTextColor(Color(150, 150, 180));
+    mainScreen->addChild(std::move(keyboardSection));
+    
+    // Create the MIDI keyboard
+    auto midiKeyboard = std::make_unique<MidiKeyboard>("midi_keyboard", 50, 440);
+    
+    // Configure keyboard for 3 octaves starting from C3
+    MidiKeyboard::KeyboardConfig keyboardConfig;
+    keyboardConfig.startOctave = 3;     // C3 - C6 range
+    keyboardConfig.numOctaves = 3;
+    keyboardConfig.whiteKeyWidth = 28;   // Slightly larger keys
+    keyboardConfig.whiteKeyHeight = 140;
+    keyboardConfig.blackKeyWidth = 20;
+    keyboardConfig.blackKeyHeight = 90;
+    keyboardConfig.whiteKeyColor = Color(250, 250, 250);
+    keyboardConfig.blackKeyColor = Color(30, 30, 30);
+    keyboardConfig.pressedWhiteColor = Color(100, 150, 255);
+    keyboardConfig.pressedBlackColor = Color(80, 120, 200);
+    keyboardConfig.keyBorderColor = Color(120, 120, 120);
+    
+    midiKeyboard->setConfig(keyboardConfig);
+    midiKeyboard->setVelocityRange(30, 127);  // More expressive velocity range
+    
+    // Connect keyboard to synthesizer
+    midiKeyboard->setNoteCallback([&synthesizer](int note, int velocity, bool isNoteOn) {
+        if (isNoteOn) {
+            float normalizedVelocity = velocity / 127.0f;
+            synthesizer->noteOn(note, normalizedVelocity);
+            std::cout << "Keyboard Note On: " << MidiKeyboard::getNoteName(note) 
+                      << " (note " << note << ") velocity " << velocity << std::endl;
+        } else {
+            synthesizer->noteOff(note);
+            std::cout << "Keyboard Note Off: " << MidiKeyboard::getNoteName(note) 
+                      << " (note " << note << ")" << std::endl;
+        }
+    });
+    
+    // Store pointer for potential external MIDI input display
+    MidiKeyboard* midiKeyboardPtr = midiKeyboard.get();
+    mainScreen->addChild(std::move(midiKeyboard));
+    
+    // Add octave control buttons
+    auto octaveDownButton = std::make_unique<Button>("octave_down", "OCT-");
+    octaveDownButton->setPosition(650, 440);
+    octaveDownButton->setSize(60, 30);
+    octaveDownButton->setBackgroundColor(Color(80, 80, 100));
+    octaveDownButton->setTextColor(Color(255, 255, 255));
+    octaveDownButton->setClickCallback([midiKeyboardPtr]() {
+        if (midiKeyboardPtr) {
+            midiKeyboardPtr->transposeOctave(-1);
+            std::cout << "Keyboard transposed down one octave" << std::endl;
+        }
+    });
+    mainScreen->addChild(std::move(octaveDownButton));
+    
+    auto octaveUpButton = std::make_unique<Button>("octave_up", "OCT+");
+    octaveUpButton->setPosition(720, 440);
+    octaveUpButton->setSize(60, 30);
+    octaveUpButton->setBackgroundColor(Color(80, 80, 100));
+    octaveUpButton->setTextColor(Color(255, 255, 255));
+    octaveUpButton->setClickCallback([midiKeyboardPtr]() {
+        if (midiKeyboardPtr) {
+            midiKeyboardPtr->transposeOctave(1);
+            std::cout << "Keyboard transposed up one octave" << std::endl;
+        }
+    });
+    mainScreen->addChild(std::move(octaveUpButton));
+    
+    // Add velocity mode button
+    auto velocityModeButton = std::make_unique<Button>("velocity_mode", "VEL: VAR");
+    velocityModeButton->setPosition(650, 480);
+    velocityModeButton->setSize(130, 30);
+    velocityModeButton->setBackgroundColor(Color(60, 100, 60));
+    velocityModeButton->setTextColor(Color(255, 255, 255));
+    velocityModeButton->setToggleMode(true);
+    
+    // Store raw pointer for callback
+    Button* velocityModeButtonPtr = velocityModeButton.get();
+    
+    bool isFixedVelocity = false;
+    velocityModeButton->setClickCallback([midiKeyboardPtr, &isFixedVelocity, velocityModeButtonPtr]() {
+        if (midiKeyboardPtr) {
+            isFixedVelocity = !isFixedVelocity;
+            if (isFixedVelocity) {
+                midiKeyboardPtr->setFixedVelocity(100);  // Fixed velocity
+                velocityModeButtonPtr->setText("VEL: FIX");
+                velocityModeButtonPtr->setBackgroundColor(Color(100, 60, 60));
+                std::cout << "Keyboard set to fixed velocity mode" << std::endl;
+            } else {
+                midiKeyboardPtr->setFixedVelocity(0);    // Variable velocity
+                velocityModeButtonPtr->setText("VEL: VAR");
+                velocityModeButtonPtr->setBackgroundColor(Color(60, 100, 60));
+                std::cout << "Keyboard set to variable velocity mode" << std::endl;
+            }
+        }
+    });
+    mainScreen->addChild(std::move(velocityModeButton));
+    
+    // Create preset browser section (moved down to make room for keyboard)
     auto presetSection = std::make_unique<Label>("preset_section", "PRESET BROWSER");
-    presetSection->setPosition(50, 410);
+    presetSection->setPosition(50, 600);
     presetSection->setTextColor(Color(150, 150, 180));
     mainScreen->addChild(std::move(presetSection));
     
@@ -622,8 +724,8 @@ int main(int argc, char* argv[]) {
     }
     
     auto presetBrowser = std::make_unique<PresetBrowserUI>("preset_browser");
-    presetBrowser->setPosition(50, 440);
-    presetBrowser->setSize(500, 320);
+    presetBrowser->setPosition(50, 630);
+    presetBrowser->setSize(500, 280);
     presetBrowser->initialize(presetManager.get(), presetDatabase.get());
     presetBrowser->setParameterManager(&paramManager);
     
@@ -780,12 +882,29 @@ int main(int argc, char* argv[]) {
     // Set up MIDI handling
     midiInput->setCallback(midiHandler.get());
     
-    midiHandler->setNoteOnCallback([&](int channel, int note, int velocity) {
-        synthesizer->noteOn(note, velocity / 127.0f);
+    midiHandler->setNoteOnCallback([&, midiKeyboardPtr](int channel, int note, int velocity) {
+        float normalizedVelocity = velocity / 127.0f;
+        synthesizer->noteOn(note, normalizedVelocity);
+        
+        // Display external MIDI input on keyboard
+        if (midiKeyboardPtr) {
+            midiKeyboardPtr->setNotePressed(note, true, velocity);
+        }
+        
+        std::cout << "MIDI Note On: " << MidiKeyboard::getNoteName(note) 
+                  << " (note " << note << ") velocity " << velocity << std::endl;
     });
     
-    midiHandler->setNoteOffCallback([&](int channel, int note) {
+    midiHandler->setNoteOffCallback([&, midiKeyboardPtr](int channel, int note) {
         synthesizer->noteOff(note);
+        
+        // Update keyboard display
+        if (midiKeyboardPtr) {
+            midiKeyboardPtr->setNotePressed(note, false, 0);
+        }
+        
+        std::cout << "MIDI Note Off: " << MidiKeyboard::getNoteName(note) 
+                  << " (note " << note << ")" << std::endl;
     });
     
     // Set up MIDI CC processing for CC learning

@@ -257,6 +257,7 @@ set(UI_CORE_SOURCES
     src/ui/ParameterBridge.cpp
     src/ui/ParameterUpdateQueue.cpp
     src/ui/SynthKnob.cpp
+    src/ui/MidiKeyboard.cpp
     src/ui/PresetBrowserUIComponent.cpp
     src/ui/VisualizationComponents.cpp
 )
@@ -525,6 +526,14 @@ target_link_libraries(MidiCCLearningTest PRIVATE
 )
 message(STATUS "Building MidiCCLearningTest")
 message(STATUS "- Run ./bin/MidiCCLearningTest to test the complete MIDI CC learning and parameter automation system")
+
+# MIDI Keyboard UI Component Test
+add_executable(MidiKeyboardTest examples/MidiKeyboardTest.cpp)
+target_link_libraries(MidiKeyboardTest PRIVATE
+    AIMusicCore
+)
+message(STATUS "Building MidiKeyboardTest")
+message(STATUS "- Run ./bin/MidiKeyboardTest to test the MIDI keyboard UI component functionality")
 
 # Create Enhanced Preset Database Test executable
 add_executable(EnhancedPresetDatabaseTest examples/EnhancedPresetDatabaseTest.cpp)
