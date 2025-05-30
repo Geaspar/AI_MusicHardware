@@ -24,6 +24,9 @@ struct Color {
     static Color Cyan() { return Color(0, 255, 255); }
     static Color Magenta() { return Color(255, 0, 255); }
     static Color Orange() { return Color(255, 165, 0); }
+    
+    // Create color from HSV values
+    static Color fromHSV(float h, float s, float v);
 };
 
 // Point structure

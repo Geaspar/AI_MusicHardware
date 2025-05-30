@@ -134,8 +134,10 @@ void EnhancedParameterManager::connectIoTInterface(IoTInterface* iotInterface) {
     
     // Update the IoT adapter
     if (iotInterface_) {
-        iotAdapter_ = IoTEventAdapter(iotInterface_);
-        iotAdapter_.start();
+        iotAdapter_ = std::make_unique<IoTEventAdapter>(iotInterface_);
+        iotAdapter_->start();
+    } else {
+        iotAdapter_.reset();
     }
 }
 
@@ -146,11 +148,11 @@ void EnhancedParameterManager::mapIoTTopicToParameter(
     float minValue,
     float maxValue) {
     
-    if (!parameter || !iotInterface_) return;
+    if (!parameter || !iotInterface_ || !iotAdapter_) return;
     
     // Register with IoT adapter
-    iotAdapter_.mapTopicToParameter(topic, parameter);
-    iotAdapter_.registerSensorType(topic, sensorType, minValue, maxValue);
+    iotAdapter_->mapTopicToParameter(topic, parameter);
+    iotAdapter_->registerSensorType(topic, sensorType, minValue, maxValue);
 }
 
 void EnhancedParameterManager::setIoTMappingMode(
@@ -159,10 +161,10 @@ void EnhancedParameterManager::setIoTMappingMode(
     float threshold,
     float exponent) {
     
-    if (!iotInterface_) return;
+    if (!iotInterface_ || !iotAdapter_) return;
     
     // Set mapping mode in IoT adapter
-    iotAdapter_.setMappingMode(topic, mappingMode, threshold, exponent);
+    iotAdapter_->setMappingMode(topic, mappingMode, threshold, exponent);
 }
 
 void EnhancedParameterManager::updateAutomation(float deltaTime) {

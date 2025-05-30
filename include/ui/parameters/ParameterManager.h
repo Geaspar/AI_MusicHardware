@@ -136,7 +136,7 @@ public:
      * 
      * @return IoTEventAdapter* Pointer to IoT event adapter
      */
-    IoTEventAdapter* getIoTEventAdapter() { return &iotAdapter_; }
+    IoTEventAdapter* getIoTEventAdapter() { return iotAdapter_.get(); }
     
     /**
      * @brief Map IoT topic to parameter
@@ -191,7 +191,7 @@ private:
     
     Synthesizer* synth_ = nullptr;
     IoTInterface* iotInterface_ = nullptr;
-    IoTEventAdapter iotAdapter_;
+    std::unique_ptr<IoTEventAdapter> iotAdapter_;
     
     // Parameter smoothing tracking
     struct SmoothingInfo {

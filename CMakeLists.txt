@@ -239,6 +239,20 @@ set(AI_SMART_FEATURES_SOURCES
     src/ai/SmartCollectionManager.cpp
 )
 
+# UI Core sources
+set(UI_CORE_SOURCES
+    src/ui/UserInterface.cpp
+    src/ui/UIComponents.cpp
+    src/ui/UIContext.cpp
+    src/ui/DisplayManager.cpp
+    src/ui/Font.cpp
+    src/ui/ParameterBridge.cpp
+    src/ui/ParameterUpdateQueue.cpp
+    src/ui/SynthKnob.cpp
+    src/ui/PresetBrowserUIComponent.cpp
+    src/ui/VisualizationComponents.cpp
+)
+
 # Set up RtAudio if found
 if(RTAUDIO_FOUND)
     message(STATUS "Found RtAudio: ${RTAUDIO_INCLUDE_DIRS}")
@@ -285,6 +299,7 @@ add_library(AIMusicCore STATIC
     ${EVENT_SYSTEM_SOURCES}
     ${PRESET_SYSTEM_SOURCES}
     ${AI_SMART_FEATURES_SOURCES}
+    ${UI_CORE_SOURCES}
 )
 
 # Add IoT library link if found
@@ -510,3 +525,42 @@ target_link_libraries(Phase3SmartFeaturesDemo PRIVATE
 )
 message(STATUS "Building Phase3SmartFeaturesDemo")
 message(STATUS "- Run ./bin/Phase3SmartFeaturesDemo to test Phase 3 smart features with ML analysis and intelligent recommendations")
+
+# Find SDL2 for UI tests
+find_package(SDL2 QUIET)
+if(SDL2_FOUND)
+    message(STATUS "Found SDL2: ${SDL2_INCLUDE_DIRS}")
+    
+    # Create TestUI executable
+    add_executable(TestUI examples/TestUI.cpp)
+    target_include_directories(TestUI PRIVATE ${SDL2_INCLUDE_DIRS})
+    target_link_libraries(TestUI PRIVATE
+        AIMusicCore
+        ${SDL2_LIBRARIES}
+    )
+    message(STATUS "Building TestUI")
+    message(STATUS "- Run ./bin/TestUI to test the basic UI system with interactive knobs and buttons")
+    
+    # Create Enhanced UI Integration Test executable
+    add_executable(EnhancedUIIntegrationTest examples/EnhancedUIIntegrationTest.cpp)
+    target_include_directories(EnhancedUIIntegrationTest PRIVATE ${SDL2_INCLUDE_DIRS})
+    target_link_libraries(EnhancedUIIntegrationTest PRIVATE
+        AIMusicCore
+        ${SDL2_LIBRARIES}
+    )
+    message(STATUS "Building EnhancedUIIntegrationTest")
+    message(STATUS "- Run ./bin/EnhancedUIIntegrationTest to test the enhanced UI with parameter binding and thread-safe updates")
+    
+    # Create Comprehensive UI Test executable
+    add_executable(ComprehensiveUITest examples/ComprehensiveUITest.cpp)
+    target_include_directories(ComprehensiveUITest PRIVATE ${SDL2_INCLUDE_DIRS})
+    target_link_libraries(ComprehensiveUITest PRIVATE
+        AIMusicCore
+        ${SDL2_LIBRARIES}
+    )
+    message(STATUS "Building ComprehensiveUITest")
+    message(STATUS "- Run ./bin/ComprehensiveUITest to test all UI components including preset browser and visualizations")
+else()
+    message(WARNING "SDL2 not found. UI test applications will not be built.")
+    message(WARNING "Install SDL2 to enable UI testing: brew install sdl2 (macOS) or sudo apt-get install libsdl2-dev (Linux)")
+endif()
