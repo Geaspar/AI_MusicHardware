@@ -7,6 +7,9 @@
 #include <iomanip>
 #include <sstream>
 #include <SDL2/SDL.h>
+#ifdef HAVE_SDL_TTF
+#include <SDL_ttf.h>
+#endif
 
 // Core systems
 #include "../include/audio/AudioEngine.h"
@@ -36,7 +39,35 @@ using namespace AIMusicHardware;
 // Custom SDL DisplayManager for rendering
 class SDLDisplayManager : public DisplayManager {
 public:
-    SDLDisplayManager(SDL_Renderer* renderer) : renderer_(renderer), width_(1280), height_(800) {}
+    SDLDisplayManager(SDL_Renderer* renderer) : renderer_(renderer), width_(1280), height_(800), 
+                                             font_(nullptr), fontLarge_(nullptr), fontSmall_(nullptr) {
+#ifdef HAVE_SDL_TTF
+        // Initialize SDL_ttf
+        if (TTF_Init() == -1) {
+            std::cerr << "TTF_Init failed: " << TTF_GetError() << std::endl;
+        } else {
+            // Load fonts in different sizes
+            font_ = TTF_OpenFont("/System/Library/Fonts/Helvetica.ttc", 14);          // Normal text
+            fontLarge_ = TTF_OpenFont("/System/Library/Fonts/Helvetica.ttc", 18);     // Section headers
+            fontSmall_ = TTF_OpenFont("/System/Library/Fonts/Helvetica.ttc", 12);     // Small labels
+            
+            if (!font_ || !fontLarge_ || !fontSmall_) {
+                std::cerr << "Failed to load some fonts: " << TTF_GetError() << std::endl;
+            } else {
+                std::cout << "SDL_ttf initialized with multiple font sizes" << std::endl;
+            }
+        }
+#endif
+    }
+    
+    ~SDLDisplayManager() {
+#ifdef HAVE_SDL_TTF
+        if (font_) TTF_CloseFont(font_);
+        if (fontLarge_) TTF_CloseFont(fontLarge_);
+        if (fontSmall_) TTF_CloseFont(fontSmall_);
+        TTF_Quit();
+#endif
+    }
     
     bool initialize(int width, int height) override {
         width_ = width;
@@ -81,35 +112,91 @@ public:
     }
     
     void drawText(int x, int y, const std::string& text, Font* font, const Color& color) override {
-        if (!renderer_) return;
-        // Simplified text rendering - in production, use SDL_ttf
-        SDL_SetRenderDrawColor(renderer_, color.r, color.g, color.b, color.a);
+        // Check if this looks like a section header based on content
+        bool isHeader = (text.find("OSCILLATOR") != std::string::npos ||
+                        text.find("FILTER") != std::string::npos ||
+                        text.find("ENVELOPE") != std::string::npos ||
+                        text.find("MASTER") != std::string::npos ||
+                        text.find("VISUALIZATION") != std::string::npos ||
+                        text.find("KEYBOARD") != std::string::npos ||
+                        text.find("PRESET") != std::string::npos ||
+                        text.find("MIDI CC") != std::string::npos ||
+                        text.find("TRANSPORT") != std::string::npos ||
+                        text.find("PERFORMANCE") != std::string::npos);
         
-        int charWidth = 8;
-        int charHeight = 14;
+        // Check if this looks like a small knob label
+        bool isSmallLabel = (text == "Frequency" || text == "Waveform" || text == "Cutoff" || 
+                            text == "Resonance" || text == "Attack" || text == "Decay" || 
+                            text == "Sustain" || text == "Release" || text == "Volume");
+        
+        if (isHeader) {
+            drawTextWithSize(x, y, text, color, TextSize::Large);
+        } else if (isSmallLabel) {
+            drawTextWithSize(x, y, text, color, TextSize::Small);
+        } else {
+            drawTextWithSize(x, y, text, color, TextSize::Normal);
+        }
+    }
+    
+    enum class TextSize {
+        Small,
+        Normal, 
+        Large
+    };
+    
+    void drawTextWithSize(int x, int y, const std::string& text, const Color& color, TextSize size) {
+        if (!renderer_) return;
+        
+#ifdef HAVE_SDL_TTF
+        TTF_Font* selectedFont = font_;
+        switch (size) {
+            case TextSize::Small: selectedFont = fontSmall_; break;
+            case TextSize::Large: selectedFont = fontLarge_; break;
+            default: selectedFont = font_; break;
+        }
+        
+        if (selectedFont) {
+            // Use SDL_ttf for real text rendering
+            SDL_Color textColor = { color.r, color.g, color.b, 255 };
+            SDL_Surface* textSurface = TTF_RenderText_Solid(selectedFont, text.c_str(), textColor);
+            
+            if (textSurface) {
+                SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer_, textSurface);
+                if (textTexture) {
+                    int textWidth = textSurface->w;
+                    int textHeight = textSurface->h;
+                    SDL_Rect destRect = { x, y, textWidth, textHeight };
+                    
+                    SDL_RenderCopy(renderer_, textTexture, nullptr, &destRect);
+                    SDL_DestroyTexture(textTexture);
+                }
+                SDL_FreeSurface(textSurface);
+            }
+            return;
+        }
+#endif
+        
+        // Fallback rendering if SDL_ttf not available
+        int charWidth = 6;
+        int charHeight = 10;
+        int charSpacing = 4;
+        
+        int totalWidth = text.length() * (charWidth + charSpacing);
+        SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 200);
+        SDL_Rect bgRect = { x - 2, y - 2, totalWidth + 4, charHeight + 4 };
+        SDL_RenderFillRect(renderer_, &bgRect);
+        
+        SDL_SetRenderDrawColor(renderer_, color.r, color.g, color.b, 255);
         
         for (size_t i = 0; i < text.length(); i++) {
-            int charX = x + i * charWidth;
-            
             if (text[i] != ' ') {
-                // Simple character representation
-                if (isalpha(text[i])) {
-                    SDL_Rect charRect = { charX, y, charWidth - 1, charHeight };
-                    SDL_RenderDrawRect(renderer_, &charRect);
-                    
-                    // Add distinguishing features for lowercase
-                    if (islower(text[i])) {
-                        SDL_RenderDrawLine(renderer_, charX, y + charHeight/2, 
-                                         charX + charWidth - 2, y + charHeight/2);
-                    }
-                } else if (isdigit(text[i])) {
-                    SDL_Rect digitRect = { charX + 1, y + 2, charWidth - 3, charHeight - 4 };
-                    SDL_RenderDrawRect(renderer_, &digitRect);
-                } else {
-                    // Other characters - draw a simple line
-                    SDL_RenderDrawLine(renderer_, charX, y + charHeight/2, 
-                                     charX + charWidth - 2, y + charHeight/2);
-                }
+                int charX = x + i * (charWidth + charSpacing);
+                SDL_Rect charRect = { charX, y, charWidth, charHeight };
+                SDL_RenderFillRect(renderer_, &charRect);
+                
+                SDL_SetRenderDrawColor(renderer_, 255, 255, 255, 255);
+                SDL_RenderDrawRect(renderer_, &charRect);
+                SDL_SetRenderDrawColor(renderer_, color.r, color.g, color.b, 255);
             }
         }
     }
@@ -121,6 +208,11 @@ private:
     SDL_Renderer* renderer_;
     int width_;
     int height_;
+#ifdef HAVE_SDL_TTF
+    TTF_Font* font_;
+    TTF_Font* fontLarge_;
+    TTF_Font* fontSmall_;
+#endif
 };
 
 // Helper to translate SDL events to our InputEvent format
@@ -373,24 +465,15 @@ int main(int argc, char* argv[]) {
     titleLabel->setTextColor(Color(200, 220, 255));
     mainScreen->addChild(std::move(titleLabel));
     
-    // Create oscillator section
+    // Create oscillator section with bright colors
     auto oscSection = std::make_unique<Label>("osc_section", "OSCILLATOR");
     oscSection->setPosition(50, 50);
-    oscSection->setSize(100, 20);
-    oscSection->setTextColor(Color(150, 150, 180));
+    oscSection->setSize(200, 25);
+    oscSection->setTextColor(Color(255, 255, 100)); // Bright yellow for visibility
     mainScreen->addChild(std::move(oscSection));
     
-    // Add a bright test button to ensure rendering works
-    auto testButton = std::make_unique<Button>("test", "TEST BUTTON");
-    testButton->setPosition(10, 10);
-    testButton->setSize(120, 40);
-    testButton->setBackgroundColor(Color(100, 100, 200)); // Bright blue
-    testButton->setHighlightColor(Color(150, 150, 255)); // Lighter blue when pressed
-    testButton->setTextColor(Color(255, 255, 255));
-    mainScreen->addChild(std::move(testButton));
-    
-    // Create oscillator knobs connected to synthesizer parameters
-    auto freqKnob = SynthKnobFactory::createFrequencyKnob("Frequency", 50, 80, 80);
+    // Create oscillator knobs connected to synthesizer parameters with better spacing
+    auto freqKnob = SynthKnobFactory::createFrequencyKnob("Frequency", 50, 85, 80);
     freqKnob->setValueFormatter([](float value) {
         std::stringstream ss;
         ss << std::fixed << std::setprecision(1) << value << " Hz";
@@ -399,7 +482,15 @@ int main(int argc, char* argv[]) {
     SynthKnob* freqKnobPtr = freqKnob.get();
     mainScreen->addChild(std::move(freqKnob));
     
-    auto waveKnob = std::make_unique<SynthKnob>("Wave", 180, 80, 80, 0.0f, 4.0f, 0.0f);
+    // Add frequency knob label
+    auto freqLabel = std::make_unique<Label>("freq_label", "Frequency");
+    freqLabel->setPosition(55, 170);
+    freqLabel->setSize(70, 15);
+    freqLabel->setTextColor(Color(200, 200, 200));
+    freqLabel->setFontName("small");
+    mainScreen->addChild(std::move(freqLabel));
+    
+    auto waveKnob = std::make_unique<SynthKnob>("Wave", 170, 85, 80, 0.0f, 4.0f, 0.0f);
     waveKnob->setValueFormatter([](float value) {
         const char* waveNames[] = {"Sine", "Saw", "Square", "Triangle", "Noise"};
         int index = static_cast<int>(value);
@@ -411,13 +502,22 @@ int main(int argc, char* argv[]) {
     SynthKnob* waveKnobPtr = waveKnob.get();
     mainScreen->addChild(std::move(waveKnob));
     
+    // Add wave knob label
+    auto waveLabel = std::make_unique<Label>("wave_label", "Waveform");
+    waveLabel->setPosition(175, 170);
+    waveLabel->setSize(70, 15);
+    waveLabel->setTextColor(Color(200, 200, 200));
+    waveLabel->setFontName("small");
+    mainScreen->addChild(std::move(waveLabel));
+    
     // Create filter section
     auto filterSection = std::make_unique<Label>("filter_section", "FILTER");
     filterSection->setPosition(350, 50);
-    filterSection->setTextColor(Color(150, 150, 180));
+    filterSection->setSize(180, 25);
+    filterSection->setTextColor(Color(100, 255, 100)); // Bright green for visibility
     mainScreen->addChild(std::move(filterSection));
     
-    auto cutoffKnob = SynthKnobFactory::createFrequencyKnob("Cutoff", 350, 80, 80);
+    auto cutoffKnob = SynthKnobFactory::createFrequencyKnob("Cutoff", 350, 85, 80);
     cutoffKnob->setValueFormatter([](float value) {
         std::stringstream ss;
         if (value >= 1000.0f) {
@@ -430,7 +530,15 @@ int main(int argc, char* argv[]) {
     SynthKnob* cutoffKnobPtr = cutoffKnob.get();
     mainScreen->addChild(std::move(cutoffKnob));
     
-    auto resKnob = SynthKnobFactory::createResonanceKnob("Resonance", 480, 80, 80);
+    // Add cutoff knob label
+    auto cutoffLabel = std::make_unique<Label>("cutoff_label", "Cutoff");
+    cutoffLabel->setPosition(365, 170);
+    cutoffLabel->setSize(50, 15);
+    cutoffLabel->setTextColor(Color(200, 200, 200));
+    cutoffLabel->setFontName("small");
+    mainScreen->addChild(std::move(cutoffLabel));
+    
+    auto resKnob = SynthKnobFactory::createResonanceKnob("Resonance", 460, 85, 80);
     resKnob->setValueFormatter([](float value) {
         std::stringstream ss;
         ss << std::fixed << std::setprecision(0) << value * 100.0f << "%";
@@ -439,13 +547,22 @@ int main(int argc, char* argv[]) {
     SynthKnob* resKnobPtr = resKnob.get();
     mainScreen->addChild(std::move(resKnob));
     
-    // Create envelope section
+    // Add resonance knob label
+    auto resLabel = std::make_unique<Label>("res_label", "Resonance");
+    resLabel->setPosition(470, 170);
+    resLabel->setSize(60, 15);
+    resLabel->setTextColor(Color(200, 200, 200));
+    resLabel->setFontName("small");
+    mainScreen->addChild(std::move(resLabel));
+    
+    // Create envelope section  
     auto envSection = std::make_unique<Label>("env_section", "ENVELOPE");
-    envSection->setPosition(650, 50);
-    envSection->setTextColor(Color(150, 150, 180));
+    envSection->setPosition(590, 50);
+    envSection->setSize(200, 25);
+    envSection->setTextColor(Color(255, 100, 255)); // Bright magenta for visibility
     mainScreen->addChild(std::move(envSection));
     
-    auto attackKnob = SynthKnobFactory::createTimeKnob("Attack", 650, 80, 60, 2.0f);
+    auto attackKnob = SynthKnobFactory::createTimeKnob("Attack", 590, 85, 80, 2.0f);
     attackKnob->setValueFormatter([](float value) {
         std::stringstream ss;
         if (value < 0.1f) {
@@ -457,7 +574,7 @@ int main(int argc, char* argv[]) {
     });
     SynthKnob* attackKnobPtr = attackKnob.get();
     
-    auto decayKnob = SynthKnobFactory::createTimeKnob("Decay", 730, 80, 60, 2.0f);
+    auto decayKnob = SynthKnobFactory::createTimeKnob("Decay", 680, 85, 80, 2.0f);
     decayKnob->setValueFormatter([](float value) {
         std::stringstream ss;
         if (value < 0.1f) {
@@ -469,7 +586,7 @@ int main(int argc, char* argv[]) {
     });
     SynthKnob* decayKnobPtr = decayKnob.get();
     
-    auto sustainKnob = SynthKnobFactory::createVolumeKnob("Sustain", 810, 80, 60);
+    auto sustainKnob = SynthKnobFactory::createVolumeKnob("Sustain", 770, 85, 80);
     sustainKnob->setValueFormatter([](float value) {
         std::stringstream ss;
         ss << std::fixed << std::setprecision(0) << value * 100.0f << "%";
@@ -477,7 +594,7 @@ int main(int argc, char* argv[]) {
     });
     SynthKnob* sustainKnobPtr = sustainKnob.get();
     
-    auto releaseKnob = SynthKnobFactory::createTimeKnob("Release", 890, 80, 60, 4.0f);
+    auto releaseKnob = SynthKnobFactory::createTimeKnob("Release", 860, 85, 80, 4.0f);
     releaseKnob->setValueFormatter([](float value) {
         std::stringstream ss;
         if (value < 0.1f) {
@@ -494,13 +611,43 @@ int main(int argc, char* argv[]) {
     mainScreen->addChild(std::move(sustainKnob));
     mainScreen->addChild(std::move(releaseKnob));
     
+    // Add envelope knob labels
+    auto attackLabel = std::make_unique<Label>("attack_label", "Attack");
+    attackLabel->setPosition(605, 170);
+    attackLabel->setSize(50, 15);
+    attackLabel->setTextColor(Color(200, 200, 200));
+    attackLabel->setFontName("small");
+    mainScreen->addChild(std::move(attackLabel));
+    
+    auto decayLabel = std::make_unique<Label>("decay_label", "Decay");
+    decayLabel->setPosition(695, 170);
+    decayLabel->setSize(50, 15);
+    decayLabel->setTextColor(Color(200, 200, 200));
+    decayLabel->setFontName("small");
+    mainScreen->addChild(std::move(decayLabel));
+    
+    auto sustainLabel = std::make_unique<Label>("sustain_label", "Sustain");
+    sustainLabel->setPosition(780, 170);
+    sustainLabel->setSize(60, 15);
+    sustainLabel->setTextColor(Color(200, 200, 200));
+    sustainLabel->setFontName("small");
+    mainScreen->addChild(std::move(sustainLabel));
+    
+    auto releaseLabel = std::make_unique<Label>("release_label", "Release");
+    releaseLabel->setPosition(870, 170);
+    releaseLabel->setSize(60, 15);
+    releaseLabel->setTextColor(Color(200, 200, 200));
+    releaseLabel->setFontName("small");
+    mainScreen->addChild(std::move(releaseLabel));
+    
     // Create master section
     auto masterSection = std::make_unique<Label>("master_section", "MASTER");
-    masterSection->setPosition(1000, 50);
-    masterSection->setTextColor(Color(150, 150, 180));
+    masterSection->setPosition(980, 50);
+    masterSection->setSize(130, 25);
+    masterSection->setTextColor(Color(100, 200, 255)); // Bright cyan for visibility
     mainScreen->addChild(std::move(masterSection));
     
-    auto volumeKnob = SynthKnobFactory::createVolumeKnob("Volume", 1000, 80, 80);
+    auto volumeKnob = SynthKnobFactory::createVolumeKnob("Volume", 980, 85, 80);
     volumeKnob->setValueFormatter([](float value) {
         std::stringstream ss;
         if (value == 0.0f) {
@@ -514,10 +661,19 @@ int main(int argc, char* argv[]) {
     SynthKnob* volumeKnobPtr = volumeKnob.get();
     mainScreen->addChild(std::move(volumeKnob));
     
+    // Add volume knob label
+    auto volumeLabel = std::make_unique<Label>("volume_label", "Volume");
+    volumeLabel->setPosition(995, 170);
+    volumeLabel->setSize(50, 15);
+    volumeLabel->setTextColor(Color(200, 200, 200));
+    volumeLabel->setFontName("small");
+    mainScreen->addChild(std::move(volumeLabel));
+    
     // Create visualization section
     auto vizSection = std::make_unique<Label>("viz_section", "VISUALIZATION");
     vizSection->setPosition(50, 200);
-    vizSection->setTextColor(Color(150, 150, 180));
+    vizSection->setSize(200, 25);
+    vizSection->setTextColor(Color(255, 200, 100)); // Bright orange for visibility
     mainScreen->addChild(std::move(vizSection));
     
     auto waveform = std::make_unique<WaveformVisualizer>("waveform", 512);
@@ -546,7 +702,7 @@ int main(int argc, char* argv[]) {
     // Create MIDI keyboard section
     auto keyboardSection = std::make_unique<Label>("keyboard_section", "MIDI KEYBOARD");
     keyboardSection->setPosition(50, 410);
-    keyboardSection->setTextColor(Color(150, 150, 180));
+    keyboardSection->setTextColor(Color(255, 150, 255)); // Bright pink for visibility
     mainScreen->addChild(std::move(keyboardSection));
     
     // Create the MIDI keyboard
@@ -570,12 +726,30 @@ int main(int argc, char* argv[]) {
     midiKeyboard->setVelocityRange(30, 127);  // More expressive velocity range
     
     // Connect keyboard to synthesizer
-    midiKeyboard->setNoteCallback([&synthesizer](int note, int velocity, bool isNoteOn) {
+    midiKeyboard->setNoteCallback([&synthesizer, &audioEngine](int note, int velocity, bool isNoteOn) {
         if (isNoteOn) {
             float normalizedVelocity = velocity / 127.0f;
-            synthesizer->noteOn(note, normalizedVelocity);
             std::cout << "Keyboard Note On: " << MidiKeyboard::getNoteName(note) 
-                      << " (note " << note << ") velocity " << velocity << std::endl;
+                      << " (note " << note << ") velocity " << velocity 
+                      << " normalized: " << normalizedVelocity << std::endl;
+            
+            // Check audio engine status
+            std::cout << "Audio Engine - Sample Rate: " << audioEngine->getSampleRate() 
+                      << ", Buffer Size: " << audioEngine->getBufferSize() 
+                      << ", Stream Time: " << audioEngine->getStreamTime() << std::endl;
+            
+            synthesizer->noteOn(note, normalizedVelocity);
+            
+            // Check synthesizer state
+            std::cout << "Master Volume: " << synthesizer->getParameter("master_volume") << std::endl;
+            std::cout << "Filter Cutoff: " << synthesizer->getParameter("filter_cutoff") << std::endl;
+            std::cout << "Oscillator Type: " << synthesizer->getParameter("oscillator_type") << std::endl;
+            
+            // Try setting reasonable filter cutoff if it's too low
+            if (synthesizer->getParameter("filter_cutoff") < 0.3f) {
+                std::cout << "Filter cutoff too low, setting to 0.5 (mid-range)" << std::endl;
+                synthesizer->setParameter("filter_cutoff", 0.5f);
+            }
         } else {
             synthesizer->noteOff(note);
             std::cout << "Keyboard Note Off: " << MidiKeyboard::getNoteName(note) 
@@ -647,7 +821,7 @@ int main(int argc, char* argv[]) {
     // Create preset browser section (moved down to make room for keyboard)
     auto presetSection = std::make_unique<Label>("preset_section", "PRESET BROWSER");
     presetSection->setPosition(50, 600);
-    presetSection->setTextColor(Color(150, 150, 180));
+    presetSection->setTextColor(Color(150, 255, 150)); // Bright light green for visibility
     mainScreen->addChild(std::move(presetSection));
     
     // Initialize preset system
@@ -856,15 +1030,29 @@ int main(int argc, char* argv[]) {
     
     // Note: For oscillator frame parameter, we need special handling since it uses normalized values
     connectKnobToParam(waveKnobPtr, "oscillator_type");
-    connectKnobToParam(cutoffKnobPtr, "filter_cutoff");
+    
+    // Special handling for filter cutoff - need to normalize from Hz to 0-1 range
+    if (cutoffKnobPtr) {
+        parameterKnobs["filter_cutoff"] = cutoffKnobPtr;
+        cutoffKnobPtr->setValueChangeCallback([&synthesizer](float frequencyHz) {
+            // Normalize frequency from 20-20000 Hz to 0-1 range
+            float normalized = (std::log(frequencyHz / 20.0f) / std::log(20000.0f / 20.0f));
+            normalized = std::max(0.0f, std::min(1.0f, normalized));
+            synthesizer->setParameter("filter_cutoff", normalized);
+            std::cout << "Updated filter_cutoff: " << frequencyHz << " Hz -> normalized " << normalized << std::endl;
+        });
+        // Initialize with a reasonable cutoff frequency (1000 Hz)
+        cutoffKnobPtr->setValue(1000.0f);
+    }
+    
     connectKnobToParam(resKnobPtr, "filter_resonance");
     connectKnobToParam(volumeKnobPtr, "master_volume");
     
     // Add CC learning buttons for each parameter
-    addParameterLearning(waveKnobPtr, "oscillator_type", 180, 80);
-    addParameterLearning(cutoffKnobPtr, "filter_cutoff", 350, 80);
-    addParameterLearning(resKnobPtr, "filter_resonance", 480, 80);
-    addParameterLearning(volumeKnobPtr, "master_volume", 1000, 80);
+    addParameterLearning(waveKnobPtr, "oscillator_type", 170, 85);
+    addParameterLearning(cutoffKnobPtr, "filter_cutoff", 350, 85);
+    addParameterLearning(resKnobPtr, "filter_resonance", 460, 85);
+    addParameterLearning(volumeKnobPtr, "master_volume", 980, 85);
     
     // Envelope parameters will need to be added to the synthesizer parameter system
     // connectKnobToParam(attackKnobPtr, "envelope_attack");

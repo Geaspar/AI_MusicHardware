@@ -157,9 +157,28 @@ int main(int argc, char* argv[]) {
     
     // Cleanup
     std::cout << "AI Music Hardware - Shutting down..." << std::endl;
-    userInterface->shutdown();
-    hardwareInterface->shutdown();
+    
+    // Stop audio engine first to prevent callbacks during shutdown
+    std::cout << "Stopping audio engine..." << std::endl;
     audioEngine->shutdown();
+    
+    // Stop hardware interface
+    std::cout << "Stopping hardware interface..." << std::endl;
+    hardwareInterface->shutdown();
+    
+    // Clear connections in UI before shutdown
+    userInterface->connectSynthesizer(nullptr);
+    userInterface->connectEffectProcessor(nullptr);
+    userInterface->connectSequencer(nullptr);
+    userInterface->connectMidiHandler(nullptr);
+    userInterface->connectLLMInterface(nullptr);
+    userInterface->connectHardwareInterface(nullptr);
+    
+    // Shutdown UI
+    std::cout << "Shutting down UI..." << std::endl;
+    userInterface->shutdown();
+    
+    std::cout << "Shutdown complete." << std::endl;
     
     return 0;
 }

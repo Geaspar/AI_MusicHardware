@@ -1,0 +1,41 @@
+{
+  "mappings": [
+    {
+      "ccNumber": 7,
+      "channel": 0,
+      "curveType": 2,
+      "deviceName": "Manual Mapping",
+      "inverted": false,
+      "isActive": true,
+      "maxValue": 1.0,
+      "minValue": 0.0,
+      "parameterId": "master_volume",
+      "smoothing": 0.0
+    },
+    {
+      "ccNumber": 71,
+      "channel": 0,
+      "curveType": 3,
+      "deviceName": "Manual Mapping",
+      "inverted": false,
+      "isActive": true,
+      "maxValue": 1.0,
+      "minValue": 0.0,
+      "parameterId": "filter_resonance",
+      "smoothing": 0.0
+    },
+    {
+      "ccNumber": 74,
+      "channel": 0,
+      "curveType": 1,
+      "deviceName": "Test Controller",
+      "inverted": false,
+      "isActive": true,
+      "maxValue": 1.0,
+      "minValue": 0.0,
+      "parameterId": "filter_cutoff",
+      "smoothing": 0.0
+    }
+  ],
+  "version": "1.0"
+}

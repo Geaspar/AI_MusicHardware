@@ -560,10 +560,42 @@ target_link_libraries(Phase3SmartFeaturesDemo PRIVATE
 message(STATUS "Building Phase3SmartFeaturesDemo")
 message(STATUS "- Run ./bin/Phase3SmartFeaturesDemo to test Phase 3 smart features with ML analysis and intelligent recommendations")
 
-# Find SDL2 for UI tests
+# Find SDL2 and SDL2_ttf for UI tests
 find_package(SDL2 QUIET)
+find_package(SDL2_ttf QUIET)
+
 if(SDL2_FOUND)
     message(STATUS "Found SDL2: ${SDL2_INCLUDE_DIRS}")
+    
+    # Check for SDL2_ttf
+    if(SDL2_ttf_FOUND)
+        message(STATUS "Found SDL2_ttf: ${SDL2_TTF_INCLUDE_DIRS}")
+        add_definitions(-DHAVE_SDL_TTF)
+    else()
+        # Try to find SDL2_ttf manually
+        find_path(SDL2_TTF_INCLUDE_DIR SDL_ttf.h
+            HINTS
+            /opt/homebrew/include/SDL2
+            /usr/local/include/SDL2
+            /usr/include/SDL2
+        )
+        find_library(SDL2_TTF_LIBRARY
+            NAMES SDL2_ttf
+            HINTS
+            /opt/homebrew/lib
+            /usr/local/lib
+            /usr/lib
+        )
+        
+        if(SDL2_TTF_INCLUDE_DIR AND SDL2_TTF_LIBRARY)
+            message(STATUS "Found SDL2_ttf manually: ${SDL2_TTF_LIBRARY}")
+            set(SDL2_TTF_LIBRARIES ${SDL2_TTF_LIBRARY})
+            set(SDL2_TTF_INCLUDE_DIRS ${SDL2_TTF_INCLUDE_DIR})
+            add_definitions(-DHAVE_SDL_TTF)
+        else()
+            message(WARNING "SDL2_ttf not found. Text will use fallback rendering.")
+        endif()
+    endif()
     
     # Create TestUI executable
     add_executable(TestUI examples/TestUI.cpp)
@@ -598,12 +630,34 @@ if(SDL2_FOUND)
     # Create Integrated Main Application executable
     add_executable(AIMusicHardwareIntegrated src/main_integrated_simple.cpp)
     target_include_directories(AIMusicHardwareIntegrated PRIVATE ${SDL2_INCLUDE_DIRS})
+    if(SDL2_TTF_INCLUDE_DIRS)
+        target_include_directories(AIMusicHardwareIntegrated PRIVATE ${SDL2_TTF_INCLUDE_DIRS})
+    else()
+        # Add SDL2_ttf include directory manually
+        target_include_directories(AIMusicHardwareIntegrated PRIVATE /opt/homebrew/include/SDL2)
+    endif()
     target_link_libraries(AIMusicHardwareIntegrated PRIVATE
         AIMusicCore
         ${SDL2_LIBRARIES}
     )
+    if(SDL2_TTF_LIBRARIES)
+        target_link_libraries(AIMusicHardwareIntegrated PRIVATE ${SDL2_TTF_LIBRARIES})
+    else()
+        # Link SDL2_ttf manually
+        target_link_libraries(AIMusicHardwareIntegrated PRIVATE /opt/homebrew/lib/libSDL2_ttf.dylib)
+    endif()
     message(STATUS "Building AIMusicHardwareIntegrated")
     message(STATUS "- Run ./bin/AIMusicHardwareIntegrated for the full integrated synthesizer application with production UI")
+    
+    # Create Improved UI version
+    add_executable(AIMusicHardwareImproved src/main_integrated_improved.cpp)
+    target_include_directories(AIMusicHardwareImproved PRIVATE ${SDL2_INCLUDE_DIRS})
+    target_link_libraries(AIMusicHardwareImproved PRIVATE
+        AIMusicCore
+        ${SDL2_LIBRARIES}
+    )
+    message(STATUS "Building AIMusicHardwareImproved")
+    message(STATUS "- Run ./bin/AIMusicHardwareImproved for the synthesizer with improved UI layout and labels")
     
     # Create Parameter Smoothing Test executable (simple version)
     add_executable(ParameterSmoothingTestSimple examples/ParameterSmoothingTestSimple.cpp)
@@ -612,6 +666,16 @@ if(SDL2_FOUND)
     )
     message(STATUS "Building ParameterSmoothingTestSimple")
     message(STATUS "- Run ./bin/ParameterSmoothingTestSimple to test the new parameter smoothing and automation system")
+    
+    # Create Simple UI Demo with improved layout
+    add_executable(SimpleUIDemo examples/SimpleUIDemo.cpp)
+    target_include_directories(SimpleUIDemo PRIVATE ${SDL2_INCLUDE_DIRS})
+    target_link_libraries(SimpleUIDemo PRIVATE
+        AIMusicCore
+        ${SDL2_LIBRARIES}
+    )
+    message(STATUS "Building SimpleUIDemo")
+    message(STATUS "- Run ./bin/SimpleUIDemo to see improved UI layout with proper labels and parameter automation")
 else()
     message(WARNING "SDL2 not found. UI test applications will not be built.")
     message(WARNING "Install SDL2 to enable UI testing: brew install sdl2 (macOS) or sudo apt-get install libsdl2-dev (Linux)")

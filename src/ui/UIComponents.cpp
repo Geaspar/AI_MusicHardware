@@ -64,55 +64,16 @@ void Label::render(DisplayManager* display) {
     // For now, provide a better fallback rendering approach
     Font* font = nullptr;
     
-    if (font) {
-        // Calculate text width for alignment
-        int textWidth = 0;
-        int textHeight = 0;
-        font->getTextDimensions(text_, textWidth, textHeight);
-        
-        int x = x_;
-        if (alignment_ == 1) { // Center
-            x = x_ + (width_ - textWidth) / 2;
-        } else if (alignment_ == 2) { // Right
-            x = x_ + width_ - textWidth;
-        }
-        
-        // Calculate vertical centering
-        int y = y_ + (height_ - textHeight) / 2;
-        
-        // Draw the text
-        display->drawText(x, y, text_, font, textColor_);
-    } else {
-        // Improved fallback rendering if no font is available
-        // Use character count to estimate width
-        int approxCharWidth = 6; // Average character width in pixels
-        int approxCharHeight = 12; // Average character height in pixels
-        int estimatedTextWidth = text_.length() * approxCharWidth;
-        
-        // Calculate position based on alignment
-        int rectX = x_;
-        if (alignment_ == 1) { // Center
-            rectX = x_ + (width_ - estimatedTextWidth) / 2;
-        } else if (alignment_ == 2) { // Right
-            rectX = x_ + width_ - estimatedTextWidth;
-        }
-        
-        // Draw a filled rectangle for the text background
-        int rectWidth = std::max(estimatedTextWidth, 10);
-        int rectHeight = approxCharHeight;
-        int rectY = y_ + (height_ - rectHeight) / 2;
-        
-        display->fillRect(rectX, rectY, rectWidth, rectHeight, Color(50, 50, 50));
-        display->drawRect(rectX, rectY, rectWidth, rectHeight, textColor_);
-        
-        // Draw small lines to represent text
-        int lineY = rectY + rectHeight / 2;
-        for (size_t i = 0; i < text_.length() && i < 10; i++) {
-            int lineX = rectX + i * approxCharWidth + 3;
-            int lineW = (text_[i] == ' ') ? 1 : 4; // Make spaces smaller
-            display->fillRect(lineX, lineY, lineW, 1, textColor_);
-        }
-    }
+    // ALWAYS call drawText directly - our custom implementation will handle it
+    
+    // Calculate position based on alignment
+    int textX = x_;
+    int textY = y_;
+    
+    // For now, just draw at the label position
+    // Our custom drawText will make it visible
+    // Note: fontName_ will be passed to the display manager for size determination
+    display->drawText(textX, textY, text_, font, textColor_);
     
     // Render children
     renderChildren(display);
@@ -549,44 +510,73 @@ void Knob::render(DisplayManager* display) {
     Font* font = nullptr;
     // TODO: Get font from context
     
-    if (font) {
-        // Draw label text
-        display->drawText(centerX - label_.length() * 4, y_ + height_ + 5, label_, font, color_);
-        
-        // Draw value text if enabled
-        if (showValue_) {
-            std::string valueText;
-            if (valueFormatter_) {
-                valueText = valueFormatter_(value_);
-            } else {
-                // Default formatting
-                std::ostringstream ss;
-                ss << std::fixed << std::setprecision(2) << value_;
-                valueText = ss.str();
+    // Always render labels and values for better visibility
+    // Draw label text at bottom
+    if (!label_.empty()) {
+        if (font) {
+            display->drawText(centerX - label_.length() * 4, y_ + height_ + 10, label_, font, color_);
+        } else {
+            // Improved fallback rendering for label
+            int labelX = centerX - (label_.length() * 6) / 2;
+            int labelY = y_ + height_ + 10;
+            
+            // Draw label background for visibility
+            display->fillRect(labelX - 2, labelY - 2, label_.length() * 6 + 4, 14, Color(30, 30, 30));
+            
+            // Render each character as a small filled rectangle
+            for (size_t i = 0; i < label_.length(); i++) {
+                if (label_[i] != ' ') {
+                    display->fillRect(labelX + i * 6, labelY + 2, 4, 8, color_);
+                }
             }
-            
-            display->drawText(centerX - valueText.length() * 4, y_ - 15, valueText, font, color_);
-        }
-        
-        // Draw MIDI CC number if mapped
-        if (midiControlNumber_ >= 0 && !midiLearnEnabled_) {
-            std::ostringstream ccText;
-            ccText << "CC" << midiControlNumber_;
-            std::string ccString = ccText.str();
-            
-            display->drawText(centerX - ccString.length() * 4, y_ + height_ + 20, 
-                           ccString, font, Color(0, 200, 0));
         }
     }
-    else {
-        // Fallback rendering if no font available
+    
+    // Draw value text at top if enabled
+    if (showValue_) {
+        std::string valueText;
+        if (valueFormatter_) {
+            valueText = valueFormatter_(value_);
+        } else {
+            // Default formatting
+            std::ostringstream ss;
+            ss << std::fixed << std::setprecision(2) << value_;
+            valueText = ss.str();
+        }
         
-        // Draw label as basic rectangle at bottom
-        display->fillRect(x_, y_ + height_ + 5, width_, 10, color_);
+        if (font) {
+            display->drawText(centerX - valueText.length() * 4, y_ - 15, valueText, font, color_);
+        } else {
+            // Improved fallback rendering for value
+            int valueX = centerX - (valueText.length() * 6) / 2;
+            int valueY = y_ - 15;
+            
+            // Draw value background
+            display->fillRect(valueX - 2, valueY - 2, valueText.length() * 6 + 4, 14, Color(30, 30, 30));
+            
+            // Render value text
+            for (size_t i = 0; i < valueText.length(); i++) {
+                if (valueText[i] != ' ' && valueText[i] != '.') {
+                    display->fillRect(valueX + i * 6, valueY + 2, 4, 8, Color(150, 200, 255));
+                } else if (valueText[i] == '.') {
+                    display->fillRect(valueX + i * 6 + 1, valueY + 8, 2, 2, Color(150, 200, 255));
+                }
+            }
+        }
+    }
+    
+    // Draw MIDI CC number if mapped
+    if (midiControlNumber_ >= 0 && !midiLearnEnabled_) {
+        std::ostringstream ccText;
+        ccText << "CC" << midiControlNumber_;
+        std::string ccString = ccText.str();
         
-        // Draw MIDI indicator if mapped
-        if (midiControlNumber_ >= 0) {
-            display->fillRect(x_, y_ + height_ + 20, width_ / 2, 5, Color(0, 200, 0));
+        if (font) {
+            display->drawText(centerX - ccString.length() * 4, y_ + height_ + 25, 
+                           ccString, font, Color(0, 200, 0));
+        } else {
+            // Draw MIDI indicator as simple green bar
+            display->fillRect(centerX - 15, y_ + height_ + 25, 30, 4, Color(0, 200, 0));
         }
     }
     
