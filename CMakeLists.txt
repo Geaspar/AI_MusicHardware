@@ -257,6 +257,7 @@ set(UI_CORE_SOURCES
     src/ui/ParameterBridge.cpp
     src/ui/ParameterUpdateQueue.cpp
     src/ui/SynthKnob.cpp
+    src/ui/SmoothParameter.cpp
     src/ui/MidiKeyboard.cpp
     src/ui/PresetBrowserUIComponent.cpp
     src/ui/VisualizationComponents.cpp
@@ -603,6 +604,14 @@ if(SDL2_FOUND)
     )
     message(STATUS "Building AIMusicHardwareIntegrated")
     message(STATUS "- Run ./bin/AIMusicHardwareIntegrated for the full integrated synthesizer application with production UI")
+    
+    # Create Parameter Smoothing Test executable (simple version)
+    add_executable(ParameterSmoothingTestSimple examples/ParameterSmoothingTestSimple.cpp)
+    target_link_libraries(ParameterSmoothingTestSimple PRIVATE
+        AIMusicCore
+    )
+    message(STATUS "Building ParameterSmoothingTestSimple")
+    message(STATUS "- Run ./bin/ParameterSmoothingTestSimple to test the new parameter smoothing and automation system")
 else()
     message(WARNING "SDL2 not found. UI test applications will not be built.")
     message(WARNING "Install SDL2 to enable UI testing: brew install sdl2 (macOS) or sudo apt-get install libsdl2-dev (Linux)")

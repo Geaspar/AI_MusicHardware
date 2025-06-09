@@ -127,6 +127,18 @@ public:
      * @param automated Whether knob is automated
      */
     void setAutomated(bool automated) { isAutomated_ = automated; }
+    
+    /**
+     * @brief Check if knob is currently automated
+     * @return true if knob is being automated
+     */
+    bool isAutomated() const { return isAutomated_; }
+    
+    /**
+     * @brief Set value from automation (with visual feedback)
+     * @param value Normalized value from automation
+     */
+    void setValueFromAutomation(float value);
 
     /**
      * @brief Get display string for current value
@@ -175,6 +187,8 @@ private:
     // State
     bool isAutomated_ = false;
     float defaultValue_ = 0.5f;
+    std::atomic<float> automation_value_{0.0f};
+    bool is_being_automated_ = false;
     
     // Visual parameters
     static constexpr int MODULATION_RING_WIDTH = 3;

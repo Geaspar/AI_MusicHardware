@@ -60,6 +60,58 @@ void ParameterManager::setParameterValue(const std::string& parameterId, float v
     }
 }
 
+void ParameterManager::setParameterWithAutomation(const std::string& parameterId, float value) {
+    // Initialize smooth parameter if it doesn't exist
+    if (smooth_parameters_.find(parameterId) == smooth_parameters_.end()) {
+        float current_value = getParameterValue(parameterId);
+        smooth_parameters_.emplace(parameterId, SmoothParameter(current_value));
+    }
+    
+    // Set target value for smooth transition
+    smooth_parameters_[parameterId].setTarget(value);
+    automation_enabled_[parameterId] = true;
+    
+    // Update local cache with target value
+    parameters_[parameterId] = value;
+}
+
+void ParameterManager::processAudioBuffer(int num_samples) {
+    // Process all smooth parameters
+    for (auto& [param_id, smooth_param] : smooth_parameters_) {
+        if (!automation_enabled_[param_id]) {
+            continue;
+        }
+        
+        // Process smoothing for this buffer
+        float smoothed_value = smooth_param.process();
+        
+        // Update synthesizer with smoothed value
+        if (synth_) {
+            synth_->setParameter(param_id, smoothed_value);
+        }
+        
+        // Check if smoothing is complete
+        if (!smooth_param.isSmoothing()) {
+            automation_enabled_[param_id] = false;
+        }
+    }
+}
+
+bool ParameterManager::isParameterAutomated(const std::string& parameterId) const {
+    auto it = automation_enabled_.find(parameterId);
+    return it != automation_enabled_.end() && it->second;
+}
+
+void ParameterManager::setParameterSmoothingFactor(const std::string& parameterId, float factor) {
+    // Initialize smooth parameter if it doesn't exist
+    if (smooth_parameters_.find(parameterId) == smooth_parameters_.end()) {
+        float current_value = getParameterValue(parameterId);
+        smooth_parameters_.emplace(parameterId, SmoothParameter(current_value));
+    }
+    
+    smooth_parameters_[parameterId].setSmoothingFactor(factor);
+}
+
 std::map<std::string, float> ParameterManager::getAllParameters() const {
     // If connected to a synthesizer, get all parameters from it
     if (synth_) {
@@ -293,6 +345,12 @@ void ParameterManager::initializeDefaultParameters() {
     parameters_["lfo2_amount"] = 0.0f;        // No modulation
     parameters_["reverb_mix"] = 0.2f;         // 20% wet
     parameters_["volume"] = 0.7f;             // 70% volume
+    
+    // Initialize smooth parameters for all default parameters
+    for (const auto& [param_id, value] : parameters_) {
+        smooth_parameters_.emplace(param_id, SmoothParameter(value));
+        automation_enabled_[param_id] = false;
+    }
 }
 
 void ParameterManager::updateSynthesizer(const std::string& parameterId) {

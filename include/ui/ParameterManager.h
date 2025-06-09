@@ -5,6 +5,8 @@
 #include <vector>
 #include <functional>
 #include <memory>
+#include <unordered_map>
+#include "ui/SmoothParameter.h"
 
 namespace AIMusicHardware {
 
@@ -82,6 +84,37 @@ public:
      * @param value The new value
      */
     void setParameterValue(const std::string& parameterId, float value);
+    
+    /**
+     * @brief Set parameter with automation (smooth transition)
+     * 
+     * @param parameterId The ID of the parameter
+     * @param value The new target value
+     */
+    void setParameterWithAutomation(const std::string& parameterId, float value);
+    
+    /**
+     * @brief Process audio buffer for parameter smoothing
+     * 
+     * @param num_samples Number of samples to process
+     */
+    void processAudioBuffer(int num_samples);
+    
+    /**
+     * @brief Check if a parameter is currently being automated
+     * 
+     * @param parameterId The ID of the parameter
+     * @return true if parameter is being automated
+     */
+    bool isParameterAutomated(const std::string& parameterId) const;
+    
+    /**
+     * @brief Set smoothing factor for a parameter
+     * 
+     * @param parameterId The ID of the parameter
+     * @param factor Smoothing factor (0.0-0.99)
+     */
+    void setParameterSmoothingFactor(const std::string& parameterId, float factor);
     
     /**
      * @brief Get all parameters
@@ -174,6 +207,10 @@ private:
     std::map<std::string, float> parameters_;
     std::vector<ModulationRouting> modulations_;
     ParameterChangedCallback parameterChangedCallback_;
+    
+    // Smooth parameter automation
+    std::unordered_map<std::string, SmoothParameter> smooth_parameters_;
+    std::unordered_map<std::string, bool> automation_enabled_;
     
     // Helper methods
     void initializeDefaultParameters();

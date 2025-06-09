@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <sstream>
 #include <iomanip>
+#include <atomic>
 
 namespace AIMusicHardware {
 
@@ -132,14 +133,46 @@ void SynthKnob::update(float deltaTime) {
         automationTimer += deltaTime;
         if (automationTimer > 2.0f) {
             isAutomated_ = false;
+            is_being_automated_ = false;
             automationTimer = 0.0f;
         }
     }
 }
 
+void SynthKnob::setValueFromAutomation(float value) {
+    automation_value_.store(value);
+    is_being_automated_ = true;
+    isAutomated_ = true;
+    
+    // Update animated value for smooth visual feedback
+    if (animateValueChanges_) {
+        animationStartValue_ = animatedValue_;
+        animationTargetValue_ = value;
+        animationProgress_ = 0.0f;
+    } else {
+        animatedValue_ = value;
+    }
+    
+    // Set internal value without triggering parameter update
+    // (since this comes from parameter automation)
+    setValue(value);
+}
+
 void SynthKnob::render(DisplayManager* displayManager) {
-    // Base knob rendering
-    Knob::render(displayManager);
+    // Use automation value for display if being automated
+    float display_value = is_being_automated_ ? 
+        automation_value_.load() : getValue();
+    
+    // Base knob rendering with appropriate value
+    if (is_being_automated_) {
+        // Temporarily set value for rendering
+        float original_value = getValue();
+        setValue(display_value);
+        Knob::render(displayManager);
+        setValue(original_value);
+    } else {
+        Knob::render(displayManager);
+    }
     
     // Get knob center for additional drawing
     int centerX = x_ + width_ / 2;
@@ -283,14 +316,46 @@ void SynthKnob::drawValueTooltip(DisplayManager* displayManager) {
 }
 
 void SynthKnob::drawAutomationIndicator(DisplayManager* displayManager, int centerX, int centerY) {
-    // Draw small dot to indicate automation
-    int indicatorX = centerX + width_ / 2 - AUTOMATION_INDICATOR_SIZE;
-    int indicatorY = centerY - height_ / 2;
+    // Draw automation ring around the knob
+    int outer_radius = width_ / 2 + 8;
+    int inner_radius = width_ / 2 + 5;
     
-    Color automationColor(255, 100, 100); // Red for automation
-    displayManager->fillRect(indicatorX, indicatorY, 
-                            AUTOMATION_INDICATOR_SIZE, AUTOMATION_INDICATOR_SIZE, 
-                            automationColor);
+    // Pulsing effect for active automation
+    float pulse_intensity = is_being_automated_ ? 
+        0.5f + 0.5f * std::sin(std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now().time_since_epoch()).count() * 0.01f) : 1.0f;
+    
+    Color automationColor(255, 100, 100, static_cast<uint8_t>(200 * pulse_intensity)); // Pulsing red
+    
+    // Draw automation ring using line segments
+    const int segments = 32;
+    for (int i = 0; i < segments; ++i) {
+        float angle1 = (2.0f * M_PI * i) / segments;
+        float angle2 = (2.0f * M_PI * (i + 1)) / segments;
+        
+        // Outer ring points
+        int x1_outer = centerX + static_cast<int>(outer_radius * std::cos(angle1));
+        int y1_outer = centerY + static_cast<int>(outer_radius * std::sin(angle1));
+        int x2_outer = centerX + static_cast<int>(outer_radius * std::cos(angle2));
+        int y2_outer = centerY + static_cast<int>(outer_radius * std::sin(angle2));
+        
+        // Inner ring points
+        int x1_inner = centerX + static_cast<int>(inner_radius * std::cos(angle1));
+        int y1_inner = centerY + static_cast<int>(inner_radius * std::sin(angle1));
+        int x2_inner = centerX + static_cast<int>(inner_radius * std::cos(angle2));
+        int y2_inner = centerY + static_cast<int>(inner_radius * std::sin(angle2));
+        
+        // Draw ring segment
+        displayManager->drawLine(x1_outer, y1_outer, x2_outer, y2_outer, automationColor);
+        displayManager->drawLine(x1_inner, y1_inner, x2_inner, y2_inner, automationColor);
+        displayManager->drawLine(x1_outer, y1_outer, x1_inner, y1_inner, automationColor);
+        displayManager->drawLine(x2_outer, y2_outer, x2_inner, y2_inner, automationColor);
+    }
+    
+    // Draw "AUTO" text below knob
+    Color textColor(255, 100, 100, static_cast<uint8_t>(255 * pulse_intensity));
+    displayManager->drawText(centerX - 15, centerY + height_ / 2 + 15, 
+                            "AUTO", nullptr, textColor);
 }
 
 void SynthKnob::drawFineControlIndicator(DisplayManager* displayManager, int centerX, int centerY) {
