@@ -142,10 +142,6 @@ void Icon::render(DisplayManager* display) {
         
         // Render the icon
         display->drawText(centerX, centerY, iconText, iconFont, color_);
-    } else {
-        // Fallback rendering if no font is available
-        display->fillRect(x_, y_, width_, height_, Color(60, 60, 60));
-        display->drawRect(x_, y_, width_, height_, color_);
     }
     
     // Render children
@@ -261,9 +257,6 @@ void Button::render(DisplayManager* display) {
         
         // Draw text
         display->drawText(textX, textY, text_, font, textColor_);
-    } else {
-        // Fallback rendering if no font available
-        display->drawRect(x_ + 2, y_ + 2, width_ - 4, height_ - 4, textColor_);
     }
     
     // Render children
@@ -513,23 +506,7 @@ void Knob::render(DisplayManager* display) {
     // Always render labels and values for better visibility
     // Draw label text at bottom
     if (!label_.empty()) {
-        if (font) {
-            display->drawText(centerX - label_.length() * 4, y_ + height_ + 10, label_, font, color_);
-        } else {
-            // Improved fallback rendering for label
-            int labelX = centerX - (label_.length() * 6) / 2;
-            int labelY = y_ + height_ + 10;
-            
-            // Draw label background for visibility
-            display->fillRect(labelX - 2, labelY - 2, label_.length() * 6 + 4, 14, Color(30, 30, 30));
-            
-            // Render each character as a small filled rectangle
-            for (size_t i = 0; i < label_.length(); i++) {
-                if (label_[i] != ' ') {
-                    display->fillRect(labelX + i * 6, labelY + 2, 4, 8, color_);
-                }
-            }
-        }
+        display->drawText(centerX - label_.length() * 4, y_ + height_ + 10, label_, font, color_);
     }
     
     // Draw value text at top if enabled
@@ -544,25 +521,7 @@ void Knob::render(DisplayManager* display) {
             valueText = ss.str();
         }
         
-        if (font) {
-            display->drawText(centerX - valueText.length() * 4, y_ - 15, valueText, font, color_);
-        } else {
-            // Improved fallback rendering for value
-            int valueX = centerX - (valueText.length() * 6) / 2;
-            int valueY = y_ - 15;
-            
-            // Draw value background
-            display->fillRect(valueX - 2, valueY - 2, valueText.length() * 6 + 4, 14, Color(30, 30, 30));
-            
-            // Render value text
-            for (size_t i = 0; i < valueText.length(); i++) {
-                if (valueText[i] != ' ' && valueText[i] != '.') {
-                    display->fillRect(valueX + i * 6, valueY + 2, 4, 8, Color(150, 200, 255));
-                } else if (valueText[i] == '.') {
-                    display->fillRect(valueX + i * 6 + 1, valueY + 8, 2, 2, Color(150, 200, 255));
-                }
-            }
-        }
+        display->drawText(centerX - valueText.length() * 4, y_ - 15, valueText, font, color_);
     }
     
     // Draw MIDI CC number if mapped
@@ -571,13 +530,8 @@ void Knob::render(DisplayManager* display) {
         ccText << "CC" << midiControlNumber_;
         std::string ccString = ccText.str();
         
-        if (font) {
-            display->drawText(centerX - ccString.length() * 4, y_ + height_ + 25, 
-                           ccString, font, Color(0, 200, 0));
-        } else {
-            // Draw MIDI indicator as simple green bar
-            display->fillRect(centerX - 15, y_ + height_ + 25, 30, 4, Color(0, 200, 0));
-        }
+        display->drawText(centerX - ccString.length() * 4, y_ + height_ + 25, 
+                       ccString, font, Color(0, 200, 0));
     }
     
     // Render children
