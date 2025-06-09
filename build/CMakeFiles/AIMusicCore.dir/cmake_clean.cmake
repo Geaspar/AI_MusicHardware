@@ -109,6 +109,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/AIMusicCore.dir/src/ui/DisplayManager.cpp.o.d"
   "CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.o"
   "CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.o.d"
+  "CMakeFiles/AIMusicCore.dir/src/ui/GridLayout.cpp.o"
+  "CMakeFiles/AIMusicCore.dir/src/ui/GridLayout.cpp.o.d"
   "CMakeFiles/AIMusicCore.dir/src/ui/MidiKeyboard.cpp.o"
   "CMakeFiles/AIMusicCore.dir/src/ui/MidiKeyboard.cpp.o.d"
   "CMakeFiles/AIMusicCore.dir/src/ui/ParameterBridge.cpp.o"

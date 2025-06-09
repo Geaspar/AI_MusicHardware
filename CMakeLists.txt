@@ -261,6 +261,7 @@ set(UI_CORE_SOURCES
     src/ui/MidiKeyboard.cpp
     src/ui/PresetBrowserUIComponent.cpp
     src/ui/VisualizationComponents.cpp
+    src/ui/GridLayout.cpp
 )
 
 # Set up RtAudio if found
@@ -658,6 +659,27 @@ if(SDL2_FOUND)
     )
     message(STATUS "Building AIMusicHardwareImproved")
     message(STATUS "- Run ./bin/AIMusicHardwareImproved for the synthesizer with improved UI layout and labels")
+    
+    # Create Grid Layout version
+    add_executable(AIMusicHardwareGrid src/main_grid_layout.cpp)
+    target_include_directories(AIMusicHardwareGrid PRIVATE ${SDL2_INCLUDE_DIRS})
+    if(SDL2_TTF_INCLUDE_DIRS)
+        target_include_directories(AIMusicHardwareGrid PRIVATE ${SDL2_TTF_INCLUDE_DIRS})
+    else()
+        target_include_directories(AIMusicHardwareGrid PRIVATE /opt/homebrew/include/SDL2)
+    endif()
+    target_link_libraries(AIMusicHardwareGrid PRIVATE
+        AIMusicCore
+        ${SDL2_LIBRARIES}
+    )
+    if(SDL2_TTF_LIBRARIES)
+        target_link_libraries(AIMusicHardwareGrid PRIVATE ${SDL2_TTF_LIBRARIES})
+    else()
+        target_link_libraries(AIMusicHardwareGrid PRIVATE /opt/homebrew/lib/libSDL2_ttf.dylib)
+    endif()
+    target_compile_definitions(AIMusicHardwareGrid PRIVATE HAVE_SDL_TTF)
+    message(STATUS "Building AIMusicHardwareGrid")
+    message(STATUS "- Run ./bin/AIMusicHardwareGrid for the synthesizer with grid-based layout system")
     
     # Create Parameter Smoothing Test executable (simple version)
     add_executable(ParameterSmoothingTestSimple examples/ParameterSmoothingTestSimple.cpp)

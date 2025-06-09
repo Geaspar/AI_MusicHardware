@@ -520,6 +520,19 @@ AIMusicHardwareImproved/fast:
 .PHONY : AIMusicHardwareImproved/fast
 
 #=============================================================================
+# Target rules for targets named AIMusicHardwareGrid
+
+# Build rule for target.
+AIMusicHardwareGrid: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 AIMusicHardwareGrid
+.PHONY : AIMusicHardwareGrid
+
+# fast build rule for target.
+AIMusicHardwareGrid/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicHardwareGrid.dir/build.make CMakeFiles/AIMusicHardwareGrid.dir/build
+.PHONY : AIMusicHardwareGrid/fast
+
+#=============================================================================
 # Target rules for targets named ParameterSmoothingTestSimple
 
 # Build rule for target.
@@ -2009,6 +2022,30 @@ src/iot/MQTTInterface.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/iot/MQTTInterface.cpp.s
 .PHONY : src/iot/MQTTInterface.cpp.s
 
+src/main_grid_layout.o: src/main_grid_layout.cpp.o
+.PHONY : src/main_grid_layout.o
+
+# target to build an object file
+src/main_grid_layout.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicHardwareGrid.dir/build.make CMakeFiles/AIMusicHardwareGrid.dir/src/main_grid_layout.cpp.o
+.PHONY : src/main_grid_layout.cpp.o
+
+src/main_grid_layout.i: src/main_grid_layout.cpp.i
+.PHONY : src/main_grid_layout.i
+
+# target to preprocess a source file
+src/main_grid_layout.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicHardwareGrid.dir/build.make CMakeFiles/AIMusicHardwareGrid.dir/src/main_grid_layout.cpp.i
+.PHONY : src/main_grid_layout.cpp.i
+
+src/main_grid_layout.s: src/main_grid_layout.cpp.s
+.PHONY : src/main_grid_layout.s
+
+# target to generate assembly for a file
+src/main_grid_layout.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicHardwareGrid.dir/build.make CMakeFiles/AIMusicHardwareGrid.dir/src/main_grid_layout.cpp.s
+.PHONY : src/main_grid_layout.cpp.s
+
 src/main_integrated_improved.o: src/main_integrated_improved.cpp.o
 .PHONY : src/main_integrated_improved.o
 
@@ -2609,6 +2646,30 @@ src/ui/Font.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.s
 .PHONY : src/ui/Font.cpp.s
 
+src/ui/GridLayout.o: src/ui/GridLayout.cpp.o
+.PHONY : src/ui/GridLayout.o
+
+# target to build an object file
+src/ui/GridLayout.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/GridLayout.cpp.o
+.PHONY : src/ui/GridLayout.cpp.o
+
+src/ui/GridLayout.i: src/ui/GridLayout.cpp.i
+.PHONY : src/ui/GridLayout.i
+
+# target to preprocess a source file
+src/ui/GridLayout.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/GridLayout.cpp.i
+.PHONY : src/ui/GridLayout.cpp.i
+
+src/ui/GridLayout.s: src/ui/GridLayout.cpp.s
+.PHONY : src/ui/GridLayout.s
+
+# target to generate assembly for a file
+src/ui/GridLayout.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/GridLayout.cpp.s
+.PHONY : src/ui/GridLayout.cpp.s
+
 src/ui/MidiKeyboard.o: src/ui/MidiKeyboard.cpp.o
 .PHONY : src/ui/MidiKeyboard.o
 
@@ -3005,6 +3066,7 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... AIMusicCore"
+	@echo "... AIMusicHardwareGrid"
 	@echo "... AIMusicHardwareImproved"
 	@echo "... AIMusicHardwareIntegrated"
 	@echo "... AdvancedFilterDemo"
@@ -3220,6 +3282,9 @@ help:
 	@echo "... src/iot/MQTTInterface.o"
 	@echo "... src/iot/MQTTInterface.i"
 	@echo "... src/iot/MQTTInterface.s"
+	@echo "... src/main_grid_layout.o"
+	@echo "... src/main_grid_layout.i"
+	@echo "... src/main_grid_layout.s"
 	@echo "... src/main_integrated_improved.o"
 	@echo "... src/main_integrated_improved.i"
 	@echo "... src/main_integrated_improved.s"
@@ -3295,6 +3360,9 @@ help:
 	@echo "... src/ui/Font.o"
 	@echo "... src/ui/Font.i"
 	@echo "... src/ui/Font.s"
+	@echo "... src/ui/GridLayout.o"
+	@echo "... src/ui/GridLayout.i"
+	@echo "... src/ui/GridLayout.s"
 	@echo "... src/ui/MidiKeyboard.o"
 	@echo "... src/ui/MidiKeyboard.i"
 	@echo "... src/ui/MidiKeyboard.s"

@@ -93,6 +93,7 @@ all: CMakeFiles/EnhancedUIIntegrationTest.dir/all
 all: CMakeFiles/ComprehensiveUITest.dir/all
 all: CMakeFiles/AIMusicHardwareIntegrated.dir/all
 all: CMakeFiles/AIMusicHardwareImproved.dir/all
+all: CMakeFiles/AIMusicHardwareGrid.dir/all
 all: CMakeFiles/ParameterSmoothingTestSimple.dir/all
 all: CMakeFiles/SimpleUIDemo.dir/all
 .PHONY : all
@@ -133,6 +134,7 @@ clean: CMakeFiles/EnhancedUIIntegrationTest.dir/clean
 clean: CMakeFiles/ComprehensiveUITest.dir/clean
 clean: CMakeFiles/AIMusicHardwareIntegrated.dir/clean
 clean: CMakeFiles/AIMusicHardwareImproved.dir/clean
+clean: CMakeFiles/AIMusicHardwareGrid.dir/clean
 clean: CMakeFiles/ParameterSmoothingTestSimple.dir/clean
 clean: CMakeFiles/SimpleUIDemo.dir/clean
 .PHONY : clean
@@ -170,12 +172,12 @@ CMakeFiles/AIMusicCore.dir/clean:
 CMakeFiles/PresetLib.dir/all: CMakeFiles/AIMusicCore.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/PresetLib.dir/build.make CMakeFiles/PresetLib.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/PresetLib.dir/build.make CMakeFiles/PresetLib.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=81,82 "Built target PresetLib"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=82 "Built target PresetLib"
 .PHONY : CMakeFiles/PresetLib.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/PresetLib.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 54
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 53
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/PresetLib.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 0
 .PHONY : CMakeFiles/PresetLib.dir/rule
@@ -202,7 +204,7 @@ CMakeFiles/SimplePresetManagerDemo.dir/all: CMakeFiles/PresetLib.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/SimplePresetManagerDemo.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 56
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 55
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/SimplePresetManagerDemo.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 0
 .PHONY : CMakeFiles/SimplePresetManagerDemo.dir/rule
@@ -224,12 +226,12 @@ CMakeFiles/MultiTimbralDemo.dir/all: CMakeFiles/AIMusicCore.dir/all
 CMakeFiles/MultiTimbralDemo.dir/all: CMakeFiles/PresetLib.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MultiTimbralDemo.dir/build.make CMakeFiles/MultiTimbralDemo.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MultiTimbralDemo.dir/build.make CMakeFiles/MultiTimbralDemo.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=74,75 "Built target MultiTimbralDemo"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=75 "Built target MultiTimbralDemo"
 .PHONY : CMakeFiles/MultiTimbralDemo.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/MultiTimbralDemo.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 56
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 54
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/MultiTimbralDemo.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 0
 .PHONY : CMakeFiles/MultiTimbralDemo.dir/rule
@@ -328,7 +330,7 @@ CMakeFiles/OscillatorStackDemo.dir/clean:
 CMakeFiles/AdvancedFilterDemo.dir/all: CMakeFiles/AIMusicCore.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AdvancedFilterDemo.dir/build.make CMakeFiles/AdvancedFilterDemo.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AdvancedFilterDemo.dir/build.make CMakeFiles/AdvancedFilterDemo.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=56,57 "Built target AdvancedFilterDemo"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=57,58 "Built target AdvancedFilterDemo"
 .PHONY : CMakeFiles/AdvancedFilterDemo.dir/all
 
 # Build rule for subdir invocation for target.
@@ -380,12 +382,12 @@ CMakeFiles/SynchronizedSequencerDemo.dir/clean:
 CMakeFiles/IoTParameterDemo.dir/all: CMakeFiles/AIMusicCore.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/IoTParameterDemo.dir/build.make CMakeFiles/IoTParameterDemo.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/IoTParameterDemo.dir/build.make CMakeFiles/IoTParameterDemo.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=68,69 "Built target IoTParameterDemo"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=69 "Built target IoTParameterDemo"
 .PHONY : CMakeFiles/IoTParameterDemo.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/IoTParameterDemo.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 54
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 53
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/IoTParameterDemo.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 0
 .PHONY : CMakeFiles/IoTParameterDemo.dir/rule
@@ -406,12 +408,12 @@ CMakeFiles/IoTParameterDemo.dir/clean:
 CMakeFiles/IoTParameterIntegrationTest.dir/all: CMakeFiles/AIMusicCore.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/IoTParameterIntegrationTest.dir/build.make CMakeFiles/IoTParameterIntegrationTest.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/IoTParameterIntegrationTest.dir/build.make CMakeFiles/IoTParameterIntegrationTest.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=70 "Built target IoTParameterIntegrationTest"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=70,71 "Built target IoTParameterIntegrationTest"
 .PHONY : CMakeFiles/IoTParameterIntegrationTest.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/IoTParameterIntegrationTest.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 53
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 54
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/IoTParameterIntegrationTest.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 0
 .PHONY : CMakeFiles/IoTParameterIntegrationTest.dir/rule
@@ -432,12 +434,12 @@ CMakeFiles/IoTParameterIntegrationTest.dir/clean:
 CMakeFiles/IoTEventIntegrationTest.dir/all: CMakeFiles/AIMusicCore.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/IoTEventIntegrationTest.dir/build.make CMakeFiles/IoTEventIntegrationTest.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/IoTEventIntegrationTest.dir/build.make CMakeFiles/IoTEventIntegrationTest.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=67 "Built target IoTEventIntegrationTest"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=67,68 "Built target IoTEventIntegrationTest"
 .PHONY : CMakeFiles/IoTEventIntegrationTest.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/IoTEventIntegrationTest.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 53
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 54
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/IoTEventIntegrationTest.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 0
 .PHONY : CMakeFiles/IoTEventIntegrationTest.dir/rule
@@ -458,12 +460,12 @@ CMakeFiles/IoTEventIntegrationTest.dir/clean:
 CMakeFiles/IoTConfigManagerDemo.dir/all: CMakeFiles/AIMusicCore.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/IoTConfigManagerDemo.dir/build.make CMakeFiles/IoTConfigManagerDemo.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/IoTConfigManagerDemo.dir/build.make CMakeFiles/IoTConfigManagerDemo.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=65,66 "Built target IoTConfigManagerDemo"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=66 "Built target IoTConfigManagerDemo"
 .PHONY : CMakeFiles/IoTConfigManagerDemo.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/IoTConfigManagerDemo.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 54
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 53
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/IoTConfigManagerDemo.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 0
 .PHONY : CMakeFiles/IoTConfigManagerDemo.dir/rule
@@ -536,12 +538,12 @@ CMakeFiles/SimpleMQTTTest.dir/clean:
 CMakeFiles/SimpleMQTTInterfaceTest.dir/all: CMakeFiles/AIMusicCore.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimpleMQTTInterfaceTest.dir/build.make CMakeFiles/SimpleMQTTInterfaceTest.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimpleMQTTInterfaceTest.dir/build.make CMakeFiles/SimpleMQTTInterfaceTest.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=87,88 "Built target SimpleMQTTInterfaceTest"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=88 "Built target SimpleMQTTInterfaceTest"
 .PHONY : CMakeFiles/SimpleMQTTInterfaceTest.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/SimpleMQTTInterfaceTest.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 54
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 53
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/SimpleMQTTInterfaceTest.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 0
 .PHONY : CMakeFiles/SimpleMQTTInterfaceTest.dir/rule
@@ -562,12 +564,12 @@ CMakeFiles/SimpleMQTTInterfaceTest.dir/clean:
 CMakeFiles/RealMQTTTest.dir/all: CMakeFiles/AIMusicCore.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/RealMQTTTest.dir/build.make CMakeFiles/RealMQTTTest.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/RealMQTTTest.dir/build.make CMakeFiles/RealMQTTTest.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=84,85 "Built target RealMQTTTest"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=85 "Built target RealMQTTTest"
 .PHONY : CMakeFiles/RealMQTTTest.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/RealMQTTTest.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 54
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 53
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/RealMQTTTest.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 0
 .PHONY : CMakeFiles/RealMQTTTest.dir/rule
@@ -588,7 +590,7 @@ CMakeFiles/RealMQTTTest.dir/clean:
 CMakeFiles/ComprehensiveMQTTTest.dir/all: CMakeFiles/AIMusicCore.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ComprehensiveMQTTTest.dir/build.make CMakeFiles/ComprehensiveMQTTTest.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ComprehensiveMQTTTest.dir/build.make CMakeFiles/ComprehensiveMQTTTest.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=59,60 "Built target ComprehensiveMQTTTest"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=60,61 "Built target ComprehensiveMQTTTest"
 .PHONY : CMakeFiles/ComprehensiveMQTTTest.dir/all
 
 # Build rule for subdir invocation for target.
@@ -614,12 +616,12 @@ CMakeFiles/ComprehensiveMQTTTest.dir/clean:
 CMakeFiles/QuickMQTTTest.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/QuickMQTTTest.dir/build.make CMakeFiles/QuickMQTTTest.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/QuickMQTTTest.dir/build.make CMakeFiles/QuickMQTTTest.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=83 "Built target QuickMQTTTest"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=83,84 "Built target QuickMQTTTest"
 .PHONY : CMakeFiles/QuickMQTTTest.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/QuickMQTTTest.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 1
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 2
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/QuickMQTTTest.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 0
 .PHONY : CMakeFiles/QuickMQTTTest.dir/rule
@@ -640,12 +642,12 @@ CMakeFiles/QuickMQTTTest.dir/clean:
 CMakeFiles/SimpleAudioTest.dir/all: CMakeFiles/AIMusicCore.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimpleAudioTest.dir/build.make CMakeFiles/SimpleAudioTest.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimpleAudioTest.dir/build.make CMakeFiles/SimpleAudioTest.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=86 "Built target SimpleAudioTest"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=86,87 "Built target SimpleAudioTest"
 .PHONY : CMakeFiles/SimpleAudioTest.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/SimpleAudioTest.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 53
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 54
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/SimpleAudioTest.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 0
 .PHONY : CMakeFiles/SimpleAudioTest.dir/rule
@@ -666,7 +668,7 @@ CMakeFiles/SimpleAudioTest.dir/clean:
 CMakeFiles/AudioEngineStressTest.dir/all: CMakeFiles/AIMusicCore.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AudioEngineStressTest.dir/build.make CMakeFiles/AudioEngineStressTest.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AudioEngineStressTest.dir/build.make CMakeFiles/AudioEngineStressTest.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=58 "Built target AudioEngineStressTest"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=59 "Built target AudioEngineStressTest"
 .PHONY : CMakeFiles/AudioEngineStressTest.dir/all
 
 # Build rule for subdir invocation for target.
@@ -692,12 +694,12 @@ CMakeFiles/AudioEngineStressTest.dir/clean:
 CMakeFiles/MidiCCLearningTest.dir/all: CMakeFiles/AIMusicCore.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiCCLearningTest.dir/build.make CMakeFiles/MidiCCLearningTest.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiCCLearningTest.dir/build.make CMakeFiles/MidiCCLearningTest.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=71,72 "Built target MidiCCLearningTest"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=72 "Built target MidiCCLearningTest"
 .PHONY : CMakeFiles/MidiCCLearningTest.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/MidiCCLearningTest.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 54
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 53
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/MidiCCLearningTest.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 0
 .PHONY : CMakeFiles/MidiCCLearningTest.dir/rule
@@ -718,12 +720,12 @@ CMakeFiles/MidiCCLearningTest.dir/clean:
 CMakeFiles/MidiKeyboardTest.dir/all: CMakeFiles/AIMusicCore.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiKeyboardTest.dir/build.make CMakeFiles/MidiKeyboardTest.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiKeyboardTest.dir/build.make CMakeFiles/MidiKeyboardTest.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=73 "Built target MidiKeyboardTest"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=73,74 "Built target MidiKeyboardTest"
 .PHONY : CMakeFiles/MidiKeyboardTest.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/MidiKeyboardTest.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 53
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 54
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/MidiKeyboardTest.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 0
 .PHONY : CMakeFiles/MidiKeyboardTest.dir/rule
@@ -744,7 +746,7 @@ CMakeFiles/MidiKeyboardTest.dir/clean:
 CMakeFiles/EnhancedPresetDatabaseTest.dir/all: CMakeFiles/AIMusicCore.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/EnhancedPresetDatabaseTest.dir/build.make CMakeFiles/EnhancedPresetDatabaseTest.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/EnhancedPresetDatabaseTest.dir/build.make CMakeFiles/EnhancedPresetDatabaseTest.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=62,63 "Built target EnhancedPresetDatabaseTest"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=63,64 "Built target EnhancedPresetDatabaseTest"
 .PHONY : CMakeFiles/EnhancedPresetDatabaseTest.dir/all
 
 # Build rule for subdir invocation for target.
@@ -770,12 +772,12 @@ CMakeFiles/EnhancedPresetDatabaseTest.dir/clean:
 CMakeFiles/PresetBrowserUIDemo.dir/all: CMakeFiles/AIMusicCore.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/PresetBrowserUIDemo.dir/build.make CMakeFiles/PresetBrowserUIDemo.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/PresetBrowserUIDemo.dir/build.make CMakeFiles/PresetBrowserUIDemo.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=80 "Built target PresetBrowserUIDemo"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=80,81 "Built target PresetBrowserUIDemo"
 .PHONY : CMakeFiles/PresetBrowserUIDemo.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/PresetBrowserUIDemo.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 53
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 54
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/PresetBrowserUIDemo.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 0
 .PHONY : CMakeFiles/PresetBrowserUIDemo.dir/rule
@@ -796,12 +798,12 @@ CMakeFiles/PresetBrowserUIDemo.dir/clean:
 CMakeFiles/Phase3SmartFeaturesDemo.dir/all: CMakeFiles/AIMusicCore.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Phase3SmartFeaturesDemo.dir/build.make CMakeFiles/Phase3SmartFeaturesDemo.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Phase3SmartFeaturesDemo.dir/build.make CMakeFiles/Phase3SmartFeaturesDemo.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=78,79 "Built target Phase3SmartFeaturesDemo"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=79 "Built target Phase3SmartFeaturesDemo"
 .PHONY : CMakeFiles/Phase3SmartFeaturesDemo.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/Phase3SmartFeaturesDemo.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 54
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 53
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/Phase3SmartFeaturesDemo.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 0
 .PHONY : CMakeFiles/Phase3SmartFeaturesDemo.dir/rule
@@ -848,7 +850,7 @@ CMakeFiles/TestUI.dir/clean:
 CMakeFiles/EnhancedUIIntegrationTest.dir/all: CMakeFiles/AIMusicCore.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/EnhancedUIIntegrationTest.dir/build.make CMakeFiles/EnhancedUIIntegrationTest.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/EnhancedUIIntegrationTest.dir/build.make CMakeFiles/EnhancedUIIntegrationTest.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=64 "Built target EnhancedUIIntegrationTest"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=65 "Built target EnhancedUIIntegrationTest"
 .PHONY : CMakeFiles/EnhancedUIIntegrationTest.dir/all
 
 # Build rule for subdir invocation for target.
@@ -874,7 +876,7 @@ CMakeFiles/EnhancedUIIntegrationTest.dir/clean:
 CMakeFiles/ComprehensiveUITest.dir/all: CMakeFiles/AIMusicCore.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ComprehensiveUITest.dir/build.make CMakeFiles/ComprehensiveUITest.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ComprehensiveUITest.dir/build.make CMakeFiles/ComprehensiveUITest.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=61 "Built target ComprehensiveUITest"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=62 "Built target ComprehensiveUITest"
 .PHONY : CMakeFiles/ComprehensiveUITest.dir/all
 
 # Build rule for subdir invocation for target.
@@ -900,7 +902,7 @@ CMakeFiles/ComprehensiveUITest.dir/clean:
 CMakeFiles/AIMusicHardwareIntegrated.dir/all: CMakeFiles/AIMusicCore.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicHardwareIntegrated.dir/build.make CMakeFiles/AIMusicHardwareIntegrated.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicHardwareIntegrated.dir/build.make CMakeFiles/AIMusicHardwareIntegrated.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=55 "Built target AIMusicHardwareIntegrated"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=56 "Built target AIMusicHardwareIntegrated"
 .PHONY : CMakeFiles/AIMusicHardwareIntegrated.dir/all
 
 # Build rule for subdir invocation for target.
@@ -926,7 +928,7 @@ CMakeFiles/AIMusicHardwareIntegrated.dir/clean:
 CMakeFiles/AIMusicHardwareImproved.dir/all: CMakeFiles/AIMusicCore.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicHardwareImproved.dir/build.make CMakeFiles/AIMusicHardwareImproved.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicHardwareImproved.dir/build.make CMakeFiles/AIMusicHardwareImproved.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=53,54 "Built target AIMusicHardwareImproved"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=54,55 "Built target AIMusicHardwareImproved"
 .PHONY : CMakeFiles/AIMusicHardwareImproved.dir/all
 
 # Build rule for subdir invocation for target.
@@ -946,18 +948,44 @@ CMakeFiles/AIMusicHardwareImproved.dir/clean:
 .PHONY : CMakeFiles/AIMusicHardwareImproved.dir/clean
 
 #=============================================================================
+# Target rules for target CMakeFiles/AIMusicHardwareGrid.dir
+
+# All Build rule for target.
+CMakeFiles/AIMusicHardwareGrid.dir/all: CMakeFiles/AIMusicCore.dir/all
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicHardwareGrid.dir/build.make CMakeFiles/AIMusicHardwareGrid.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicHardwareGrid.dir/build.make CMakeFiles/AIMusicHardwareGrid.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=53 "Built target AIMusicHardwareGrid"
+.PHONY : CMakeFiles/AIMusicHardwareGrid.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/AIMusicHardwareGrid.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 53
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/AIMusicHardwareGrid.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 0
+.PHONY : CMakeFiles/AIMusicHardwareGrid.dir/rule
+
+# Convenience name for target.
+AIMusicHardwareGrid: CMakeFiles/AIMusicHardwareGrid.dir/rule
+.PHONY : AIMusicHardwareGrid
+
+# clean rule for target.
+CMakeFiles/AIMusicHardwareGrid.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicHardwareGrid.dir/build.make CMakeFiles/AIMusicHardwareGrid.dir/clean
+.PHONY : CMakeFiles/AIMusicHardwareGrid.dir/clean
+
+#=============================================================================
 # Target rules for target CMakeFiles/ParameterSmoothingTestSimple.dir
 
 # All Build rule for target.
 CMakeFiles/ParameterSmoothingTestSimple.dir/all: CMakeFiles/AIMusicCore.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ParameterSmoothingTestSimple.dir/build.make CMakeFiles/ParameterSmoothingTestSimple.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ParameterSmoothingTestSimple.dir/build.make CMakeFiles/ParameterSmoothingTestSimple.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=77 "Built target ParameterSmoothingTestSimple"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=77,78 "Built target ParameterSmoothingTestSimple"
 .PHONY : CMakeFiles/ParameterSmoothingTestSimple.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/ParameterSmoothingTestSimple.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 53
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 54
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/ParameterSmoothingTestSimple.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/geaspar/AIMusicHardware/build/CMakeFiles 0
 .PHONY : CMakeFiles/ParameterSmoothingTestSimple.dir/rule

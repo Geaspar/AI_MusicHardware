@@ -63,6 +63,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/Users/geaspar/AIMusicHardware/src/synthesis/wavetable/wavetable.cpp" "CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/ui/DisplayManager.cpp" "CMakeFiles/AIMusicCore.dir/src/ui/DisplayManager.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/ui/DisplayManager.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/ui/Font.cpp" "CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.o.d"
+  "/Users/geaspar/AIMusicHardware/src/ui/GridLayout.cpp" "CMakeFiles/AIMusicCore.dir/src/ui/GridLayout.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/ui/GridLayout.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/ui/MidiKeyboard.cpp" "CMakeFiles/AIMusicCore.dir/src/ui/MidiKeyboard.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/ui/MidiKeyboard.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/ui/ParameterBridge.cpp" "CMakeFiles/AIMusicCore.dir/src/ui/ParameterBridge.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/ui/ParameterBridge.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/ui/ParameterManager.cpp" "CMakeFiles/AIMusicCore.dir/src/ui/ParameterManager.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/ui/ParameterManager.cpp.o.d"

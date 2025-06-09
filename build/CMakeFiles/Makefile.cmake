@@ -94,6 +94,7 @@ set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/ComprehensiveUITest.dir/DependInfo.cmake"
   "CMakeFiles/AIMusicHardwareIntegrated.dir/DependInfo.cmake"
   "CMakeFiles/AIMusicHardwareImproved.dir/DependInfo.cmake"
+  "CMakeFiles/AIMusicHardwareGrid.dir/DependInfo.cmake"
   "CMakeFiles/ParameterSmoothingTestSimple.dir/DependInfo.cmake"
   "CMakeFiles/SimpleUIDemo.dir/DependInfo.cmake"
   )

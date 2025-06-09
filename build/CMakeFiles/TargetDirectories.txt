@@ -29,6 +29,7 @@
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/ComprehensiveUITest.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/AIMusicHardwareIntegrated.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/AIMusicHardwareImproved.dir
+/Users/geaspar/AIMusicHardware/build/CMakeFiles/AIMusicHardwareGrid.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/ParameterSmoothingTestSimple.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/SimpleUIDemo.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/edit_cache.dir
