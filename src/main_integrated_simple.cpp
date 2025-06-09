@@ -175,30 +175,6 @@ public:
             return;
         }
 #endif
-        
-        // Fallback rendering if SDL_ttf not available
-        int charWidth = 6;
-        int charHeight = 10;
-        int charSpacing = 4;
-        
-        int totalWidth = text.length() * (charWidth + charSpacing);
-        SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 200);
-        SDL_Rect bgRect = { x - 2, y - 2, totalWidth + 4, charHeight + 4 };
-        SDL_RenderFillRect(renderer_, &bgRect);
-        
-        SDL_SetRenderDrawColor(renderer_, color.r, color.g, color.b, 255);
-        
-        for (size_t i = 0; i < text.length(); i++) {
-            if (text[i] != ' ') {
-                int charX = x + i * (charWidth + charSpacing);
-                SDL_Rect charRect = { charX, y, charWidth, charHeight };
-                SDL_RenderFillRect(renderer_, &charRect);
-                
-                SDL_SetRenderDrawColor(renderer_, 255, 255, 255, 255);
-                SDL_RenderDrawRect(renderer_, &charRect);
-                SDL_SetRenderDrawColor(renderer_, color.r, color.g, color.b, 255);
-            }
-        }
     }
     
     int getWidth() const override { return width_; }
@@ -484,7 +460,7 @@ int main(int argc, char* argv[]) {
     
     // Add frequency knob label
     auto freqLabel = std::make_unique<Label>("freq_label", "Frequency");
-    freqLabel->setPosition(55, 170);
+    freqLabel->setPosition(55, 175);
     freqLabel->setSize(70, 15);
     freqLabel->setTextColor(Color(200, 200, 200));
     freqLabel->setFontName("small");
@@ -504,7 +480,7 @@ int main(int argc, char* argv[]) {
     
     // Add wave knob label
     auto waveLabel = std::make_unique<Label>("wave_label", "Waveform");
-    waveLabel->setPosition(175, 170);
+    waveLabel->setPosition(175, 175);
     waveLabel->setSize(70, 15);
     waveLabel->setTextColor(Color(200, 200, 200));
     waveLabel->setFontName("small");
@@ -532,7 +508,7 @@ int main(int argc, char* argv[]) {
     
     // Add cutoff knob label
     auto cutoffLabel = std::make_unique<Label>("cutoff_label", "Cutoff");
-    cutoffLabel->setPosition(365, 170);
+    cutoffLabel->setPosition(365, 175);
     cutoffLabel->setSize(50, 15);
     cutoffLabel->setTextColor(Color(200, 200, 200));
     cutoffLabel->setFontName("small");
@@ -549,7 +525,7 @@ int main(int argc, char* argv[]) {
     
     // Add resonance knob label
     auto resLabel = std::make_unique<Label>("res_label", "Resonance");
-    resLabel->setPosition(470, 170);
+    resLabel->setPosition(470, 175);
     resLabel->setSize(60, 15);
     resLabel->setTextColor(Color(200, 200, 200));
     resLabel->setFontName("small");
@@ -613,28 +589,28 @@ int main(int argc, char* argv[]) {
     
     // Add envelope knob labels
     auto attackLabel = std::make_unique<Label>("attack_label", "Attack");
-    attackLabel->setPosition(605, 170);
+    attackLabel->setPosition(605, 175);
     attackLabel->setSize(50, 15);
     attackLabel->setTextColor(Color(200, 200, 200));
     attackLabel->setFontName("small");
     mainScreen->addChild(std::move(attackLabel));
     
     auto decayLabel = std::make_unique<Label>("decay_label", "Decay");
-    decayLabel->setPosition(695, 170);
+    decayLabel->setPosition(695, 175);
     decayLabel->setSize(50, 15);
     decayLabel->setTextColor(Color(200, 200, 200));
     decayLabel->setFontName("small");
     mainScreen->addChild(std::move(decayLabel));
     
     auto sustainLabel = std::make_unique<Label>("sustain_label", "Sustain");
-    sustainLabel->setPosition(780, 170);
+    sustainLabel->setPosition(780, 175);
     sustainLabel->setSize(60, 15);
     sustainLabel->setTextColor(Color(200, 200, 200));
     sustainLabel->setFontName("small");
     mainScreen->addChild(std::move(sustainLabel));
     
     auto releaseLabel = std::make_unique<Label>("release_label", "Release");
-    releaseLabel->setPosition(870, 170);
+    releaseLabel->setPosition(870, 175);
     releaseLabel->setSize(60, 15);
     releaseLabel->setTextColor(Color(200, 200, 200));
     releaseLabel->setFontName("small");
@@ -663,7 +639,7 @@ int main(int argc, char* argv[]) {
     
     // Add volume knob label
     auto volumeLabel = std::make_unique<Label>("volume_label", "Volume");
-    volumeLabel->setPosition(995, 170);
+    volumeLabel->setPosition(995, 175);
     volumeLabel->setSize(50, 15);
     volumeLabel->setTextColor(Color(200, 200, 200));
     volumeLabel->setFontName("small");
@@ -671,42 +647,42 @@ int main(int argc, char* argv[]) {
     
     // Create visualization section
     auto vizSection = std::make_unique<Label>("viz_section", "VISUALIZATION");
-    vizSection->setPosition(50, 200);
+    vizSection->setPosition(50, 210);
     vizSection->setSize(200, 25);
     vizSection->setTextColor(Color(255, 200, 100)); // Bright orange for visibility
     mainScreen->addChild(std::move(vizSection));
     
     auto waveform = std::make_unique<WaveformVisualizer>("waveform", 512);
-    waveform->setPosition(50, 230);
+    waveform->setPosition(50, 240);
     waveform->setSize(300, 150);
     waveform->setWaveformColor(Color(0, 255, 128));
     mainScreen->addChild(std::move(waveform));
     
     auto spectrum = std::make_unique<SpectrumAnalyzer>("spectrum", 32);
-    spectrum->setPosition(370, 230);
+    spectrum->setPosition(370, 240);
     spectrum->setSize(300, 150);
     mainScreen->addChild(std::move(spectrum));
     
     auto envelope = std::make_unique<EnvelopeVisualizer>("envelope");
-    envelope->setPosition(690, 230);
+    envelope->setPosition(690, 240);
     envelope->setSize(250, 150);
     envelope->setADSR(0.01f, 0.1f, 0.7f, 0.5f);
     envelope->setEditable(true);
     mainScreen->addChild(std::move(envelope));
     
     auto levelMeter = std::make_unique<LevelMeter>("level", LevelMeter::Orientation::Vertical);
-    levelMeter->setPosition(960, 230);
+    levelMeter->setPosition(960, 240);
     levelMeter->setSize(30, 150);
     mainScreen->addChild(std::move(levelMeter));
     
     // Create MIDI keyboard section
     auto keyboardSection = std::make_unique<Label>("keyboard_section", "MIDI KEYBOARD");
-    keyboardSection->setPosition(50, 410);
+    keyboardSection->setPosition(50, 420);
     keyboardSection->setTextColor(Color(255, 150, 255)); // Bright pink for visibility
     mainScreen->addChild(std::move(keyboardSection));
     
     // Create the MIDI keyboard
-    auto midiKeyboard = std::make_unique<MidiKeyboard>("midi_keyboard", 50, 440);
+    auto midiKeyboard = std::make_unique<MidiKeyboard>("midi_keyboard", 50, 450);
     
     // Configure keyboard for 3 octaves starting from C3
     MidiKeyboard::KeyboardConfig keyboardConfig;
@@ -763,7 +739,7 @@ int main(int argc, char* argv[]) {
     
     // Add octave control buttons
     auto octaveDownButton = std::make_unique<Button>("octave_down", "OCT-");
-    octaveDownButton->setPosition(650, 440);
+    octaveDownButton->setPosition(650, 450);
     octaveDownButton->setSize(60, 30);
     octaveDownButton->setBackgroundColor(Color(80, 80, 100));
     octaveDownButton->setTextColor(Color(255, 255, 255));
@@ -776,7 +752,7 @@ int main(int argc, char* argv[]) {
     mainScreen->addChild(std::move(octaveDownButton));
     
     auto octaveUpButton = std::make_unique<Button>("octave_up", "OCT+");
-    octaveUpButton->setPosition(720, 440);
+    octaveUpButton->setPosition(720, 450);
     octaveUpButton->setSize(60, 30);
     octaveUpButton->setBackgroundColor(Color(80, 80, 100));
     octaveUpButton->setTextColor(Color(255, 255, 255));
@@ -790,7 +766,7 @@ int main(int argc, char* argv[]) {
     
     // Add velocity mode button
     auto velocityModeButton = std::make_unique<Button>("velocity_mode", "VEL: VAR");
-    velocityModeButton->setPosition(650, 480);
+    velocityModeButton->setPosition(650, 490);
     velocityModeButton->setSize(130, 30);
     velocityModeButton->setBackgroundColor(Color(60, 100, 60));
     velocityModeButton->setTextColor(Color(255, 255, 255));
@@ -820,7 +796,7 @@ int main(int argc, char* argv[]) {
     
     // Create preset browser section (moved down to make room for keyboard)
     auto presetSection = std::make_unique<Label>("preset_section", "PRESET BROWSER");
-    presetSection->setPosition(50, 600);
+    presetSection->setPosition(50, 610);
     presetSection->setTextColor(Color(150, 255, 150)); // Bright light green for visibility
     mainScreen->addChild(std::move(presetSection));
     
@@ -898,8 +874,8 @@ int main(int argc, char* argv[]) {
     }
     
     auto presetBrowser = std::make_unique<PresetBrowserUI>("preset_browser");
-    presetBrowser->setPosition(50, 630);
-    presetBrowser->setSize(500, 280);
+    presetBrowser->setPosition(50, 640);
+    presetBrowser->setSize(500, 150);
     presetBrowser->initialize(presetManager.get(), presetDatabase.get());
     presetBrowser->setParameterManager(&paramManager);
     
@@ -945,12 +921,12 @@ int main(int argc, char* argv[]) {
     
     // Create MIDI CC learning controls
     auto ccLearningSection = std::make_unique<Label>("cc_section", "MIDI CC LEARNING");
-    ccLearningSection->setPosition(600, 410);
+    ccLearningSection->setPosition(600, 420);
     ccLearningSection->setTextColor(Color(150, 150, 180));
     mainScreen->addChild(std::move(ccLearningSection));
     
     auto learnButton = std::make_unique<Button>("learn_cc", "LEARN CC");
-    learnButton->setPosition(600, 440);
+    learnButton->setPosition(600, 450);
     learnButton->setSize(120, 40);
     learnButton->setToggleMode(true);
     learnButton->setClickCallback([&ccLearning]() {
@@ -964,7 +940,7 @@ int main(int argc, char* argv[]) {
     mainScreen->addChild(std::move(learnButton));
     
     auto clearCCButton = std::make_unique<Button>("clear_cc", "CLEAR CC");
-    clearCCButton->setPosition(730, 440);
+    clearCCButton->setPosition(730, 450);
     clearCCButton->setSize(100, 40);
     clearCCButton->setClickCallback([&ccLearning]() {
         ccLearning.getLearning().clearAllMappings();
@@ -974,7 +950,7 @@ int main(int argc, char* argv[]) {
     
     // CC Learning status display
     auto ccStatusLabel = std::make_unique<Label>("cc_status", "CC Status: Ready");
-    ccStatusLabel->setPosition(600, 490);
+    ccStatusLabel->setPosition(600, 500);
     ccStatusLabel->setSize(250, 20);
     ccStatusLabel->setTextColor(Color(150, 200, 150));
     ccStatusPtr = ccStatusLabel.get(); // Store pointer for callback updates
@@ -982,12 +958,12 @@ int main(int argc, char* argv[]) {
     
     // Create transport controls  
     auto transportSection = std::make_unique<Label>("transport_section", "TRANSPORT");
-    transportSection->setPosition(600, 540);
+    transportSection->setPosition(600, 530);
     transportSection->setTextColor(Color(150, 150, 180));
     mainScreen->addChild(std::move(transportSection));
     
     auto playButton = std::make_unique<Button>("play", "PLAY");
-    playButton->setPosition(600, 570);
+    playButton->setPosition(600, 560);
     playButton->setSize(80, 40);
     playButton->setToggleMode(true);
     playButton->setClickCallback([&sequencer]() {
@@ -1000,7 +976,7 @@ int main(int argc, char* argv[]) {
     mainScreen->addChild(std::move(playButton));
     
     auto stopButton = std::make_unique<Button>("stop", "STOP");
-    stopButton->setPosition(690, 570);
+    stopButton->setPosition(690, 560);
     stopButton->setSize(80, 40);
     stopButton->setClickCallback([&sequencer]() {
         sequencer->stop();
