@@ -793,9 +793,10 @@ CMakeFiles/TestAudio.dir/examples/TestAudio.cpp.o: \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/cstdarg \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/thread \
   /Users/geaspar/AIMusicHardware/examples/../include/audio/AudioEngine.h \
-  /Users/geaspar/AIMusicHardware/examples/../include/audio/Synthesizer.h \
+  /Users/geaspar/AIMusicHardware/examples/../include/audio/AudioErrorHandler.h \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/map \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/__tree \
+  /Users/geaspar/AIMusicHardware/examples/../include/audio/Synthesizer.h \
   /Users/geaspar/AIMusicHardware/examples/../include/audio/../sequencer/Sequencer.h \
   /Users/geaspar/AIMusicHardware/examples/../include/audio/../synthesis/framework/processor.h \
   /Users/geaspar/AIMusicHardware/examples/../include/audio/../synthesis/voice/voice_manager.h \

@@ -748,6 +748,9 @@ CMakeFiles/TestMpeVoiceManager.dir/examples/TestMpeVoiceManager.cpp.o: \
   /Users/geaspar/AIMusicHardware/examples/../include/midi/MpeConfiguration.h \
   /Users/geaspar/AIMusicHardware/examples/../include/midi/MpeChannelAllocator.h \
   /Users/geaspar/AIMusicHardware/examples/../include/audio/AudioEngine.h \
+  /Users/geaspar/AIMusicHardware/examples/../include/audio/AudioErrorHandler.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/map \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/__tree \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/iostream \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/ios \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/__locale \

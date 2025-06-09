@@ -504,12 +504,12 @@ void Knob::render(DisplayManager* display) {
     // TODO: Get font from context
     
     // Always render labels and values for better visibility
-    // Draw label text at bottom
+    // Draw label text at bottom (below the value text)
     if (!label_.empty()) {
-        display->drawText(centerX - label_.length() * 4, y_ + height_ + 10, label_, font, color_);
+        display->drawText(centerX - label_.length() * 4, y_ + height_ + 40, label_, font, color_);
     }
     
-    // Draw value text at top if enabled
+    // Draw value text below the knob, but above the label
     if (showValue_) {
         std::string valueText;
         if (valueFormatter_) {
@@ -521,7 +521,11 @@ void Knob::render(DisplayManager* display) {
             valueText = ss.str();
         }
         
-        display->drawText(centerX - valueText.length() * 4, y_ - 15, valueText, font, color_);
+        // Position value text well below the knob to avoid overlap
+        // Knob bottom is at y_ + height_
+        // Put value text at y_ + height_ + 25 (well below knob)
+        // Label will be at y_ + height_ + 40
+        display->drawText(centerX - valueText.length() * 4, y_ + height_ + 25, valueText, font, Color(200, 200, 200));
     }
     
     // Draw MIDI CC number if mapped
@@ -530,7 +534,7 @@ void Knob::render(DisplayManager* display) {
         ccText << "CC" << midiControlNumber_;
         std::string ccString = ccText.str();
         
-        display->drawText(centerX - ccString.length() * 4, y_ + height_ + 25, 
+        display->drawText(centerX - ccString.length() * 4, y_ + height_ + 55, 
                        ccString, font, Color(0, 200, 0));
     }
     

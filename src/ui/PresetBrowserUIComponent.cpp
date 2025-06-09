@@ -376,7 +376,7 @@ PresetBrowserUI::PresetBrowserUI(const std::string& id)
         loadSelectedPreset();
     });
     
-    layoutComponents();
+    // Don't call layoutComponents() here - it will be called when setPosition is called
 }
 
 PresetBrowserUI::~PresetBrowserUI() = default;
@@ -385,12 +385,18 @@ void PresetBrowserUI::initialize(PresetManager* presetManager, PresetDatabase* d
     presetManager_ = presetManager;
     database_ = database;
     
+    std::cout << "PresetBrowserUI::initialize - Database has " 
+              << (database_ ? database_->getAllPresets().size() : 0) << " presets" << std::endl;
+    
     // Set up categories
     std::vector<std::string> categories = {"All", "Bass", "Lead", "Pad", "FX", "User"};
     categoryFilter_->setCategories(categories);
     categoryFilter_->selectCategory("All");
     
     refresh();
+    
+    std::cout << "PresetBrowserUI::initialize - After refresh, filteredPresets_ has " 
+              << filteredPresets_.size() << " presets" << std::endl;
 }
 
 void PresetBrowserUI::refresh() {
@@ -459,6 +465,9 @@ void PresetBrowserUI::render(DisplayManager* display) {
     
     // Draw border
     display->drawRect(x_, y_, width_, height_, Color(60, 60, 60));
+    
+    // Debug: Draw component position info
+    display->drawText(x_ + 5, y_ + 5, "Preset Browser", nullptr, Color(255, 255, 255));
     
     // Render sub-components
     searchBox_->render(display);

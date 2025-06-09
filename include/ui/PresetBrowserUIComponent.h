@@ -171,6 +171,18 @@ public:
     void render(DisplayManager* display) override;
     bool handleInput(const InputEvent& event) override;
     
+    // Override setPosition to re-layout components
+    void setPosition(int x, int y) {
+        UIComponent::setPosition(x, y);
+        layoutComponents();
+    }
+    
+    // Override setSize to re-layout components  
+    void setSize(int width, int height) {
+        UIComponent::setSize(width, height);
+        layoutComponents();
+    }
+    
     /**
      * @brief Callbacks for preset actions
      */

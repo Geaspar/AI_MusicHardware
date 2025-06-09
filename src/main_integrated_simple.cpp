@@ -723,9 +723,9 @@ int main(int argc, char* argv[]) {
     });
     mainScreen->addChild(std::move(velocityModeButton));
     
-    // Create preset browser section (moved down to make room for keyboard)
+    // Create preset browser section 
     auto presetSection = std::make_unique<Label>("preset_section", "PRESET BROWSER");
-    presetSection->setPosition(50, 650);
+    presetSection->setPosition(600, 170);  // Above the preset browser
     presetSection->setTextColor(Color(150, 255, 150)); // Bright light green for visibility
     mainScreen->addChild(std::move(presetSection));
     
@@ -803,9 +803,16 @@ int main(int argc, char* argv[]) {
     }
     
     auto presetBrowser = std::make_unique<PresetBrowserUI>("preset_browser");
-    presetBrowser->setPosition(50, 680);
-    presetBrowser->setSize(500, 90);
+    presetBrowser->setPosition(600, 200);  // Move to right side 
+    presetBrowser->setSize(600, 350);      // Make it much bigger
+    
+    // Debug: Check preset database contents before initialization
+    std::cout << "Preset database has " << presetDatabase->getAllPresets().size() << " presets before initialization" << std::endl;
+    
     presetBrowser->initialize(presetManager.get(), presetDatabase.get());
+    
+    // Debug: Check preset database contents after initialization
+    std::cout << "Preset database has " << presetDatabase->getAllPresets().size() << " presets after initialization" << std::endl;
     presetBrowser->setParameterManager(&paramManager);
     
     // Set up preset loading callback with UI updates

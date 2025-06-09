@@ -377,6 +377,45 @@ SimpleAudioTest/fast:
 .PHONY : SimpleAudioTest/fast
 
 #=============================================================================
+# Target rules for targets named AudioEngineStressTest
+
+# Build rule for target.
+AudioEngineStressTest: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 AudioEngineStressTest
+.PHONY : AudioEngineStressTest
+
+# fast build rule for target.
+AudioEngineStressTest/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AudioEngineStressTest.dir/build.make CMakeFiles/AudioEngineStressTest.dir/build
+.PHONY : AudioEngineStressTest/fast
+
+#=============================================================================
+# Target rules for targets named MidiCCLearningTest
+
+# Build rule for target.
+MidiCCLearningTest: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 MidiCCLearningTest
+.PHONY : MidiCCLearningTest
+
+# fast build rule for target.
+MidiCCLearningTest/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiCCLearningTest.dir/build.make CMakeFiles/MidiCCLearningTest.dir/build
+.PHONY : MidiCCLearningTest/fast
+
+#=============================================================================
+# Target rules for targets named MidiKeyboardTest
+
+# Build rule for target.
+MidiKeyboardTest: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 MidiKeyboardTest
+.PHONY : MidiKeyboardTest
+
+# fast build rule for target.
+MidiKeyboardTest/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiKeyboardTest.dir/build.make CMakeFiles/MidiKeyboardTest.dir/build
+.PHONY : MidiKeyboardTest/fast
+
+#=============================================================================
 # Target rules for targets named EnhancedPresetDatabaseTest
 
 # Build rule for target.
@@ -415,6 +454,97 @@ Phase3SmartFeaturesDemo/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Phase3SmartFeaturesDemo.dir/build.make CMakeFiles/Phase3SmartFeaturesDemo.dir/build
 .PHONY : Phase3SmartFeaturesDemo/fast
 
+#=============================================================================
+# Target rules for targets named TestUI
+
+# Build rule for target.
+TestUI: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 TestUI
+.PHONY : TestUI
+
+# fast build rule for target.
+TestUI/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestUI.dir/build.make CMakeFiles/TestUI.dir/build
+.PHONY : TestUI/fast
+
+#=============================================================================
+# Target rules for targets named EnhancedUIIntegrationTest
+
+# Build rule for target.
+EnhancedUIIntegrationTest: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 EnhancedUIIntegrationTest
+.PHONY : EnhancedUIIntegrationTest
+
+# fast build rule for target.
+EnhancedUIIntegrationTest/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/EnhancedUIIntegrationTest.dir/build.make CMakeFiles/EnhancedUIIntegrationTest.dir/build
+.PHONY : EnhancedUIIntegrationTest/fast
+
+#=============================================================================
+# Target rules for targets named ComprehensiveUITest
+
+# Build rule for target.
+ComprehensiveUITest: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 ComprehensiveUITest
+.PHONY : ComprehensiveUITest
+
+# fast build rule for target.
+ComprehensiveUITest/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ComprehensiveUITest.dir/build.make CMakeFiles/ComprehensiveUITest.dir/build
+.PHONY : ComprehensiveUITest/fast
+
+#=============================================================================
+# Target rules for targets named AIMusicHardwareIntegrated
+
+# Build rule for target.
+AIMusicHardwareIntegrated: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 AIMusicHardwareIntegrated
+.PHONY : AIMusicHardwareIntegrated
+
+# fast build rule for target.
+AIMusicHardwareIntegrated/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicHardwareIntegrated.dir/build.make CMakeFiles/AIMusicHardwareIntegrated.dir/build
+.PHONY : AIMusicHardwareIntegrated/fast
+
+#=============================================================================
+# Target rules for targets named AIMusicHardwareImproved
+
+# Build rule for target.
+AIMusicHardwareImproved: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 AIMusicHardwareImproved
+.PHONY : AIMusicHardwareImproved
+
+# fast build rule for target.
+AIMusicHardwareImproved/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicHardwareImproved.dir/build.make CMakeFiles/AIMusicHardwareImproved.dir/build
+.PHONY : AIMusicHardwareImproved/fast
+
+#=============================================================================
+# Target rules for targets named ParameterSmoothingTestSimple
+
+# Build rule for target.
+ParameterSmoothingTestSimple: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 ParameterSmoothingTestSimple
+.PHONY : ParameterSmoothingTestSimple
+
+# fast build rule for target.
+ParameterSmoothingTestSimple/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ParameterSmoothingTestSimple.dir/build.make CMakeFiles/ParameterSmoothingTestSimple.dir/build
+.PHONY : ParameterSmoothingTestSimple/fast
+
+#=============================================================================
+# Target rules for targets named SimpleUIDemo
+
+# Build rule for target.
+SimpleUIDemo: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 SimpleUIDemo
+.PHONY : SimpleUIDemo
+
+# fast build rule for target.
+SimpleUIDemo/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimpleUIDemo.dir/build.make CMakeFiles/SimpleUIDemo.dir/build
+.PHONY : SimpleUIDemo/fast
+
 examples/AdvancedFilterDemo.o: examples/AdvancedFilterDemo.cpp.o
 .PHONY : examples/AdvancedFilterDemo.o
 
@@ -438,6 +568,30 @@ examples/AdvancedFilterDemo.s: examples/AdvancedFilterDemo.cpp.s
 examples/AdvancedFilterDemo.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AdvancedFilterDemo.dir/build.make CMakeFiles/AdvancedFilterDemo.dir/examples/AdvancedFilterDemo.cpp.s
 .PHONY : examples/AdvancedFilterDemo.cpp.s
+
+examples/AudioEngineStressTest.o: examples/AudioEngineStressTest.cpp.o
+.PHONY : examples/AudioEngineStressTest.o
+
+# target to build an object file
+examples/AudioEngineStressTest.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AudioEngineStressTest.dir/build.make CMakeFiles/AudioEngineStressTest.dir/examples/AudioEngineStressTest.cpp.o
+.PHONY : examples/AudioEngineStressTest.cpp.o
+
+examples/AudioEngineStressTest.i: examples/AudioEngineStressTest.cpp.i
+.PHONY : examples/AudioEngineStressTest.i
+
+# target to preprocess a source file
+examples/AudioEngineStressTest.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AudioEngineStressTest.dir/build.make CMakeFiles/AudioEngineStressTest.dir/examples/AudioEngineStressTest.cpp.i
+.PHONY : examples/AudioEngineStressTest.cpp.i
+
+examples/AudioEngineStressTest.s: examples/AudioEngineStressTest.cpp.s
+.PHONY : examples/AudioEngineStressTest.s
+
+# target to generate assembly for a file
+examples/AudioEngineStressTest.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AudioEngineStressTest.dir/build.make CMakeFiles/AudioEngineStressTest.dir/examples/AudioEngineStressTest.cpp.s
+.PHONY : examples/AudioEngineStressTest.cpp.s
 
 examples/ComprehensiveMQTTTest.o: examples/ComprehensiveMQTTTest.cpp.o
 .PHONY : examples/ComprehensiveMQTTTest.o
@@ -463,6 +617,30 @@ examples/ComprehensiveMQTTTest.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ComprehensiveMQTTTest.dir/build.make CMakeFiles/ComprehensiveMQTTTest.dir/examples/ComprehensiveMQTTTest.cpp.s
 .PHONY : examples/ComprehensiveMQTTTest.cpp.s
 
+examples/ComprehensiveUITest.o: examples/ComprehensiveUITest.cpp.o
+.PHONY : examples/ComprehensiveUITest.o
+
+# target to build an object file
+examples/ComprehensiveUITest.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ComprehensiveUITest.dir/build.make CMakeFiles/ComprehensiveUITest.dir/examples/ComprehensiveUITest.cpp.o
+.PHONY : examples/ComprehensiveUITest.cpp.o
+
+examples/ComprehensiveUITest.i: examples/ComprehensiveUITest.cpp.i
+.PHONY : examples/ComprehensiveUITest.i
+
+# target to preprocess a source file
+examples/ComprehensiveUITest.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ComprehensiveUITest.dir/build.make CMakeFiles/ComprehensiveUITest.dir/examples/ComprehensiveUITest.cpp.i
+.PHONY : examples/ComprehensiveUITest.cpp.i
+
+examples/ComprehensiveUITest.s: examples/ComprehensiveUITest.cpp.s
+.PHONY : examples/ComprehensiveUITest.s
+
+# target to generate assembly for a file
+examples/ComprehensiveUITest.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ComprehensiveUITest.dir/build.make CMakeFiles/ComprehensiveUITest.dir/examples/ComprehensiveUITest.cpp.s
+.PHONY : examples/ComprehensiveUITest.cpp.s
+
 examples/EnhancedPresetDatabaseTest.o: examples/EnhancedPresetDatabaseTest.cpp.o
 .PHONY : examples/EnhancedPresetDatabaseTest.o
 
@@ -486,6 +664,30 @@ examples/EnhancedPresetDatabaseTest.s: examples/EnhancedPresetDatabaseTest.cpp.s
 examples/EnhancedPresetDatabaseTest.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/EnhancedPresetDatabaseTest.dir/build.make CMakeFiles/EnhancedPresetDatabaseTest.dir/examples/EnhancedPresetDatabaseTest.cpp.s
 .PHONY : examples/EnhancedPresetDatabaseTest.cpp.s
+
+examples/EnhancedUIIntegrationTest.o: examples/EnhancedUIIntegrationTest.cpp.o
+.PHONY : examples/EnhancedUIIntegrationTest.o
+
+# target to build an object file
+examples/EnhancedUIIntegrationTest.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/EnhancedUIIntegrationTest.dir/build.make CMakeFiles/EnhancedUIIntegrationTest.dir/examples/EnhancedUIIntegrationTest.cpp.o
+.PHONY : examples/EnhancedUIIntegrationTest.cpp.o
+
+examples/EnhancedUIIntegrationTest.i: examples/EnhancedUIIntegrationTest.cpp.i
+.PHONY : examples/EnhancedUIIntegrationTest.i
+
+# target to preprocess a source file
+examples/EnhancedUIIntegrationTest.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/EnhancedUIIntegrationTest.dir/build.make CMakeFiles/EnhancedUIIntegrationTest.dir/examples/EnhancedUIIntegrationTest.cpp.i
+.PHONY : examples/EnhancedUIIntegrationTest.cpp.i
+
+examples/EnhancedUIIntegrationTest.s: examples/EnhancedUIIntegrationTest.cpp.s
+.PHONY : examples/EnhancedUIIntegrationTest.s
+
+# target to generate assembly for a file
+examples/EnhancedUIIntegrationTest.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/EnhancedUIIntegrationTest.dir/build.make CMakeFiles/EnhancedUIIntegrationTest.dir/examples/EnhancedUIIntegrationTest.cpp.s
+.PHONY : examples/EnhancedUIIntegrationTest.cpp.s
 
 examples/IoTConfigManagerDemo.o: examples/IoTConfigManagerDemo.cpp.o
 .PHONY : examples/IoTConfigManagerDemo.o
@@ -583,6 +785,54 @@ examples/IoTParameterIntegrationTest.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/IoTParameterIntegrationTest.dir/build.make CMakeFiles/IoTParameterIntegrationTest.dir/examples/IoTParameterIntegrationTest.cpp.s
 .PHONY : examples/IoTParameterIntegrationTest.cpp.s
 
+examples/MidiCCLearningTest.o: examples/MidiCCLearningTest.cpp.o
+.PHONY : examples/MidiCCLearningTest.o
+
+# target to build an object file
+examples/MidiCCLearningTest.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiCCLearningTest.dir/build.make CMakeFiles/MidiCCLearningTest.dir/examples/MidiCCLearningTest.cpp.o
+.PHONY : examples/MidiCCLearningTest.cpp.o
+
+examples/MidiCCLearningTest.i: examples/MidiCCLearningTest.cpp.i
+.PHONY : examples/MidiCCLearningTest.i
+
+# target to preprocess a source file
+examples/MidiCCLearningTest.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiCCLearningTest.dir/build.make CMakeFiles/MidiCCLearningTest.dir/examples/MidiCCLearningTest.cpp.i
+.PHONY : examples/MidiCCLearningTest.cpp.i
+
+examples/MidiCCLearningTest.s: examples/MidiCCLearningTest.cpp.s
+.PHONY : examples/MidiCCLearningTest.s
+
+# target to generate assembly for a file
+examples/MidiCCLearningTest.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiCCLearningTest.dir/build.make CMakeFiles/MidiCCLearningTest.dir/examples/MidiCCLearningTest.cpp.s
+.PHONY : examples/MidiCCLearningTest.cpp.s
+
+examples/MidiKeyboardTest.o: examples/MidiKeyboardTest.cpp.o
+.PHONY : examples/MidiKeyboardTest.o
+
+# target to build an object file
+examples/MidiKeyboardTest.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiKeyboardTest.dir/build.make CMakeFiles/MidiKeyboardTest.dir/examples/MidiKeyboardTest.cpp.o
+.PHONY : examples/MidiKeyboardTest.cpp.o
+
+examples/MidiKeyboardTest.i: examples/MidiKeyboardTest.cpp.i
+.PHONY : examples/MidiKeyboardTest.i
+
+# target to preprocess a source file
+examples/MidiKeyboardTest.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiKeyboardTest.dir/build.make CMakeFiles/MidiKeyboardTest.dir/examples/MidiKeyboardTest.cpp.i
+.PHONY : examples/MidiKeyboardTest.cpp.i
+
+examples/MidiKeyboardTest.s: examples/MidiKeyboardTest.cpp.s
+.PHONY : examples/MidiKeyboardTest.s
+
+# target to generate assembly for a file
+examples/MidiKeyboardTest.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MidiKeyboardTest.dir/build.make CMakeFiles/MidiKeyboardTest.dir/examples/MidiKeyboardTest.cpp.s
+.PHONY : examples/MidiKeyboardTest.cpp.s
+
 examples/MultiTimbralDemo.o: examples/MultiTimbralDemo.cpp.o
 .PHONY : examples/MultiTimbralDemo.o
 
@@ -630,6 +880,30 @@ examples/OscillatorStackDemo.s: examples/OscillatorStackDemo.cpp.s
 examples/OscillatorStackDemo.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/OscillatorStackDemo.dir/build.make CMakeFiles/OscillatorStackDemo.dir/examples/OscillatorStackDemo.cpp.s
 .PHONY : examples/OscillatorStackDemo.cpp.s
+
+examples/ParameterSmoothingTestSimple.o: examples/ParameterSmoothingTestSimple.cpp.o
+.PHONY : examples/ParameterSmoothingTestSimple.o
+
+# target to build an object file
+examples/ParameterSmoothingTestSimple.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ParameterSmoothingTestSimple.dir/build.make CMakeFiles/ParameterSmoothingTestSimple.dir/examples/ParameterSmoothingTestSimple.cpp.o
+.PHONY : examples/ParameterSmoothingTestSimple.cpp.o
+
+examples/ParameterSmoothingTestSimple.i: examples/ParameterSmoothingTestSimple.cpp.i
+.PHONY : examples/ParameterSmoothingTestSimple.i
+
+# target to preprocess a source file
+examples/ParameterSmoothingTestSimple.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ParameterSmoothingTestSimple.dir/build.make CMakeFiles/ParameterSmoothingTestSimple.dir/examples/ParameterSmoothingTestSimple.cpp.i
+.PHONY : examples/ParameterSmoothingTestSimple.cpp.i
+
+examples/ParameterSmoothingTestSimple.s: examples/ParameterSmoothingTestSimple.cpp.s
+.PHONY : examples/ParameterSmoothingTestSimple.s
+
+# target to generate assembly for a file
+examples/ParameterSmoothingTestSimple.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ParameterSmoothingTestSimple.dir/build.make CMakeFiles/ParameterSmoothingTestSimple.dir/examples/ParameterSmoothingTestSimple.cpp.s
+.PHONY : examples/ParameterSmoothingTestSimple.cpp.s
 
 examples/Phase3SmartFeaturesDemo.o: examples/Phase3SmartFeaturesDemo.cpp.o
 .PHONY : examples/Phase3SmartFeaturesDemo.o
@@ -823,6 +1097,30 @@ examples/SimplePresetManagerDemo.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimplePresetManagerDemo.dir/build.make CMakeFiles/SimplePresetManagerDemo.dir/examples/SimplePresetManagerDemo.cpp.s
 .PHONY : examples/SimplePresetManagerDemo.cpp.s
 
+examples/SimpleUIDemo.o: examples/SimpleUIDemo.cpp.o
+.PHONY : examples/SimpleUIDemo.o
+
+# target to build an object file
+examples/SimpleUIDemo.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimpleUIDemo.dir/build.make CMakeFiles/SimpleUIDemo.dir/examples/SimpleUIDemo.cpp.o
+.PHONY : examples/SimpleUIDemo.cpp.o
+
+examples/SimpleUIDemo.i: examples/SimpleUIDemo.cpp.i
+.PHONY : examples/SimpleUIDemo.i
+
+# target to preprocess a source file
+examples/SimpleUIDemo.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimpleUIDemo.dir/build.make CMakeFiles/SimpleUIDemo.dir/examples/SimpleUIDemo.cpp.i
+.PHONY : examples/SimpleUIDemo.cpp.i
+
+examples/SimpleUIDemo.s: examples/SimpleUIDemo.cpp.s
+.PHONY : examples/SimpleUIDemo.s
+
+# target to generate assembly for a file
+examples/SimpleUIDemo.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimpleUIDemo.dir/build.make CMakeFiles/SimpleUIDemo.dir/examples/SimpleUIDemo.cpp.s
+.PHONY : examples/SimpleUIDemo.cpp.s
+
 examples/SynchronizedSequencerDemo.o: examples/SynchronizedSequencerDemo.cpp.o
 .PHONY : examples/SynchronizedSequencerDemo.o
 
@@ -919,6 +1217,30 @@ examples/TestMpeVoiceManager.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestMpeVoiceManager.dir/build.make CMakeFiles/TestMpeVoiceManager.dir/examples/TestMpeVoiceManager.cpp.s
 .PHONY : examples/TestMpeVoiceManager.cpp.s
 
+examples/TestUI.o: examples/TestUI.cpp.o
+.PHONY : examples/TestUI.o
+
+# target to build an object file
+examples/TestUI.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestUI.dir/build.make CMakeFiles/TestUI.dir/examples/TestUI.cpp.o
+.PHONY : examples/TestUI.cpp.o
+
+examples/TestUI.i: examples/TestUI.cpp.i
+.PHONY : examples/TestUI.i
+
+# target to preprocess a source file
+examples/TestUI.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestUI.dir/build.make CMakeFiles/TestUI.dir/examples/TestUI.cpp.i
+.PHONY : examples/TestUI.cpp.i
+
+examples/TestUI.s: examples/TestUI.cpp.s
+.PHONY : examples/TestUI.s
+
+# target to generate assembly for a file
+examples/TestUI.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestUI.dir/build.make CMakeFiles/TestUI.dir/examples/TestUI.cpp.s
+.PHONY : examples/TestUI.cpp.s
+
 src/ai/PresetMLAnalyzer.o: src/ai/PresetMLAnalyzer.cpp.o
 .PHONY : src/ai/PresetMLAnalyzer.o
 
@@ -1014,6 +1336,30 @@ src/audio/AudioEngine.s: src/audio/AudioEngine.cpp.s
 src/audio/AudioEngine.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/audio/AudioEngine.cpp.s
 .PHONY : src/audio/AudioEngine.cpp.s
+
+src/audio/AudioErrorHandler.o: src/audio/AudioErrorHandler.cpp.o
+.PHONY : src/audio/AudioErrorHandler.o
+
+# target to build an object file
+src/audio/AudioErrorHandler.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/audio/AudioErrorHandler.cpp.o
+.PHONY : src/audio/AudioErrorHandler.cpp.o
+
+src/audio/AudioErrorHandler.i: src/audio/AudioErrorHandler.cpp.i
+.PHONY : src/audio/AudioErrorHandler.i
+
+# target to preprocess a source file
+src/audio/AudioErrorHandler.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/audio/AudioErrorHandler.cpp.i
+.PHONY : src/audio/AudioErrorHandler.cpp.i
+
+src/audio/AudioErrorHandler.s: src/audio/AudioErrorHandler.cpp.s
+.PHONY : src/audio/AudioErrorHandler.s
+
+# target to generate assembly for a file
+src/audio/AudioErrorHandler.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/audio/AudioErrorHandler.cpp.s
+.PHONY : src/audio/AudioErrorHandler.cpp.s
 
 src/audio/Synthesizer.o: src/audio/Synthesizer.cpp.o
 .PHONY : src/audio/Synthesizer.o
@@ -1663,6 +2009,78 @@ src/iot/MQTTInterface.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/iot/MQTTInterface.cpp.s
 .PHONY : src/iot/MQTTInterface.cpp.s
 
+src/main_integrated_improved.o: src/main_integrated_improved.cpp.o
+.PHONY : src/main_integrated_improved.o
+
+# target to build an object file
+src/main_integrated_improved.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicHardwareImproved.dir/build.make CMakeFiles/AIMusicHardwareImproved.dir/src/main_integrated_improved.cpp.o
+.PHONY : src/main_integrated_improved.cpp.o
+
+src/main_integrated_improved.i: src/main_integrated_improved.cpp.i
+.PHONY : src/main_integrated_improved.i
+
+# target to preprocess a source file
+src/main_integrated_improved.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicHardwareImproved.dir/build.make CMakeFiles/AIMusicHardwareImproved.dir/src/main_integrated_improved.cpp.i
+.PHONY : src/main_integrated_improved.cpp.i
+
+src/main_integrated_improved.s: src/main_integrated_improved.cpp.s
+.PHONY : src/main_integrated_improved.s
+
+# target to generate assembly for a file
+src/main_integrated_improved.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicHardwareImproved.dir/build.make CMakeFiles/AIMusicHardwareImproved.dir/src/main_integrated_improved.cpp.s
+.PHONY : src/main_integrated_improved.cpp.s
+
+src/main_integrated_simple.o: src/main_integrated_simple.cpp.o
+.PHONY : src/main_integrated_simple.o
+
+# target to build an object file
+src/main_integrated_simple.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicHardwareIntegrated.dir/build.make CMakeFiles/AIMusicHardwareIntegrated.dir/src/main_integrated_simple.cpp.o
+.PHONY : src/main_integrated_simple.cpp.o
+
+src/main_integrated_simple.i: src/main_integrated_simple.cpp.i
+.PHONY : src/main_integrated_simple.i
+
+# target to preprocess a source file
+src/main_integrated_simple.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicHardwareIntegrated.dir/build.make CMakeFiles/AIMusicHardwareIntegrated.dir/src/main_integrated_simple.cpp.i
+.PHONY : src/main_integrated_simple.cpp.i
+
+src/main_integrated_simple.s: src/main_integrated_simple.cpp.s
+.PHONY : src/main_integrated_simple.s
+
+# target to generate assembly for a file
+src/main_integrated_simple.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicHardwareIntegrated.dir/build.make CMakeFiles/AIMusicHardwareIntegrated.dir/src/main_integrated_simple.cpp.s
+.PHONY : src/main_integrated_simple.cpp.s
+
+src/midi/MidiCCLearning.o: src/midi/MidiCCLearning.cpp.o
+.PHONY : src/midi/MidiCCLearning.o
+
+# target to build an object file
+src/midi/MidiCCLearning.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/midi/MidiCCLearning.cpp.o
+.PHONY : src/midi/MidiCCLearning.cpp.o
+
+src/midi/MidiCCLearning.i: src/midi/MidiCCLearning.cpp.i
+.PHONY : src/midi/MidiCCLearning.i
+
+# target to preprocess a source file
+src/midi/MidiCCLearning.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/midi/MidiCCLearning.cpp.i
+.PHONY : src/midi/MidiCCLearning.cpp.i
+
+src/midi/MidiCCLearning.s: src/midi/MidiCCLearning.cpp.s
+.PHONY : src/midi/MidiCCLearning.s
+
+# target to generate assembly for a file
+src/midi/MidiCCLearning.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/midi/MidiCCLearning.cpp.s
+.PHONY : src/midi/MidiCCLearning.cpp.s
+
 src/midi/MidiInterface.o: src/midi/MidiInterface.cpp.o
 .PHONY : src/midi/MidiInterface.o
 
@@ -2143,6 +2561,102 @@ src/synthesis/wavetable/wavetable.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.s
 .PHONY : src/synthesis/wavetable/wavetable.cpp.s
 
+src/ui/DisplayManager.o: src/ui/DisplayManager.cpp.o
+.PHONY : src/ui/DisplayManager.o
+
+# target to build an object file
+src/ui/DisplayManager.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/DisplayManager.cpp.o
+.PHONY : src/ui/DisplayManager.cpp.o
+
+src/ui/DisplayManager.i: src/ui/DisplayManager.cpp.i
+.PHONY : src/ui/DisplayManager.i
+
+# target to preprocess a source file
+src/ui/DisplayManager.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/DisplayManager.cpp.i
+.PHONY : src/ui/DisplayManager.cpp.i
+
+src/ui/DisplayManager.s: src/ui/DisplayManager.cpp.s
+.PHONY : src/ui/DisplayManager.s
+
+# target to generate assembly for a file
+src/ui/DisplayManager.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/DisplayManager.cpp.s
+.PHONY : src/ui/DisplayManager.cpp.s
+
+src/ui/Font.o: src/ui/Font.cpp.o
+.PHONY : src/ui/Font.o
+
+# target to build an object file
+src/ui/Font.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.o
+.PHONY : src/ui/Font.cpp.o
+
+src/ui/Font.i: src/ui/Font.cpp.i
+.PHONY : src/ui/Font.i
+
+# target to preprocess a source file
+src/ui/Font.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.i
+.PHONY : src/ui/Font.cpp.i
+
+src/ui/Font.s: src/ui/Font.cpp.s
+.PHONY : src/ui/Font.s
+
+# target to generate assembly for a file
+src/ui/Font.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.s
+.PHONY : src/ui/Font.cpp.s
+
+src/ui/MidiKeyboard.o: src/ui/MidiKeyboard.cpp.o
+.PHONY : src/ui/MidiKeyboard.o
+
+# target to build an object file
+src/ui/MidiKeyboard.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/MidiKeyboard.cpp.o
+.PHONY : src/ui/MidiKeyboard.cpp.o
+
+src/ui/MidiKeyboard.i: src/ui/MidiKeyboard.cpp.i
+.PHONY : src/ui/MidiKeyboard.i
+
+# target to preprocess a source file
+src/ui/MidiKeyboard.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/MidiKeyboard.cpp.i
+.PHONY : src/ui/MidiKeyboard.cpp.i
+
+src/ui/MidiKeyboard.s: src/ui/MidiKeyboard.cpp.s
+.PHONY : src/ui/MidiKeyboard.s
+
+# target to generate assembly for a file
+src/ui/MidiKeyboard.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/MidiKeyboard.cpp.s
+.PHONY : src/ui/MidiKeyboard.cpp.s
+
+src/ui/ParameterBridge.o: src/ui/ParameterBridge.cpp.o
+.PHONY : src/ui/ParameterBridge.o
+
+# target to build an object file
+src/ui/ParameterBridge.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/ParameterBridge.cpp.o
+.PHONY : src/ui/ParameterBridge.cpp.o
+
+src/ui/ParameterBridge.i: src/ui/ParameterBridge.cpp.i
+.PHONY : src/ui/ParameterBridge.i
+
+# target to preprocess a source file
+src/ui/ParameterBridge.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/ParameterBridge.cpp.i
+.PHONY : src/ui/ParameterBridge.cpp.i
+
+src/ui/ParameterBridge.s: src/ui/ParameterBridge.cpp.s
+.PHONY : src/ui/ParameterBridge.s
+
+# target to generate assembly for a file
+src/ui/ParameterBridge.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/ParameterBridge.cpp.s
+.PHONY : src/ui/ParameterBridge.cpp.s
+
 src/ui/ParameterManager.o: src/ui/ParameterManager.cpp.o
 .PHONY : src/ui/ParameterManager.o
 
@@ -2166,6 +2680,198 @@ src/ui/ParameterManager.s: src/ui/ParameterManager.cpp.s
 src/ui/ParameterManager.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/ParameterManager.cpp.s
 .PHONY : src/ui/ParameterManager.cpp.s
+
+src/ui/ParameterUpdateQueue.o: src/ui/ParameterUpdateQueue.cpp.o
+.PHONY : src/ui/ParameterUpdateQueue.o
+
+# target to build an object file
+src/ui/ParameterUpdateQueue.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/ParameterUpdateQueue.cpp.o
+.PHONY : src/ui/ParameterUpdateQueue.cpp.o
+
+src/ui/ParameterUpdateQueue.i: src/ui/ParameterUpdateQueue.cpp.i
+.PHONY : src/ui/ParameterUpdateQueue.i
+
+# target to preprocess a source file
+src/ui/ParameterUpdateQueue.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/ParameterUpdateQueue.cpp.i
+.PHONY : src/ui/ParameterUpdateQueue.cpp.i
+
+src/ui/ParameterUpdateQueue.s: src/ui/ParameterUpdateQueue.cpp.s
+.PHONY : src/ui/ParameterUpdateQueue.s
+
+# target to generate assembly for a file
+src/ui/ParameterUpdateQueue.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/ParameterUpdateQueue.cpp.s
+.PHONY : src/ui/ParameterUpdateQueue.cpp.s
+
+src/ui/PresetBrowserUIComponent.o: src/ui/PresetBrowserUIComponent.cpp.o
+.PHONY : src/ui/PresetBrowserUIComponent.o
+
+# target to build an object file
+src/ui/PresetBrowserUIComponent.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/PresetBrowserUIComponent.cpp.o
+.PHONY : src/ui/PresetBrowserUIComponent.cpp.o
+
+src/ui/PresetBrowserUIComponent.i: src/ui/PresetBrowserUIComponent.cpp.i
+.PHONY : src/ui/PresetBrowserUIComponent.i
+
+# target to preprocess a source file
+src/ui/PresetBrowserUIComponent.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/PresetBrowserUIComponent.cpp.i
+.PHONY : src/ui/PresetBrowserUIComponent.cpp.i
+
+src/ui/PresetBrowserUIComponent.s: src/ui/PresetBrowserUIComponent.cpp.s
+.PHONY : src/ui/PresetBrowserUIComponent.s
+
+# target to generate assembly for a file
+src/ui/PresetBrowserUIComponent.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/PresetBrowserUIComponent.cpp.s
+.PHONY : src/ui/PresetBrowserUIComponent.cpp.s
+
+src/ui/SmoothParameter.o: src/ui/SmoothParameter.cpp.o
+.PHONY : src/ui/SmoothParameter.o
+
+# target to build an object file
+src/ui/SmoothParameter.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/SmoothParameter.cpp.o
+.PHONY : src/ui/SmoothParameter.cpp.o
+
+src/ui/SmoothParameter.i: src/ui/SmoothParameter.cpp.i
+.PHONY : src/ui/SmoothParameter.i
+
+# target to preprocess a source file
+src/ui/SmoothParameter.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/SmoothParameter.cpp.i
+.PHONY : src/ui/SmoothParameter.cpp.i
+
+src/ui/SmoothParameter.s: src/ui/SmoothParameter.cpp.s
+.PHONY : src/ui/SmoothParameter.s
+
+# target to generate assembly for a file
+src/ui/SmoothParameter.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/SmoothParameter.cpp.s
+.PHONY : src/ui/SmoothParameter.cpp.s
+
+src/ui/SynthKnob.o: src/ui/SynthKnob.cpp.o
+.PHONY : src/ui/SynthKnob.o
+
+# target to build an object file
+src/ui/SynthKnob.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/SynthKnob.cpp.o
+.PHONY : src/ui/SynthKnob.cpp.o
+
+src/ui/SynthKnob.i: src/ui/SynthKnob.cpp.i
+.PHONY : src/ui/SynthKnob.i
+
+# target to preprocess a source file
+src/ui/SynthKnob.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/SynthKnob.cpp.i
+.PHONY : src/ui/SynthKnob.cpp.i
+
+src/ui/SynthKnob.s: src/ui/SynthKnob.cpp.s
+.PHONY : src/ui/SynthKnob.s
+
+# target to generate assembly for a file
+src/ui/SynthKnob.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/SynthKnob.cpp.s
+.PHONY : src/ui/SynthKnob.cpp.s
+
+src/ui/UIComponents.o: src/ui/UIComponents.cpp.o
+.PHONY : src/ui/UIComponents.o
+
+# target to build an object file
+src/ui/UIComponents.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/UIComponents.cpp.o
+.PHONY : src/ui/UIComponents.cpp.o
+
+src/ui/UIComponents.i: src/ui/UIComponents.cpp.i
+.PHONY : src/ui/UIComponents.i
+
+# target to preprocess a source file
+src/ui/UIComponents.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/UIComponents.cpp.i
+.PHONY : src/ui/UIComponents.cpp.i
+
+src/ui/UIComponents.s: src/ui/UIComponents.cpp.s
+.PHONY : src/ui/UIComponents.s
+
+# target to generate assembly for a file
+src/ui/UIComponents.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/UIComponents.cpp.s
+.PHONY : src/ui/UIComponents.cpp.s
+
+src/ui/UIContext.o: src/ui/UIContext.cpp.o
+.PHONY : src/ui/UIContext.o
+
+# target to build an object file
+src/ui/UIContext.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/UIContext.cpp.o
+.PHONY : src/ui/UIContext.cpp.o
+
+src/ui/UIContext.i: src/ui/UIContext.cpp.i
+.PHONY : src/ui/UIContext.i
+
+# target to preprocess a source file
+src/ui/UIContext.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/UIContext.cpp.i
+.PHONY : src/ui/UIContext.cpp.i
+
+src/ui/UIContext.s: src/ui/UIContext.cpp.s
+.PHONY : src/ui/UIContext.s
+
+# target to generate assembly for a file
+src/ui/UIContext.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/UIContext.cpp.s
+.PHONY : src/ui/UIContext.cpp.s
+
+src/ui/UserInterface.o: src/ui/UserInterface.cpp.o
+.PHONY : src/ui/UserInterface.o
+
+# target to build an object file
+src/ui/UserInterface.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/UserInterface.cpp.o
+.PHONY : src/ui/UserInterface.cpp.o
+
+src/ui/UserInterface.i: src/ui/UserInterface.cpp.i
+.PHONY : src/ui/UserInterface.i
+
+# target to preprocess a source file
+src/ui/UserInterface.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/UserInterface.cpp.i
+.PHONY : src/ui/UserInterface.cpp.i
+
+src/ui/UserInterface.s: src/ui/UserInterface.cpp.s
+.PHONY : src/ui/UserInterface.s
+
+# target to generate assembly for a file
+src/ui/UserInterface.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/UserInterface.cpp.s
+.PHONY : src/ui/UserInterface.cpp.s
+
+src/ui/VisualizationComponents.o: src/ui/VisualizationComponents.cpp.o
+.PHONY : src/ui/VisualizationComponents.o
+
+# target to build an object file
+src/ui/VisualizationComponents.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/VisualizationComponents.cpp.o
+.PHONY : src/ui/VisualizationComponents.cpp.o
+
+src/ui/VisualizationComponents.i: src/ui/VisualizationComponents.cpp.i
+.PHONY : src/ui/VisualizationComponents.i
+
+# target to preprocess a source file
+src/ui/VisualizationComponents.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/VisualizationComponents.cpp.i
+.PHONY : src/ui/VisualizationComponents.cpp.i
+
+src/ui/VisualizationComponents.s: src/ui/VisualizationComponents.cpp.s
+.PHONY : src/ui/VisualizationComponents.s
+
+# target to generate assembly for a file
+src/ui/VisualizationComponents.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/VisualizationComponents.cpp.s
+.PHONY : src/ui/VisualizationComponents.cpp.s
 
 src/ui/parameters/ParameterManager.o: src/ui/parameters/ParameterManager.cpp.o
 .PHONY : src/ui/parameters/ParameterManager.o
@@ -2299,15 +3005,23 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... AIMusicCore"
+	@echo "... AIMusicHardwareImproved"
+	@echo "... AIMusicHardwareIntegrated"
 	@echo "... AdvancedFilterDemo"
+	@echo "... AudioEngineStressTest"
 	@echo "... ComprehensiveMQTTTest"
+	@echo "... ComprehensiveUITest"
 	@echo "... EnhancedPresetDatabaseTest"
+	@echo "... EnhancedUIIntegrationTest"
 	@echo "... IoTConfigManagerDemo"
 	@echo "... IoTEventIntegrationTest"
 	@echo "... IoTParameterDemo"
 	@echo "... IoTParameterIntegrationTest"
+	@echo "... MidiCCLearningTest"
+	@echo "... MidiKeyboardTest"
 	@echo "... MultiTimbralDemo"
 	@echo "... OscillatorStackDemo"
+	@echo "... ParameterSmoothingTestSimple"
 	@echo "... Phase3SmartFeaturesDemo"
 	@echo "... PresetBrowserUIDemo"
 	@echo "... PresetLib"
@@ -2317,19 +3031,30 @@ help:
 	@echo "... SimpleMQTTInterfaceTest"
 	@echo "... SimpleMQTTTest"
 	@echo "... SimplePresetManagerDemo"
+	@echo "... SimpleUIDemo"
 	@echo "... SynchronizedSequencerDemo"
 	@echo "... TestAudio"
 	@echo "... TestMQTTIntegration"
 	@echo "... TestMpeVoiceManager"
+	@echo "... TestUI"
 	@echo "... examples/AdvancedFilterDemo.o"
 	@echo "... examples/AdvancedFilterDemo.i"
 	@echo "... examples/AdvancedFilterDemo.s"
+	@echo "... examples/AudioEngineStressTest.o"
+	@echo "... examples/AudioEngineStressTest.i"
+	@echo "... examples/AudioEngineStressTest.s"
 	@echo "... examples/ComprehensiveMQTTTest.o"
 	@echo "... examples/ComprehensiveMQTTTest.i"
 	@echo "... examples/ComprehensiveMQTTTest.s"
+	@echo "... examples/ComprehensiveUITest.o"
+	@echo "... examples/ComprehensiveUITest.i"
+	@echo "... examples/ComprehensiveUITest.s"
 	@echo "... examples/EnhancedPresetDatabaseTest.o"
 	@echo "... examples/EnhancedPresetDatabaseTest.i"
 	@echo "... examples/EnhancedPresetDatabaseTest.s"
+	@echo "... examples/EnhancedUIIntegrationTest.o"
+	@echo "... examples/EnhancedUIIntegrationTest.i"
+	@echo "... examples/EnhancedUIIntegrationTest.s"
 	@echo "... examples/IoTConfigManagerDemo.o"
 	@echo "... examples/IoTConfigManagerDemo.i"
 	@echo "... examples/IoTConfigManagerDemo.s"
@@ -2342,12 +3067,21 @@ help:
 	@echo "... examples/IoTParameterIntegrationTest.o"
 	@echo "... examples/IoTParameterIntegrationTest.i"
 	@echo "... examples/IoTParameterIntegrationTest.s"
+	@echo "... examples/MidiCCLearningTest.o"
+	@echo "... examples/MidiCCLearningTest.i"
+	@echo "... examples/MidiCCLearningTest.s"
+	@echo "... examples/MidiKeyboardTest.o"
+	@echo "... examples/MidiKeyboardTest.i"
+	@echo "... examples/MidiKeyboardTest.s"
 	@echo "... examples/MultiTimbralDemo.o"
 	@echo "... examples/MultiTimbralDemo.i"
 	@echo "... examples/MultiTimbralDemo.s"
 	@echo "... examples/OscillatorStackDemo.o"
 	@echo "... examples/OscillatorStackDemo.i"
 	@echo "... examples/OscillatorStackDemo.s"
+	@echo "... examples/ParameterSmoothingTestSimple.o"
+	@echo "... examples/ParameterSmoothingTestSimple.i"
+	@echo "... examples/ParameterSmoothingTestSimple.s"
 	@echo "... examples/Phase3SmartFeaturesDemo.o"
 	@echo "... examples/Phase3SmartFeaturesDemo.i"
 	@echo "... examples/Phase3SmartFeaturesDemo.s"
@@ -2372,6 +3106,9 @@ help:
 	@echo "... examples/SimplePresetManagerDemo.o"
 	@echo "... examples/SimplePresetManagerDemo.i"
 	@echo "... examples/SimplePresetManagerDemo.s"
+	@echo "... examples/SimpleUIDemo.o"
+	@echo "... examples/SimpleUIDemo.i"
+	@echo "... examples/SimpleUIDemo.s"
 	@echo "... examples/SynchronizedSequencerDemo.o"
 	@echo "... examples/SynchronizedSequencerDemo.i"
 	@echo "... examples/SynchronizedSequencerDemo.s"
@@ -2384,6 +3121,9 @@ help:
 	@echo "... examples/TestMpeVoiceManager.o"
 	@echo "... examples/TestMpeVoiceManager.i"
 	@echo "... examples/TestMpeVoiceManager.s"
+	@echo "... examples/TestUI.o"
+	@echo "... examples/TestUI.i"
+	@echo "... examples/TestUI.s"
 	@echo "... src/ai/PresetMLAnalyzer.o"
 	@echo "... src/ai/PresetMLAnalyzer.i"
 	@echo "... src/ai/PresetMLAnalyzer.s"
@@ -2396,6 +3136,9 @@ help:
 	@echo "... src/audio/AudioEngine.o"
 	@echo "... src/audio/AudioEngine.i"
 	@echo "... src/audio/AudioEngine.s"
+	@echo "... src/audio/AudioErrorHandler.o"
+	@echo "... src/audio/AudioErrorHandler.i"
+	@echo "... src/audio/AudioErrorHandler.s"
 	@echo "... src/audio/Synthesizer.o"
 	@echo "... src/audio/Synthesizer.i"
 	@echo "... src/audio/Synthesizer.s"
@@ -2477,6 +3220,15 @@ help:
 	@echo "... src/iot/MQTTInterface.o"
 	@echo "... src/iot/MQTTInterface.i"
 	@echo "... src/iot/MQTTInterface.s"
+	@echo "... src/main_integrated_improved.o"
+	@echo "... src/main_integrated_improved.i"
+	@echo "... src/main_integrated_improved.s"
+	@echo "... src/main_integrated_simple.o"
+	@echo "... src/main_integrated_simple.i"
+	@echo "... src/main_integrated_simple.s"
+	@echo "... src/midi/MidiCCLearning.o"
+	@echo "... src/midi/MidiCCLearning.i"
+	@echo "... src/midi/MidiCCLearning.s"
 	@echo "... src/midi/MidiInterface.o"
 	@echo "... src/midi/MidiInterface.i"
 	@echo "... src/midi/MidiInterface.s"
@@ -2537,9 +3289,45 @@ help:
 	@echo "... src/synthesis/wavetable/wavetable.o"
 	@echo "... src/synthesis/wavetable/wavetable.i"
 	@echo "... src/synthesis/wavetable/wavetable.s"
+	@echo "... src/ui/DisplayManager.o"
+	@echo "... src/ui/DisplayManager.i"
+	@echo "... src/ui/DisplayManager.s"
+	@echo "... src/ui/Font.o"
+	@echo "... src/ui/Font.i"
+	@echo "... src/ui/Font.s"
+	@echo "... src/ui/MidiKeyboard.o"
+	@echo "... src/ui/MidiKeyboard.i"
+	@echo "... src/ui/MidiKeyboard.s"
+	@echo "... src/ui/ParameterBridge.o"
+	@echo "... src/ui/ParameterBridge.i"
+	@echo "... src/ui/ParameterBridge.s"
 	@echo "... src/ui/ParameterManager.o"
 	@echo "... src/ui/ParameterManager.i"
 	@echo "... src/ui/ParameterManager.s"
+	@echo "... src/ui/ParameterUpdateQueue.o"
+	@echo "... src/ui/ParameterUpdateQueue.i"
+	@echo "... src/ui/ParameterUpdateQueue.s"
+	@echo "... src/ui/PresetBrowserUIComponent.o"
+	@echo "... src/ui/PresetBrowserUIComponent.i"
+	@echo "... src/ui/PresetBrowserUIComponent.s"
+	@echo "... src/ui/SmoothParameter.o"
+	@echo "... src/ui/SmoothParameter.i"
+	@echo "... src/ui/SmoothParameter.s"
+	@echo "... src/ui/SynthKnob.o"
+	@echo "... src/ui/SynthKnob.i"
+	@echo "... src/ui/SynthKnob.s"
+	@echo "... src/ui/UIComponents.o"
+	@echo "... src/ui/UIComponents.i"
+	@echo "... src/ui/UIComponents.s"
+	@echo "... src/ui/UIContext.o"
+	@echo "... src/ui/UIContext.i"
+	@echo "... src/ui/UIContext.s"
+	@echo "... src/ui/UserInterface.o"
+	@echo "... src/ui/UserInterface.i"
+	@echo "... src/ui/UserInterface.s"
+	@echo "... src/ui/VisualizationComponents.o"
+	@echo "... src/ui/VisualizationComponents.i"
+	@echo "... src/ui/VisualizationComponents.s"
 	@echo "... src/ui/parameters/ParameterManager.o"
 	@echo "... src/ui/parameters/ParameterManager.i"
 	@echo "... src/ui/parameters/ParameterManager.s"

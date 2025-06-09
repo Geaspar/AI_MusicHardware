@@ -744,6 +744,7 @@ CMakeFiles/AIMusicCore.dir/src/sequencer/AdaptiveSequencer.cpp.o: \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/cerrno \
   /Users/geaspar/AIMusicHardware/src/sequencer/../../include/sequencer/Sequencer.h \
   /Users/geaspar/AIMusicHardware/src/sequencer/../../include/sequencer/../audio/AudioEngine.h \
+  /Users/geaspar/AIMusicHardware/src/sequencer/../../include/sequencer/../audio/AudioErrorHandler.h \
   /Users/geaspar/AIMusicHardware/src/sequencer/../../include/sequencer/../audio/Synthesizer.h \
   /Users/geaspar/AIMusicHardware/src/sequencer/../../include/sequencer/../audio/../sequencer/Sequencer.h \
   /Users/geaspar/AIMusicHardware/src/sequencer/../../include/sequencer/../audio/../synthesis/framework/processor.h \
