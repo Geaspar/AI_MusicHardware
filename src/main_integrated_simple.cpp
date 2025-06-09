@@ -666,9 +666,9 @@ int main(int argc, char* argv[]) {
     MidiKeyboard* midiKeyboardPtr = midiKeyboard.get();
     mainScreen->addChild(std::move(midiKeyboard));
     
-    // Add octave control buttons
+    // Add octave control buttons (positioned after keyboard ends)
     auto octaveDownButton = std::make_unique<Button>("octave_down", "OCT-");
-    octaveDownButton->setPosition(650, 460);
+    octaveDownButton->setPosition(50, 610);
     octaveDownButton->setSize(60, 30);
     octaveDownButton->setBackgroundColor(Color(80, 80, 100));
     octaveDownButton->setTextColor(Color(255, 255, 255));
@@ -681,7 +681,7 @@ int main(int argc, char* argv[]) {
     mainScreen->addChild(std::move(octaveDownButton));
     
     auto octaveUpButton = std::make_unique<Button>("octave_up", "OCT+");
-    octaveUpButton->setPosition(720, 460);
+    octaveUpButton->setPosition(120, 610);
     octaveUpButton->setSize(60, 30);
     octaveUpButton->setBackgroundColor(Color(80, 80, 100));
     octaveUpButton->setTextColor(Color(255, 255, 255));
@@ -695,7 +695,7 @@ int main(int argc, char* argv[]) {
     
     // Add velocity mode button
     auto velocityModeButton = std::make_unique<Button>("velocity_mode", "VEL: VAR");
-    velocityModeButton->setPosition(650, 500);
+    velocityModeButton->setPosition(190, 610);
     velocityModeButton->setSize(130, 30);
     velocityModeButton->setBackgroundColor(Color(60, 100, 60));
     velocityModeButton->setTextColor(Color(255, 255, 255));
@@ -725,7 +725,7 @@ int main(int argc, char* argv[]) {
     
     // Create preset browser section (moved down to make room for keyboard)
     auto presetSection = std::make_unique<Label>("preset_section", "PRESET BROWSER");
-    presetSection->setPosition(50, 620);
+    presetSection->setPosition(50, 650);
     presetSection->setTextColor(Color(150, 255, 150)); // Bright light green for visibility
     mainScreen->addChild(std::move(presetSection));
     
@@ -803,8 +803,8 @@ int main(int argc, char* argv[]) {
     }
     
     auto presetBrowser = std::make_unique<PresetBrowserUI>("preset_browser");
-    presetBrowser->setPosition(50, 650);
-    presetBrowser->setSize(500, 120);
+    presetBrowser->setPosition(50, 680);
+    presetBrowser->setSize(500, 90);
     presetBrowser->initialize(presetManager.get(), presetDatabase.get());
     presetBrowser->setParameterManager(&paramManager);
     
