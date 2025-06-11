@@ -195,6 +195,19 @@ TestAudio/fast:
 .PHONY : TestAudio/fast
 
 #=============================================================================
+# Target rules for targets named TestEffectControls
+
+# Build rule for target.
+TestEffectControls: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 TestEffectControls
+.PHONY : TestEffectControls
+
+# fast build rule for target.
+TestEffectControls/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestEffectControls.dir/build.make CMakeFiles/TestEffectControls.dir/build
+.PHONY : TestEffectControls/fast
+
+#=============================================================================
 # Target rules for targets named OscillatorStackDemo
 
 # Build rule for target.
@@ -533,6 +546,32 @@ AIMusicHardwareGrid/fast:
 .PHONY : AIMusicHardwareGrid/fast
 
 #=============================================================================
+# Target rules for targets named AIMusicHardware
+
+# Build rule for target.
+AIMusicHardware: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 AIMusicHardware
+.PHONY : AIMusicHardware
+
+# fast build rule for target.
+AIMusicHardware/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicHardware.dir/build.make CMakeFiles/AIMusicHardware.dir/build
+.PHONY : AIMusicHardware/fast
+
+#=============================================================================
+# Target rules for targets named AIMusicHardwareEnhanced
+
+# Build rule for target.
+AIMusicHardwareEnhanced: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 AIMusicHardwareEnhanced
+.PHONY : AIMusicHardwareEnhanced
+
+# fast build rule for target.
+AIMusicHardwareEnhanced/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicHardwareEnhanced.dir/build.make CMakeFiles/AIMusicHardwareEnhanced.dir/build
+.PHONY : AIMusicHardwareEnhanced/fast
+
+#=============================================================================
 # Target rules for targets named ParameterSmoothingTestSimple
 
 # Build rule for target.
@@ -557,6 +596,19 @@ SimpleUIDemo: cmake_check_build_system
 SimpleUIDemo/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/SimpleUIDemo.dir/build.make CMakeFiles/SimpleUIDemo.dir/build
 .PHONY : SimpleUIDemo/fast
+
+#=============================================================================
+# Target rules for targets named GridEnhancementsDemo
+
+# Build rule for target.
+GridEnhancementsDemo: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 GridEnhancementsDemo
+.PHONY : GridEnhancementsDemo
+
+# fast build rule for target.
+GridEnhancementsDemo/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/GridEnhancementsDemo.dir/build.make CMakeFiles/GridEnhancementsDemo.dir/build
+.PHONY : GridEnhancementsDemo/fast
 
 examples/AdvancedFilterDemo.o: examples/AdvancedFilterDemo.cpp.o
 .PHONY : examples/AdvancedFilterDemo.o
@@ -701,6 +753,30 @@ examples/EnhancedUIIntegrationTest.s: examples/EnhancedUIIntegrationTest.cpp.s
 examples/EnhancedUIIntegrationTest.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/EnhancedUIIntegrationTest.dir/build.make CMakeFiles/EnhancedUIIntegrationTest.dir/examples/EnhancedUIIntegrationTest.cpp.s
 .PHONY : examples/EnhancedUIIntegrationTest.cpp.s
+
+examples/GridEnhancementsDemo.o: examples/GridEnhancementsDemo.cpp.o
+.PHONY : examples/GridEnhancementsDemo.o
+
+# target to build an object file
+examples/GridEnhancementsDemo.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/GridEnhancementsDemo.dir/build.make CMakeFiles/GridEnhancementsDemo.dir/examples/GridEnhancementsDemo.cpp.o
+.PHONY : examples/GridEnhancementsDemo.cpp.o
+
+examples/GridEnhancementsDemo.i: examples/GridEnhancementsDemo.cpp.i
+.PHONY : examples/GridEnhancementsDemo.i
+
+# target to preprocess a source file
+examples/GridEnhancementsDemo.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/GridEnhancementsDemo.dir/build.make CMakeFiles/GridEnhancementsDemo.dir/examples/GridEnhancementsDemo.cpp.i
+.PHONY : examples/GridEnhancementsDemo.cpp.i
+
+examples/GridEnhancementsDemo.s: examples/GridEnhancementsDemo.cpp.s
+.PHONY : examples/GridEnhancementsDemo.s
+
+# target to generate assembly for a file
+examples/GridEnhancementsDemo.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/GridEnhancementsDemo.dir/build.make CMakeFiles/GridEnhancementsDemo.dir/examples/GridEnhancementsDemo.cpp.s
+.PHONY : examples/GridEnhancementsDemo.cpp.s
 
 examples/IoTConfigManagerDemo.o: examples/IoTConfigManagerDemo.cpp.o
 .PHONY : examples/IoTConfigManagerDemo.o
@@ -1181,6 +1257,30 @@ examples/TestAudio.s: examples/TestAudio.cpp.s
 examples/TestAudio.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestAudio.dir/build.make CMakeFiles/TestAudio.dir/examples/TestAudio.cpp.s
 .PHONY : examples/TestAudio.cpp.s
+
+examples/TestEffectControls.o: examples/TestEffectControls.cpp.o
+.PHONY : examples/TestEffectControls.o
+
+# target to build an object file
+examples/TestEffectControls.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestEffectControls.dir/build.make CMakeFiles/TestEffectControls.dir/examples/TestEffectControls.cpp.o
+.PHONY : examples/TestEffectControls.cpp.o
+
+examples/TestEffectControls.i: examples/TestEffectControls.cpp.i
+.PHONY : examples/TestEffectControls.i
+
+# target to preprocess a source file
+examples/TestEffectControls.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestEffectControls.dir/build.make CMakeFiles/TestEffectControls.dir/examples/TestEffectControls.cpp.i
+.PHONY : examples/TestEffectControls.cpp.i
+
+examples/TestEffectControls.s: examples/TestEffectControls.cpp.s
+.PHONY : examples/TestEffectControls.s
+
+# target to generate assembly for a file
+examples/TestEffectControls.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestEffectControls.dir/build.make CMakeFiles/TestEffectControls.dir/examples/TestEffectControls.cpp.s
+.PHONY : examples/TestEffectControls.cpp.s
 
 examples/TestMQTTIntegration.o: examples/TestMQTTIntegration.cpp.o
 .PHONY : examples/TestMQTTIntegration.o
@@ -2022,6 +2122,54 @@ src/iot/MQTTInterface.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/iot/MQTTInterface.cpp.s
 .PHONY : src/iot/MQTTInterface.cpp.s
 
+src/main.o: src/main.cpp.o
+.PHONY : src/main.o
+
+# target to build an object file
+src/main.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicHardware.dir/build.make CMakeFiles/AIMusicHardware.dir/src/main.cpp.o
+.PHONY : src/main.cpp.o
+
+src/main.i: src/main.cpp.i
+.PHONY : src/main.i
+
+# target to preprocess a source file
+src/main.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicHardware.dir/build.make CMakeFiles/AIMusicHardware.dir/src/main.cpp.i
+.PHONY : src/main.cpp.i
+
+src/main.s: src/main.cpp.s
+.PHONY : src/main.s
+
+# target to generate assembly for a file
+src/main.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicHardware.dir/build.make CMakeFiles/AIMusicHardware.dir/src/main.cpp.s
+.PHONY : src/main.cpp.s
+
+src/main_grid_enhanced.o: src/main_grid_enhanced.cpp.o
+.PHONY : src/main_grid_enhanced.o
+
+# target to build an object file
+src/main_grid_enhanced.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicHardwareEnhanced.dir/build.make CMakeFiles/AIMusicHardwareEnhanced.dir/src/main_grid_enhanced.cpp.o
+.PHONY : src/main_grid_enhanced.cpp.o
+
+src/main_grid_enhanced.i: src/main_grid_enhanced.cpp.i
+.PHONY : src/main_grid_enhanced.i
+
+# target to preprocess a source file
+src/main_grid_enhanced.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicHardwareEnhanced.dir/build.make CMakeFiles/AIMusicHardwareEnhanced.dir/src/main_grid_enhanced.cpp.i
+.PHONY : src/main_grid_enhanced.cpp.i
+
+src/main_grid_enhanced.s: src/main_grid_enhanced.cpp.s
+.PHONY : src/main_grid_enhanced.s
+
+# target to generate assembly for a file
+src/main_grid_enhanced.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicHardwareEnhanced.dir/build.make CMakeFiles/AIMusicHardwareEnhanced.dir/src/main_grid_enhanced.cpp.s
+.PHONY : src/main_grid_enhanced.cpp.s
+
 src/main_grid_layout.o: src/main_grid_layout.cpp.o
 .PHONY : src/main_grid_layout.o
 
@@ -2622,6 +2770,54 @@ src/ui/DisplayManager.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/DisplayManager.cpp.s
 .PHONY : src/ui/DisplayManager.cpp.s
 
+src/ui/DropdownMenu.o: src/ui/DropdownMenu.cpp.o
+.PHONY : src/ui/DropdownMenu.o
+
+# target to build an object file
+src/ui/DropdownMenu.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/DropdownMenu.cpp.o
+.PHONY : src/ui/DropdownMenu.cpp.o
+
+src/ui/DropdownMenu.i: src/ui/DropdownMenu.cpp.i
+.PHONY : src/ui/DropdownMenu.i
+
+# target to preprocess a source file
+src/ui/DropdownMenu.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/DropdownMenu.cpp.i
+.PHONY : src/ui/DropdownMenu.cpp.i
+
+src/ui/DropdownMenu.s: src/ui/DropdownMenu.cpp.s
+.PHONY : src/ui/DropdownMenu.s
+
+# target to generate assembly for a file
+src/ui/DropdownMenu.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/DropdownMenu.cpp.s
+.PHONY : src/ui/DropdownMenu.cpp.s
+
+src/ui/FilterVisualizer.o: src/ui/FilterVisualizer.cpp.o
+.PHONY : src/ui/FilterVisualizer.o
+
+# target to build an object file
+src/ui/FilterVisualizer.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/FilterVisualizer.cpp.o
+.PHONY : src/ui/FilterVisualizer.cpp.o
+
+src/ui/FilterVisualizer.i: src/ui/FilterVisualizer.cpp.i
+.PHONY : src/ui/FilterVisualizer.i
+
+# target to preprocess a source file
+src/ui/FilterVisualizer.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/FilterVisualizer.cpp.i
+.PHONY : src/ui/FilterVisualizer.cpp.i
+
+src/ui/FilterVisualizer.s: src/ui/FilterVisualizer.cpp.s
+.PHONY : src/ui/FilterVisualizer.s
+
+# target to generate assembly for a file
+src/ui/FilterVisualizer.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/ui/FilterVisualizer.cpp.s
+.PHONY : src/ui/FilterVisualizer.cpp.s
+
 src/ui/Font.o: src/ui/Font.cpp.o
 .PHONY : src/ui/Font.o
 
@@ -3066,6 +3262,8 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... AIMusicCore"
+	@echo "... AIMusicHardware"
+	@echo "... AIMusicHardwareEnhanced"
 	@echo "... AIMusicHardwareGrid"
 	@echo "... AIMusicHardwareImproved"
 	@echo "... AIMusicHardwareIntegrated"
@@ -3075,6 +3273,7 @@ help:
 	@echo "... ComprehensiveUITest"
 	@echo "... EnhancedPresetDatabaseTest"
 	@echo "... EnhancedUIIntegrationTest"
+	@echo "... GridEnhancementsDemo"
 	@echo "... IoTConfigManagerDemo"
 	@echo "... IoTEventIntegrationTest"
 	@echo "... IoTParameterDemo"
@@ -3096,6 +3295,7 @@ help:
 	@echo "... SimpleUIDemo"
 	@echo "... SynchronizedSequencerDemo"
 	@echo "... TestAudio"
+	@echo "... TestEffectControls"
 	@echo "... TestMQTTIntegration"
 	@echo "... TestMpeVoiceManager"
 	@echo "... TestUI"
@@ -3117,6 +3317,9 @@ help:
 	@echo "... examples/EnhancedUIIntegrationTest.o"
 	@echo "... examples/EnhancedUIIntegrationTest.i"
 	@echo "... examples/EnhancedUIIntegrationTest.s"
+	@echo "... examples/GridEnhancementsDemo.o"
+	@echo "... examples/GridEnhancementsDemo.i"
+	@echo "... examples/GridEnhancementsDemo.s"
 	@echo "... examples/IoTConfigManagerDemo.o"
 	@echo "... examples/IoTConfigManagerDemo.i"
 	@echo "... examples/IoTConfigManagerDemo.s"
@@ -3177,6 +3380,9 @@ help:
 	@echo "... examples/TestAudio.o"
 	@echo "... examples/TestAudio.i"
 	@echo "... examples/TestAudio.s"
+	@echo "... examples/TestEffectControls.o"
+	@echo "... examples/TestEffectControls.i"
+	@echo "... examples/TestEffectControls.s"
 	@echo "... examples/TestMQTTIntegration.o"
 	@echo "... examples/TestMQTTIntegration.i"
 	@echo "... examples/TestMQTTIntegration.s"
@@ -3282,6 +3488,12 @@ help:
 	@echo "... src/iot/MQTTInterface.o"
 	@echo "... src/iot/MQTTInterface.i"
 	@echo "... src/iot/MQTTInterface.s"
+	@echo "... src/main.o"
+	@echo "... src/main.i"
+	@echo "... src/main.s"
+	@echo "... src/main_grid_enhanced.o"
+	@echo "... src/main_grid_enhanced.i"
+	@echo "... src/main_grid_enhanced.s"
 	@echo "... src/main_grid_layout.o"
 	@echo "... src/main_grid_layout.i"
 	@echo "... src/main_grid_layout.s"
@@ -3357,6 +3569,12 @@ help:
 	@echo "... src/ui/DisplayManager.o"
 	@echo "... src/ui/DisplayManager.i"
 	@echo "... src/ui/DisplayManager.s"
+	@echo "... src/ui/DropdownMenu.o"
+	@echo "... src/ui/DropdownMenu.i"
+	@echo "... src/ui/DropdownMenu.s"
+	@echo "... src/ui/FilterVisualizer.o"
+	@echo "... src/ui/FilterVisualizer.i"
+	@echo "... src/ui/FilterVisualizer.s"
 	@echo "... src/ui/Font.o"
 	@echo "... src/ui/Font.i"
 	@echo "... src/ui/Font.s"

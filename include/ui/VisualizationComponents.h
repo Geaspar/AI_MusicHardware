@@ -282,6 +282,98 @@ private:
 };
 
 /**
+ * @brief Filter frequency response visualizer (Vital-style)
+ * 
+ * Displays the frequency response curve of a filter with
+ * interactive cutoff and resonance control
+ */
+class FilterVisualizer : public UIComponent {
+public:
+    enum class FilterType {
+        LowPass,
+        HighPass,
+        BandPass,
+        Notch
+    };
+    
+    FilterVisualizer(const std::string& id);
+    
+    /**
+     * @brief Set filter parameters
+     */
+    void setFilterType(FilterType type) { filterType_ = type; }
+    void setCutoffFrequency(float freq) { cutoffFreq_ = freq; }
+    void setResonance(float res) { resonance_ = res; }
+    void setSampleRate(float rate) { sampleRate_ = rate; }
+    
+    /**
+     * @brief Visual settings
+     */
+    void setCurveColor(const Color& color) { curveColor_ = color; }
+    void setFillColor(const Color& color) { fillColor_ = color; }
+    void setGridColor(const Color& color) { gridColor_ = color; }
+    void setBackgroundColor(const Color& color) { backgroundColor_ = color; }
+    void showGrid(bool show) { showGrid_ = show; }
+    void showFill(bool show) { showFill_ = show; }
+    void setLineThickness(int thickness) { lineThickness_ = thickness; }
+    
+    /**
+     * @brief Enable interactive editing
+     */
+    void setEditable(bool editable) { isEditable_ = editable; }
+    
+    void update(float deltaTime) override;
+    void render(DisplayManager* display) override;
+    bool handleInput(const InputEvent& event) override;
+    
+    /**
+     * @brief Callback when filter parameters change
+     */
+    using ParameterChangeCallback = std::function<void(float cutoff, float resonance)>;
+    void setParameterChangeCallback(ParameterChangeCallback callback) { parameterChangeCallback_ = callback; }
+    
+private:
+    // Filter parameters
+    FilterType filterType_ = FilterType::LowPass;
+    float cutoffFreq_ = 1000.0f;
+    float resonance_ = 0.7f;
+    float sampleRate_ = 44100.0f;
+    
+    // Visual settings
+    Color curveColor_{100, 200, 255};
+    Color fillColor_{100, 200, 255, 50};
+    Color gridColor_{40, 40, 40};
+    Color backgroundColor_{20, 20, 20};
+    bool showGrid_ = true;
+    bool showFill_ = true;
+    int lineThickness_ = 2;
+    
+    // Interaction
+    bool isEditable_ = false;
+    bool isDragging_ = false;
+    Point dragStart_;
+    float dragStartCutoff_;
+    float dragStartResonance_;
+    
+    ParameterChangeCallback parameterChangeCallback_;
+    
+    // Frequency response calculation
+    static constexpr int NUM_POINTS = 128;
+    std::vector<float> frequencyResponse_;
+    
+    // Helper methods
+    void calculateFrequencyResponse();
+    float calculateMagnitudeResponse(float frequency);
+    void drawGrid(DisplayManager* display);
+    void drawFrequencyResponse(DisplayManager* display);
+    void drawCutoffMarker(DisplayManager* display);
+    float frequencyToX(float freq) const;
+    float xToFrequency(int x) const;
+    float magnitudeToY(float mag) const;
+    float yToMagnitude(int y) const;
+};
+
+/**
  * @brief Level meter with peak hold
  */
 class LevelMeter : public UIComponent {

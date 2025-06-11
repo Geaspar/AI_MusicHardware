@@ -4,6 +4,7 @@
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/MultiTimbralDemo.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/TestMpeVoiceManager.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/TestAudio.dir
+/Users/geaspar/AIMusicHardware/build/CMakeFiles/TestEffectControls.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/OscillatorStackDemo.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/AdvancedFilterDemo.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/SynchronizedSequencerDemo.dir
@@ -30,7 +31,10 @@
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/AIMusicHardwareIntegrated.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/AIMusicHardwareImproved.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/AIMusicHardwareGrid.dir
+/Users/geaspar/AIMusicHardware/build/CMakeFiles/AIMusicHardware.dir
+/Users/geaspar/AIMusicHardware/build/CMakeFiles/AIMusicHardwareEnhanced.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/ParameterSmoothingTestSimple.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/SimpleUIDemo.dir
+/Users/geaspar/AIMusicHardware/build/CMakeFiles/GridEnhancementsDemo.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/edit_cache.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/rebuild_cache.dir

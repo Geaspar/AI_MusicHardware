@@ -62,6 +62,8 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/Users/geaspar/AIMusicHardware/src/synthesis/wavetable/oscillator_stack.cpp" "CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/oscillator_stack.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/oscillator_stack.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/synthesis/wavetable/wavetable.cpp" "CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/wavetable.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/ui/DisplayManager.cpp" "CMakeFiles/AIMusicCore.dir/src/ui/DisplayManager.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/ui/DisplayManager.cpp.o.d"
+  "/Users/geaspar/AIMusicHardware/src/ui/DropdownMenu.cpp" "CMakeFiles/AIMusicCore.dir/src/ui/DropdownMenu.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/ui/DropdownMenu.cpp.o.d"
+  "/Users/geaspar/AIMusicHardware/src/ui/FilterVisualizer.cpp" "CMakeFiles/AIMusicCore.dir/src/ui/FilterVisualizer.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/ui/FilterVisualizer.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/ui/Font.cpp" "CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/ui/Font.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/ui/GridLayout.cpp" "CMakeFiles/AIMusicCore.dir/src/ui/GridLayout.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/ui/GridLayout.cpp.o.d"
   "/Users/geaspar/AIMusicHardware/src/ui/MidiKeyboard.cpp" "CMakeFiles/AIMusicCore.dir/src/ui/MidiKeyboard.cpp.o" "gcc" "CMakeFiles/AIMusicCore.dir/src/ui/MidiKeyboard.cpp.o.d"

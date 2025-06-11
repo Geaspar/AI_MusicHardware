@@ -61,9 +61,16 @@ void Phaser::process(float* buffer, int numFrames) {
             // Distribute filters evenly across frequency range
             float filterFreq = frequency * (1.0f + 0.25f * j);
             
+            // Limit frequency to prevent tan() from producing extreme values
+            filterFreq = std::min(filterFreq, sampleRate_ * 0.49f); // Below Nyquist
+            
             // Convert frequency to coefficient for allpass filter
             // alpha = tan(pi * f/fs)
             float alpha = std::tan(PI * filterFreq / sampleRate_);
+            
+            // Clamp alpha to prevent extreme coefficients
+            alpha = clamp(alpha, -10.0f, 10.0f);
+            
             allpassCoeffs_[j] = (alpha - 1.0f) / (alpha + 1.0f);
         }
         
@@ -77,12 +84,19 @@ void Phaser::process(float* buffer, int numFrames) {
         // Apply allpass filters in series
         for (int j = 0; j < stages_; ++j) {
             float temp = allpassFilters_[j];
-            outputL = allpassCoeffs_[j] * outputL + temp;
-            allpassFilters_[j] = outputL * allpassCoeffs_[j] + temp;
+            float newOut = allpassCoeffs_[j] * outputL + temp;
+            allpassFilters_[j] = outputL - allpassCoeffs_[j] * newOut;
+            outputL = newOut;
+            
+            // Prevent runaway oscillation
+            if (!std::isfinite(outputL)) {
+                outputL = 0.0f;
+                allpassFilters_[j] = 0.0f;
+            }
         }
         
-        // Store output for feedback in next block
-        lastOutput_[0] = outputL;
+        // Store output for feedback in next block (clamped)
+        lastOutput_[0] = clamp(outputL, -2.0f, 2.0f);
         
         // Mix dry and wet signals
         buffer[i] = inputL * (1.0f - mix_) + outputL * mix_;
@@ -97,12 +111,19 @@ void Phaser::process(float* buffer, int numFrames) {
         // Apply allpass filters in series
         for (int j = 0; j < stages_; ++j) {
             float temp = allpassFilters_[j + stages_];
-            outputR = allpassCoeffs_[j] * outputR + temp;
-            allpassFilters_[j + stages_] = outputR * allpassCoeffs_[j] + temp;
+            float newOut = allpassCoeffs_[j] * outputR + temp;
+            allpassFilters_[j + stages_] = outputR - allpassCoeffs_[j] * newOut;
+            outputR = newOut;
+            
+            // Prevent runaway oscillation
+            if (!std::isfinite(outputR)) {
+                outputR = 0.0f;
+                allpassFilters_[j + stages_] = 0.0f;
+            }
         }
         
-        // Store output for feedback
-        lastOutput_[1] = outputR;
+        // Store output for feedback (clamped)
+        lastOutput_[1] = clamp(outputR, -2.0f, 2.0f);
         
         // Mix dry and wet signals
         buffer[i + 1] = inputR * (1.0f - mix_) + outputR * mix_;

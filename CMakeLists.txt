@@ -261,7 +261,9 @@ set(UI_CORE_SOURCES
     src/ui/MidiKeyboard.cpp
     src/ui/PresetBrowserUIComponent.cpp
     src/ui/VisualizationComponents.cpp
+    src/ui/FilterVisualizer.cpp
     src/ui/GridLayout.cpp
+    src/ui/DropdownMenu.cpp
 )
 
 # Set up RtAudio if found
@@ -369,6 +371,13 @@ target_link_libraries(TestAudio PRIVATE
     AIMusicCore
 )
 message(STATUS "Building TestAudio")
+
+# Test for effect controls
+add_executable(TestEffectControls examples/TestEffectControls.cpp)
+target_link_libraries(TestEffectControls PRIVATE
+    AIMusicCore
+)
+message(STATUS "Building TestEffectControls")
 
 # List files we're not building for now due to issues
 set_target_properties(MultiTimbralDemo PROPERTIES EXCLUDE_FROM_ALL TRUE)
@@ -681,6 +690,35 @@ if(SDL2_FOUND)
     message(STATUS "Building AIMusicHardwareGrid")
     message(STATUS "- Run ./bin/AIMusicHardwareGrid for the synthesizer with grid-based layout system")
     
+    # Create Original Main Application executable
+    add_executable(AIMusicHardware src/main.cpp)
+    target_link_libraries(AIMusicHardware PRIVATE
+        AIMusicCore
+    )
+    message(STATUS "Building AIMusicHardware")
+    message(STATUS "- Run ./bin/AIMusicHardware for the original synthesizer application")
+    
+    # Create Enhanced Grid Layout version
+    add_executable(AIMusicHardwareEnhanced src/main_grid_enhanced.cpp)
+    target_include_directories(AIMusicHardwareEnhanced PRIVATE ${SDL2_INCLUDE_DIRS})
+    if(SDL2_TTF_INCLUDE_DIRS)
+        target_include_directories(AIMusicHardwareEnhanced PRIVATE ${SDL2_TTF_INCLUDE_DIRS})
+    else()
+        target_include_directories(AIMusicHardwareEnhanced PRIVATE /opt/homebrew/include/SDL2)
+    endif()
+    target_link_libraries(AIMusicHardwareEnhanced PRIVATE
+        AIMusicCore
+        ${SDL2_LIBRARIES}
+    )
+    if(SDL2_TTF_LIBRARIES)
+        target_link_libraries(AIMusicHardwareEnhanced PRIVATE ${SDL2_TTF_LIBRARIES})
+    else()
+        target_link_libraries(AIMusicHardwareEnhanced PRIVATE /opt/homebrew/lib/libSDL2_ttf.dylib)
+    endif()
+    target_compile_definitions(AIMusicHardwareEnhanced PRIVATE HAVE_SDL_TTF)
+    message(STATUS "Building AIMusicHardwareEnhanced")
+    message(STATUS "- Run ./bin/AIMusicHardwareEnhanced for the enhanced grid layout with advanced UI features")
+    
     # Create Parameter Smoothing Test executable (simple version)
     add_executable(ParameterSmoothingTestSimple examples/ParameterSmoothingTestSimple.cpp)
     target_link_libraries(ParameterSmoothingTestSimple PRIVATE
@@ -698,6 +736,27 @@ if(SDL2_FOUND)
     )
     message(STATUS "Building SimpleUIDemo")
     message(STATUS "- Run ./bin/SimpleUIDemo to see improved UI layout with proper labels and parameter automation")
+    
+    # Create Grid Enhancements Demo
+    add_executable(GridEnhancementsDemo examples/GridEnhancementsDemo.cpp)
+    target_include_directories(GridEnhancementsDemo PRIVATE ${SDL2_INCLUDE_DIRS})
+    if(SDL2_TTF_INCLUDE_DIRS)
+        target_include_directories(GridEnhancementsDemo PRIVATE ${SDL2_TTF_INCLUDE_DIRS})
+    else()
+        target_include_directories(GridEnhancementsDemo PRIVATE /opt/homebrew/include/SDL2)
+    endif()
+    target_link_libraries(GridEnhancementsDemo PRIVATE
+        AIMusicCore
+        ${SDL2_LIBRARIES}
+    )
+    if(SDL2_TTF_LIBRARIES)
+        target_link_libraries(GridEnhancementsDemo PRIVATE ${SDL2_TTF_LIBRARIES})
+    else()
+        target_link_libraries(GridEnhancementsDemo PRIVATE /opt/homebrew/lib/libSDL2_ttf.dylib)
+    endif()
+    target_compile_definitions(GridEnhancementsDemo PRIVATE HAVE_SDL_TTF)
+    message(STATUS "Building GridEnhancementsDemo")
+    message(STATUS "- Run ./bin/GridEnhancementsDemo to see enhanced UI features with better visuals and modulation hints")
 else()
     message(WARNING "SDL2 not found. UI test applications will not be built.")
     message(WARNING "Install SDL2 to enable UI testing: brew install sdl2 (macOS) or sudo apt-get install libsdl2-dev (Linux)")

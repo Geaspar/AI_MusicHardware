@@ -143,6 +143,9 @@ public:
     // Oscillator access
     WavetableOscillator* getOscillator() { return oscillator_.get(); }
     
+    // Envelope access
+    ModEnvelope* getEnvelope() { return envelope_.get(); }
+    
     // Age tracking for voice stealing
     int getAge() const { return age_; }
     void incrementAge() { age_++; }

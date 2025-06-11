@@ -274,6 +274,58 @@ void Synthesizer::setParameter(const std::string& paramId, float value) {
         // For future implementation - adjust master volume
         std::cout << "Setting master volume to " << value << std::endl;
     }
+    else if (paramId == "envelope_attack") {
+        // Update all voices' attack time
+        if (voiceManager_) {
+            for (int i = 0; i < voiceManager_->getMaxVoices(); ++i) {
+                if (auto* voice = voiceManager_->getVoice(i)) {
+                    if (auto* envelope = voice->getEnvelope()) {
+                        envelope->setAttack(value);
+                    }
+                }
+            }
+        }
+        std::cout << "Setting envelope attack to " << value << " seconds" << std::endl;
+    }
+    else if (paramId == "envelope_decay") {
+        // Update all voices' decay time
+        if (voiceManager_) {
+            for (int i = 0; i < voiceManager_->getMaxVoices(); ++i) {
+                if (auto* voice = voiceManager_->getVoice(i)) {
+                    if (auto* envelope = voice->getEnvelope()) {
+                        envelope->setDecay(value);
+                    }
+                }
+            }
+        }
+        std::cout << "Setting envelope decay to " << value << " seconds" << std::endl;
+    }
+    else if (paramId == "envelope_sustain") {
+        // Update all voices' sustain level
+        if (voiceManager_) {
+            for (int i = 0; i < voiceManager_->getMaxVoices(); ++i) {
+                if (auto* voice = voiceManager_->getVoice(i)) {
+                    if (auto* envelope = voice->getEnvelope()) {
+                        envelope->setSustain(value);
+                    }
+                }
+            }
+        }
+        std::cout << "Setting envelope sustain to " << value << std::endl;
+    }
+    else if (paramId == "envelope_release") {
+        // Update all voices' release time
+        if (voiceManager_) {
+            for (int i = 0; i < voiceManager_->getMaxVoices(); ++i) {
+                if (auto* voice = voiceManager_->getVoice(i)) {
+                    if (auto* envelope = voice->getEnvelope()) {
+                        envelope->setRelease(value);
+                    }
+                }
+            }
+        }
+        std::cout << "Setting envelope release to " << value << " seconds" << std::endl;
+    }
     else if (paramId == "voice_count") {
         // Set number of voices
         int count = static_cast<int>(value);
@@ -334,6 +386,18 @@ float Synthesizer::getParameter(const std::string& paramId) const {
     else if (paramId == "master_volume") {
         // For future implementation - get master volume
         return 0.7f; // Default value
+    }
+    else if (paramId == "envelope_attack") {
+        return 0.01f; // Default 10ms attack
+    }
+    else if (paramId == "envelope_decay") {
+        return 0.1f; // Default 100ms decay
+    }
+    else if (paramId == "envelope_sustain") {
+        return 0.7f; // Default 70% sustain
+    }
+    else if (paramId == "envelope_release") {
+        return 0.5f; // Default 500ms release
     }
     else if (paramId == "voice_count") {
         return static_cast<float>(getVoiceCount());

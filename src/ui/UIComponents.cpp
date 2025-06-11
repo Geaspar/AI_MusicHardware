@@ -504,12 +504,12 @@ void Knob::render(DisplayManager* display) {
     // TODO: Get font from context
     
     // Always render labels and values for better visibility
-    // Draw label text at bottom (below the value text)
+    // Draw label text above the value text
     if (!label_.empty()) {
-        display->drawText(centerX - label_.length() * 4, y_ + height_ + 40, label_, font, color_);
+        display->drawText(centerX - label_.length() * 4, y_ + height_ + 20, label_, font, color_);
     }
     
-    // Draw value text below the knob, but above the label
+    // Draw value text below the label
     if (showValue_) {
         std::string valueText;
         if (valueFormatter_) {
@@ -521,11 +521,11 @@ void Knob::render(DisplayManager* display) {
             valueText = ss.str();
         }
         
-        // Position value text well below the knob to avoid overlap
+        // Position value text below the label
         // Knob bottom is at y_ + height_
-        // Put value text at y_ + height_ + 25 (well below knob)
-        // Label will be at y_ + height_ + 40
-        display->drawText(centerX - valueText.length() * 4, y_ + height_ + 25, valueText, font, Color(200, 200, 200));
+        // Put label at y_ + height_ + 20
+        // Put value text at y_ + height_ + 35
+        display->drawText(centerX - valueText.length() * 4, y_ + height_ + 35, valueText, font, Color(200, 200, 200));
     }
     
     // Draw MIDI CC number if mapped
@@ -823,6 +823,244 @@ bool WaveformDisplay::handleInput(const InputEvent& event) {
 }
 
 //
+// Slider implementation
+Slider::Slider(const std::string& id, const std::string& label, 
+               int x, int y, int width, int height)
+    : UIComponent(id)
+    , label_(label)
+    , value_(0.0f)
+    , minValue_(0.0f)
+    , maxValue_(1.0f)
+    , step_(0.01f)
+    , orientation_(Orientation::Vertical)
+    , showValue_(true)
+    , isDragging_(false)
+    , color_(255, 255, 255)
+    , backgroundColor_(40, 40, 50)
+    , trackColor_(60, 60, 70)
+    , thumbColor_(100, 150, 200)
+    , modulationColor_(0, 255, 200)
+    , modulationAmount_(0.0f)
+    , midiLearnEnabled_(false)
+    , midiControlNumber_(-1) {
+    x_ = x;
+    y_ = y;
+    width_ = width;
+    height_ = height;
+}
+
+Slider::~Slider() {}
+
+void Slider::setValue(float value) {
+    value_ = std::clamp(value, minValue_, maxValue_);
+    if (valueChangeCallback_) {
+        valueChangeCallback_(value_);
+    }
+}
+
+float Slider::getValue() const {
+    return value_;
+}
+
+void Slider::setRange(float min, float max) {
+    minValue_ = min;
+    maxValue_ = max;
+    value_ = std::clamp(value_, minValue_, maxValue_);
+}
+
+void Slider::setStep(float step) {
+    step_ = step;
+}
+
+void Slider::setOrientation(Orientation orientation) {
+    orientation_ = orientation;
+}
+
+Slider::Orientation Slider::getOrientation() const {
+    return orientation_;
+}
+
+void Slider::setLabel(const std::string& label) {
+    label_ = label;
+}
+
+void Slider::setColor(const Color& color) {
+    color_ = color;
+}
+
+void Slider::setBackgroundColor(const Color& color) {
+    backgroundColor_ = color;
+}
+
+void Slider::setTrackColor(const Color& color) {
+    trackColor_ = color;
+}
+
+void Slider::setThumbColor(const Color& color) {
+    thumbColor_ = color;
+}
+
+void Slider::setShowValue(bool show) {
+    showValue_ = show;
+}
+
+void Slider::setValueFormatter(std::function<std::string(float)> formatter) {
+    valueFormatter_ = formatter;
+}
+
+void Slider::setModulationAmount(float amount) {
+    modulationAmount_ = amount;
+}
+
+void Slider::setModulationColor(const Color& color) {
+    modulationColor_ = color;
+}
+
+void Slider::setMidiLearnEnabled(bool enabled) {
+    midiLearnEnabled_ = enabled;
+}
+
+void Slider::setMidiControlNumber(int ccNumber) {
+    midiControlNumber_ = ccNumber;
+}
+
+void Slider::setValueChangeCallback(ValueChangeCallback callback) {
+    valueChangeCallback_ = callback;
+}
+
+void Slider::update(float deltaTime) {
+    // Animation updates could go here
+}
+
+void Slider::render(DisplayManager* display) {
+    if (!display) return;
+    
+    // Draw background
+    display->fillRect(x_, y_, width_, height_, backgroundColor_);
+    
+    // Draw track
+    int trackPadding = 4;
+    if (orientation_ == Orientation::Vertical) {
+        int trackX = x_ + width_ / 2 - 2;
+        display->fillRect(trackX, y_ + trackPadding, 4, height_ - 2 * trackPadding, trackColor_);
+        
+        // Draw modulation indicator if active
+        if (modulationAmount_ > 0.0f) {
+            float normalizedValue = (value_ - minValue_) / (maxValue_ - minValue_);
+            float modulatedValue = std::clamp(normalizedValue + modulationAmount_, 0.0f, 1.0f);
+            
+            int valueY = y_ + height_ - trackPadding - (normalizedValue * (height_ - 2 * trackPadding));
+            int modY = y_ + height_ - trackPadding - (modulatedValue * (height_ - 2 * trackPadding));
+            
+            display->fillRect(trackX - 2, std::min(valueY, modY), 8, std::abs(modY - valueY), modulationColor_);
+        }
+        
+        // Draw thumb
+        float normalizedValue = (value_ - minValue_) / (maxValue_ - minValue_);
+        int thumbY = y_ + height_ - trackPadding - (normalizedValue * (height_ - 2 * trackPadding));
+        display->fillRect(x_ + 2, thumbY - 4, width_ - 4, 8, thumbColor_);
+        
+        // Draw MIDI learn indicator
+        if (midiLearnEnabled_) {
+            display->drawRect(x_ - 2, y_ - 2, width_ + 4, height_ + 4, Color(255, 100, 0));
+        } else if (midiControlNumber_ >= 0) {
+            display->fillCircle(x_ + 3, y_ + 3, 3, Color(0, 255, 0));
+        }
+        
+    } else {
+        // Horizontal slider
+        int trackY = y_ + height_ / 2 - 2;
+        display->fillRect(x_ + trackPadding, trackY, width_ - 2 * trackPadding, 4, trackColor_);
+        
+        // Draw modulation indicator if active
+        if (modulationAmount_ > 0.0f) {
+            float normalizedValue = (value_ - minValue_) / (maxValue_ - minValue_);
+            float modulatedValue = std::clamp(normalizedValue + modulationAmount_, 0.0f, 1.0f);
+            
+            int valueX = x_ + trackPadding + (normalizedValue * (width_ - 2 * trackPadding));
+            int modX = x_ + trackPadding + (modulatedValue * (width_ - 2 * trackPadding));
+            
+            display->fillRect(std::min(valueX, modX), trackY - 2, std::abs(modX - valueX), 8, modulationColor_);
+        }
+        
+        // Draw thumb
+        float normalizedValue = (value_ - minValue_) / (maxValue_ - minValue_);
+        int thumbX = x_ + trackPadding + (normalizedValue * (width_ - 2 * trackPadding));
+        display->fillRect(thumbX - 4, y_ + 2, 8, height_ - 4, thumbColor_);
+    }
+    
+    // Draw label above slider
+    if (!label_.empty()) {
+        display->drawText(x_ + width_ / 2 - label_.length() * 4, y_ - 20, label_, nullptr, color_);
+    }
+    
+    // Draw value below slider
+    if (showValue_) {
+        std::string valueText;
+        if (valueFormatter_) {
+            valueText = valueFormatter_(value_);
+        } else {
+            std::ostringstream ss;
+            ss << std::fixed << std::setprecision(2) << value_;
+            valueText = ss.str();
+        }
+        display->drawText(x_ + width_ / 2 - valueText.length() * 4, y_ + height_ + 10, valueText, nullptr, Color(200, 200, 200));
+    }
+}
+
+bool Slider::handleInput(const InputEvent& event) {
+    if (!visible_ || !enabled_) return false;
+    
+    bool inBounds = (event.value >= x_ && event.value < x_ + width_ &&
+                     event.value2 >= y_ && event.value2 < y_ + height_);
+    
+    if (event.type == InputEventType::TouchPress && inBounds) {
+        isDragging_ = true;
+        
+        // Calculate new value based on click position
+        float normalizedValue;
+        if (orientation_ == Orientation::Vertical) {
+            normalizedValue = 1.0f - (event.value2 - y_) / static_cast<float>(height_);
+        } else {
+            normalizedValue = (event.value - x_) / static_cast<float>(width_);
+        }
+        normalizedValue = std::clamp(normalizedValue, 0.0f, 1.0f);
+        
+        float newValue = minValue_ + normalizedValue * (maxValue_ - minValue_);
+        
+        // Snap to step
+        if (step_ > 0) {
+            newValue = std::round(newValue / step_) * step_;
+        }
+        
+        setValue(newValue);
+        return true;
+    } else if (event.type == InputEventType::TouchRelease) {
+        isDragging_ = false;
+    } else if (event.type == InputEventType::TouchMove && isDragging_) {
+        // Calculate new value based on drag position
+        float normalizedValue;
+        if (orientation_ == Orientation::Vertical) {
+            normalizedValue = 1.0f - (event.value2 - y_) / static_cast<float>(height_);
+        } else {
+            normalizedValue = (event.value - x_) / static_cast<float>(width_);
+        }
+        normalizedValue = std::clamp(normalizedValue, 0.0f, 1.0f);
+        
+        float newValue = minValue_ + normalizedValue * (maxValue_ - minValue_);
+        
+        // Snap to step
+        if (step_ > 0) {
+            newValue = std::round(newValue / step_) * step_;
+        }
+        
+        setValue(newValue);
+        return true;
+    }
+    
+    return false;
+}
+
 // EnvelopeEditor implementation
 //
 EnvelopeEditor::EnvelopeEditor(const std::string& id)

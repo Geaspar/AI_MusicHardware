@@ -173,6 +173,81 @@ private:
     std::function<std::string(float)> valueFormatter_;
 };
 
+// Slider - Vertical or horizontal slider control
+class Slider : public UIComponent {
+public:
+    enum class Orientation {
+        Vertical,
+        Horizontal
+    };
+    
+    Slider(const std::string& id, const std::string& label = "", 
+           int x = 0, int y = 0, int width = 40, int height = 120);
+    virtual ~Slider();
+    
+    // Value management
+    void setValue(float value);
+    float getValue() const;
+    void setRange(float min, float max);
+    void setStep(float step);
+    
+    // Appearance
+    void setOrientation(Orientation orientation);
+    Orientation getOrientation() const;
+    void setLabel(const std::string& label);
+    void setColor(const Color& color);
+    void setBackgroundColor(const Color& color);
+    void setTrackColor(const Color& color);
+    void setThumbColor(const Color& color);
+    void setShowValue(bool show);
+    void setValueFormatter(std::function<std::string(float)> formatter);
+    
+    // Modulation
+    void setModulationAmount(float amount);
+    void setModulationColor(const Color& color);
+    
+    // MIDI
+    void setMidiLearnEnabled(bool enabled);
+    void setMidiControlNumber(int ccNumber);
+    
+    // Callbacks
+    using ValueChangeCallback = std::function<void(float)>;
+    void setValueChangeCallback(ValueChangeCallback callback);
+    
+    // UIComponent overrides
+    virtual void update(float deltaTime) override;
+    virtual void render(DisplayManager* display) override;
+    virtual bool handleInput(const InputEvent& event) override;
+    
+private:
+    std::string label_;
+    float value_;
+    float minValue_;
+    float maxValue_;
+    float step_;
+    Orientation orientation_;
+    bool showValue_;
+    bool isDragging_;
+    
+    // Colors
+    Color color_;
+    Color backgroundColor_;
+    Color trackColor_;
+    Color thumbColor_;
+    Color modulationColor_;
+    
+    // Modulation
+    float modulationAmount_;
+    
+    // MIDI
+    bool midiLearnEnabled_;
+    int midiControlNumber_;
+    
+    // Callbacks
+    ValueChangeCallback valueChangeCallback_;
+    std::function<std::string(float)> valueFormatter_;
+};
+
 // WaveformDisplay - Shows audio waveform
 class WaveformDisplay : public UIComponent {
 public:

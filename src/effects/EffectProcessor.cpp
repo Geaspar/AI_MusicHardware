@@ -45,12 +45,7 @@ void EffectProcessor::addEffect(std::unique_ptr<Effect> effect) {
 
 void EffectProcessor::removeEffect(size_t index) {
     if (index < effects_.size()) {
-        // More efficient approach - swap with last element then pop_back
-        // This avoids shifting all elements after the removed one
-        if (index < effects_.size() - 1) {
-            std::swap(effects_[index], effects_.back());
-        }
-        effects_.pop_back();
+        effects_.erase(effects_.begin() + index);
     }
 }
 

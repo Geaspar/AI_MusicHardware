@@ -1063,10 +1063,24 @@ CMakeFiles/AIMusicCore.dir/src/ui/VisualizationComponents.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/AIMusicCore.dir/src/ui/VisualizationComponents.cpp.s"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/geaspar/AIMusicHardware/src/ui/VisualizationComponents.cpp -o CMakeFiles/AIMusicCore.dir/src/ui/VisualizationComponents.cpp.s
 
+CMakeFiles/AIMusicCore.dir/src/ui/FilterVisualizer.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
+CMakeFiles/AIMusicCore.dir/src/ui/FilterVisualizer.cpp.o: /Users/geaspar/AIMusicHardware/src/ui/FilterVisualizer.cpp
+CMakeFiles/AIMusicCore.dir/src/ui/FilterVisualizer.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_72) "Building CXX object CMakeFiles/AIMusicCore.dir/src/ui/FilterVisualizer.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/ui/FilterVisualizer.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/ui/FilterVisualizer.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/ui/FilterVisualizer.cpp.o -c /Users/geaspar/AIMusicHardware/src/ui/FilterVisualizer.cpp
+
+CMakeFiles/AIMusicCore.dir/src/ui/FilterVisualizer.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/AIMusicCore.dir/src/ui/FilterVisualizer.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/geaspar/AIMusicHardware/src/ui/FilterVisualizer.cpp > CMakeFiles/AIMusicCore.dir/src/ui/FilterVisualizer.cpp.i
+
+CMakeFiles/AIMusicCore.dir/src/ui/FilterVisualizer.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/AIMusicCore.dir/src/ui/FilterVisualizer.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/geaspar/AIMusicHardware/src/ui/FilterVisualizer.cpp -o CMakeFiles/AIMusicCore.dir/src/ui/FilterVisualizer.cpp.s
+
 CMakeFiles/AIMusicCore.dir/src/ui/GridLayout.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
 CMakeFiles/AIMusicCore.dir/src/ui/GridLayout.cpp.o: /Users/geaspar/AIMusicHardware/src/ui/GridLayout.cpp
 CMakeFiles/AIMusicCore.dir/src/ui/GridLayout.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_72) "Building CXX object CMakeFiles/AIMusicCore.dir/src/ui/GridLayout.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_73) "Building CXX object CMakeFiles/AIMusicCore.dir/src/ui/GridLayout.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/ui/GridLayout.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/ui/GridLayout.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/ui/GridLayout.cpp.o -c /Users/geaspar/AIMusicHardware/src/ui/GridLayout.cpp
 
 CMakeFiles/AIMusicCore.dir/src/ui/GridLayout.cpp.i: cmake_force
@@ -1076,6 +1090,20 @@ CMakeFiles/AIMusicCore.dir/src/ui/GridLayout.cpp.i: cmake_force
 CMakeFiles/AIMusicCore.dir/src/ui/GridLayout.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/AIMusicCore.dir/src/ui/GridLayout.cpp.s"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/geaspar/AIMusicHardware/src/ui/GridLayout.cpp -o CMakeFiles/AIMusicCore.dir/src/ui/GridLayout.cpp.s
+
+CMakeFiles/AIMusicCore.dir/src/ui/DropdownMenu.cpp.o: CMakeFiles/AIMusicCore.dir/flags.make
+CMakeFiles/AIMusicCore.dir/src/ui/DropdownMenu.cpp.o: /Users/geaspar/AIMusicHardware/src/ui/DropdownMenu.cpp
+CMakeFiles/AIMusicCore.dir/src/ui/DropdownMenu.cpp.o: CMakeFiles/AIMusicCore.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_74) "Building CXX object CMakeFiles/AIMusicCore.dir/src/ui/DropdownMenu.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/AIMusicCore.dir/src/ui/DropdownMenu.cpp.o -MF CMakeFiles/AIMusicCore.dir/src/ui/DropdownMenu.cpp.o.d -o CMakeFiles/AIMusicCore.dir/src/ui/DropdownMenu.cpp.o -c /Users/geaspar/AIMusicHardware/src/ui/DropdownMenu.cpp
+
+CMakeFiles/AIMusicCore.dir/src/ui/DropdownMenu.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/AIMusicCore.dir/src/ui/DropdownMenu.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/geaspar/AIMusicHardware/src/ui/DropdownMenu.cpp > CMakeFiles/AIMusicCore.dir/src/ui/DropdownMenu.cpp.i
+
+CMakeFiles/AIMusicCore.dir/src/ui/DropdownMenu.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/AIMusicCore.dir/src/ui/DropdownMenu.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/geaspar/AIMusicHardware/src/ui/DropdownMenu.cpp -o CMakeFiles/AIMusicCore.dir/src/ui/DropdownMenu.cpp.s
 
 # Object files for target AIMusicCore
 AIMusicCore_OBJECTS = \
@@ -1150,7 +1178,9 @@ AIMusicCore_OBJECTS = \
 "CMakeFiles/AIMusicCore.dir/src/ui/MidiKeyboard.cpp.o" \
 "CMakeFiles/AIMusicCore.dir/src/ui/PresetBrowserUIComponent.cpp.o" \
 "CMakeFiles/AIMusicCore.dir/src/ui/VisualizationComponents.cpp.o" \
-"CMakeFiles/AIMusicCore.dir/src/ui/GridLayout.cpp.o"
+"CMakeFiles/AIMusicCore.dir/src/ui/FilterVisualizer.cpp.o" \
+"CMakeFiles/AIMusicCore.dir/src/ui/GridLayout.cpp.o" \
+"CMakeFiles/AIMusicCore.dir/src/ui/DropdownMenu.cpp.o"
 
 # External object files for target AIMusicCore
 AIMusicCore_EXTERNAL_OBJECTS =
@@ -1226,10 +1256,12 @@ lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/ui/SmoothParameter.cpp.o
 lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/ui/MidiKeyboard.cpp.o
 lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/ui/PresetBrowserUIComponent.cpp.o
 lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/ui/VisualizationComponents.cpp.o
+lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/ui/FilterVisualizer.cpp.o
 lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/ui/GridLayout.cpp.o
+lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/src/ui/DropdownMenu.cpp.o
 lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/build.make
 lib/libAIMusicCore.a: CMakeFiles/AIMusicCore.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_73) "Linking CXX static library lib/libAIMusicCore.a"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/geaspar/AIMusicHardware/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_75) "Linking CXX static library lib/libAIMusicCore.a"
 	$(CMAKE_COMMAND) -P CMakeFiles/AIMusicCore.dir/cmake_clean_target.cmake
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/AIMusicCore.dir/link.txt --verbose=$(VERBOSE)
 

@@ -69,6 +69,7 @@ set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/MultiTimbralDemo.dir/DependInfo.cmake"
   "CMakeFiles/TestMpeVoiceManager.dir/DependInfo.cmake"
   "CMakeFiles/TestAudio.dir/DependInfo.cmake"
+  "CMakeFiles/TestEffectControls.dir/DependInfo.cmake"
   "CMakeFiles/OscillatorStackDemo.dir/DependInfo.cmake"
   "CMakeFiles/AdvancedFilterDemo.dir/DependInfo.cmake"
   "CMakeFiles/SynchronizedSequencerDemo.dir/DependInfo.cmake"
@@ -95,6 +96,9 @@ set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/AIMusicHardwareIntegrated.dir/DependInfo.cmake"
   "CMakeFiles/AIMusicHardwareImproved.dir/DependInfo.cmake"
   "CMakeFiles/AIMusicHardwareGrid.dir/DependInfo.cmake"
+  "CMakeFiles/AIMusicHardware.dir/DependInfo.cmake"
+  "CMakeFiles/AIMusicHardwareEnhanced.dir/DependInfo.cmake"
   "CMakeFiles/ParameterSmoothingTestSimple.dir/DependInfo.cmake"
   "CMakeFiles/SimpleUIDemo.dir/DependInfo.cmake"
+  "CMakeFiles/GridEnhancementsDemo.dir/DependInfo.cmake"
   )

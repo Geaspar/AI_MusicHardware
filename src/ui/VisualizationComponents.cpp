@@ -345,30 +345,46 @@ void EnvelopeVisualizer::calculateEnvelopePoints(std::vector<Point>& points) {
     int usableWidth = width_ - 2 * margin;
     int usableHeight = height_ - 2 * margin;
     
-    // Total time for visualization (normalized)
-    float totalTime = attack_ + decay_ + 1.0f + release_; // 1.0f for sustain display
+    // Use fixed time scale: map 0-4 seconds to full width
+    const float maxDisplayTime = 4.0f; // 4 seconds max display
+    const float pixelsPerSecond = usableWidth / maxDisplayTime;
     
-    // Start point
-    points.push_back(Point(x_ + margin, y_ + height_ - margin));
+    // Fixed sustain display time
+    const float sustainDisplayTime = 0.3f; // Display sustain as 0.3 seconds
     
-    // Attack peak
-    int attackX = x_ + margin + static_cast<int>((attack_ / totalTime) * usableWidth);
-    int attackY = y_ + margin;
-    points.push_back(Point(attackX, attackY));
+    // Calculate X positions based on fixed time scale
+    int startX = x_ + margin;
+    int attackX = startX + static_cast<int>(attack_ * pixelsPerSecond);
+    int decayX = attackX + static_cast<int>(decay_ * pixelsPerSecond);
+    int sustainEndX = decayX + static_cast<int>(sustainDisplayTime * pixelsPerSecond);
+    int releaseX = sustainEndX + static_cast<int>(release_ * pixelsPerSecond);
     
-    // Decay to sustain
-    int decayX = attackX + static_cast<int>((decay_ / totalTime) * usableWidth);
-    int sustainY = y_ + margin + static_cast<int>((1.0f - sustain_) * usableHeight);
+    // Clamp positions to stay within bounds
+    attackX = std::min(attackX, x_ + width_ - margin);
+    decayX = std::min(decayX, x_ + width_ - margin);
+    sustainEndX = std::min(sustainEndX, x_ + width_ - margin);
+    releaseX = std::min(releaseX, x_ + width_ - margin);
+    
+    // Calculate Y positions
+    int bottomY = y_ + height_ - margin;
+    int topY = y_ + margin;
+    int sustainY = topY + static_cast<int>((1.0f - sustain_) * usableHeight);
+    
+    // Build envelope points
+    // Point 0: Start (bottom left)
+    points.push_back(Point(startX, bottomY));
+    
+    // Point 1: Attack peak (top)
+    points.push_back(Point(attackX, topY));
+    
+    // Point 2: Decay end / Sustain start
     points.push_back(Point(decayX, sustainY));
     
-    // Sustain hold
-    int sustainX = decayX + static_cast<int>((1.0f / totalTime) * usableWidth);
-    points.push_back(Point(sustainX, sustainY));
+    // Point 3: Sustain end (where release begins)
+    points.push_back(Point(sustainEndX, sustainY));
     
-    // Release
-    int releaseX = x_ + width_ - margin;
-    int releaseY = y_ + height_ - margin;
-    points.push_back(Point(releaseX, releaseY));
+    // Point 4: Release end (at bottom after release time)
+    points.push_back(Point(releaseX, bottomY));
 }
 
 void EnvelopeVisualizer::drawEnvelope(DisplayManager* display, const std::vector<Point>& points) {
@@ -400,15 +416,23 @@ void EnvelopeVisualizer::drawEnvelope(DisplayManager* display, const std::vector
 void EnvelopeVisualizer::drawHandles(DisplayManager* display, const std::vector<Point>& points) {
     const int handleSize = 8;
     
-    // Skip start and end points (not editable)
-    for (size_t i = 1; i < points.size() - 1; ++i) {
-        Color handleColor = (dragHandle_ == static_cast<int>(i) - 1) ? 
-                           Color(255, 255, 0) : Color(200, 200, 200);
-        
-        display->fillRect(points[i].x - handleSize/2, points[i].y - handleSize/2,
-                         handleSize, handleSize, handleColor);
-        display->drawRect(points[i].x - handleSize/2, points[i].y - handleSize/2,
-                         handleSize, handleSize, Color(100, 100, 100));
+    // Draw only the 3 key draggable handles
+    // Skip point 0 (start) and point 3 (sustain end - not independently adjustable)
+    std::vector<int> handleIndices = {1, 2, 4}; // Attack peak, Decay/Sustain, Release end
+    int handleNum = 0;
+    
+    for (int i : handleIndices) {
+        if (i < points.size()) {
+            Color handleColor = (dragHandle_ == handleNum) ? 
+                               Color(255, 255, 0) : Color(200, 200, 200);
+            
+            // Draw handle with filled square and border
+            display->fillRect(points[i].x - handleSize/2, points[i].y - handleSize/2,
+                             handleSize, handleSize, handleColor);
+            display->drawRect(points[i].x - handleSize/2, points[i].y - handleSize/2,
+                             handleSize, handleSize, Color(100, 100, 100));
+        }
+        handleNum++;
     }
 }
 
@@ -452,10 +476,15 @@ void EnvelopeVisualizer::drawPhaseIndicator(DisplayManager* display, const std::
 int EnvelopeVisualizer::getHandleAtPosition(int x, int y, const std::vector<Point>& points) {
     const int handleSize = 12; // Slightly larger hit area
     
-    for (size_t i = 1; i < points.size() - 1; ++i) {
-        if (std::abs(x - points[i].x) < handleSize/2 &&
-            std::abs(y - points[i].y) < handleSize/2) {
-            return i - 1; // Return handle index (0=attack, 1=decay, 2=sustain)
+    // Check the 3 handles at indices 1, 2, and 4
+    std::vector<int> handleIndices = {1, 2, 4}; // Attack peak, Decay/Sustain, Release end
+    
+    for (int i = 0; i < handleIndices.size(); ++i) {
+        int pointIndex = handleIndices[i];
+        if (pointIndex < points.size() &&
+            std::abs(x - points[pointIndex].x) < handleSize/2 &&
+            std::abs(y - points[pointIndex].y) < handleSize/2) {
+            return i; // Return handle index (0, 1, or 2)
         }
     }
     
@@ -467,26 +496,57 @@ void EnvelopeVisualizer::updateParameterFromHandle(int handle, int x, int y) {
     int usableWidth = width_ - 2 * margin;
     int usableHeight = height_ - 2 * margin;
     
-    // Normalize coordinates
-    float normX = static_cast<float>(x - x_ - margin) / usableWidth;
-    float normY = 1.0f - static_cast<float>(y - y_ - margin) / usableHeight;
+    // Fixed time scale parameters
+    const float maxDisplayTime = 4.0f;
+    const float pixelsPerSecond = usableWidth / maxDisplayTime;
     
-    normX = std::clamp(normX, 0.0f, 1.0f);
-    normY = std::clamp(normY, 0.0f, 1.0f);
+    // Get current envelope points for reference
+    std::vector<Point> points;
+    calculateEnvelopePoints(points);
     
     switch (handle) {
-        case 0: // Attack
-            attack_ = normX * 2.0f; // Max 2 seconds
+        case 0: { // Attack - horizontal movement only
+            // Calculate new attack time based on X position
+            float pixels = static_cast<float>(x - (x_ + margin));
+            pixels = std::clamp(pixels, 0.0f, static_cast<float>(usableWidth));
+            
+            // Convert pixel position to time using fixed scale
+            attack_ = pixels / pixelsPerSecond;
+            attack_ = std::clamp(attack_, 0.001f, 2.0f);
             break;
-        case 1: // Decay
-            decay_ = normX * 2.0f; // Max 2 seconds
+        }
+        
+        case 1: { // Decay/Sustain - handle both time and level
+            // For sustain level - vertical movement
+            float normY = 1.0f - static_cast<float>(y - y_ - margin) / usableHeight;
+            sustain_ = std::clamp(normY, 0.0f, 1.0f);
+            
+            // For decay time - horizontal movement from attack point
+            if (points.size() > 2) {
+                float attackEndX = static_cast<float>(points[1].x);
+                float pixels = static_cast<float>(x) - attackEndX;
+                pixels = std::clamp(pixels, 0.0f, static_cast<float>(usableWidth));
+                
+                // Convert pixel distance to time using fixed scale
+                decay_ = pixels / pixelsPerSecond;
+                decay_ = std::clamp(decay_, 0.001f, 2.0f);
+            }
             break;
-        case 2: // Sustain
-            sustain_ = normY;
+        }
+        
+        case 2: { // Release - horizontal movement only
+            // Calculate release time based on pixel distance from sustain end
+            if (points.size() > 3) {
+                float sustainEndX = static_cast<float>(points[3].x);
+                float pixels = static_cast<float>(x) - sustainEndX;
+                pixels = std::clamp(pixels, 0.0f, static_cast<float>(usableWidth));
+                
+                // Convert pixel distance to time using fixed scale
+                release_ = pixels / pixelsPerSecond;
+                release_ = std::clamp(release_, 0.001f, 4.0f);
+            }
             break;
-        case 3: // Release
-            release_ = normX * 4.0f; // Max 4 seconds
-            break;
+        }
     }
     
     if (parameterChangeCallback_) {

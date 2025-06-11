@@ -41,9 +41,18 @@ The AIMusicHardware project has reached a significant milestone with multiple co
   - Enhanced parameter binding system (ValueBridge pattern)
   - Thread-safe communication using lock-free queues
   - Professional visualization components (waveform, envelope, level meters)
+  - **NEW**: Vital-style filter visualizer with frequency response display
+  - **NEW**: Modulation routing UI with source/destination dropdowns
+  - **NEW**: Effects chain UI with bypass/mix controls per effect
+  - **ENHANCED**: Envelope visualizer now includes all 4 ADSR handles (including release)
   - Comprehensive preset browser with search/filtering
   - Real-time parameter automation with multiple scaling types
 - **Performance**: 60 FPS rendering with sample-accurate parameter updates
+- **Recent Fixes**:
+  - Filter control feedback loop prevention
+  - Dropdown z-order rendering fixed
+  - Effect crash fixes (Reverb, Distortion, Phaser)
+  - Logarithmic cutoff slider scaling (20Hz-20kHz)
 
 #### 4. Sequencer System ⭐ **Advanced Features**
 - **Status**: 🟢 **COMPLETE** - Game audio inspired

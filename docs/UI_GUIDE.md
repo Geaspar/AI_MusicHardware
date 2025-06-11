@@ -127,18 +127,24 @@ waveform->setDisplayMode(WaveformVisualizer::DisplayMode::Lissajous);   // X-Y d
 ```
 
 #### EnvelopeVisualizer
-Interactive ADSR envelope display:
+Interactive ADSR envelope display with 4-point editing:
 
 ```cpp
 auto envelope = std::make_unique<EnvelopeVisualizer>("envelope");
 envelope->setADSR(0.01f, 0.1f, 0.7f, 0.5f);  // Attack, Decay, Sustain, Release
-envelope->setEditable(true);  // Enable drag editing
+envelope->setEditable(true);  // Enable drag editing with all 4 handles
 
 // Callback for parameter changes
 envelope->setParameterChangeCallback([](float a, float d, float s, float r) {
     // Update synthesizer parameters
 });
 ```
+
+**Features:**
+- Full 4-point ADSR editing (including release handle)
+- Real-time envelope visualization
+- Drag handles for intuitive control
+- Visual feedback during parameter changes
 
 #### LevelMeter
 Audio level monitoring:
@@ -165,6 +171,103 @@ phaseMeter->setTraceColor(Color(0, 255, 128));
 // Update with stereo samples
 phaseMeter->pushSamples(leftBuffer, rightBuffer, numSamples);
 ```
+
+#### FilterVisualizer
+Vital-style frequency response display with interactive control:
+
+```cpp
+auto filterViz = std::make_unique<FilterVisualizer>("filter_viz");
+filterViz->setFilterType(FilterVisualizer::FilterType::LowPass);
+filterViz->setCutoff(0.5f);  // Normalized 0-1
+filterViz->setResonance(0.7f);
+
+// Bind to filter parameters
+filterViz->bindCutoffParameter(filterCutoffParam);
+filterViz->bindResonanceParameter(filterResonanceParam);
+
+// Handle parameter changes
+filterViz->setParameterChangeCallback([](float cutoff, float resonance) {
+    // Update synthesizer filter
+});
+```
+
+**Features:**
+- Real-time frequency response visualization
+- Interactive cutoff and resonance control
+- Logarithmic frequency scaling (20Hz-20kHz)
+- Visual feedback with handles and grid
+- Feedback loop prevention between sliders and visualizer
+
+### 4. Modulation System
+
+#### Modulation Routing Interface
+Visual modulation matrix with source/destination routing:
+
+```cpp
+// Create modulation section
+auto modSection = std::make_unique<Panel>("mod_section");
+
+// Source dropdown
+auto modSource = std::make_unique<Dropdown>("mod_source");
+modSource->addOption("LFO 1");
+modSource->addOption("LFO 2");
+modSource->addOption("Envelope 1");
+modSource->addOption("Envelope 2");
+
+// Destination dropdown
+auto modDest = std::make_unique<Dropdown>("mod_dest");
+modDest->addOption("Filter Cutoff");
+modDest->addOption("Filter Resonance");
+modDest->addOption("Oscillator Pitch");
+modDest->addOption("Oscillator Shape");
+
+// Amount knob
+auto modAmount = std::make_unique<SynthKnob>("mod_amount", 0, 0, 50, -1.0f, 1.0f, 0.0f);
+modAmount->setLabel("Amount");
+```
+
+**Features:**
+- Intuitive source/destination dropdowns
+- Bidirectional modulation amounts (-100% to +100%)
+- Multiple routing slots
+- Visual connection indicators
+
+### 5. Effects Processing
+
+#### Effects Chain UI
+Reorderable effects chain with bypass and mix controls:
+
+```cpp
+// Create effects chain container
+auto effectsChain = std::make_unique<Panel>("effects_chain");
+
+// Individual effect slot
+auto reverbSlot = std::make_unique<Panel>("reverb_slot");
+
+// Effect controls
+auto reverbBypass = std::make_unique<Button>("reverb_bypass", "Bypass");
+reverbBypass->setToggleMode(true);
+reverbBypass->setSize(60, 25);
+
+auto reverbMix = std::make_unique<Slider>("reverb_mix");
+reverbMix->setRange(0.0f, 1.0f);
+reverbMix->setValue(0.3f);
+reverbMix->setLabel("Mix");
+
+// Effect-specific parameters
+auto reverbSize = std::make_unique<SynthKnob>("reverb_size", 0, 0, 50, 0.0f, 1.0f, 0.5f);
+reverbSize->setLabel("Size");
+
+auto reverbDamping = std::make_unique<SynthKnob>("reverb_damp", 0, 0, 50, 0.0f, 1.0f, 0.7f);
+reverbDamping->setLabel("Damping");
+```
+
+**Features:**
+- Visual effects chain representation
+- Per-effect bypass toggle
+- Dry/wet mix control for each effect
+- Drag-and-drop reordering support
+- Effect-specific parameter controls
 
 ## Parameter Binding System
 

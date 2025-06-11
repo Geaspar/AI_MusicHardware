@@ -390,7 +390,7 @@ private:
 
 ### EnvelopeVisualizer
 
-Interactive ADSR envelope display:
+Interactive ADSR envelope display with full 4-point editing:
 
 ```cpp
 class EnvelopeVisualizer : public UIComponent {
@@ -416,18 +416,90 @@ private:
     
     // Interaction state
     bool isEditable_ = false;
-    int dragHandle_ = -1;  // Which handle is being dragged
+    int dragHandle_ = -1;  // Which handle is being dragged (0=attack, 1=decay, 2=sustain, 3=release)
     ParameterChangeCallback parameterChangeCallback_;
     
     // Rendering
     void calculateEnvelopePoints(std::vector<Point>& points);
     void drawEnvelope(DisplayManager* display, const std::vector<Point>& points);
-    void drawHandles(DisplayManager* display, const std::vector<Point>& points);
+    void drawHandles(DisplayManager* display, const std::vector<Point>& points);  // Now draws all 4 handles
     void drawPhaseIndicator(DisplayManager* display, const std::vector<Point>& points);
     
     // Interaction
     int getHandleAtPosition(int x, int y, const std::vector<Point>& points);
     void updateParameterFromHandle(int handle, int x, int y);
+};
+```
+
+### FilterVisualizer
+
+Vital-style frequency response visualization with interactive control:
+
+```cpp
+class FilterVisualizer : public UIComponent {
+public:
+    enum class FilterType {
+        LowPass,
+        HighPass,
+        BandPass,
+        Notch
+    };
+    
+    FilterVisualizer(const std::string& id);
+    
+    // Filter parameters
+    void setFilterType(FilterType type);
+    void setCutoff(float normalized);  // 0-1, logarithmically scaled
+    void setResonance(float normalized);  // 0-1
+    
+    // Parameter binding
+    void bindCutoffParameter(Parameter* param);
+    void bindResonanceParameter(Parameter* param);
+    
+    // Callbacks
+    using ParameterChangeCallback = std::function<void(float cutoff, float resonance)>;
+    void setParameterChangeCallback(ParameterChangeCallback callback);
+    
+    // Component interface
+    void update(float deltaTime) override;
+    void render(DisplayManager* display) override;
+    bool handleInput(const InputEvent& event) override;
+    
+private:
+    // Filter state
+    FilterType filterType_ = FilterType::LowPass;
+    float cutoff_ = 0.5f;  // Normalized
+    float resonance_ = 0.0f;
+    
+    // Logarithmic scaling
+    float cutoffToFrequency(float normalized) const {
+        // Maps 0->20Hz, 0.5->500Hz, 1->20kHz logarithmically
+        const float minFreq = 20.0f;
+        const float maxFreq = 20000.0f;
+        return minFreq * std::pow(maxFreq / minFreq, normalized);
+    }
+    
+    float frequencyToCutoff(float freq) const {
+        const float minFreq = 20.0f;
+        const float maxFreq = 20000.0f;
+        return std::log(freq / minFreq) / std::log(maxFreq / minFreq);
+    }
+    
+    // Interaction state
+    bool isDraggingCutoff_ = false;
+    bool isDraggingResonance_ = false;
+    bool isUpdatingFromParameter_ = false;  // Prevents feedback loops
+    
+    // Parameter binding
+    Parameter* cutoffParam_ = nullptr;
+    Parameter* resonanceParam_ = nullptr;
+    ParameterChangeCallback parameterChangeCallback_;
+    
+    // Rendering
+    void drawFrequencyResponse(DisplayManager* display);
+    void drawGrid(DisplayManager* display);
+    void drawHandles(DisplayManager* display);
+    void calculateResponseCurve(std::vector<Point>& points);
 };
 ```
 

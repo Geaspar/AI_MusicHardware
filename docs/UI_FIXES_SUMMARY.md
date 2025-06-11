@@ -1,6 +1,6 @@
 # UI Fixes Summary
 
-## Date: October 6, 2025
+## Date: November 6, 2025 (Updated from October 6, 2025)
 
 This document summarizes the major UI fixes and improvements implemented to address various issues with the synthesizer interface.
 
@@ -158,6 +158,82 @@ fontSmall_ = TTF_OpenFont("/System/Library/Fonts/Helvetica.ttc", 12);
 4. **Improved Audio System**: Automatic buffer size selection based on system capabilities
 5. **Component Pooling**: Reuse component instances to reduce allocation overhead
 
+## 6. Envelope Visualizer Release Handle Fix
+
+### Problem
+- EnvelopeVisualizer was only showing 3 handles (Attack, Decay, Sustain)
+- Release handle was missing, making it impossible to adjust release time visually
+
+### Solution
+Modified the envelope visualizer to include all 4 ADSR handles:
+- Attack handle at the attack point
+- Decay handle at the decay point  
+- Sustain handle for vertical sustain level adjustment
+- Release handle at the release endpoint
+
+### Implementation
+The fix ensures all 4 envelope stages can be edited interactively, matching the behavior of professional synthesizers like Vital.
+
+## 7. Filter Visualizer Implementation
+
+### Problem
+- No visual feedback for filter frequency response
+- Users couldn't see how cutoff and resonance affected the sound
+
+### Solution
+Implemented a Vital-style FilterVisualizer component with:
+- Real-time frequency response curve visualization
+- Interactive cutoff and resonance control via draggable handles
+- Logarithmic frequency scaling (20Hz at 0, 500Hz at 0.5, 20kHz at 1.0)
+- Grid overlay for frequency reference
+- Feedback loop prevention between parameter updates
+
+### Technical Details
+```cpp
+// Logarithmic cutoff mapping
+float cutoffToFrequency(float normalized) {
+    const float minFreq = 20.0f;
+    const float maxFreq = 20000.0f;
+    return minFreq * std::pow(maxFreq / minFreq, normalized);
+}
+```
+
+## 8. Dropdown Z-Order Fix
+
+### Problem
+- Dropdown menus were rendering behind other UI elements
+- Made modulation routing dropdowns unusable
+
+### Solution
+- Implemented proper z-order management for dropdown overlays
+- Dropdowns now render on top of all other UI elements
+- Fixed clipping issues with dropdown lists
+
+## 9. Effect Processor Crash Fixes
+
+### Problem
+- Reverb, Distortion, and Phaser effects were causing crashes
+- Null pointer exceptions when effects were bypassed
+
+### Solution
+- Added proper null checks in effect processing chains
+- Fixed initialization order for effect parameters
+- Implemented safe bypass handling
+- Added bounds checking for effect parameters
+
+## 10. Filter Control Input Handling
+
+### Problem
+- Filter cutoff and resonance sliders were not responding to input
+- Feedback loop between visualizer and parameter updates
+
+### Solution
+- Implemented `isUpdatingFromParameter_` flag to prevent feedback loops
+- Fixed event handling in FilterVisualizer to properly process mouse input
+- Ensured bidirectional updates work correctly between sliders and visualizer
+
 ## Conclusion
 
 These fixes significantly improve the stability and usability of the UI system. The grid layout provides a much more maintainable approach to component positioning, while the rendering checks ensure a clean visual experience during initialization. The reduced audio latency makes the synthesizer more responsive and suitable for live performance.
+
+The recent additions of the filter visualizer, modulation routing UI, and effects chain controls bring the interface up to professional standards, matching the functionality found in commercial synthesizers like Vital. The envelope visualizer fix ensures all ADSR parameters can be edited visually, completing the core synthesis control interface.
