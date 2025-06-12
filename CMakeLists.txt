@@ -183,6 +183,8 @@ set(SYNTHESIS_SOURCES
     src/synthesis/wavetable/oscillator_stack.cpp
     src/synthesis/modulators/envelope.cpp
     src/synthesis/modulators/modulation_matrix.cpp
+    src/synthesis/modulators/LFO.cpp
+    src/synthesis/modulators/LFOModulationSource.cpp
     src/synthesis/voice/voice_manager.cpp
     src/synthesis/voice/MpeVoice.cpp
     src/synthesis/voice/MpeAwareVoiceManager.cpp
@@ -726,6 +728,22 @@ if(SDL2_FOUND)
     )
     message(STATUS "Building ParameterSmoothingTestSimple")
     message(STATUS "- Run ./bin/ParameterSmoothingTestSimple to test the new parameter smoothing and automation system")
+    
+    # Create LFO Test executable (no UI required)
+    add_executable(TestLFO examples/TestLFO.cpp)
+    target_link_libraries(TestLFO PRIVATE
+        AIMusicCore
+    )
+    message(STATUS "Building TestLFO")
+    message(STATUS "- Run ./bin/TestLFO to test the LFO implementation without UI")
+    
+    # Create Simple LFO Test executable
+    add_executable(TestLFOSimple examples/TestLFOSimple.cpp)
+    target_link_libraries(TestLFOSimple PRIVATE
+        AIMusicCore
+    )
+    message(STATUS "Building TestLFOSimple")
+    message(STATUS "- Run ./bin/TestLFOSimple for a quick LFO validation")
     
     # Create Simple UI Demo with improved layout
     add_executable(SimpleUIDemo examples/SimpleUIDemo.cpp)

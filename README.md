@@ -1,6 +1,6 @@
 # AI Music Hardware
 
-An electronic musical instrument with LLM-assisted composition capabilities, digital synthesis, effects processing, and sequencing.
+An IoT-enabled hardware synthesizer with LLM-assisted composition capabilities, digital synthesis, effects processing, and event-based sequencing. Designed with a modular architecture where UI is optional for testing and development.
 
 ## Project Structure
 - `src/` - Source code
@@ -19,26 +19,35 @@ An electronic musical instrument with LLM-assisted composition capabilities, dig
 
 ## System Architecture
 
-The architecture consists of the following core components:
+The architecture follows a modular design where core functionality is independent of UI:
 
+### Core Components (Always Present):
 1. **Audio Engine**: Real-time C++ audio processing with digital synthesis
-2. **Effects System**: Modular audio effects chain with reordering capabilities
-3. **Sequencer**: Pattern-based sequencer with timing and note events
-4. **Adaptive Sequencer**: Game audio-inspired dynamic music system with state transitions
+2. **Modulation System**: LFOs, envelopes, and modulation matrix (in development)
+3. **Effects System**: Modular audio effects chain with reordering capabilities
+4. **Event Sequencer**: Event-driven sequencer for hardware compatibility
 5. **MIDI Integration**: Hardware connectivity via MIDI protocol with MPE support
 6. **Multi-Timbral Engine**: Support for multiple simultaneous instruments on different MIDI channels
-7. **Preset Management**: Comprehensive system for saving and loading synthesizer settings
-8. **MPE Support**: MIDI Polyphonic Expression for expressive control with three dimensions:
-   - Per-note pitch bend (X-axis)
-   - Per-note timbre control (Y-axis)
-   - Per-note pressure sensitivity (Z-axis)
-9. **Hardware Interface**: Physical controls and display interface
-10. **IoT Integration**: Connect with other devices through MQTT protocol:
-   - Discover and connect to IoT sensors and controllers
-   - Map sensor data to synthesis parameters
-   - Create interactive environments that respond to real-world data
-   - Control synthesizer remotely via IoT devices
-11. **LLM Integration**:
+7. **Preset Management**: Enterprise-grade system for saving and loading synthesizer settings
+
+### Optional Components (For Testing/Development):
+8. **UI Module**: SDL2-based interface for testing and prototyping hardware layout
+9. **Visualization**: Waveform, envelope, and filter visualizers to prototype hardware displays
+
+### Hardware-Specific Components:
+10. **Hardware Interface**: Physical controls and display interface
+11. **IoT Integration**: Connect with other devices through MQTT protocol:
+    - Discover and connect to IoT sensors and controllers
+    - Map sensor data to synthesis parameters
+    - Create interactive environments that respond to real-world data
+    - Control synthesizer remotely via IoT devices
+
+### Advanced Features:
+12. **MPE Support**: MIDI Polyphonic Expression for expressive control with three dimensions:
+    - Per-note pitch bend (X-axis)
+    - Per-note timbre control (Y-axis)
+    - Per-note pressure sensitivity (Z-axis)
+13. **LLM Integration**:
     - Voice/text to synthesizer parameter suggestions
     - Pattern completion and suggestion for sequencer
     - User preference learning for customized assistance

@@ -585,6 +585,32 @@ ParameterSmoothingTestSimple/fast:
 .PHONY : ParameterSmoothingTestSimple/fast
 
 #=============================================================================
+# Target rules for targets named TestLFO
+
+# Build rule for target.
+TestLFO: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 TestLFO
+.PHONY : TestLFO
+
+# fast build rule for target.
+TestLFO/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestLFO.dir/build.make CMakeFiles/TestLFO.dir/build
+.PHONY : TestLFO/fast
+
+#=============================================================================
+# Target rules for targets named TestLFOSimple
+
+# Build rule for target.
+TestLFOSimple: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 TestLFOSimple
+.PHONY : TestLFOSimple
+
+# fast build rule for target.
+TestLFOSimple/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestLFOSimple.dir/build.make CMakeFiles/TestLFOSimple.dir/build
+.PHONY : TestLFOSimple/fast
+
+#=============================================================================
 # Target rules for targets named SimpleUIDemo
 
 # Build rule for target.
@@ -1281,6 +1307,54 @@ examples/TestEffectControls.s: examples/TestEffectControls.cpp.s
 examples/TestEffectControls.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestEffectControls.dir/build.make CMakeFiles/TestEffectControls.dir/examples/TestEffectControls.cpp.s
 .PHONY : examples/TestEffectControls.cpp.s
+
+examples/TestLFO.o: examples/TestLFO.cpp.o
+.PHONY : examples/TestLFO.o
+
+# target to build an object file
+examples/TestLFO.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestLFO.dir/build.make CMakeFiles/TestLFO.dir/examples/TestLFO.cpp.o
+.PHONY : examples/TestLFO.cpp.o
+
+examples/TestLFO.i: examples/TestLFO.cpp.i
+.PHONY : examples/TestLFO.i
+
+# target to preprocess a source file
+examples/TestLFO.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestLFO.dir/build.make CMakeFiles/TestLFO.dir/examples/TestLFO.cpp.i
+.PHONY : examples/TestLFO.cpp.i
+
+examples/TestLFO.s: examples/TestLFO.cpp.s
+.PHONY : examples/TestLFO.s
+
+# target to generate assembly for a file
+examples/TestLFO.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestLFO.dir/build.make CMakeFiles/TestLFO.dir/examples/TestLFO.cpp.s
+.PHONY : examples/TestLFO.cpp.s
+
+examples/TestLFOSimple.o: examples/TestLFOSimple.cpp.o
+.PHONY : examples/TestLFOSimple.o
+
+# target to build an object file
+examples/TestLFOSimple.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestLFOSimple.dir/build.make CMakeFiles/TestLFOSimple.dir/examples/TestLFOSimple.cpp.o
+.PHONY : examples/TestLFOSimple.cpp.o
+
+examples/TestLFOSimple.i: examples/TestLFOSimple.cpp.i
+.PHONY : examples/TestLFOSimple.i
+
+# target to preprocess a source file
+examples/TestLFOSimple.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestLFOSimple.dir/build.make CMakeFiles/TestLFOSimple.dir/examples/TestLFOSimple.cpp.i
+.PHONY : examples/TestLFOSimple.cpp.i
+
+examples/TestLFOSimple.s: examples/TestLFOSimple.cpp.s
+.PHONY : examples/TestLFOSimple.s
+
+# target to generate assembly for a file
+examples/TestLFOSimple.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestLFOSimple.dir/build.make CMakeFiles/TestLFOSimple.dir/examples/TestLFOSimple.cpp.s
+.PHONY : examples/TestLFOSimple.cpp.s
 
 examples/TestMQTTIntegration.o: examples/TestMQTTIntegration.cpp.o
 .PHONY : examples/TestMQTTIntegration.o
@@ -2482,6 +2556,54 @@ src/synthesis/framework/processor.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/framework/processor.cpp.s
 .PHONY : src/synthesis/framework/processor.cpp.s
 
+src/synthesis/modulators/LFO.o: src/synthesis/modulators/LFO.cpp.o
+.PHONY : src/synthesis/modulators/LFO.o
+
+# target to build an object file
+src/synthesis/modulators/LFO.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/LFO.cpp.o
+.PHONY : src/synthesis/modulators/LFO.cpp.o
+
+src/synthesis/modulators/LFO.i: src/synthesis/modulators/LFO.cpp.i
+.PHONY : src/synthesis/modulators/LFO.i
+
+# target to preprocess a source file
+src/synthesis/modulators/LFO.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/LFO.cpp.i
+.PHONY : src/synthesis/modulators/LFO.cpp.i
+
+src/synthesis/modulators/LFO.s: src/synthesis/modulators/LFO.cpp.s
+.PHONY : src/synthesis/modulators/LFO.s
+
+# target to generate assembly for a file
+src/synthesis/modulators/LFO.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/LFO.cpp.s
+.PHONY : src/synthesis/modulators/LFO.cpp.s
+
+src/synthesis/modulators/LFOModulationSource.o: src/synthesis/modulators/LFOModulationSource.cpp.o
+.PHONY : src/synthesis/modulators/LFOModulationSource.o
+
+# target to build an object file
+src/synthesis/modulators/LFOModulationSource.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/LFOModulationSource.cpp.o
+.PHONY : src/synthesis/modulators/LFOModulationSource.cpp.o
+
+src/synthesis/modulators/LFOModulationSource.i: src/synthesis/modulators/LFOModulationSource.cpp.i
+.PHONY : src/synthesis/modulators/LFOModulationSource.i
+
+# target to preprocess a source file
+src/synthesis/modulators/LFOModulationSource.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/LFOModulationSource.cpp.i
+.PHONY : src/synthesis/modulators/LFOModulationSource.cpp.i
+
+src/synthesis/modulators/LFOModulationSource.s: src/synthesis/modulators/LFOModulationSource.cpp.s
+.PHONY : src/synthesis/modulators/LFOModulationSource.s
+
+# target to generate assembly for a file
+src/synthesis/modulators/LFOModulationSource.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/modulators/LFOModulationSource.cpp.s
+.PHONY : src/synthesis/modulators/LFOModulationSource.cpp.s
+
 src/synthesis/modulators/envelope.o: src/synthesis/modulators/envelope.cpp.o
 .PHONY : src/synthesis/modulators/envelope.o
 
@@ -3296,6 +3418,8 @@ help:
 	@echo "... SynchronizedSequencerDemo"
 	@echo "... TestAudio"
 	@echo "... TestEffectControls"
+	@echo "... TestLFO"
+	@echo "... TestLFOSimple"
 	@echo "... TestMQTTIntegration"
 	@echo "... TestMpeVoiceManager"
 	@echo "... TestUI"
@@ -3383,6 +3507,12 @@ help:
 	@echo "... examples/TestEffectControls.o"
 	@echo "... examples/TestEffectControls.i"
 	@echo "... examples/TestEffectControls.s"
+	@echo "... examples/TestLFO.o"
+	@echo "... examples/TestLFO.i"
+	@echo "... examples/TestLFO.s"
+	@echo "... examples/TestLFOSimple.o"
+	@echo "... examples/TestLFOSimple.i"
+	@echo "... examples/TestLFOSimple.s"
 	@echo "... examples/TestMQTTIntegration.o"
 	@echo "... examples/TestMQTTIntegration.i"
 	@echo "... examples/TestMQTTIntegration.s"
@@ -3533,6 +3663,12 @@ help:
 	@echo "... src/synthesis/framework/processor.o"
 	@echo "... src/synthesis/framework/processor.i"
 	@echo "... src/synthesis/framework/processor.s"
+	@echo "... src/synthesis/modulators/LFO.o"
+	@echo "... src/synthesis/modulators/LFO.i"
+	@echo "... src/synthesis/modulators/LFO.s"
+	@echo "... src/synthesis/modulators/LFOModulationSource.o"
+	@echo "... src/synthesis/modulators/LFOModulationSource.i"
+	@echo "... src/synthesis/modulators/LFOModulationSource.s"
 	@echo "... src/synthesis/modulators/envelope.o"
 	@echo "... src/synthesis/modulators/envelope.i"
 	@echo "... src/synthesis/modulators/envelope.s"
