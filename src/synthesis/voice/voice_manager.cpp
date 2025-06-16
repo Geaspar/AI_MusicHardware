@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include <random>
+#include <iostream>
 
 namespace AIMusicHardware {
 
@@ -22,8 +23,9 @@ Voice::Voice(int sampleRate)
       channel_(0),
       state_(State::Inactive),
       sampleRate_(sampleRate),
-      pitchBendSemitones_(0.0f),
-      pressure_(0.0f) {
+      pressure_(0.0f),
+      amplitudeModulation_(1.0f),
+      rng_(std::random_device{}()) {
     
     // Create oscillator and envelope
     oscillator_ = std::make_unique<WavetableOscillator>(sampleRate);
@@ -43,23 +45,31 @@ void Voice::noteOn(int midiNote, float velocity) {
     midiNote_ = midiNote;
     velocity_ = std::clamp(velocity, 0.0f, 1.0f);
     baseFrequency_ = midiNoteToFrequency(midiNote);
-    frequency_ = baseFrequency_;
     
-    // Apply any active pitch bend
-    if (pitchBendSemitones_ != 0.0f) {
-        frequency_ = baseFrequency_ * std::pow(2.0f, pitchBendSemitones_ / 12.0f);
-    }
+    // Initialize pitch modulation for this note
+    pitchMod_.basePitch = static_cast<float>(midiNote);
+    pitchMod_.velocityValue = velocity;
+    pitchMod_.randomValue = randomDist_(rng_); // New random value per note
+    pitchMod_.smoothedPitch = pitchMod_.basePitch; // Start at base pitch
     
     age_ = 0;
     
-    // Set oscillator frequency
-    oscillator_->setFrequency(frequency_);
+    // Update frequency with all modulations
+    updateOscillatorFrequency();
     
     // Start envelope
     envelope_->noteOn();
     
     // Update state
     state_ = State::Starting;
+    
+    // Debug output
+    std::cout << "Voice::noteOn - Note: " << midiNote << ", Velocity: " << velocity 
+              << ", Freq: " << frequency_ << " Hz" << std::endl;
+    std::cout << "Envelope params - A: " << envelope_->getAttack() 
+              << ", D: " << envelope_->getDecay()
+              << ", S: " << envelope_->getSustain()
+              << ", R: " << envelope_->getRelease() << std::endl;
 }
 
 void Voice::noteOff() {
@@ -73,6 +83,12 @@ void Voice::reset() {
     midiNote_ = -1;
     velocity_ = 0.0f;
     age_ = 0;
+    
+    // Reset modulation
+    amplitudeModulation_ = 1.0f;
+    
+    // Reset pitch modulation to defaults
+    pitchMod_ = PitchModulation(); // Reset to default values
     
     envelope_->reset();
     
@@ -88,12 +104,38 @@ float Voice::generateSample() {
     // Increment age counter for voice stealing
     age_++;
     
+    // Update envelope value for pitch modulation
+    pitchMod_.envValue = envelope_->getCurrentValue();
+    
+    // Calculate total pitch (Vital-style unified calculation)
+    float targetPitch = pitchMod_.calculateTotalPitch();
+    
+    // Smooth pitch changes to avoid clicks
+    pitchMod_.updateSmoothedPitch(targetPitch);
+    
+    // Update frequency every 64 samples for efficiency (like Vital's block processing)
+    if (age_ % 64 == 0) {
+        updateOscillatorFrequency();
+        
+        // Debug output for pitch modulation (only first few times)
+        if (age_ < 256 && pitchMod_.lfo1ToPitch != 0.0f) {
+            std::cout << "Voice pitch mod - LFO1 amount: " << pitchMod_.lfo1ToPitch 
+                      << ", LFO1 value: " << pitchMod_.lfo1Value 
+                      << ", Total pitch: " << pitchMod_.smoothedPitch << std::endl;
+        }
+    }
+    
     // Generate oscillator sample
     float sample = oscillator_->generateSample();
     
     // Apply envelope
     float envValue = envelope_->generateValue();
     sample *= envValue * velocity_;
+    
+    // Apply amplitude modulation
+    sample *= amplitudeModulation_;
+    
+    // Debug output for first few samples (removed verbose logging)
     
     // Update state based on envelope
     if (state_ == State::Starting && envValue > 0.01f) {
@@ -130,16 +172,48 @@ void Voice::setSampleRate(int sampleRate) {
 }
 
 void Voice::setPitchBend(float semitones) {
-    pitchBendSemitones_ = semitones;
+    pitchMod_.pitchBend = semitones;
     
     // Only update frequency if voice is active
     if (state_ != State::Inactive && state_ != State::Finished) {
-        // Calculate new frequency with pitch bend
-        frequency_ = baseFrequency_ * std::pow(2.0f, pitchBendSemitones_ / 12.0f);
-        
-        // Update oscillator frequency
-        oscillator_->setFrequency(frequency_);
+        // Don't force update here, let generateSample handle it smoothly
     }
+}
+
+void Voice::setPitchModulationAmount(const std::string& source, float semitones) {
+    if (source == "lfo1") {
+        pitchMod_.lfo1ToPitch = semitones;
+    } else if (source == "lfo2") {
+        pitchMod_.lfo2ToPitch = semitones;
+    } else if (source == "envelope") {
+        pitchMod_.envToPitch = semitones;
+    } else if (source == "velocity") {
+        pitchMod_.velocityToPitch = semitones;
+    } else if (source == "random") {
+        pitchMod_.randomToPitch = semitones;
+    } else if (source == "note") {
+        pitchMod_.noteToPitch = semitones;
+    }
+}
+
+void Voice::setPitchModulationValue(const std::string& source, float value) {
+    if (source == "lfo1") {
+        pitchMod_.lfo1Value = value;
+    } else if (source == "lfo2") {
+        pitchMod_.lfo2Value = value;
+    }
+    // Note: envelope, velocity, and random values are updated internally
+}
+
+void Voice::updateOscillatorFrequency() {
+    // Use the smoothed pitch value for frequency calculation
+    float totalPitchInSemitones = pitchMod_.smoothedPitch;
+    
+    // Convert total pitch (in MIDI note units) to frequency
+    frequency_ = 440.0f * std::pow(2.0f, (totalPitchInSemitones - 69.0f) / 12.0f);
+    
+    // Update oscillator
+    oscillator_->setFrequency(frequency_);
 }
 
 float Voice::midiNoteToFrequency(int midiNote) const {

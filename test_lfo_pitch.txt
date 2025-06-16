@@ -1,0 +1,14 @@
+Test Steps for LFO Pitch Modulation:
+
+1. Run ./bin/AIMusicHardwareIntegrated
+2. In the Modulation Routing section:
+   - Row 1: Set Source = "LFO 1", Destination = "Pitch", Amount = 50% (or drag slider)
+3. Play a note on the keyboard (click on a key)
+4. You should hear the pitch wobbling up and down
+5. Adjust the LFO 1 Rate slider to change the speed of modulation
+6. Adjust the modulation amount slider to change the depth
+
+Expected behavior:
+- When LFO is connected to Pitch, the note's pitch should oscillate
+- The console should show "Pitch modulation LFO value" messages
+- The pitch should vary by the amount set (50% = 6 semitones)

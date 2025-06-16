@@ -3,6 +3,7 @@
 #include <vector>
 #include <memory>
 #include <unordered_map>
+#include <random>
 #include "../wavetable/wavetable.h"  // For Wavetable class
 
 namespace AIMusicHardware {
@@ -160,6 +161,56 @@ public:
     void setPitchBend(float semitones);
     void setPressure(float pressure) { pressure_ = pressure; }
     
+    // Amplitude modulation
+    void setAmplitudeModulation(float modulation) { amplitudeModulation_ = modulation; }
+    float getAmplitudeModulation() const { return amplitudeModulation_; }
+    
+    // Unified pitch modulation system (Vital-style)
+    struct PitchModulation {
+        float basePitch = 0.0f;           // MIDI note number
+        float pitchBend = 0.0f;           // Pitch wheel (-2 to +2 semitones typically)
+        float lfo1ToPitch = 0.0f;         // LFO1 modulation amount in semitones
+        float lfo2ToPitch = 0.0f;         // LFO2 modulation amount in semitones
+        float envToPitch = 0.0f;          // Envelope modulation amount in semitones
+        float velocityToPitch = 0.0f;     // Velocity modulation amount in semitones
+        float randomToPitch = 0.0f;       // Random modulation amount in semitones
+        float noteToPitch = 0.0f;         // Note tracking (keyboard follow)
+        
+        // Current modulation values (0-1 range, will be multiplied by amounts)
+        float lfo1Value = 0.0f;
+        float lfo2Value = 0.0f;
+        float envValue = 0.0f;
+        float velocityValue = 0.0f;
+        float randomValue = 0.0f;
+        
+        // Calculate total pitch in semitones
+        float calculateTotalPitch() const {
+            return basePitch 
+                 + pitchBend
+                 + (lfo1ToPitch * lfo1Value)
+                 + (lfo2ToPitch * lfo2Value)
+                 + (envToPitch * envValue)
+                 + (velocityToPitch * velocityValue)
+                 + (randomToPitch * randomValue)
+                 + noteToPitch;
+        }
+        
+        // Smooth interpolation for audio-rate modulation
+        float smoothedPitch = 0.0f;
+        void updateSmoothedPitch(float targetPitch, float smoothingFactor = 0.995f) {
+            smoothedPitch = smoothedPitch * smoothingFactor + targetPitch * (1.0f - smoothingFactor);
+        }
+    };
+    
+    // Set modulation amounts (in semitones)
+    void setPitchModulationAmount(const std::string& source, float semitones);
+    
+    // Set modulation values (0-1 range, bipolar sources should be -1 to 1)
+    void setPitchModulationValue(const std::string& source, float value);
+    
+    // Get current total pitch
+    float getTotalPitch() const { return pitchMod_.calculateTotalPitch(); }
+    
     // Sample rate control
     virtual void setSampleRate(int sampleRate);
 
@@ -184,8 +235,18 @@ private:
     int sampleRate_;
 
     // MIDI expression parameters
-    float pitchBendSemitones_ = 0.0f;  // Current pitch bend in semitones
     float pressure_ = 0.0f;            // Pressure/aftertouch (0.0-1.0)
+    float amplitudeModulation_ = 1.0f; // Amplitude modulation multiplier (0.0-1.0)
+    
+    // Unified pitch modulation
+    PitchModulation pitchMod_;
+    
+    // Random number generator for random pitch
+    std::mt19937 rng_;
+    std::uniform_real_distribution<float> randomDist_{-1.0f, 1.0f};
+    
+    // Internal frequency update
+    void updateOscillatorFrequency();
 };
 
 } // namespace AIMusicHardware

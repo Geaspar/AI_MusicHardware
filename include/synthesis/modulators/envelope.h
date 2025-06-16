@@ -38,6 +38,12 @@ public:
     void setSustain(float level); // 0.0 - 1.0
     void setRelease(float seconds);
     
+    // Parameter getters
+    float getAttack() const { return attack_; }
+    float getDecay() const { return decay_; }
+    float getSustain() const { return sustain_; }
+    float getRelease() const { return release_; }
+    
     // Curve control for more natural envelopes
     void setAttackCurve(float curve); // -1.0 (slow start) to 1.0 (fast start)
     void setDecayCurve(float curve);   // -1.0 (slow decay) to 1.0 (fast decay)

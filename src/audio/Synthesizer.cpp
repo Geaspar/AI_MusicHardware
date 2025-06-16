@@ -1,5 +1,7 @@
 #include "../../include/audio/Synthesizer.h"
 #include "../../include/sequencer/Sequencer.h"
+#include "../../include/effects/Filter.h"
+#include "../../include/effects/EffectProcessor.h"
 #include <cmath>
 #include <algorithm>
 #include <random>
@@ -32,10 +34,18 @@ public:
     }
     
     void update() override {
-        // Update phase
-        phase_ += frequency_ / sampleRate_;
+        // Update phase - for now assume 64 sample blocks
+        // TODO: Make this more flexible by passing samples per update
+        const float samplesPerUpdate = 64.0f;
+        float phaseIncrement = (frequency_ * samplesPerUpdate) / sampleRate_;
+        phase_ += phaseIncrement;
         if (phase_ >= 1.0f) {
             phase_ -= 1.0f;
+            // Debug: print when LFO completes a cycle
+            if (getName() == "LFO1" && frequency_ != lastDebugFreq_) {
+                std::cout << "LFO1 cycling at " << frequency_ << " Hz" << std::endl;
+                lastDebugFreq_ = frequency_;
+            }
         }
         
         // Generate value based on wave shape
@@ -91,6 +101,7 @@ private:
     float prevPhase_ = 0.0f;
     WaveShape shape_;
     float value_;
+    mutable float lastDebugFreq_ = -1.0f;
 };
 
 // Synthesizer implementation
@@ -135,6 +146,10 @@ void Synthesizer::createModulationSources() {
     auto lfo1 = std::make_unique<LfoSource>("LFO1", sampleRate_);
     auto lfo2 = std::make_unique<LfoSource>("LFO2", sampleRate_);
     
+    // Store raw pointers before moving to modulation matrix
+    lfo1_ = lfo1.get();
+    lfo2_ = lfo2.get();
+    
     // Set different default shapes
     lfo1->setFrequency(1.0f);  // 1 Hz
     lfo2->setFrequency(0.5f);  // 0.5 Hz
@@ -142,6 +157,166 @@ void Synthesizer::createModulationSources() {
     // Add to modulation matrix
     modulationMatrix_.addSource(std::move(lfo1));
     modulationMatrix_.addSource(std::move(lfo2));
+    
+    // Store base parameter values
+    baseParameterValues_["filter_cutoff"] = 1.0f; // Start with filter wide open (20kHz)
+    baseParameterValues_["filter_resonance"] = 0.1f; // Low resonance by default
+    baseParameterValues_["master_volume"] = 0.7f;
+    baseParameterValues_["pitch"] = 0.0f;
+    baseParameterValues_["envelope_attack"] = 0.01f;
+    baseParameterValues_["envelope_release"] = 0.5f;
+    
+    // Create modulation destinations
+    // Filter cutoff destination
+    auto filterCutoffDest = std::make_unique<ModulationDestination>(
+        "Filter Cutoff",
+        [this](float value) { 
+            // This is called with the MODULATED value
+            // Map 0-1 to 20Hz-20kHz logarithmically
+            float freq = 20.0f * std::pow(1000.0f, value);
+            
+            // Apply to filter - first check internal effect chain
+            bool foundFilter = false;
+            for (size_t i = 0; i < effectChain_.getNumProcessors(); ++i) {
+                if (auto* filter = dynamic_cast<Filter*>(effectChain_.getProcessor(i))) {
+                    filter->setParameter("frequency", freq);
+                    foundFilter = true;
+                    break;
+                }
+            }
+            
+            // If not found internally, check external effect processor
+            if (!foundFilter && externalEffectProcessor_) {
+                for (size_t i = 0; i < externalEffectProcessor_->getNumEffects(); ++i) {
+                    if (auto* filter = dynamic_cast<Filter*>(externalEffectProcessor_->getEffect(i))) {
+                        filter->setParameter("frequency", freq);
+                        // std::cout << "Setting filter cutoff to " << freq << " Hz (normalized: " << value << ")" << std::endl;
+                        break;
+                    }
+                }
+            }
+        },
+        [this]() { return baseParameterValues_["filter_cutoff"]; },
+        0.0f, 1.0f
+    );
+    
+    // Filter resonance destination
+    auto filterResDest = std::make_unique<ModulationDestination>(
+        "Filter Res",
+        [this](float value) { 
+            // Map 0-1 to reasonable resonance range (0.7-10)
+            float resonance = 0.7f + value * 9.3f;
+            
+            // Apply to filter - first check internal effect chain
+            bool foundFilter = false;
+            for (size_t i = 0; i < effectChain_.getNumProcessors(); ++i) {
+                if (auto* filter = dynamic_cast<Filter*>(effectChain_.getProcessor(i))) {
+                    filter->setParameter("resonance", resonance);
+                    foundFilter = true;
+                    break;
+                }
+            }
+            
+            // If not found internally, check external effect processor
+            if (!foundFilter && externalEffectProcessor_) {
+                for (size_t i = 0; i < externalEffectProcessor_->getNumEffects(); ++i) {
+                    if (auto* filter = dynamic_cast<Filter*>(externalEffectProcessor_->getEffect(i))) {
+                        filter->setParameter("resonance", resonance);
+                        // std::cout << "Setting filter resonance to " << resonance << " (normalized: " << value << ")" << std::endl;
+                        break;
+                    }
+                }
+            }
+        },
+        [this]() { return baseParameterValues_["filter_resonance"]; },
+        0.0f, 1.0f
+    );
+    
+    // Pitch destination (in semitones) - now updates LFO1 pitch modulation
+    auto pitchDest = std::make_unique<ModulationDestination>(
+        "Pitch",
+        [this](float value) { 
+            // value is the LFO output in the range [-1, 1]
+            // Store this as the LFO1 value for pitch modulation
+            if (voiceManager_) {
+                // Only log when there are active voices
+                bool hasActiveVoices = false;
+                
+                // Update LFO1 value for all voices
+                for (int i = 0; i < voiceManager_->getMaxVoices(); ++i) {
+                    if (auto* voice = voiceManager_->getVoice(i)) {
+                        if (voice->isActive()) {
+                            hasActiveVoices = true;
+                            voice->setPitchModulationValue("lfo1", value);
+                        }
+                    }
+                }
+                
+                // Debug output only when there are active voices
+                // if (hasActiveVoices) {
+                //     std::cout << "Pitch modulation LFO value: " << value << std::endl;
+                // }
+            }
+        },
+        [this]() { return 0.0f; }, // LFO center value
+        -1.0f, 1.0f
+    );
+    
+    // Volume destination - per-voice amplitude modulation
+    auto volumeDest = std::make_unique<ModulationDestination>(
+        "Volume",
+        [this](float value) { 
+            // Apply amplitude modulation to all active voices
+            if (voiceManager_) {
+                for (int i = 0; i < voiceManager_->getMaxVoices(); ++i) {
+                    if (auto* voice = voiceManager_->getVoice(i)) {
+                        // Set amplitude modulation on each voice
+                        // This would multiply with the voice's envelope output
+                        voice->setAmplitudeModulation(value);
+                    }
+                }
+            }
+            // std::cout << "Modulating voice amplitude to " << value << std::endl;
+        },
+        [this]() { return 1.0f; }, // Base amplitude is always 1.0
+        0.0f, 1.0f
+    );
+    
+    // Attack time destination
+    auto attackDest = std::make_unique<ModulationDestination>(
+        "Attack",
+        [this](float value) { 
+            // value is already the attack time in seconds (0.001-2.0)
+            // Only update if it's different from the base value
+            if (std::abs(value - baseParameterValues_["envelope_attack"]) > 0.001f) {
+                setParameter("envelope_attack", value);
+            }
+        },
+        [this]() { return baseParameterValues_["envelope_attack"]; },
+        0.001f, 2.0f
+    );
+    
+    // Release time destination
+    auto releaseDest = std::make_unique<ModulationDestination>(
+        "Release",
+        [this](float value) { 
+            // value is already the release time in seconds (0.01-4.0)
+            // Only update if it's different from the base value
+            if (std::abs(value - baseParameterValues_["envelope_release"]) > 0.001f) {
+                setParameter("envelope_release", value);
+            }
+        },
+        [this]() { return baseParameterValues_["envelope_release"]; },
+        0.01f, 4.0f
+    );
+    
+    // Add destinations to modulation matrix
+    modulationMatrix_.addDestination(std::move(filterCutoffDest));
+    modulationMatrix_.addDestination(std::move(filterResDest));
+    modulationMatrix_.addDestination(std::move(pitchDest));
+    modulationMatrix_.addDestination(std::move(volumeDest));
+    modulationMatrix_.addDestination(std::move(attackDest));
+    modulationMatrix_.addDestination(std::move(releaseDest));
 }
 
 void Synthesizer::setSampleRate(int sampleRate) {
@@ -168,6 +343,21 @@ void Synthesizer::setSampleRate(int sampleRate) {
 void Synthesizer::noteOn(int midiNote, float velocity, int channel) {
     if (voiceManager_) {
         voiceManager_->noteOn(midiNote, velocity, channel);
+        
+        // Apply global pitch modulation amounts to the newly triggered voice
+        for (int i = 0; i < voiceManager_->getMaxVoices(); ++i) {
+            if (auto* voice = voiceManager_->getVoice(i)) {
+                if (voice->getMidiNote() == midiNote && voice->getChannel() == channel && voice->isActive()) {
+                    // Apply all stored global pitch modulation amounts
+                    for (const auto& [source, amount] : globalPitchModAmounts_) {
+                        if (amount != 0.0f) {
+                            voice->setPitchModulationAmount(source, amount);
+                        }
+                    }
+                    break; // Found the voice
+                }
+            }
+        }
     }
 }
 
@@ -263,18 +453,66 @@ void Synthesizer::setParameter(const std::string& paramId, float value) {
         }
     }
     else if (paramId == "filter_cutoff") {
-        // For future implementation - will need to add filter to VoiceManager
-        std::cout << "Setting filter cutoff to " << value << std::endl;
+        // Store the base parameter value
+        baseParameterValues_["filter_cutoff"] = value;
+        
+        // Apply directly to the filter if no modulation is active
+        // The modulation matrix will handle this when modulation is active
+        float freq = 20.0f * std::pow(1000.0f, value);
+        bool foundFilter = false;
+        for (size_t i = 0; i < effectChain_.getNumProcessors(); ++i) {
+            if (auto* filter = dynamic_cast<Filter*>(effectChain_.getProcessor(i))) {
+                filter->setParameter("frequency", freq);
+                foundFilter = true;
+                break;
+            }
+        }
+        
+        // If not found internally, check external effect processor
+        if (!foundFilter && externalEffectProcessor_) {
+            for (size_t i = 0; i < externalEffectProcessor_->getNumEffects(); ++i) {
+                if (auto* filter = dynamic_cast<Filter*>(externalEffectProcessor_->getEffect(i))) {
+                    filter->setParameter("frequency", freq);
+                    break;
+                }
+            }
+        }
+        std::cout << "Setting filter cutoff to " << value << " (freq: " << freq << " Hz)" << std::endl;
     }
     else if (paramId == "filter_resonance") {
-        // For future implementation - will need to add filter to VoiceManager
-        std::cout << "Setting filter resonance to " << value << std::endl;
+        // Store the base parameter value
+        baseParameterValues_["filter_resonance"] = value;
+        
+        // Apply directly to the filter if no modulation is active
+        float resonance = 0.7f + value * 9.3f;
+        bool foundFilter = false;
+        for (size_t i = 0; i < effectChain_.getNumProcessors(); ++i) {
+            if (auto* filter = dynamic_cast<Filter*>(effectChain_.getProcessor(i))) {
+                filter->setParameter("resonance", resonance);
+                foundFilter = true;
+                break;
+            }
+        }
+        
+        // If not found internally, check external effect processor
+        if (!foundFilter && externalEffectProcessor_) {
+            for (size_t i = 0; i < externalEffectProcessor_->getNumEffects(); ++i) {
+                if (auto* filter = dynamic_cast<Filter*>(externalEffectProcessor_->getEffect(i))) {
+                    filter->setParameter("resonance", resonance);
+                    break;
+                }
+            }
+        }
+        std::cout << "Setting filter resonance to " << value << " (resonance: " << resonance << ")" << std::endl;
     }
     else if (paramId == "master_volume") {
         // For future implementation - adjust master volume
         std::cout << "Setting master volume to " << value << std::endl;
     }
     else if (paramId == "envelope_attack") {
+        // Update base parameter value
+        baseParameterValues_["envelope_attack"] = value;
+        
         // Update all voices' attack time
         if (voiceManager_) {
             for (int i = 0; i < voiceManager_->getMaxVoices(); ++i) {
@@ -314,6 +552,9 @@ void Synthesizer::setParameter(const std::string& paramId, float value) {
         std::cout << "Setting envelope sustain to " << value << std::endl;
     }
     else if (paramId == "envelope_release") {
+        // Update base parameter value
+        baseParameterValues_["envelope_release"] = value;
+        
         // Update all voices' release time
         if (voiceManager_) {
             for (int i = 0; i < voiceManager_->getMaxVoices(); ++i) {
@@ -343,10 +584,17 @@ void Synthesizer::setParameter(const std::string& paramId, float value) {
             std::string lfoName = paramId.substr(0, underscorePos); // "lfo1", "lfo2", etc.
             std::string paramName = paramId.substr(underscorePos + 1); // "rate", "shape", etc.
 
-            if (auto* source = modulationMatrix_.getSource(lfoName)) {
+            // Convert to uppercase for LFO name lookup (e.g., "lfo1" -> "LFO1")
+            std::string upperLfoName;
+            for (char c : lfoName) {
+                upperLfoName += std::toupper(c);
+            }
+
+            if (auto* source = modulationMatrix_.getSource(upperLfoName)) {
                 if (auto* lfo = dynamic_cast<LfoSource*>(source)) {
                     if (paramName == "rate") {
                         lfo->setFrequency(value);
+                        std::cout << "Set " << upperLfoName << " frequency to " << value << " Hz" << std::endl;
                     }
                     else if (paramName == "shape") {
                         // Convert 0-4 float value to LFO shape
@@ -388,7 +636,7 @@ float Synthesizer::getParameter(const std::string& paramId) const {
         return 0.7f; // Default value
     }
     else if (paramId == "envelope_attack") {
-        return 0.01f; // Default 10ms attack
+        return baseParameterValues_.count("envelope_attack") ? baseParameterValues_.at("envelope_attack") : 0.01f;
     }
     else if (paramId == "envelope_decay") {
         return 0.1f; // Default 100ms decay
@@ -397,7 +645,7 @@ float Synthesizer::getParameter(const std::string& paramId) const {
         return 0.7f; // Default 70% sustain
     }
     else if (paramId == "envelope_release") {
-        return 0.5f; // Default 500ms release
+        return baseParameterValues_.count("envelope_release") ? baseParameterValues_.at("envelope_release") : 0.5f;
     }
     else if (paramId == "voice_count") {
         return static_cast<float>(getVoiceCount());
@@ -485,17 +733,19 @@ void Synthesizer::setOscillatorType(OscillatorType type) {
 
 float Synthesizer::oscTypeToFramePosition(OscillatorType type) const {
     // Map oscillator type to frame position (0-1)
+    // Wavetable stores: 0=Sine, 1=Saw, 2=Square, 3=Triangle, 4=Noise
+    // We need to map to exact frame positions, not interpolated positions
     switch (type) {
         case OscillatorType::Sine:
-            return 0.0f;
-        case OscillatorType::Saw:
-            return 0.25f;
+            return 0.0f;    // Frame 0
         case OscillatorType::Square:
-            return 0.5f;
+            return 0.5f;    // Frame 2 (normalized: 2/4 = 0.5)
+        case OscillatorType::Saw:
+            return 0.25f;   // Frame 1 (normalized: 1/4 = 0.25)
         case OscillatorType::Triangle:
-            return 0.75f;
+            return 0.75f;   // Frame 3 (normalized: 3/4 = 0.75)
         case OscillatorType::Noise:
-            return 1.0f;
+            return 1.0f;    // Frame 4 (normalized: 4/4 = 1.0)
         default:
             return 0.0f;
     }
@@ -529,15 +779,27 @@ void Synthesizer::process(float* buffer, int numFrames) {
     // Clear buffer
     std::fill(buffer, buffer + numFrames * 2, 0.0f);
     
-    // Update modulation matrix
-    modulationMatrix_.update();
+    // Process in blocks of 64 samples for smoother LFO modulation
+    const int blockSize = 64;
+    int samplesProcessed = 0;
     
-    // Process voices through voice manager
-    if (voiceManager_) {
-        voiceManager_->process(buffer, numFrames);
+    while (samplesProcessed < numFrames) {
+        int samplesToProcess = std::min(blockSize, numFrames - samplesProcessed);
+        
+        // Update modulation matrix once per block (every 64 samples)
+        // This gives smooth modulation without causing crashes
+        modulationMatrix_.update();
+        
+        // Process voices for this block
+        if (voiceManager_) {
+            float* blockBuffer = buffer + (samplesProcessed * 2);
+            voiceManager_->process(blockBuffer, samplesToProcess);
+        }
+        
+        samplesProcessed += samplesToProcess;
     }
     
-    // Process effects chain
+    // Process effects chain on the complete buffer
     effectChain_.process(buffer, numFrames);
     
     // Final limiter to prevent clipping
@@ -588,6 +850,63 @@ Processor* Synthesizer::getEffect(size_t index) {
 
 size_t Synthesizer::getNumEffects() const {
     return effectChain_.getNumProcessors();
+}
+
+void Synthesizer::connectModulation(const std::string& sourceName, const std::string& destName, float amount) {
+    modulationMatrix_.connect(sourceName, destName, amount);
+    std::cout << "Connected " << sourceName << " to " << destName << " with amount " << amount << std::endl;
+}
+
+void Synthesizer::disconnectModulation(const std::string& sourceName, const std::string& destName) {
+    modulationMatrix_.disconnect(sourceName, destName);
+    std::cout << "Disconnected " << sourceName << " from " << destName << std::endl;
+}
+
+void Synthesizer::setLFORate(int lfoIndex, float rate) {
+    std::string lfoName = "LFO" + std::to_string(lfoIndex + 1);
+    if (auto* source = modulationMatrix_.getSource(lfoName)) {
+        if (auto* lfo = dynamic_cast<LfoSource*>(source)) {
+            lfo->setFrequency(rate);
+            std::cout << "Set " << lfoName << " rate to " << rate << " Hz" << std::endl;
+        }
+    }
+}
+
+void Synthesizer::setLFOShape(int lfoIndex, int shape) {
+    std::string lfoName = "LFO" + std::to_string(lfoIndex + 1);
+    if (auto* source = modulationMatrix_.getSource(lfoName)) {
+        if (auto* lfo = dynamic_cast<LfoSource*>(source)) {
+            lfo->setShape(static_cast<LfoSource::WaveShape>(shape));
+            std::cout << "Set " << lfoName << " shape to " << shape << std::endl;
+        }
+    }
+}
+
+void Synthesizer::setLFODepth(int lfoIndex, float depth) {
+    std::string lfoName = "LFO" + std::to_string(lfoIndex + 1);
+    if (auto* source = modulationMatrix_.getSource(lfoName)) {
+        if (auto* lfo = dynamic_cast<LfoSource*>(source)) {
+            // LFO depth is handled by modulation amount in the connection
+            // This could be used to scale the LFO output directly if needed
+            std::cout << "Set " << lfoName << " depth to " << depth << std::endl;
+        }
+    }
+}
+
+void Synthesizer::setGlobalPitchModulationAmount(const std::string& source, float semitones) {
+    // Store the global pitch modulation amount
+    globalPitchModAmounts_[source] = semitones;
+    
+    // Apply to all existing voices
+    if (voiceManager_) {
+        for (int i = 0; i < voiceManager_->getMaxVoices(); ++i) {
+            if (auto* voice = voiceManager_->getVoice(i)) {
+                voice->setPitchModulationAmount(source, semitones);
+            }
+        }
+    }
+    
+    std::cout << "Set global pitch modulation for " << source << " to " << semitones << " semitones" << std::endl;
 }
 
 } // namespace AIMusicHardware

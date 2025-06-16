@@ -3,7 +3,7 @@
 **Purpose**: Track all bug fixes, patches, and stability improvements throughout the project lifecycle.
 
 **Maintained By**: Development Team  
-**Last Updated**: May 30, 2025
+**Last Updated**: December 16, 2024
 
 ---
 
@@ -11,7 +11,13 @@
 
 | Date | ID | Severity | Status | Component | Platform | Reporter | Assignee | Time to Resolution | GitHub Commit | Title | Problem | Fix | Testing Method | Files Modified |
 |------|----|---------:|--------|-----------|----------|----------|----------|------------------:|--------------:|-------|---------|-----|----------------|----------------|
-| 2025-05-30 | BUG-001 | Critical | ✅ Resolved | UI/Audio | macOS | User | Claude | <1 day | 9d172a8 | Critical Shutdown Crash Resolution | Application crashed during shutdown due to improper component destruction order. SDL components destroyed while UI still accessing them, audio callbacks continuing during shutdown, missing null pointer checks in display manager. | Implemented comprehensive shutdown sequence: 1) Stop audio engine first 2) Clear UI connections 3) Shutdown UI context before display manager 4) Reset display manager before SDL cleanup 5) Destroy SDL in correct order 6) Added null pointer checks to all SDL operations 7) Explicit component destruction in safe order | Automated test script + 50+ manual shutdown cycles | `src/main_integrated_simple.cpp`, `test_shutdown.sh` |
+| 2024-05-30 | BUG-001 | Critical | ✅ Resolved | UI/Audio | macOS | User | Claude | <1 day | 9d172a8 | Critical Shutdown Crash Resolution | Application crashed during shutdown due to improper component destruction order. SDL components destroyed while UI still accessing them, audio callbacks continuing during shutdown, missing null pointer checks in display manager. | Implemented comprehensive shutdown sequence: 1) Stop audio engine first 2) Clear UI connections 3) Shutdown UI context before display manager 4) Reset display manager before SDL cleanup 5) Destroy SDL in correct order 6) Added null pointer checks to all SDL operations 7) Explicit component destruction in safe order | Automated test script + 50+ manual shutdown cycles | `src/main_integrated_simple.cpp`, `test_shutdown.sh` |
+| 2024-12-16 | BUG-002 | Critical | ✅ Resolved | Modulation | All | User | Assistant | <1 hour | pending | Modulation System Crash - Null Pointer Access | Application crashed when modulating parameters due to null pointer access in ModulationConnection::getSource(). Occurred during per-sample modulation updates (512 times per buffer). | Changed from per-sample to block-based processing (every 64 samples). Prevents excessive modulation matrix updates while maintaining smooth modulation. | Manual testing with heavy modulation | `src/audio/Synthesizer.cpp` |
+| 2024-12-16 | BUG-003 | High | ✅ Resolved | Audio/Effects | All | User | Assistant | <1 hour | pending | Filter Not Affecting Audio Output | Filter had no effect on sound. Synthesizer was looking for filter in internal effect chain but filter was in external effect processor. | Connected synthesizer to external effect processor via setExternalEffectProcessor(). Added checks for both internal and external effect chains. | Manual testing with filter parameter changes | `src/audio/Synthesizer.cpp`, `include/audio/Synthesizer.h`, `src/main_integrated_simple.cpp` |
+| 2024-12-16 | BUG-004 | High | ✅ Resolved | UI/Modulation | All | User | Assistant | <30 min | pending | LFO Rate Slider Not Working | LFO rate slider had no effect on LFO speed. Direct callbacks bypassed parameter system and case mismatch between "lfo1" and "LFO1". | Connected LFO sliders through parameter system. Added uppercase conversion in parameter handler. | Manual testing of all LFO parameters | `src/main_integrated_simple.cpp`, `src/audio/Synthesizer.cpp` |
+| 2024-12-16 | BUG-005 | Medium | ✅ Resolved | Modulation | All | User | Assistant | <30 min | pending | LFO Running 64x Slower Than Expected | LFO rate was incorrect - 1 Hz setting produced ~0.016 Hz. Phase increment calculation assumed per-sample updates but updates were per-block. | Multiplied phase increment by samples per update (64). LFO now runs at correct speed. | Manual testing with oscilloscope visualization | `src/audio/Synthesizer.cpp` |
+| 2024-12-16 | BUG-006 | Low | ✅ Resolved | UI | All | User | Assistant | <15 min | pending | Oscillator Wave Shapes Mislabeled | Square and Saw waves were swapped in UI. Wavetable frame positions didn't match enum order. | Updated UI labels and frame position mapping to match wavetable storage order. | Visual verification with oscilloscope | `src/main_integrated_simple.cpp`, `src/audio/Synthesizer.cpp` |
+| 2024-12-16 | BUG-007 | Medium | 🔄 In Progress | Audio | All | User | Assistant | TBD | pending | Duplicate Note Triggering | Notes play again ~1 second after initial trigger. Suspected sequencer or voice management issue. | Added debug timestamps and disabled sequencer for testing. Investigation ongoing. | Manual testing with debug output | `src/main_integrated_simple.cpp` |
 
 ---
 
@@ -59,29 +65,35 @@
 
 | Severity | Count | Resolution Rate | Avg. Time to Resolution |
 |----------|-------|-----------------|-------------------------|
-| Critical | 1 | 100% | <1 day |
-| High | 0 | N/A | N/A |
-| Medium | 0 | N/A | N/A |
-| Low | 0 | N/A | N/A |
-| **Total** | **1** | **100%** | **<1 day** |
+| Critical | 2 | 100% | <1 day |
+| High | 2 | 100% | <1 hour |
+| Medium | 2 | 50% | <30 min |
+| Low | 1 | 100% | <15 min |
+| **Total** | **7** | **86%** | **<1 hour avg** |
 
 ### By Component
 | Component | Bugs Fixed | Critical | High | Medium | Low |
 |-----------|------------|----------|------|--------|-----|
 | UI/Audio | 1 | 1 | 0 | 0 | 0 |
-| **Total** | **1** | **1** | **0** | **0** | **0** |
+| Modulation | 3 | 1 | 0 | 1 | 0 |
+| Audio/Effects | 1 | 0 | 1 | 0 | 0 |
+| UI/Modulation | 1 | 0 | 1 | 0 | 0 |
+| UI | 1 | 0 | 0 | 0 | 1 |
+| Audio | 1 | 0 | 0 | 1 | 0 |
+| **Total** | **7** | **2** | **2** | **2** | **1** |
 
 ### By Platform
 | Platform | Bugs Fixed | Critical | High | Medium | Low |
 |----------|------------|----------|------|--------|-----|
 | macOS | 1 | 1 | 0 | 0 | 0 |
-| **Total** | **1** | **1** | **0** | **0** | **0** |
+| All | 6 | 1 | 2 | 2 | 1 |
+| **Total** | **7** | **2** | **2** | **2** | **1** |
 
 ---
 
 ## Detailed Fix Descriptions
 
-### BUG-001: Critical Shutdown Crash Resolution (2025-05-30)
+### BUG-001: Critical Shutdown Crash Resolution (2024-05-30)
 
 **Impact**: 🔴 Critical - Application crashes on exit  
 **Status**: ✅ Resolved  

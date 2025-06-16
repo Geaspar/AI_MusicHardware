@@ -69,9 +69,22 @@ public:
     // Voice management
     void setVoiceCount(int count);
     int getVoiceCount() const;
+    VoiceManager* getVoiceManager() { return voiceManager_.get(); }
     
     // Modulation system
     ModulationMatrix* getModulationMatrix() { return &modulationMatrix_; }
+    
+    // Connect modulation source to destination
+    void connectModulation(const std::string& sourceName, const std::string& destName, float amount);
+    void disconnectModulation(const std::string& sourceName, const std::string& destName);
+    
+    // LFO control
+    void setLFORate(int lfoIndex, float rate);
+    void setLFOShape(int lfoIndex, int shape);
+    void setLFODepth(int lfoIndex, float depth);
+    
+    // Global pitch modulation amounts (applied to all voices)
+    void setGlobalPitchModulationAmount(const std::string& source, float semitones);
     
     // Processor implementation
     void process(float* buffer, int numFrames) override;
@@ -87,6 +100,11 @@ public:
     void removeEffect(size_t index);
     Processor* getEffect(size_t index);
     size_t getNumEffects() const;
+    
+    // Set external effect processor for filter control
+    void setExternalEffectProcessor(class EffectProcessor* effectProcessor) {
+        externalEffectProcessor_ = effectProcessor;
+    }
     
 private:
     // Convert legacy oscillator type to wavetable frame position
@@ -104,6 +122,19 @@ private:
     
     // Legacy compatibility
     OscillatorType currentOscType_;
+    
+    // Modulation state
+    std::unordered_map<std::string, float> baseParameterValues_;
+    
+    // Global pitch modulation amounts
+    std::unordered_map<std::string, float> globalPitchModAmounts_;
+    
+    // LFO pointers for direct access (optimization)
+    class LfoSource* lfo1_ = nullptr;
+    class LfoSource* lfo2_ = nullptr;
+    
+    // External effect processor for filter control
+    class EffectProcessor* externalEffectProcessor_ = nullptr;
 };
 
 } // namespace AIMusicHardware

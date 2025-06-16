@@ -61,6 +61,9 @@ public:
     // Apply modulation and update the target parameter
     void update();
     
+    // Apply a specific value to the destination
+    void applyValue(float value) { setter_(value); }
+    
     // Get name for this destination
     const std::string& getName() const { return name_; }
     

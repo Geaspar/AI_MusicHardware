@@ -1,4 +1,5 @@
 #include "../../../include/synthesis/modulators/modulation_matrix.h"
+#include <unordered_set>
 
 namespace AIMusicHardware {
 
@@ -148,8 +149,14 @@ void ModulationMatrix::disconnect(const std::string& sourceName,
 }
 
 void ModulationMatrix::update() {
-    // First update all sources
-    for (auto& source : sources_) {
+    // Only update sources that are connected to something
+    std::unordered_set<ModulationSource*> activeSources;
+    for (auto& connection : connections_) {
+        activeSources.insert(connection->getSource());
+    }
+    
+    // Update only active sources
+    for (auto* source : activeSources) {
         source->update();
     }
     
@@ -165,7 +172,7 @@ void ModulationMatrix::update() {
         modulations[dest] += mod;
     }
     
-    // Apply modulations to all destinations
+    // Apply modulations only to destinations that have modulation
     for (auto& destPair : modulations) {
         ModulationDestination* dest = destPair.first;
         float mod = destPair.second;
@@ -183,13 +190,8 @@ void ModulationMatrix::update() {
         // Clamp to destination range
         newValue = std::clamp(newValue, dest->getMinValue(), dest->getMaxValue());
         
-        // Set the new value
-        dest->setBaseValue(newValue);
-    }
-    
-    // Update all destinations
-    for (auto& dest : destinations_) {
-        dest->update();
+        // Call the destination setter with the modulated value
+        dest->applyValue(newValue);
     }
 }
 

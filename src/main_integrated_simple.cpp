@@ -249,8 +249,8 @@ void audioCallback(AudioEngine* audioEngine, Synthesizer* synthesizer,
                   WaveformVisualizer* waveform, LevelMeter* levelMeter,
                   float* outputBuffer, int numFrames) {
     
-    // Process sequencer
-    sequencer->process(static_cast<float>(numFrames) / audioEngine->getSampleRate());
+    // Process sequencer - TEMPORARILY DISABLED to debug duplicate notes
+    // sequencer->process(static_cast<float>(numFrames) / audioEngine->getSampleRate());
     
     // Process synthesizer
     synthesizer->process(outputBuffer, numFrames);
@@ -334,6 +334,10 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     
+    // Ensure sequencer is stopped to prevent unwanted note triggers
+    sequencer->stop();
+    std::cout << "Sequencer initialized and stopped. Playing: " << (sequencer->isPlaying() ? "YES" : "NO") << std::endl;
+    
     if (!audioEngine->initialize()) {
         std::cerr << "Failed to initialize audio engine!" << std::endl;
         return 1;
@@ -343,9 +347,12 @@ int main(int argc, char* argv[]) {
     auto filter = std::make_unique<Filter>(audioEngine->getSampleRate(), Filter::Type::LowPass);
     filter->setParameter("mix", 1.0f); // Full wet signal
     filter->setParameter("frequency", 20000.0f); // Start with filter wide open
-    filter->setParameter("resonance", 0.7f); // Default resonance
+    filter->setParameter("resonance", 1.0f); // Low resonance (0.7 + 0.1 * 9.3 ≈ 1.0)
     effectProcessor->addEffect(std::move(filter));
     std::cout << "Added low-pass filter to effect processor chain" << std::endl;
+    
+    // Connect synthesizer to external effect processor so it can control the filter
+    synthesizer->setExternalEffectProcessor(effectProcessor.get());
     
     // Initialize hardware (non-critical)
     if (!hardwareInterface->initialize()) {
@@ -471,7 +478,7 @@ int main(int argc, char* argv[]) {
     waveSlider->setValue(0.0f);
     waveSlider->setStep(1.0f);
     waveSlider->setValueFormatter([](float value) {
-        const char* waveNames[] = {"Sine", "Saw", "Square", "Triangle", "Noise"};
+        const char* waveNames[] = {"Sine", "Square", "Saw", "Triangle", "Noise"};
         int index = static_cast<int>(value);
         if (index >= 0 && index < 5) {
             return std::string(waveNames[index]);
@@ -493,8 +500,8 @@ int main(int argc, char* argv[]) {
     auto cutoffSlider = std::make_unique<Slider>("cutoff_slider", "Cutoff", 350, 85, 40, 100);
     // Use normalized 0-1 range for internal value, will convert to frequency
     cutoffSlider->setRange(0.0f, 1.0f);
-    // Set to 0.5 which will map to ~500 Hz
-    cutoffSlider->setValue(0.5f);
+    // Set to 1.0 which will map to 20kHz (filter wide open)
+    cutoffSlider->setValue(1.0f);
     cutoffSlider->setValueFormatter([](float normalizedValue) {
         // Convert normalized value to frequency using logarithmic scale
         // 0.0 = 20 Hz, 0.5 = 500 Hz, 1.0 = 20000 Hz
@@ -523,7 +530,7 @@ int main(int argc, char* argv[]) {
     
     auto resSlider = std::make_unique<Slider>("res_slider", "Resonance", 460, 85, 40, 100);
     resSlider->setRange(0.0f, 1.0f);
-    resSlider->setValue(0.5f);
+    resSlider->setValue(0.1f); // Low resonance by default
     resSlider->setValueFormatter([](float value) {
         std::stringstream ss;
         ss << std::fixed << std::setprecision(0) << value * 100.0f << "%";
@@ -630,6 +637,55 @@ int main(int argc, char* argv[]) {
     Slider* volumeSliderPtr = volumeSlider.get();
     mainScreen->addChild(std::move(volumeSlider));
     
+    // Create LFO 1 section (underneath master volume)
+    auto lfo1Section = std::make_unique<Label>("lfo1_section", "LFO 1");
+    lfo1Section->setPosition(900, 220);
+    lfo1Section->setSize(80, 25);
+    lfo1Section->setTextColor(Color(200, 255, 200)); // Light green for LFO
+    mainScreen->addChild(std::move(lfo1Section));
+    
+    // LFO 1 Rate slider
+    auto lfo1RateSlider = std::make_unique<Slider>("lfo1_rate", "Rate", 900, 250, 40, 80);
+    lfo1RateSlider->setRange(0.1f, 20.0f);
+    lfo1RateSlider->setValue(1.0f);
+    lfo1RateSlider->setValueFormatter([](float value) {
+        std::stringstream ss;
+        ss << std::fixed << std::setprecision(1) << value << " Hz";
+        return ss.str();
+    });
+    lfo1RateSlider->setColor(Color(180, 255, 180));
+    lfo1RateSlider->setThumbColor(Color(150, 255, 150));
+    Slider* lfo1RateSliderPtr = lfo1RateSlider.get();
+    mainScreen->addChild(std::move(lfo1RateSlider));
+    
+    // LFO 1 Depth slider
+    auto lfo1DepthSlider = std::make_unique<Slider>("lfo1_depth", "Depth", 990, 250, 40, 80);
+    lfo1DepthSlider->setRange(0.0f, 1.0f);
+    lfo1DepthSlider->setValue(1.0f);
+    lfo1DepthSlider->setValueFormatter([](float value) {
+        std::stringstream ss;
+        ss << std::fixed << std::setprecision(0) << value * 100.0f << "%";
+        return ss.str();
+    });
+    lfo1DepthSlider->setColor(Color(180, 255, 180));
+    lfo1DepthSlider->setThumbColor(Color(150, 255, 150));
+    Slider* lfo1DepthSliderPtr = lfo1DepthSlider.get();
+    mainScreen->addChild(std::move(lfo1DepthSlider));
+    
+    // LFO 1 Shape slider
+    auto lfo1ShapeSlider = std::make_unique<Slider>("lfo1_shape", "Shape", 1080, 250, 40, 80);
+    lfo1ShapeSlider->setRange(0, 4); // 5 wave shapes
+    lfo1ShapeSlider->setValue(0); // Sine
+    lfo1ShapeSlider->setValueFormatter([](float value) {
+        int shape = static_cast<int>(value);
+        const char* shapes[] = {"Sine", "Triangle", "Saw", "Square", "Random"};
+        return std::string(shapes[shape % 5]);
+    });
+    lfo1ShapeSlider->setColor(Color(180, 255, 180));
+    lfo1ShapeSlider->setThumbColor(Color(150, 255, 150));
+    Slider* lfo1ShapeSliderPtr = lfo1ShapeSlider.get();
+    mainScreen->addChild(std::move(lfo1ShapeSlider));
+    
     // Create visualization section
     auto vizSection = std::make_unique<Label>("viz_section", "VISUALIZATION");
     vizSection->setPosition(50, 220);
@@ -705,7 +761,9 @@ int main(int argc, char* argv[]) {
     midiKeyboard->setNoteCallback([&synthesizer, &audioEngine](int note, int velocity, bool isNoteOn) {
         if (isNoteOn) {
             float normalizedVelocity = velocity / 127.0f;
-            std::cout << "Keyboard Note On: " << MidiKeyboard::getNoteName(note) 
+            auto now = std::chrono::high_resolution_clock::now();
+            auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+            std::cout << "[" << timestamp << " ms] Keyboard Note On: " << MidiKeyboard::getNoteName(note) 
                       << " (note " << note << ") velocity " << velocity 
                       << " normalized: " << normalizedVelocity << std::endl;
             
@@ -727,8 +785,10 @@ int main(int argc, char* argv[]) {
                 synthesizer->setParameter("filter_cutoff", 0.5f);
             }
         } else {
+            auto now = std::chrono::high_resolution_clock::now();
+            auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
             synthesizer->noteOff(note);
-            std::cout << "Keyboard Note Off: " << MidiKeyboard::getNoteName(note) 
+            std::cout << "[" << timestamp << " ms] Keyboard Note Off: " << MidiKeyboard::getNoteName(note) 
                       << " (note " << note << ")" << std::endl;
         }
     });
@@ -895,6 +955,17 @@ int main(int argc, char* argv[]) {
     // Store dropdown references to add them last (for proper z-order)
     std::vector<std::unique_ptr<DropdownMenu>> modSourceDropdowns;
     std::vector<std::unique_ptr<DropdownMenu>> modDestDropdowns;
+    std::vector<Slider*> modAmountSliders; // Store amount slider pointers
+    
+    // Structure to track modulation connections
+    struct ModulationConnection {
+        std::string source = "None";
+        std::string destination = "None";
+        float amount = 0.0f;
+        int sourceIndex = -1;
+        int destIndex = -1;
+    };
+    std::vector<ModulationConnection> modConnections(modRowCount);
     
     for (int i = 0; i < modRowCount; ++i) {
         int yPos = modRowStartY + (i * modRowHeight);
@@ -904,12 +975,8 @@ int main(int argc, char* argv[]) {
         sourceDropdown->setPosition(850, yPos);
         sourceDropdown->setSize(120, 25);
         sourceDropdown->addItems(modSources);
-        sourceDropdown->setSelectionCallback([i](int index, const std::string& item) {
-            std::cout << "Mod " << i << " source: " << item << std::endl;
-        });
-        modSourceDropdowns.push_back(std::move(sourceDropdown));
         
-        // Amount slider
+        // Create amount slider
         auto amountSlider = std::make_unique<Slider>("mod_amount_" + std::to_string(i), "", 980, yPos, 80, 25);
         amountSlider->setOrientation(Slider::Orientation::Horizontal);
         amountSlider->setRange(-1.0f, 1.0f);
@@ -921,6 +988,8 @@ int main(int argc, char* argv[]) {
         });
         amountSlider->setColor(Color(200, 150, 255));
         amountSlider->setThumbColor(Color(220, 170, 255));
+        Slider* amountSliderPtr = amountSlider.get();
+        modAmountSliders.push_back(amountSliderPtr);
         mainScreen->addChild(std::move(amountSlider));
         
         // Create destination dropdown but don't add yet
@@ -928,9 +997,128 @@ int main(int argc, char* argv[]) {
         destDropdown->setPosition(1070, yPos);
         destDropdown->setSize(130, 25);
         destDropdown->addItems(modDestinations);
-        destDropdown->setSelectionCallback([i](int index, const std::string& item) {
-            std::cout << "Mod " << i << " destination: " << item << std::endl;
+        
+        // Set up callbacks with proper modulation matrix connection
+        sourceDropdown->setSelectionCallback([i, &modConnections, &synthesizer, amountSliderPtr](int index, const std::string& item) {
+            std::cout << "Mod " << i << " source: " << item << std::endl;
+            
+            // Disconnect previous connection if any
+            if (modConnections[i].sourceIndex > 0 && modConnections[i].destIndex > 0) {
+                std::string oldSourceName = "";
+                if (modConnections[i].source == "LFO 1") oldSourceName = "LFO1";
+                else if (modConnections[i].source == "LFO 2") oldSourceName = "LFO2";
+                
+                if (!oldSourceName.empty() && modConnections[i].destination != "None") {
+                    synthesizer->disconnectModulation(oldSourceName, modConnections[i].destination);
+                }
+            }
+            
+            modConnections[i].source = item;
+            modConnections[i].sourceIndex = index;
+            
+            // Update modulation matrix if both source and destination are set
+            if (modConnections[i].sourceIndex > 0 && modConnections[i].destIndex > 0) {
+                // Map UI names to internal names
+                std::string sourceName = "";
+                if (item == "LFO 1") sourceName = "LFO1";
+                else if (item == "LFO 2") sourceName = "LFO2";
+                
+                if (!sourceName.empty() && modConnections[i].destination != "None") {
+                    synthesizer->connectModulation(sourceName, modConnections[i].destination, modConnections[i].amount);
+                    
+                    // Special handling for pitch modulation - set the amount in semitones
+                    if (modConnections[i].destination == "Pitch") {
+                        // Map -1 to 1 modulation amount to -12 to +12 semitones (1 octave range)
+                        float semitones = modConnections[i].amount * 12.0f;
+                        
+                        // Use the new global method with the correct source
+                        if (sourceName == "LFO1") {
+                            synthesizer->setGlobalPitchModulationAmount("lfo1", semitones);
+                        } else if (sourceName == "LFO2") {
+                            synthesizer->setGlobalPitchModulationAmount("lfo2", semitones);
+                        }
+                    }
+                }
+            }
         });
+        
+        destDropdown->setSelectionCallback([i, &modConnections, &synthesizer, amountSliderPtr](int index, const std::string& item) {
+            std::cout << "Mod " << i << " destination: " << item << std::endl;
+            
+            // Disconnect previous connection if any
+            if (modConnections[i].sourceIndex > 0 && modConnections[i].destIndex > 0) {
+                std::string sourceName = "";
+                if (modConnections[i].source == "LFO 1") sourceName = "LFO1";
+                else if (modConnections[i].source == "LFO 2") sourceName = "LFO2";
+                
+                if (!sourceName.empty() && modConnections[i].destination != "None") {
+                    synthesizer->disconnectModulation(sourceName, modConnections[i].destination);
+                }
+            }
+            
+            modConnections[i].destination = item;
+            modConnections[i].destIndex = index;
+            
+            // Update modulation matrix if both source and destination are set
+            if (modConnections[i].sourceIndex > 0 && modConnections[i].destIndex > 0) {
+                // Map UI names to internal names
+                std::string sourceName = "";
+                if (modConnections[i].source == "LFO 1") sourceName = "LFO1";
+                else if (modConnections[i].source == "LFO 2") sourceName = "LFO2";
+                
+                if (!sourceName.empty() && item != "None") {
+                    synthesizer->connectModulation(sourceName, item, modConnections[i].amount);
+                    
+                    // Special handling for pitch modulation - set the amount in semitones
+                    if (item == "Pitch") {
+                        // Map -1 to 1 modulation amount to -12 to +12 semitones (1 octave range)
+                        float semitones = modConnections[i].amount * 12.0f;
+                        
+                        // Use the new global method with the correct source
+                        if (sourceName == "LFO1") {
+                            synthesizer->setGlobalPitchModulationAmount("lfo1", semitones);
+                        } else if (sourceName == "LFO2") {
+                            synthesizer->setGlobalPitchModulationAmount("lfo2", semitones);
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Set up amount slider callback
+        amountSliderPtr->setValueChangeCallback([i, &modConnections, &synthesizer](float value) {
+            modConnections[i].amount = value;
+            std::cout << "Mod " << i << " amount: " << (value * 100.0f) << "%" << std::endl;
+            
+            // Update modulation amount if connection exists
+            if (modConnections[i].sourceIndex > 0 && modConnections[i].destIndex > 0) {
+                // Map UI names to internal names
+                std::string sourceName = "";
+                if (modConnections[i].source == "LFO 1") sourceName = "LFO1";
+                else if (modConnections[i].source == "LFO 2") sourceName = "LFO2";
+                
+                if (!sourceName.empty() && modConnections[i].destination != "None") {
+                    // Disconnect and reconnect with new amount
+                    synthesizer->disconnectModulation(sourceName, modConnections[i].destination);
+                    synthesizer->connectModulation(sourceName, modConnections[i].destination, value);
+                    
+                    // Special handling for pitch modulation - set the amount in semitones
+                    if (modConnections[i].destination == "Pitch") {
+                        // Map -1 to 1 modulation amount to -12 to +12 semitones (1 octave range)
+                        float semitones = value * 12.0f;
+                        
+                        // Use the new global method with the correct source
+                        if (sourceName == "LFO1") {
+                            synthesizer->setGlobalPitchModulationAmount("lfo1", semitones);
+                        } else if (sourceName == "LFO2") {
+                            synthesizer->setGlobalPitchModulationAmount("lfo2", semitones);
+                        }
+                    }
+                }
+            }
+        });
+        
+        modSourceDropdowns.push_back(std::move(sourceDropdown));
         modDestDropdowns.push_back(std::move(destDropdown));
     }
     
@@ -1144,10 +1332,10 @@ int main(int argc, char* argv[]) {
     std::atomic<bool> updatingFromSlider{false};
     std::atomic<bool> updatingFromVisualizer{false};
     
-    // Special handling for filter cutoff - connect directly to effect processor
+    // Special handling for filter cutoff - connect to synthesizer parameter system
     if (cutoffSliderPtr) {
         parameterSliders["filter_cutoff"] = cutoffSliderPtr;
-        cutoffSliderPtr->setValueChangeCallback([&effectProcessor, filterVizPtr, &updatingFromSlider, &updatingFromVisualizer](float normalizedValue) {
+        cutoffSliderPtr->setValueChangeCallback([&synthesizer, filterVizPtr, &updatingFromSlider, &updatingFromVisualizer](float normalizedValue) {
             if (updatingFromVisualizer) {
                 std::cout << "CUTOFF SLIDER: Ignoring update from visualizer" << std::endl;
                 return; // Prevent feedback loop
@@ -1155,19 +1343,14 @@ int main(int argc, char* argv[]) {
             
             updatingFromSlider = true;
             
-            // Convert normalized value to frequency
-            // freq = 20 * (1000)^normalizedValue gives us 20Hz at 0, 500Hz at 0.5, 20kHz at 1
+            // Update synthesizer parameter (normalized 0-1)
+            synthesizer->setParameter("filter_cutoff", normalizedValue);
+            
+            // Convert normalized value to frequency for visualizer
             float frequencyHz = 20.0f * std::pow(1000.0f, normalizedValue);
             
             std::cout << "CUTOFF SLIDER: Normalized " << normalizedValue << " -> " << frequencyHz << " Hz" << std::endl;
             
-            // Update filter in effect processor (assume it's the first effect)
-            if (effectProcessor->getNumEffects() > 0) {
-                if (auto* filter = effectProcessor->getEffect(0)) {
-                    filter->setParameter("frequency", frequencyHz);
-                    std::cout << "CUTOFF SLIDER: Updated filter cutoff parameter to " << frequencyHz << " Hz" << std::endl;
-                }
-            }
             // Update visualizer
             if (filterVizPtr) {
                 filterVizPtr->setCutoffFrequency(frequencyHz);
@@ -1176,14 +1359,14 @@ int main(int argc, char* argv[]) {
             
             updatingFromSlider = false;
         });
-        // Initialize with 500 Hz (normalized 0.5)
-        cutoffSliderPtr->setValue(0.5f);
+        // Initialize with 20kHz (normalized 1.0) - filter wide open
+        cutoffSliderPtr->setValue(1.0f);
     }
     
-    // Special handling for filter resonance - connect directly to effect processor
+    // Special handling for filter resonance - connect to synthesizer parameter system
     if (resSliderPtr) {
         parameterSliders["filter_resonance"] = resSliderPtr;
-        resSliderPtr->setValueChangeCallback([&effectProcessor, filterVizPtr, &updatingFromSlider, &updatingFromVisualizer](float resonanceValue) {
+        resSliderPtr->setValueChangeCallback([&synthesizer, filterVizPtr, &updatingFromSlider, &updatingFromVisualizer](float resonanceValue) {
             if (updatingFromVisualizer) {
                 std::cout << "RESONANCE SLIDER: Ignoring update from visualizer" << std::endl;
                 return; // Prevent feedback loop
@@ -1193,31 +1376,27 @@ int main(int argc, char* argv[]) {
             
             std::cout << "RESONANCE SLIDER: Value changed to " << resonanceValue << " (normalized)" << std::endl;
             
-            // Update filter in effect processor (assume it's the first effect)
-            if (effectProcessor->getNumEffects() > 0) {
-                if (auto* filter = effectProcessor->getEffect(0)) {
-                    // Map 0-1 to reasonable resonance range (0.7-10)
-                    float resonance = 0.7f + resonanceValue * 9.3f;
-                    filter->setParameter("resonance", resonance);
-                    std::cout << "RESONANCE SLIDER: Updated filter resonance parameter to " << resonance << std::endl;
-                    
-                    // Update visualizer with actual resonance value
-                    if (filterVizPtr) {
-                        filterVizPtr->setResonance(resonance);
-                        std::cout << "RESONANCE SLIDER: Updated visualizer resonance to " << resonance << std::endl;
-                    }
-                }
+            // Update synthesizer parameter (normalized 0-1)
+            synthesizer->setParameter("filter_resonance", resonanceValue);
+            
+            // Map 0-1 to reasonable resonance range for visualizer
+            float resonance = 0.7f + resonanceValue * 9.3f;
+            
+            // Update visualizer with actual resonance value
+            if (filterVizPtr) {
+                filterVizPtr->setResonance(resonance);
+                std::cout << "RESONANCE SLIDER: Updated visualizer resonance to " << resonance << std::endl;
             }
             
             updatingFromSlider = false;
         });
-        // Initialize with default resonance
-        resSliderPtr->setValue(0.5f);
+        // Initialize with low resonance
+        resSliderPtr->setValue(0.1f);
     }
     
     // Connect filter visualizer to update both effect processor and sliders
     if (filterVizPtr) {
-        filterVizPtr->setParameterChangeCallback([&effectProcessor, cutoffSliderPtr, resSliderPtr, &updatingFromSlider, &updatingFromVisualizer](float cutoff, float resonance) {
+        filterVizPtr->setParameterChangeCallback([&synthesizer, cutoffSliderPtr, resSliderPtr, &updatingFromSlider, &updatingFromVisualizer](float cutoff, float resonance) {
             if (updatingFromSlider) {
                 std::cout << "FILTER VIZ: Ignoring callback - update came from slider" << std::endl;
                 return; // Prevent feedback loop
@@ -1227,15 +1406,6 @@ int main(int argc, char* argv[]) {
             
             std::cout << "FILTER VIZ: Dragged to cutoff=" << cutoff << " Hz, resonance=" << resonance << std::endl;
             
-            // Update filter in effect processor
-            if (effectProcessor->getNumEffects() > 0) {
-                if (auto* filter = effectProcessor->getEffect(0)) {
-                    filter->setParameter("frequency", cutoff);
-                    filter->setParameter("resonance", resonance);
-                    std::cout << "FILTER VIZ: Updated effect processor" << std::endl;
-                }
-            }
-            
             // Update sliders
             if (cutoffSliderPtr) {
                 // Convert frequency back to normalized value
@@ -1244,13 +1414,19 @@ int main(int argc, char* argv[]) {
                 float normalizedValue = std::log(cutoff / 20.0f) / std::log(1000.0f);
                 normalizedValue = std::max(0.0f, std::min(1.0f, normalizedValue));
                 cutoffSliderPtr->setValue(normalizedValue);
-                std::cout << "FILTER VIZ: Updated cutoff slider to " << normalizedValue << " (normalized)" << std::endl;
+                
+                // Update synthesizer parameter
+                synthesizer->setParameter("filter_cutoff", normalizedValue);
+                std::cout << "FILTER VIZ: Updated cutoff to " << normalizedValue << " (normalized)" << std::endl;
             }
             if (resSliderPtr) {
                 // Convert resonance back to 0-1 range for slider
                 float sliderValue = (resonance - 0.7f) / 9.3f;
                 resSliderPtr->setValue(sliderValue);
-                std::cout << "FILTER VIZ: Updated resonance slider to " << sliderValue << " (normalized)" << std::endl;
+                
+                // Update synthesizer parameter
+                synthesizer->setParameter("filter_resonance", sliderValue);
+                std::cout << "FILTER VIZ: Updated resonance to " << sliderValue << " (normalized)" << std::endl;
             }
             
             updatingFromVisualizer = false;
@@ -1264,12 +1440,6 @@ int main(int argc, char* argv[]) {
     addParameterLearning(cutoffSliderPtr, "filter_cutoff", 350, 85);
     addParameterLearning(resSliderPtr, "filter_resonance", 460, 85);
     addParameterLearning(volumeSliderPtr, "master_volume", 980, 85);
-    
-    // Connect envelope parameters
-    connectSliderToParam(attackSliderPtr, "envelope_attack");
-    connectSliderToParam(decaySliderPtr, "envelope_decay");
-    connectSliderToParam(sustainSliderPtr, "envelope_sustain");
-    connectSliderToParam(releaseSliderPtr, "envelope_release");
     
     // Connect envelope visualizer to update synthesizer and sliders
     if (envelopePtr) {
@@ -1332,6 +1502,17 @@ int main(int argc, char* argv[]) {
                            attackSliderPtr, decaySliderPtr, sustainSliderPtr, releaseSliderPtr);
     connectSliderToEnvelope(releaseSliderPtr, "envelope_release", envelopePtr,
                            attackSliderPtr, decaySliderPtr, sustainSliderPtr, releaseSliderPtr);
+    
+    // Initialize envelope parameters in synthesizer
+    synthesizer->setParameter("envelope_attack", 0.01f);
+    synthesizer->setParameter("envelope_decay", 0.1f);
+    synthesizer->setParameter("envelope_sustain", 0.7f);
+    synthesizer->setParameter("envelope_release", 0.5f);
+    
+    // Connect LFO parameters
+    connectSliderToParam(lfo1RateSliderPtr, "lfo1_rate");
+    connectSliderToParam(lfo1DepthSliderPtr, "lfo1_depth");
+    connectSliderToParam(lfo1ShapeSliderPtr, "lfo1_shape");
     
     std::cout << "Parameter connections and CC learning established" << std::endl;
 
