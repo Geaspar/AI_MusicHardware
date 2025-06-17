@@ -6,10 +6,15 @@ This document summarizes the modulation system implementation and related fixes 
 ## Major Features Implemented
 
 ### 1. LFO (Low Frequency Oscillator) System
-- **UI Controls**: Added LFO 1 controls (Rate, Depth, Shape) positioned at (900, 250), (990, 250), (1080, 250)
+- **LFO 1 Controls**: Rate, Depth, Shape positioned at (900, 250), (990, 250), (1080, 250)
+- **LFO 2 Implementation**: 
+  - Added second LFO with independent controls
+  - Dropdown selector for modulation destinations (Pitch, Filter Cutoff, Filter Resonance, Volume)
+  - Positioned below LFO 1 with similar control layout
 - **Wave Shapes**: Sine, Triangle, Saw, Square, Random
 - **Frequency Range**: 0.1 Hz to 20 Hz
 - **Integration**: Connected to modulation matrix for routing to various destinations
+- **UI Updates**: Removed CC learning buttons from LFO sliders for cleaner interface
 
 ### 2. Modulation Matrix Architecture
 - **Sources**: LFO1, LFO2, Envelope, Velocity, Aftertouch, Mod Wheel
@@ -77,6 +82,26 @@ This document summarizes the modulation system implementation and related fixes 
 - Envelope Attack: 0.01s
 - Envelope Release: 0.5s
 
+## Recent UI Improvements
+
+### Multi-Screen Navigation
+- Implemented screen management system for organizing controls
+- Added dedicated LFO screen with both LFO 1 and LFO 2 controls
+- Navigation buttons for switching between main and modulation screens
+- Proper screen lifecycle management (onEnter/onExit callbacks)
+
+### Dropdown Menu Fixes
+- Fixed event handling for dropdown menus
+- Proper mouse release detection outside menu bounds
+- Correct state management for open/closed states
+- Improved visual feedback for selections
+
+### Audio Device Recovery
+- Added graceful handling for audio device disconnection
+- Automatic recovery attempts when device becomes available
+- User notification of device status changes
+- Prevents crashes during device hot-swapping
+
 ## Technical Implementation Details
 
 ### Audio Processing Flow
@@ -85,6 +110,9 @@ Synthesizer → External Effect Processor (Filter) → Audio Output
      ↑                        ↑
      |                        |
 Modulation Matrix -------- Parameter Updates
+     ↑                        ↑
+     |                        |
+  LFO 1 & LFO 2 -------- Dropdown Routing
 ```
 
 ### Modulation Update Rate
@@ -121,6 +149,9 @@ Modulation Matrix -------- Parameter Updates
 - Parameter smoothing implementation (pending)
 - Additional LFO shapes
 - Modulation visualization improvements
+- LFO sync to host tempo
+- Modulation amount visualization on target parameters
+- Preset save/load for modulation routings
 
 ## File Changes Summary
 
@@ -146,6 +177,15 @@ Modulation Matrix -------- Parameter Updates
 5. `lfo_rate_correction_summary.md`
 6. `duplicate_note_debug_summary.md`
 
+## Change Summary (December 17, 2024)
+- Added LFO 2 with destination routing dropdown
+- Fixed dropdown menu event handling issues
+- Implemented multi-screen navigation system
+- Added audio device disconnection recovery
+- Fixed filter resonance crash with Q value limits
+- Improved MIDI controller detection (Oxi One fix)
+- Removed CC learning buttons from LFO controls
+
 ---
 
-*Last Updated: December 2024*
+*Last Updated: December 17, 2024*

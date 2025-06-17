@@ -10,6 +10,11 @@ The MIDI keyboard integration allows you to play the synthesizer in real-time us
 2. **Synthesizer** - Generates audio based on MIDI input
 3. **Audio Engine** - Delivers the audio to your speakers/headphones
 
+### Recent Updates (December 2024)
+- **Fixed**: Oxi One MIDI controller detection issue - now properly recognized on initialization
+- **Improved**: MIDI device enumeration now happens after MIDI manager is fully initialized
+- **Added**: Better error handling for MIDI device connection failures
+
 ## Prerequisites
 
 - A MIDI keyboard or controller connected to your computer
@@ -129,6 +134,7 @@ Common issues and solutions:
    - Make sure your MIDI device is connected before starting the application
    - Check if your MIDI device requires special drivers
    - Try a different USB port
+   - **Note**: Some controllers like the Oxi One may require a brief initialization delay. The system now includes proper initialization sequencing to handle these devices
 
 3. **High latency**
    - Decrease the audio buffer size (at the cost of potential audio glitches)
@@ -168,6 +174,11 @@ The MidiManager class acts as a bridge between the MIDI input and the synthesize
 2. Processes incoming MIDI messages
 3. Maps MIDI controllers to synthesizer parameters
 4. Provides MIDI learn functionality
+
+#### Recent Improvements
+- Device enumeration now happens after full initialization to prevent detection issues
+- Added support for controllers that require initialization time (like Oxi One)
+- Improved error handling and recovery for device disconnection
 
 ### Audio Callback
 

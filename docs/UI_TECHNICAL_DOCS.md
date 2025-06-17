@@ -2,7 +2,14 @@
 
 ## Architecture Overview
 
-The UI system follows a modern, thread-safe architecture inspired by professional audio software and hardware synthesizers:
+The UI system follows a modern, thread-safe architecture inspired by professional audio software and hardware synthesizers.
+
+### Recent Updates (December 2024)
+- **Fixed**: Dropdown menu event handling - proper mouse release detection outside menu bounds
+- **Added**: LFO 2 implementation with dropdown selector for modulation destinations
+- **Improved**: Multi-screen navigation system with proper screen transitions
+- **Removed**: CC learning buttons from LFO sliders to simplify interface
+- **Fixed**: Audio device disconnection recovery - graceful handling when audio devices are removed
 
 ```
 Presentation Layer
@@ -236,6 +243,50 @@ private:
 
 ## Enhanced UI Controls
 
+### DropdownMenu
+
+Interactive dropdown menu component with proper event handling:
+
+```cpp
+class DropdownMenu : public UIComponent {
+public:
+    DropdownMenu(const std::string& id, int x, int y, int width = 150, int height = 30);
+    
+    // Options management
+    void addOption(const std::string& option);
+    void clearOptions();
+    void setSelectedIndex(int index);
+    int getSelectedIndex() const;
+    std::string getSelectedOption() const;
+    
+    // Callbacks
+    using SelectionCallback = std::function<void(int index, const std::string& option)>;
+    void setSelectionCallback(SelectionCallback callback);
+    
+    // Component interface
+    void update(float deltaTime) override;
+    void render(DisplayManager* display) override;
+    bool handleInput(const InputEvent& event) override;
+    
+    // Recent fixes:
+    // - Proper mouse release detection outside menu bounds
+    // - Correct isOpen_ state management
+    // - Fixed event propagation when menu is closed
+    
+private:
+    std::vector<std::string> options_;
+    int selectedIndex_ = -1;
+    bool isOpen_ = false;
+    SelectionCallback selectionCallback_;
+    
+    // Visual settings
+    Color backgroundColor_{40, 40, 40};
+    Color textColor_{200, 200, 200};
+    Color hoverColor_{60, 60, 60};
+    Color selectedColor_{80, 80, 80};
+};
+```
+
 ### SynthKnob
 
 Professional knob control with modulation visualization:
@@ -444,6 +495,11 @@ public:
         BandPass,
         Notch
     };
+    
+    // Recent Updates:
+    // - Fixed filter resonance crash by limiting Q value to safe range (0.1 - 30.0)
+    // - Added proper bounds checking in filter coefficient calculations
+    // - Improved visual feedback for extreme resonance values
     
     FilterVisualizer(const std::string& id);
     
@@ -679,6 +735,72 @@ private:
 };
 ```
 
+## Multi-Screen Navigation
+
+### Screen Management System
+
+```cpp
+class ScreenManager {
+public:
+    // Screen registration
+    void addScreen(const std::string& id, std::unique_ptr<Screen> screen);
+    void setActiveScreen(const std::string& id);
+    
+    // Navigation
+    void navigateToScreen(const std::string& id);
+    void navigateBack();
+    
+    // Screen lifecycle
+    void onScreenEnter(const std::string& id);
+    void onScreenExit(const std::string& id);
+    
+private:
+    std::map<std::string, std::unique_ptr<Screen>> screens_;
+    std::string activeScreenId_;
+    std::stack<std::string> navigationHistory_;
+};
+```
+
+### LFO Screen Implementation
+
+```cpp
+class LFOScreen : public Screen {
+public:
+    LFOScreen();
+    
+    void initialize() {
+        // LFO 1 Controls
+        addLFOControls("LFO1", 100, 100);
+        
+        // LFO 2 Controls (New)
+        addLFOControls("LFO2", 100, 300);
+        
+        // Modulation routing
+        addModulationMatrix(500, 100);
+        
+        // Back button
+        auto backButton = std::make_unique<Button>("Back", 50, 500);
+        backButton->setCallback([this]() {
+            navigateBack();
+        });
+        addChild(std::move(backButton));
+    }
+    
+private:
+    void addLFOControls(const std::string& lfoId, int x, int y) {
+        // Rate, Depth, Shape controls
+        // Destination dropdown (new)
+        auto destDropdown = std::make_unique<DropdownMenu>(lfoId + "_dest", x, y + 150);
+        destDropdown->addOption("Off");
+        destDropdown->addOption("Pitch");
+        destDropdown->addOption("Filter Cutoff");
+        destDropdown->addOption("Filter Resonance");
+        destDropdown->addOption("Volume");
+        addChild(std::move(destDropdown));
+    }
+};
+```
+
 ## Integration Points
 
 ### Audio Thread Integration
@@ -702,10 +824,51 @@ private:
 };
 ```
 
+### Audio Device Recovery
+
+```cpp
+class AudioDeviceManager {
+public:
+    // Device monitoring
+    void startDeviceMonitoring();
+    void stopDeviceMonitoring();
+    
+    // Recovery handling
+    void onDeviceDisconnected() {
+        // 1. Stop audio processing
+        audioEngine_->stop();
+        
+        // 2. Clear device handle
+        currentDevice_ = nullptr;
+        
+        // 3. Notify UI
+        eventBus_->post(AudioDeviceDisconnectedEvent());
+        
+        // 4. Attempt recovery
+        attemptDeviceRecovery();
+    }
+    
+    void attemptDeviceRecovery() {
+        // Try to reinitialize with default device
+        if (audioEngine_->initialize()) {
+            eventBus_->post(AudioDeviceReconnectedEvent());
+        } else {
+            // Schedule retry
+            scheduleRecoveryRetry();
+        }
+    }
+    
+private:
+    std::unique_ptr<AudioEngine> audioEngine_;
+    EventBus* eventBus_;
+    std::thread monitoringThread_;
+};
+```
+
 ### MIDI Integration
 
 ```cpp
-// MIDI learn functionality
+// MIDI learn functionality (Updated - removed from LFO controls)
 class MIDILearnManager {
 public:
     void enableLearn(UIComponent* component, Parameter* parameter);

@@ -318,6 +318,60 @@ int main(int argc, char* argv[]) {
     auto midiHandler = std::make_unique<MidiHandler>();
     auto hardwareInterface = std::make_unique<HardwareInterface>();
     
+    // Initialize external MIDI input - but don't open any device yet
+    std::cout << "\n=== Initializing External MIDI Controller Support ===" << std::endl;
+    auto midiDevices = midiInput->getDevices();
+    int currentMidiDevice = -1; // -1 means no device selected
+    
+    if (midiDevices.empty()) {
+        std::cout << "No MIDI input devices found. External MIDI disabled." << std::endl;
+    } else {
+        std::cout << "Found " << midiDevices.size() << " MIDI input device(s):" << std::endl;
+        for (size_t i = 0; i < midiDevices.size(); ++i) {
+            std::cout << "  " << i << ": " << midiDevices[i] << std::endl;
+        }
+        
+        // Check for Oxi One specifically
+        int oxiIndex = -1;
+        for (size_t i = 0; i < midiDevices.size(); ++i) {
+            if (midiDevices[i].find("OXI ONE") != std::string::npos) {
+                oxiIndex = static_cast<int>(i);
+                std::cout << "Found OXI ONE at index " << oxiIndex << std::endl;
+                break;
+            }
+        }
+        
+        // Auto-select device based on priority: command line arg > Oxi One > first device
+        int selectedDevice = -1;
+        if (argc > 1) {
+            selectedDevice = std::atoi(argv[1]);
+            if (selectedDevice < 0 || selectedDevice >= static_cast<int>(midiDevices.size())) {
+                std::cout << "Invalid device index. Will select later." << std::endl;
+                selectedDevice = -1;
+            }
+        } else if (oxiIndex >= 0) {
+            selectedDevice = oxiIndex;
+            std::cout << "Auto-selecting OXI ONE" << std::endl;
+        } else if (!midiDevices.empty()) {
+            selectedDevice = 0;
+            std::cout << "Auto-selecting first available device" << std::endl;
+        }
+        
+        if (selectedDevice >= 0) {
+            std::cout << "\nOpening MIDI device " << selectedDevice << ": " << midiDevices[selectedDevice] << std::endl;
+            if (midiInput->openDevice(selectedDevice)) {
+                std::cout << "Successfully opened MIDI device!" << std::endl;
+                std::cout << "External MIDI controller ready for input." << std::endl;
+                currentMidiDevice = selectedDevice;
+            } else {
+                std::cerr << "Failed to open MIDI device. External MIDI disabled." << std::endl;
+            }
+        } else {
+            std::cout << "No MIDI device selected. Use the dropdown in the UI to select one." << std::endl;
+        }
+    }
+    std::cout << "====================================================\n" << std::endl;
+    
     // Initialize core components
     if (!synthesizer->initialize()) {
         std::cerr << "Failed to initialize synthesizer!" << std::endl;
@@ -445,12 +499,108 @@ int main(int argc, char* argv[]) {
     mainScreen->setSize(1280, 800);
     std::cout << "Created main screen" << std::endl;
     
-    // Title
-    auto titleLabel = std::make_unique<Label>("title", "AI Music Hardware - Professional Synthesizer");
-    titleLabel->setPosition(400, 10);
-    titleLabel->setSize(400, 30); // Set explicit size
-    titleLabel->setTextColor(Color(200, 220, 255));
-    mainScreen->addChild(std::move(titleLabel));
+    // Navigation buttons at the top
+    // Main button
+    auto mainNavButton = std::make_unique<Button>("main_nav_btn", "Main");
+    mainNavButton->setPosition(50, 5);
+    mainNavButton->setSize(80, 30);
+    mainNavButton->setBackgroundColor(Color(100, 100, 140));
+    mainNavButton->setTextColor(Color(255, 255, 255));
+    mainNavButton->setClickCallback([&uiContext]() {
+        uiContext->setActiveScreen("main");
+    });
+    mainScreen->addChild(std::move(mainNavButton));
+    
+    auto mainNavLabel = std::make_unique<Label>("main_nav_label", "Main");
+    mainNavLabel->setPosition(70, 10);
+    mainNavLabel->setSize(40, 20);
+    mainNavLabel->setTextColor(Color(255, 255, 255));
+    mainScreen->addChild(std::move(mainNavLabel));
+    
+    // Effects button
+    auto effectsNavButton = std::make_unique<Button>("effects_nav_btn", "Effects");
+    effectsNavButton->setPosition(140, 5);
+    effectsNavButton->setSize(80, 30);
+    effectsNavButton->setBackgroundColor(Color(80, 80, 120));
+    effectsNavButton->setTextColor(Color(255, 255, 255));
+    effectsNavButton->setClickCallback([&uiContext]() {
+        uiContext->setActiveScreen("effects");
+    });
+    mainScreen->addChild(std::move(effectsNavButton));
+    
+    auto effectsNavLabel = std::make_unique<Label>("effects_nav_label", "Effects");
+    effectsNavLabel->setPosition(155, 10);
+    effectsNavLabel->setSize(50, 20);
+    effectsNavLabel->setTextColor(Color(255, 255, 255));
+    mainScreen->addChild(std::move(effectsNavLabel));
+    
+    // Modulation button
+    auto modNavButton = std::make_unique<Button>("mod_nav_btn", "Modulation");
+    modNavButton->setPosition(230, 5);
+    modNavButton->setSize(100, 30);
+    modNavButton->setBackgroundColor(Color(80, 80, 120));
+    modNavButton->setTextColor(Color(255, 255, 255));
+    modNavButton->setClickCallback([&uiContext]() {
+        uiContext->setActiveScreen("modulation");
+    });
+    mainScreen->addChild(std::move(modNavButton));
+    
+    auto modNavLabel = std::make_unique<Label>("mod_nav_label", "Modulation");
+    modNavLabel->setPosition(245, 10);
+    modNavLabel->setSize(70, 20);
+    modNavLabel->setTextColor(Color(255, 255, 255));
+    mainScreen->addChild(std::move(modNavLabel));
+    
+    // Presets button
+    auto presetsNavButton = std::make_unique<Button>("presets_nav_btn", "Presets");
+    presetsNavButton->setPosition(340, 5);
+    presetsNavButton->setSize(80, 30);
+    presetsNavButton->setBackgroundColor(Color(80, 80, 120));
+    presetsNavButton->setTextColor(Color(255, 255, 255));
+    presetsNavButton->setClickCallback([&uiContext]() {
+        uiContext->setActiveScreen("presets");
+    });
+    mainScreen->addChild(std::move(presetsNavButton));
+    
+    auto presetsNavLabel = std::make_unique<Label>("presets_nav_label", "Presets");
+    presetsNavLabel->setPosition(355, 10);
+    presetsNavLabel->setSize(50, 20);
+    presetsNavLabel->setTextColor(Color(255, 255, 255));
+    mainScreen->addChild(std::move(presetsNavLabel));
+    
+    // Settings button
+    auto settingsNavButton = std::make_unique<Button>("settings_nav_btn", "Settings");
+    settingsNavButton->setPosition(430, 5);
+    settingsNavButton->setSize(80, 30);
+    settingsNavButton->setBackgroundColor(Color(80, 80, 120));
+    settingsNavButton->setTextColor(Color(255, 255, 255));
+    settingsNavButton->setClickCallback([&uiContext]() {
+        uiContext->setActiveScreen("settings");
+    });
+    mainScreen->addChild(std::move(settingsNavButton));
+    
+    auto settingsNavLabel = std::make_unique<Label>("settings_nav_label", "Settings");
+    settingsNavLabel->setPosition(445, 10);
+    settingsNavLabel->setSize(50, 20);
+    settingsNavLabel->setTextColor(Color(255, 255, 255));
+    mainScreen->addChild(std::move(settingsNavLabel));
+    
+    // Sequencer button
+    auto sequencerNavButton = std::make_unique<Button>("seq_nav_btn", "Sequencer");
+    sequencerNavButton->setPosition(520, 5);
+    sequencerNavButton->setSize(100, 30);
+    sequencerNavButton->setBackgroundColor(Color(80, 80, 120));
+    sequencerNavButton->setTextColor(Color(255, 255, 255));
+    sequencerNavButton->setClickCallback([&uiContext]() {
+        uiContext->setActiveScreen("sequencer");
+    });
+    mainScreen->addChild(std::move(sequencerNavButton));
+    
+    auto sequencerNavLabel = std::make_unique<Label>("seq_nav_label", "Sequencer");
+    sequencerNavLabel->setPosition(540, 10);
+    sequencerNavLabel->setSize(60, 20);
+    sequencerNavLabel->setTextColor(Color(255, 255, 255));
+    mainScreen->addChild(std::move(sequencerNavLabel));
     
     // Create oscillator section with bright colors
     auto oscSection = std::make_unique<Label>("osc_section", "OSCILLATOR");
@@ -637,54 +787,128 @@ int main(int argc, char* argv[]) {
     Slider* volumeSliderPtr = volumeSlider.get();
     mainScreen->addChild(std::move(volumeSlider));
     
-    // Create LFO 1 section (underneath master volume)
-    auto lfo1Section = std::make_unique<Label>("lfo1_section", "LFO 1");
-    lfo1Section->setPosition(900, 220);
-    lfo1Section->setSize(80, 25);
-    lfo1Section->setTextColor(Color(200, 255, 200)); // Light green for LFO
-    mainScreen->addChild(std::move(lfo1Section));
+    // Create LFO section with selector dropdown
+    auto lfoSection = std::make_unique<Label>("lfo_section", "LFO");
+    lfoSection->setPosition(900, 220);
+    lfoSection->setSize(80, 25);
+    lfoSection->setTextColor(Color(200, 255, 200)); // Light green for LFO
+    mainScreen->addChild(std::move(lfoSection));
     
-    // LFO 1 Rate slider
-    auto lfo1RateSlider = std::make_unique<Slider>("lfo1_rate", "Rate", 900, 250, 40, 80);
-    lfo1RateSlider->setRange(0.1f, 20.0f);
-    lfo1RateSlider->setValue(1.0f);
-    lfo1RateSlider->setValueFormatter([](float value) {
+    // Create LFO selector dropdown (will be added later for z-order)
+    std::unique_ptr<DropdownMenu> lfoSelectorDropdown;
+    lfoSelectorDropdown = std::make_unique<DropdownMenu>("lfo_selector", "LFO 1");
+    lfoSelectorDropdown->setPosition(980, 220);
+    lfoSelectorDropdown->setSize(100, 25);
+    lfoSelectorDropdown->addItem("LFO 1");
+    lfoSelectorDropdown->addItem("LFO 2");
+    lfoSelectorDropdown->selectItem(0); // Start with LFO 1
+    
+    // Create shared LFO sliders (will display current selected LFO)
+    auto lfoRateSlider = std::make_unique<Slider>("lfo_rate", "Rate", 900, 250, 40, 80);
+    lfoRateSlider->setRange(0.1f, 20.0f);
+    lfoRateSlider->setValue(1.0f);
+    lfoRateSlider->setValueFormatter([](float value) {
         std::stringstream ss;
         ss << std::fixed << std::setprecision(1) << value << " Hz";
         return ss.str();
     });
-    lfo1RateSlider->setColor(Color(180, 255, 180));
-    lfo1RateSlider->setThumbColor(Color(150, 255, 150));
-    Slider* lfo1RateSliderPtr = lfo1RateSlider.get();
-    mainScreen->addChild(std::move(lfo1RateSlider));
+    lfoRateSlider->setColor(Color(180, 255, 180));
+    lfoRateSlider->setThumbColor(Color(150, 255, 150));
+    Slider* lfoRateSliderPtr = lfoRateSlider.get();
+    mainScreen->addChild(std::move(lfoRateSlider));
     
-    // LFO 1 Depth slider
-    auto lfo1DepthSlider = std::make_unique<Slider>("lfo1_depth", "Depth", 990, 250, 40, 80);
-    lfo1DepthSlider->setRange(0.0f, 1.0f);
-    lfo1DepthSlider->setValue(1.0f);
-    lfo1DepthSlider->setValueFormatter([](float value) {
+    auto lfoDepthSlider = std::make_unique<Slider>("lfo_depth", "Depth", 990, 250, 40, 80);
+    lfoDepthSlider->setRange(0.0f, 1.0f);
+    lfoDepthSlider->setValue(1.0f);
+    lfoDepthSlider->setValueFormatter([](float value) {
         std::stringstream ss;
         ss << std::fixed << std::setprecision(0) << value * 100.0f << "%";
         return ss.str();
     });
-    lfo1DepthSlider->setColor(Color(180, 255, 180));
-    lfo1DepthSlider->setThumbColor(Color(150, 255, 150));
-    Slider* lfo1DepthSliderPtr = lfo1DepthSlider.get();
-    mainScreen->addChild(std::move(lfo1DepthSlider));
+    lfoDepthSlider->setColor(Color(180, 255, 180));
+    lfoDepthSlider->setThumbColor(Color(150, 255, 150));
+    Slider* lfoDepthSliderPtr = lfoDepthSlider.get();
+    mainScreen->addChild(std::move(lfoDepthSlider));
     
-    // LFO 1 Shape slider
-    auto lfo1ShapeSlider = std::make_unique<Slider>("lfo1_shape", "Shape", 1080, 250, 40, 80);
-    lfo1ShapeSlider->setRange(0, 4); // 5 wave shapes
-    lfo1ShapeSlider->setValue(0); // Sine
-    lfo1ShapeSlider->setValueFormatter([](float value) {
+    auto lfoShapeSlider = std::make_unique<Slider>("lfo_shape", "Shape", 1080, 250, 40, 80);
+    lfoShapeSlider->setRange(0, 4); // 5 wave shapes
+    lfoShapeSlider->setValue(0); // Sine
+    lfoShapeSlider->setValueFormatter([](float value) {
         int shape = static_cast<int>(value);
         const char* shapes[] = {"Sine", "Triangle", "Saw", "Square", "Random"};
         return std::string(shapes[shape % 5]);
     });
-    lfo1ShapeSlider->setColor(Color(180, 255, 180));
-    lfo1ShapeSlider->setThumbColor(Color(150, 255, 150));
-    Slider* lfo1ShapeSliderPtr = lfo1ShapeSlider.get();
-    mainScreen->addChild(std::move(lfo1ShapeSlider));
+    lfoShapeSlider->setColor(Color(180, 255, 180));
+    lfoShapeSlider->setThumbColor(Color(150, 255, 150));
+    Slider* lfoShapeSliderPtr = lfoShapeSlider.get();
+    mainScreen->addChild(std::move(lfoShapeSlider));
+    
+    // Store LFO 1 and LFO 2 parameter values
+    struct LFOState {
+        float rate;
+        float depth;
+        float shape;
+    };
+    LFOState lfo1State = {1.0f, 1.0f, 0.0f};  // LFO 1 defaults
+    LFOState lfo2State = {2.0f, 0.5f, 2.0f};  // LFO 2 defaults
+    int currentLFO = 1;  // Currently selected LFO (1 or 2)
+    
+    // Create parameter name mappings for the current LFO
+    auto getCurrentLFOParamName = [&currentLFO](const std::string& param) -> std::string {
+        return "lfo" + std::to_string(currentLFO) + "_" + param;
+    };
+    
+    // Set up LFO selector callback
+    lfoSelectorDropdown->setSelectionCallback([&synthesizer, &currentLFO, &lfo1State, &lfo2State, 
+                                               lfoRateSliderPtr, lfoDepthSliderPtr, lfoShapeSliderPtr,
+                                               &getCurrentLFOParamName, &parameterSliders]
+                                              (int index, const std::string& item) {
+        // Save current LFO state
+        if (currentLFO == 1) {
+            lfo1State.rate = lfoRateSliderPtr->getValue();
+            lfo1State.depth = lfoDepthSliderPtr->getValue();
+            lfo1State.shape = lfoShapeSliderPtr->getValue();
+        } else {
+            lfo2State.rate = lfoRateSliderPtr->getValue();
+            lfo2State.depth = lfoDepthSliderPtr->getValue();
+            lfo2State.shape = lfoShapeSliderPtr->getValue();
+        }
+        
+        // Switch to new LFO
+        currentLFO = index + 1;  // index 0 = LFO 1, index 1 = LFO 2
+        
+        // Load new LFO state
+        const LFOState& newState = (currentLFO == 1) ? lfo1State : lfo2State;
+        lfoRateSliderPtr->setValue(newState.rate);
+        lfoDepthSliderPtr->setValue(newState.depth);
+        lfoShapeSliderPtr->setValue(newState.shape);
+        
+        // Update parameter mappings
+        parameterSliders[getCurrentLFOParamName("rate")] = lfoRateSliderPtr;
+        parameterSliders[getCurrentLFOParamName("depth")] = lfoDepthSliderPtr;
+        parameterSliders[getCurrentLFOParamName("shape")] = lfoShapeSliderPtr;
+        
+        // Update colors based on selected LFO
+        Color lfoColor = (currentLFO == 1) ? Color(180, 255, 180) : Color(180, 180, 255);
+        Color thumbColor = (currentLFO == 1) ? Color(150, 255, 150) : Color(150, 150, 255);
+        
+        lfoRateSliderPtr->setColor(lfoColor);
+        lfoRateSliderPtr->setThumbColor(thumbColor);
+        lfoDepthSliderPtr->setColor(lfoColor);
+        lfoDepthSliderPtr->setThumbColor(thumbColor);
+        lfoShapeSliderPtr->setColor(lfoColor);
+        lfoShapeSliderPtr->setThumbColor(thumbColor);
+        
+        std::cout << "Switched to " << item << std::endl;
+    });
+    
+    // We'll need to store these pointers for later connection
+    Slider* lfo1RateSliderPtr = lfoRateSliderPtr;   // These will be the same sliders
+    Slider* lfo1DepthSliderPtr = lfoDepthSliderPtr;
+    Slider* lfo1ShapeSliderPtr = lfoShapeSliderPtr;
+    Slider* lfo2RateSliderPtr = lfoRateSliderPtr;   // But we'll handle them specially
+    Slider* lfo2DepthSliderPtr = lfoDepthSliderPtr;
+    Slider* lfo2ShapeSliderPtr = lfoShapeSliderPtr;
     
     // Create visualization section
     auto vizSection = std::make_unique<Label>("viz_section", "VISUALIZATION");
@@ -736,6 +960,55 @@ int main(int argc, char* argv[]) {
     keyboardSection->setPosition(50, 430);
     keyboardSection->setTextColor(Color(255, 150, 255)); // Bright pink for visibility
     mainScreen->addChild(std::move(keyboardSection));
+    
+    // Declare MIDI device dropdown (will be added last for proper z-order)
+    std::unique_ptr<DropdownMenu> midiDeviceDropdownPtr;
+    
+    // Create MIDI device selector dropdown (but don't add to screen yet)
+    midiDeviceDropdownPtr = std::make_unique<DropdownMenu>("midi_device_selector", "MIDI Device");
+    midiDeviceDropdownPtr->setPosition(650, 430);
+    midiDeviceDropdownPtr->setSize(200, 25);
+    
+    // Add "None" option first
+    midiDeviceDropdownPtr->addItem("None");
+    
+    // Add all available MIDI devices
+    for (const auto& device : midiDevices) {
+        midiDeviceDropdownPtr->addItem(device);
+    }
+    
+    // Set current selection
+    if (currentMidiDevice >= 0 && currentMidiDevice < static_cast<int>(midiDevices.size())) {
+        midiDeviceDropdownPtr->selectItem(currentMidiDevice + 1); // +1 because "None" is at index 0
+    } else {
+        midiDeviceDropdownPtr->selectItem(0); // "None"
+    }
+    
+    // Add callback to handle device selection
+    midiDeviceDropdownPtr->setSelectionCallback([&midiInput, &midiHandler, &currentMidiDevice, &midiDevices](int index, const std::string& item) {
+        std::cout << "MIDI Device Selection: " << item << " (index " << index << ")" << std::endl;
+        
+        // Close current device if any
+        if (currentMidiDevice >= 0) {
+            midiInput->closeDevice();
+            currentMidiDevice = -1;
+        }
+        
+        // Open new device if selected (index 0 is "None")
+        if (index > 0 && index <= static_cast<int>(midiDevices.size())) {
+            int deviceIndex = index - 1; // Adjust for "None" at index 0
+            std::cout << "Opening MIDI device " << deviceIndex << ": " << midiDevices[deviceIndex] << std::endl;
+            
+            if (midiInput->openDevice(deviceIndex)) {
+                currentMidiDevice = deviceIndex;
+                // Re-establish callback connection
+                midiInput->setCallback(midiHandler.get());
+                std::cout << "Successfully opened MIDI device: " << midiDevices[deviceIndex] << std::endl;
+            } else {
+                std::cerr << "Failed to open MIDI device: " << midiDevices[deviceIndex] << std::endl;
+            }
+        }
+    });
     
     // Create the MIDI keyboard
     auto midiKeyboard = std::make_unique<MidiKeyboard>("midi_keyboard", 50, 460);
@@ -1024,7 +1297,37 @@ int main(int argc, char* argv[]) {
                 else if (item == "LFO 2") sourceName = "LFO2";
                 
                 if (!sourceName.empty() && modConnections[i].destination != "None") {
-                    synthesizer->connectModulation(sourceName, modConnections[i].destination, modConnections[i].amount);
+                    // Apply safety limits for certain destinations
+                    float safeAmount = modConnections[i].amount;
+                    if (modConnections[i].destination == "Filter Res") {
+                        // Get current base resonance value (0-1 normalized)
+                        float baseResonance = synthesizer->getParameter("filter_resonance");
+                        
+                        // Calculate what the actual Q values would be at extremes
+                        float minQ = 0.7f + (baseResonance + safeAmount * -1.0f) * 9.3f;
+                        float maxQ = 0.7f + (baseResonance + safeAmount * 1.0f) * 9.3f;
+                        
+                        // Ensure Q stays within safe range (0.7 to 5.0 for stability)
+                        const float MIN_SAFE_Q = 0.7f;
+                        const float MAX_SAFE_Q = 5.0f;
+                        
+                        if (minQ < MIN_SAFE_Q || maxQ > MAX_SAFE_Q) {
+                            // Calculate the maximum safe modulation amount
+                            float maxPositiveMod = ((MAX_SAFE_Q - 0.7f) / 9.3f) - baseResonance;
+                            float maxNegativeMod = ((MIN_SAFE_Q - 0.7f) / 9.3f) - baseResonance;
+                            
+                            safeAmount = std::max(maxNegativeMod, std::min(maxPositiveMod, safeAmount));
+                            
+                            std::cout << "WARNING: Limiting Filter Res modulation to keep Q between " 
+                                      << MIN_SAFE_Q << " and " << MAX_SAFE_Q 
+                                      << " (amount: " << modConnections[i].amount << " -> " << safeAmount << ")" << std::endl;
+                        }
+                    }
+                    
+                    std::cout << "DEBUG: Connecting modulation - Source: " << sourceName 
+                              << ", Destination: " << modConnections[i].destination 
+                              << ", Amount: " << safeAmount << std::endl;
+                    synthesizer->connectModulation(sourceName, modConnections[i].destination, safeAmount);
                     
                     // Special handling for pitch modulation - set the amount in semitones
                     if (modConnections[i].destination == "Pitch") {
@@ -1044,6 +1347,16 @@ int main(int argc, char* argv[]) {
         
         destDropdown->setSelectionCallback([i, &modConnections, &synthesizer, amountSliderPtr](int index, const std::string& item) {
             std::cout << "Mod " << i << " destination: " << item << std::endl;
+            
+            // Update amount slider range/appearance based on destination
+            if (item == "Filter Res") {
+                // Visual feedback that this destination has limited range
+                amountSliderPtr->setColor(Color(255, 150, 150)); // Reddish to indicate caution
+                std::cout << "NOTE: Filter Res modulation is limited to ±30% for stability" << std::endl;
+            } else {
+                // Reset to normal color
+                amountSliderPtr->setColor(Color(200, 150, 255));
+            }
             
             // Disconnect previous connection if any
             if (modConnections[i].sourceIndex > 0 && modConnections[i].destIndex > 0) {
@@ -1067,7 +1380,33 @@ int main(int argc, char* argv[]) {
                 else if (modConnections[i].source == "LFO 2") sourceName = "LFO2";
                 
                 if (!sourceName.empty() && item != "None") {
-                    synthesizer->connectModulation(sourceName, item, modConnections[i].amount);
+                    // Apply safety limits for certain destinations
+                    float safeAmount = modConnections[i].amount;
+                    if (item == "Filter Res") {
+                        // Get current base resonance value (0-1 normalized)
+                        float baseResonance = synthesizer->getParameter("filter_resonance");
+                        
+                        // Calculate what the actual Q values would be at extremes
+                        float minQ = 0.7f + (baseResonance + safeAmount * -1.0f) * 9.3f;
+                        float maxQ = 0.7f + (baseResonance + safeAmount * 1.0f) * 9.3f;
+                        
+                        // Ensure Q stays within safe range (0.7 to 5.0 for stability)
+                        const float MIN_SAFE_Q = 0.7f;
+                        const float MAX_SAFE_Q = 5.0f;
+                        
+                        if (minQ < MIN_SAFE_Q || maxQ > MAX_SAFE_Q) {
+                            // Calculate the maximum safe modulation amount
+                            float maxPositiveMod = ((MAX_SAFE_Q - 0.7f) / 9.3f) - baseResonance;
+                            float maxNegativeMod = ((MIN_SAFE_Q - 0.7f) / 9.3f) - baseResonance;
+                            
+                            safeAmount = std::max(maxNegativeMod, std::min(maxPositiveMod, safeAmount));
+                            
+                            std::cout << "WARNING: Limiting Filter Res modulation to keep Q between " 
+                                      << MIN_SAFE_Q << " and " << MAX_SAFE_Q 
+                                      << " (amount: " << modConnections[i].amount << " -> " << safeAmount << ")" << std::endl;
+                        }
+                    }
+                    synthesizer->connectModulation(sourceName, item, safeAmount);
                     
                     // Special handling for pitch modulation - set the amount in semitones
                     if (item == "Pitch") {
@@ -1098,9 +1437,38 @@ int main(int argc, char* argv[]) {
                 else if (modConnections[i].source == "LFO 2") sourceName = "LFO2";
                 
                 if (!sourceName.empty() && modConnections[i].destination != "None") {
+                    // Apply safety limits for certain destinations
+                    float safeAmount = value;
+                    if (modConnections[i].destination == "Filter Res") {
+                        // Get current base resonance value (0-1 normalized)
+                        float baseResonance = synthesizer->getParameter("filter_resonance");
+                        
+                        // Calculate what the actual Q values would be at extremes
+                        float minQ = 0.7f + (baseResonance + safeAmount * -1.0f) * 9.3f;
+                        float maxQ = 0.7f + (baseResonance + safeAmount * 1.0f) * 9.3f;
+                        
+                        // Ensure Q stays within safe range (0.7 to 5.0 for stability)
+                        const float MIN_SAFE_Q = 0.7f;
+                        const float MAX_SAFE_Q = 5.0f;
+                        
+                        if (minQ < MIN_SAFE_Q || maxQ > MAX_SAFE_Q) {
+                            // Calculate the maximum safe modulation amount
+                            float maxPositiveMod = ((MAX_SAFE_Q - 0.7f) / 9.3f) - baseResonance;
+                            float maxNegativeMod = ((MIN_SAFE_Q - 0.7f) / 9.3f) - baseResonance;
+                            
+                            safeAmount = std::max(maxNegativeMod, std::min(maxPositiveMod, value));
+                            
+                            if (safeAmount != value) {
+                                std::cout << "WARNING: Limiting Filter Res modulation to keep Q between " 
+                                          << MIN_SAFE_Q << " and " << MAX_SAFE_Q 
+                                          << " (amount: " << value << " -> " << safeAmount << ")" << std::endl;
+                            }
+                        }
+                    }
+                    
                     // Disconnect and reconnect with new amount
                     synthesizer->disconnectModulation(sourceName, modConnections[i].destination);
-                    synthesizer->connectModulation(sourceName, modConnections[i].destination, value);
+                    synthesizer->connectModulation(sourceName, modConnections[i].destination, safeAmount);
                     
                     // Special handling for pitch modulation - set the amount in semitones
                     if (modConnections[i].destination == "Pitch") {
@@ -1509,10 +1877,65 @@ int main(int argc, char* argv[]) {
     synthesizer->setParameter("envelope_sustain", 0.7f);
     synthesizer->setParameter("envelope_release", 0.5f);
     
-    // Connect LFO parameters
-    connectSliderToParam(lfo1RateSliderPtr, "lfo1_rate");
-    connectSliderToParam(lfo1DepthSliderPtr, "lfo1_depth");
-    connectSliderToParam(lfo1ShapeSliderPtr, "lfo1_shape");
+    // Connect LFO parameters with special handling for shared sliders
+    // The sliders will update the currently selected LFO
+    lfoRateSliderPtr->setValueChangeCallback([&synthesizer, &getCurrentLFOParamName, &currentLFO, &lfo1State, &lfo2State](float value) {
+        std::string paramName = getCurrentLFOParamName("rate");
+        synthesizer->setParameter(paramName, value);
+        
+        // Update the stored state
+        if (currentLFO == 1) {
+            lfo1State.rate = value;
+        } else {
+            lfo2State.rate = value;
+        }
+        
+        std::cout << "Updated " << paramName << " to " << value << std::endl;
+    });
+    
+    lfoDepthSliderPtr->setValueChangeCallback([&synthesizer, &getCurrentLFOParamName, &currentLFO, &lfo1State, &lfo2State](float value) {
+        std::string paramName = getCurrentLFOParamName("depth");
+        synthesizer->setParameter(paramName, value);
+        
+        // Update the stored state
+        if (currentLFO == 1) {
+            lfo1State.depth = value;
+        } else {
+            lfo2State.depth = value;
+        }
+        
+        std::cout << "Updated " << paramName << " to " << value << std::endl;
+    });
+    
+    lfoShapeSliderPtr->setValueChangeCallback([&synthesizer, &getCurrentLFOParamName, &currentLFO, &lfo1State, &lfo2State](float value) {
+        std::string paramName = getCurrentLFOParamName("shape");
+        synthesizer->setParameter(paramName, value);
+        
+        // Update the stored state
+        if (currentLFO == 1) {
+            lfo1State.shape = value;
+        } else {
+            lfo2State.shape = value;
+        }
+        
+        std::cout << "Updated " << paramName << " to " << value << std::endl;
+    });
+    
+    // Initialize both LFOs with their default values
+    std::cout << "Initializing LFO 1 - Rate: " << lfo1State.rate << ", Depth: " << lfo1State.depth << ", Shape: " << lfo1State.shape << std::endl;
+    synthesizer->setParameter("lfo1_rate", lfo1State.rate);
+    synthesizer->setParameter("lfo1_depth", lfo1State.depth);
+    synthesizer->setParameter("lfo1_shape", lfo1State.shape);
+    
+    std::cout << "Initializing LFO 2 - Rate: " << lfo2State.rate << ", Depth: " << lfo2State.depth << ", Shape: " << lfo2State.shape << std::endl;
+    synthesizer->setParameter("lfo2_rate", lfo2State.rate);
+    synthesizer->setParameter("lfo2_depth", lfo2State.depth);
+    synthesizer->setParameter("lfo2_shape", lfo2State.shape);
+    
+    // Set up parameter mappings for CC learning (start with LFO 1)
+    parameterSliders["lfo1_rate"] = lfoRateSliderPtr;
+    parameterSliders["lfo1_depth"] = lfoDepthSliderPtr;
+    parameterSliders["lfo1_shape"] = lfoShapeSliderPtr;
     
     std::cout << "Parameter connections and CC learning established" << std::endl;
 
@@ -1599,6 +2022,16 @@ int main(int argc, char* argv[]) {
     mainScreen->addChild(std::move(savePresetButton));
 
     // Add all dropdowns last for proper z-order (they render on top)
+    // Add LFO selector dropdown
+    if (lfoSelectorDropdown) {
+        mainScreen->addChild(std::move(lfoSelectorDropdown));
+    }
+    
+    // Add MIDI device dropdown
+    if (midiDeviceDropdownPtr) {
+        mainScreen->addChild(std::move(midiDeviceDropdownPtr));
+    }
+    
     // Add modulation dropdowns
     for (auto& dropdown : modSourceDropdowns) {
         mainScreen->addChild(std::move(dropdown));
@@ -1612,10 +2045,410 @@ int main(int argc, char* argv[]) {
         mainScreen->addChild(std::move(dropdown));
     }
 
+
     // Add screen to context
     uiContext->addScreen(std::move(mainScreen));
     uiContext->setActiveScreen("main");
-    std::cout << "Added screen to UI context" << std::endl;
+    std::cout << "Added main screen to UI context" << std::endl;
+    
+    // Create sequencer screen
+    auto sequencerScreen = std::make_unique<Screen>("sequencer");
+    sequencerScreen->setBackgroundColor(Color(30, 30, 40));
+    sequencerScreen->setPosition(0, 0);
+    sequencerScreen->setSize(1280, 800);
+    
+    // Create a function to add navigation buttons to any screen
+    auto addNavigationButtons = [](Screen* screen, const std::string& currentScreen, UIContext* uiContext) {
+        // Main button
+        auto mainButton = std::make_unique<Button>("nav_main", "Main");
+        mainButton->setPosition(50, 5);
+        mainButton->setSize(80, 30);
+        mainButton->setBackgroundColor(currentScreen == "main" ? Color(100, 100, 140) : Color(80, 80, 120));
+        mainButton->setTextColor(Color(255, 255, 255));
+        mainButton->setClickCallback([uiContext]() { uiContext->setActiveScreen("main"); });
+        screen->addChild(std::move(mainButton));
+        
+        auto mainLabel = std::make_unique<Label>("nav_main_label", "Main");
+        mainLabel->setPosition(70, 10);
+        mainLabel->setSize(40, 20);
+        mainLabel->setTextColor(Color(255, 255, 255));
+        screen->addChild(std::move(mainLabel));
+        
+        // Effects button
+        auto effectsButton = std::make_unique<Button>("nav_effects", "Effects");
+        effectsButton->setPosition(140, 5);
+        effectsButton->setSize(80, 30);
+        effectsButton->setBackgroundColor(currentScreen == "effects" ? Color(100, 100, 140) : Color(80, 80, 120));
+        effectsButton->setTextColor(Color(255, 255, 255));
+        effectsButton->setClickCallback([uiContext]() { uiContext->setActiveScreen("effects"); });
+        screen->addChild(std::move(effectsButton));
+        
+        auto effectsLabel = std::make_unique<Label>("nav_effects_label", "Effects");
+        effectsLabel->setPosition(155, 10);
+        effectsLabel->setSize(50, 20);
+        effectsLabel->setTextColor(Color(255, 255, 255));
+        screen->addChild(std::move(effectsLabel));
+        
+        // Modulation button
+        auto modButton = std::make_unique<Button>("nav_mod", "Modulation");
+        modButton->setPosition(230, 5);
+        modButton->setSize(100, 30);
+        modButton->setBackgroundColor(currentScreen == "modulation" ? Color(100, 100, 140) : Color(80, 80, 120));
+        modButton->setTextColor(Color(255, 255, 255));
+        modButton->setClickCallback([uiContext]() { uiContext->setActiveScreen("modulation"); });
+        screen->addChild(std::move(modButton));
+        
+        auto modLabel = std::make_unique<Label>("nav_mod_label", "Modulation");
+        modLabel->setPosition(245, 10);
+        modLabel->setSize(70, 20);
+        modLabel->setTextColor(Color(255, 255, 255));
+        screen->addChild(std::move(modLabel));
+        
+        // Presets button
+        auto presetsButton = std::make_unique<Button>("nav_presets", "Presets");
+        presetsButton->setPosition(340, 5);
+        presetsButton->setSize(80, 30);
+        presetsButton->setBackgroundColor(currentScreen == "presets" ? Color(100, 100, 140) : Color(80, 80, 120));
+        presetsButton->setTextColor(Color(255, 255, 255));
+        presetsButton->setClickCallback([uiContext]() { uiContext->setActiveScreen("presets"); });
+        screen->addChild(std::move(presetsButton));
+        
+        auto presetsLabel = std::make_unique<Label>("nav_presets_label", "Presets");
+        presetsLabel->setPosition(355, 10);
+        presetsLabel->setSize(50, 20);
+        presetsLabel->setTextColor(Color(255, 255, 255));
+        screen->addChild(std::move(presetsLabel));
+        
+        // Settings button
+        auto settingsButton = std::make_unique<Button>("nav_settings", "Settings");
+        settingsButton->setPosition(430, 5);
+        settingsButton->setSize(80, 30);
+        settingsButton->setBackgroundColor(currentScreen == "settings" ? Color(100, 100, 140) : Color(80, 80, 120));
+        settingsButton->setTextColor(Color(255, 255, 255));
+        settingsButton->setClickCallback([uiContext]() { uiContext->setActiveScreen("settings"); });
+        screen->addChild(std::move(settingsButton));
+        
+        auto settingsLabel = std::make_unique<Label>("nav_settings_label", "Settings");
+        settingsLabel->setPosition(445, 10);
+        settingsLabel->setSize(50, 20);
+        settingsLabel->setTextColor(Color(255, 255, 255));
+        screen->addChild(std::move(settingsLabel));
+        
+        // Sequencer button
+        auto seqButton = std::make_unique<Button>("nav_seq", "Sequencer");
+        seqButton->setPosition(520, 5);
+        seqButton->setSize(100, 30);
+        seqButton->setBackgroundColor(currentScreen == "sequencer" ? Color(100, 100, 140) : Color(80, 80, 120));
+        seqButton->setTextColor(Color(255, 255, 255));
+        seqButton->setClickCallback([uiContext]() { uiContext->setActiveScreen("sequencer"); });
+        screen->addChild(std::move(seqButton));
+        
+        auto seqLabel = std::make_unique<Label>("nav_seq_label", "Sequencer");
+        seqLabel->setPosition(540, 10);
+        seqLabel->setSize(60, 20);
+        seqLabel->setTextColor(Color(255, 255, 255));
+        screen->addChild(std::move(seqLabel));
+    };
+    
+    // Add navigation to sequencer screen
+    addNavigationButtons(sequencerScreen.get(), "sequencer", uiContext.get());
+    
+    // Transport section
+    auto transportSection = std::make_unique<Label>("transport_section", "TRANSPORT");
+    transportSection->setPosition(50, 70);
+    transportSection->setSize(200, 25);
+    transportSection->setTextColor(Color(255, 255, 100));
+    sequencerScreen->addChild(std::move(transportSection));
+    
+    // Play/Stop button
+    auto playStopButton = std::make_unique<Button>("play_stop_btn", "Play");
+    playStopButton->setPosition(50, 110);
+    playStopButton->setSize(80, 40);
+    playStopButton->setBackgroundColor(Color(50, 120, 50));
+    playStopButton->setTextColor(Color(255, 255, 255));
+    
+    // Track playing state
+    bool* isPlaying = new bool(false);
+    
+    auto playStopButtonPtr = playStopButton.get();
+    
+    // Create label for play/stop button first
+    auto playStopLabel = std::make_unique<Label>("play_stop_label", "Play");
+    playStopLabel->setPosition(65, 120);
+    playStopLabel->setSize(50, 20);
+    playStopLabel->setTextColor(Color(255, 255, 255));
+    auto playStopLabelPtr = playStopLabel.get();
+    
+    // Set callback with both button and label pointers
+    playStopButton->setClickCallback([&sequencer, playStopButtonPtr, playStopLabelPtr, isPlaying]() {
+        if (*isPlaying) {
+            sequencer->stop();
+            playStopButtonPtr->setText("Play");
+            playStopLabelPtr->setText("Play");
+            playStopButtonPtr->setBackgroundColor(Color(50, 120, 50));
+            *isPlaying = false;
+            std::cout << "Sequencer stopped" << std::endl;
+        } else {
+            sequencer->start();
+            playStopButtonPtr->setText("Stop");
+            playStopLabelPtr->setText("Stop");
+            playStopButtonPtr->setBackgroundColor(Color(120, 50, 50));
+            *isPlaying = true;
+            std::cout << "Sequencer started" << std::endl;
+        }
+    });
+    sequencerScreen->addChild(std::move(playStopButton));
+    sequencerScreen->addChild(std::move(playStopLabel));
+    
+    // Reset button
+    auto resetButton = std::make_unique<Button>("reset_btn", "Reset");
+    resetButton->setPosition(140, 110);
+    resetButton->setSize(80, 40);
+    resetButton->setBackgroundColor(Color(80, 80, 120));
+    resetButton->setTextColor(Color(255, 255, 255));
+    resetButton->setClickCallback([&sequencer]() {
+        sequencer->reset();
+        std::cout << "Sequencer reset" << std::endl;
+    });
+    sequencerScreen->addChild(std::move(resetButton));
+    
+    // Add label for reset button
+    auto resetLabel = std::make_unique<Label>("reset_label", "Reset");
+    resetLabel->setPosition(155, 120);
+    resetLabel->setSize(50, 20);
+    resetLabel->setTextColor(Color(255, 255, 255));
+    sequencerScreen->addChild(std::move(resetLabel));
+    
+    // Tempo control
+    auto tempoLabel = std::make_unique<Label>("tempo_label", "BPM");
+    tempoLabel->setPosition(250, 70);
+    tempoLabel->setSize(100, 25);
+    tempoLabel->setTextColor(Color(200, 200, 200));
+    sequencerScreen->addChild(std::move(tempoLabel));
+    
+    auto tempoSlider = std::make_unique<Slider>("tempo_slider", "Tempo", 250, 110, 40, 100);
+    tempoSlider->setRange(60.0f, 200.0f);
+    tempoSlider->setValue(120.0f);
+    tempoSlider->setValueChangeCallback([&sequencer](float value) {
+        sequencer->setTempo(value);
+        std::cout << "Tempo set to: " << value << " BPM" << std::endl;
+    });
+    sequencerScreen->addChild(std::move(tempoSlider));
+    
+    // Loop toggle
+    auto loopButton = std::make_unique<Button>("loop_btn", "Loop: ON");
+    loopButton->setPosition(360, 110);
+    loopButton->setSize(80, 40);
+    loopButton->setBackgroundColor(Color(50, 100, 50));
+    loopButton->setTextColor(Color(255, 255, 255));
+    
+    bool* isLooping = new bool(true);
+    auto loopButtonPtr = loopButton.get();
+    
+    // Create label for loop button
+    auto loopLabel = std::make_unique<Label>("loop_label", "Loop: ON");
+    loopLabel->setPosition(368, 120);
+    loopLabel->setSize(65, 20);
+    loopLabel->setTextColor(Color(255, 255, 255));
+    auto loopLabelPtr = loopLabel.get();
+    
+    loopButton->setClickCallback([&sequencer, loopButtonPtr, loopLabelPtr, isLooping]() {
+        *isLooping = !*isLooping;
+        sequencer->setLooping(*isLooping);
+        if (*isLooping) {
+            loopButtonPtr->setText("Loop: ON");
+            loopLabelPtr->setText("Loop: ON");
+            loopButtonPtr->setBackgroundColor(Color(50, 100, 50));
+        } else {
+            loopButtonPtr->setText("Loop: OFF");
+            loopLabelPtr->setText("Loop: OFF");
+            loopButtonPtr->setBackgroundColor(Color(100, 50, 50));
+        }
+        std::cout << "Looping: " << (*isLooping ? "ON" : "OFF") << std::endl;
+    });
+    sequencerScreen->addChild(std::move(loopButton));
+    sequencerScreen->addChild(std::move(loopLabel));
+    
+    // Pattern info section
+    auto patternSection = std::make_unique<Label>("pattern_section", "PATTERN");
+    patternSection->setPosition(50, 200);
+    patternSection->setSize(200, 25);
+    patternSection->setTextColor(Color(255, 255, 100));
+    sequencerScreen->addChild(std::move(patternSection));
+    
+    // Current position display
+    auto positionLabel = std::make_unique<Label>("position_label", "Position: 1.1.1");
+    positionLabel->setPosition(50, 240);
+    positionLabel->setSize(200, 25);
+    positionLabel->setTextColor(Color(200, 200, 200));
+    sequencerScreen->addChild(std::move(positionLabel));
+    
+    // Pattern status
+    auto patternStatusLabel = std::make_unique<Label>("pattern_status", "No patterns loaded");
+    patternStatusLabel->setPosition(50, 270);
+    patternStatusLabel->setSize(300, 25);
+    patternStatusLabel->setTextColor(Color(255, 100, 100));
+    sequencerScreen->addChild(std::move(patternStatusLabel));
+    
+    // Info about sequencer being disabled
+    auto infoLabel = std::make_unique<Label>("info_label", "Note: Sequencer audio is temporarily disabled (debugging duplicate notes)");
+    infoLabel->setPosition(50, 350);
+    infoLabel->setSize(600, 25);
+    infoLabel->setTextColor(Color(255, 200, 100));
+    sequencerScreen->addChild(std::move(infoLabel));
+    
+    // Add test pattern button
+    auto addTestPatternButton = std::make_unique<Button>("add_pattern_btn", "Add Test Pattern");
+    addTestPatternButton->setPosition(50, 400);
+    addTestPatternButton->setSize(150, 40);
+    addTestPatternButton->setBackgroundColor(Color(80, 80, 120));
+    addTestPatternButton->setTextColor(Color(255, 255, 255));
+    auto sequencerScreenPtr = sequencerScreen.get();
+    addTestPatternButton->setClickCallback([&sequencer, sequencerScreenPtr]() {
+        // Create a simple test pattern
+        auto pattern = std::make_unique<Pattern>("Test Pattern");
+        pattern->setLength(4.0); // 4 beats
+        
+        // Add some notes (C major scale)
+        pattern->addNote(Note(60, 0.8f, 0.0, 0.5));   // C
+        pattern->addNote(Note(62, 0.8f, 0.5, 0.5));   // D
+        pattern->addNote(Note(64, 0.8f, 1.0, 0.5));   // E
+        pattern->addNote(Note(65, 0.8f, 1.5, 0.5));   // F
+        pattern->addNote(Note(67, 0.8f, 2.0, 0.5));   // G
+        pattern->addNote(Note(69, 0.8f, 2.5, 0.5));   // A
+        pattern->addNote(Note(71, 0.8f, 3.0, 0.5));   // B
+        pattern->addNote(Note(72, 0.8f, 3.5, 0.5));   // C
+        
+        sequencer->addPattern(std::move(pattern));
+        sequencer->setCurrentPattern(0);
+        
+        // Find the pattern status label by ID
+        if (auto* statusLabel = dynamic_cast<Label*>(sequencerScreenPtr->getChild("pattern_status"))) {
+            statusLabel->setText("Test pattern loaded (C major scale)");
+            statusLabel->setTextColor(Color(100, 255, 100));
+        }
+        std::cout << "Added test pattern to sequencer" << std::endl;
+    });
+    sequencerScreen->addChild(std::move(addTestPatternButton));
+    
+    // Add label for test pattern button
+    auto testPatternLabel = std::make_unique<Label>("test_pattern_label", "Add Test Pattern");
+    testPatternLabel->setPosition(65, 410);
+    testPatternLabel->setSize(120, 20);
+    testPatternLabel->setTextColor(Color(255, 255, 255));
+    sequencerScreen->addChild(std::move(testPatternLabel));
+    
+    // Add sequencer screen to context
+    uiContext->addScreen(std::move(sequencerScreen));
+    std::cout << "Added sequencer screen to UI context" << std::endl;
+    
+    // Create Effects screen
+    auto effectsScreen = std::make_unique<Screen>("effects");
+    effectsScreen->setBackgroundColor(Color(35, 30, 40));
+    effectsScreen->setPosition(0, 0);
+    effectsScreen->setSize(1280, 800);
+    addNavigationButtons(effectsScreen.get(), "effects", uiContext.get());
+    
+    auto effectsTitle = std::make_unique<Label>("effects_title", "EFFECTS RACK");
+    effectsTitle->setPosition(50, 50);
+    effectsTitle->setSize(200, 30);
+    effectsTitle->setTextColor(Color(255, 255, 100));
+    effectsScreen->addChild(std::move(effectsTitle));
+    
+    auto effectsInfo = std::make_unique<Label>("effects_info", "Effects controls coming soon...");
+    effectsInfo->setPosition(50, 100);
+    effectsInfo->setSize(400, 25);
+    effectsInfo->setTextColor(Color(200, 200, 200));
+    effectsScreen->addChild(std::move(effectsInfo));
+    
+    uiContext->addScreen(std::move(effectsScreen));
+    
+    // Create Modulation screen
+    auto modulationScreen = std::make_unique<Screen>("modulation");
+    modulationScreen->setBackgroundColor(Color(30, 35, 40));
+    modulationScreen->setPosition(0, 0);
+    modulationScreen->setSize(1280, 800);
+    addNavigationButtons(modulationScreen.get(), "modulation", uiContext.get());
+    
+    auto modTitle = std::make_unique<Label>("mod_title", "MODULATION MATRIX");
+    modTitle->setPosition(50, 50);
+    modTitle->setSize(250, 30);
+    modTitle->setTextColor(Color(255, 255, 100));
+    modulationScreen->addChild(std::move(modTitle));
+    
+    auto modInfo = std::make_unique<Label>("mod_info", "Visual modulation routing coming soon...");
+    modInfo->setPosition(50, 100);
+    modInfo->setSize(400, 25);
+    modInfo->setTextColor(Color(200, 200, 200));
+    modulationScreen->addChild(std::move(modInfo));
+    
+    uiContext->addScreen(std::move(modulationScreen));
+    
+    // Create Presets screen
+    auto presetsScreen = std::make_unique<Screen>("presets");
+    presetsScreen->setBackgroundColor(Color(35, 35, 40));
+    presetsScreen->setPosition(0, 0);
+    presetsScreen->setSize(1280, 800);
+    addNavigationButtons(presetsScreen.get(), "presets", uiContext.get());
+    
+    auto presetsTitle = std::make_unique<Label>("presets_title", "PRESET BROWSER");
+    presetsTitle->setPosition(50, 50);
+    presetsTitle->setSize(200, 30);
+    presetsTitle->setTextColor(Color(255, 255, 100));
+    presetsScreen->addChild(std::move(presetsTitle));
+    
+    auto presetsInfo = std::make_unique<Label>("presets_info", "Enhanced preset management coming soon...");
+    presetsInfo->setPosition(50, 100);
+    presetsInfo->setSize(400, 25);
+    presetsInfo->setTextColor(Color(200, 200, 200));
+    presetsScreen->addChild(std::move(presetsInfo));
+    
+    uiContext->addScreen(std::move(presetsScreen));
+    
+    // Create Settings screen
+    auto settingsScreen = std::make_unique<Screen>("settings");
+    settingsScreen->setBackgroundColor(Color(30, 30, 35));
+    settingsScreen->setPosition(0, 0);
+    settingsScreen->setSize(1280, 800);
+    addNavigationButtons(settingsScreen.get(), "settings", uiContext.get());
+    
+    auto settingsTitle = std::make_unique<Label>("settings_title", "SETTINGS");
+    settingsTitle->setPosition(50, 50);
+    settingsTitle->setSize(200, 30);
+    settingsTitle->setTextColor(Color(255, 255, 100));
+    settingsScreen->addChild(std::move(settingsTitle));
+    
+    auto audioSection = std::make_unique<Label>("audio_section", "Audio Configuration");
+    audioSection->setPosition(50, 100);
+    audioSection->setSize(200, 25);
+    audioSection->setTextColor(Color(200, 200, 255));
+    settingsScreen->addChild(std::move(audioSection));
+    
+    auto sampleRateLabel = std::make_unique<Label>("sample_rate", "Sample Rate: 44100 Hz");
+    sampleRateLabel->setPosition(70, 130);
+    sampleRateLabel->setSize(200, 20);
+    sampleRateLabel->setTextColor(Color(180, 180, 180));
+    settingsScreen->addChild(std::move(sampleRateLabel));
+    
+    auto bufferSizeLabel = std::make_unique<Label>("buffer_size", "Buffer Size: 512 samples");
+    bufferSizeLabel->setPosition(70, 155);
+    bufferSizeLabel->setSize(200, 20);
+    bufferSizeLabel->setTextColor(Color(180, 180, 180));
+    settingsScreen->addChild(std::move(bufferSizeLabel));
+    
+    auto midiSection = std::make_unique<Label>("midi_section", "MIDI Configuration");
+    midiSection->setPosition(50, 200);
+    midiSection->setSize(200, 25);
+    midiSection->setTextColor(Color(200, 200, 255));
+    settingsScreen->addChild(std::move(midiSection));
+    
+    auto midiInfo = std::make_unique<Label>("midi_info", "MIDI device selection and mapping options coming soon...");
+    midiInfo->setPosition(70, 230);
+    midiInfo->setSize(400, 20);
+    midiInfo->setTextColor(Color(180, 180, 180));
+    settingsScreen->addChild(std::move(midiInfo));
+    
+    uiContext->addScreen(std::move(settingsScreen));
     
     // Set up MIDI handling
     midiInput->setCallback(midiHandler.get());
@@ -1674,6 +2507,7 @@ int main(int argc, char* argv[]) {
     bool running = true;
     auto lastFrameTime = std::chrono::high_resolution_clock::now();
     auto lastPerfUpdate = std::chrono::high_resolution_clock::now();
+    auto lastAudioCheck = std::chrono::high_resolution_clock::now();
     int frameCount = 0;
     float cpuUsage = 0.0f;
     
@@ -1693,7 +2527,96 @@ int main(int argc, char* argv[]) {
                 running = false;
             } else {
                 InputEvent inputEvent = translateSDLEvent(sdlEvent);
-                uiContext->handleInput(inputEvent);
+                
+                // Check if any dropdown is open and handle it first
+                bool dropdownHandled = false;
+                Screen* activeScreen = uiContext->getScreen("main");
+                if (activeScreen) {
+                    // Check all dropdowns in reverse order (last added = top-most)
+                    // LFO selector dropdown
+                    if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("lfo_selector"))) {
+                        if (dropdown->isDropdownOpen()) {
+                            dropdownHandled = dropdown->handleInput(inputEvent);
+                            if (inputEvent.type == InputEventType::TouchPress && !dropdownHandled) {
+                                // Click outside dropdown - close it but consume the event
+                                dropdownHandled = true;
+                            }
+                        }
+                    }
+                    
+                    // MIDI device dropdown
+                    if (!dropdownHandled) {
+                        if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("midi_device_selector"))) {
+                            if (dropdown->isDropdownOpen()) {
+                                dropdownHandled = dropdown->handleInput(inputEvent);
+                                if (inputEvent.type == InputEventType::TouchPress && !dropdownHandled) {
+                                    // Click outside dropdown - close it but consume the event
+                                    dropdownHandled = true;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Preset dropdown
+                    if (!dropdownHandled) {
+                        if (auto* dropdown = dynamic_cast<PresetDropdown*>(activeScreen->getChild("preset_dropdown"))) {
+                            if (dropdown->isDropdownOpen()) {
+                                dropdownHandled = dropdown->handleInput(inputEvent);
+                                if (inputEvent.type == InputEventType::TouchPress && !dropdownHandled) {
+                                    dropdownHandled = true;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Effect dropdowns
+                    if (!dropdownHandled) {
+                        for (int i = 2; i >= 0; --i) {  // Check in reverse order
+                            if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("effect_type_" + std::to_string(i)))) {
+                                if (dropdown->isDropdownOpen()) {
+                                    dropdownHandled = dropdown->handleInput(inputEvent);
+                                    if (inputEvent.type == InputEventType::TouchPress && !dropdownHandled) {
+                                        dropdownHandled = true;
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Modulation dropdowns
+                    if (!dropdownHandled) {
+                        for (int i = 2; i >= 0; --i) {  // Check in reverse order
+                            bool found = false;
+                            if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("mod_dest_" + std::to_string(i)))) {
+                                if (dropdown->isDropdownOpen()) {
+                                    dropdownHandled = dropdown->handleInput(inputEvent);
+                                    if (inputEvent.type == InputEventType::TouchPress && !dropdownHandled) {
+                                        dropdownHandled = true;
+                                    }
+                                    found = true;
+                                }
+                            }
+                            if (!found && !dropdownHandled) {
+                                if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("mod_source_" + std::to_string(i)))) {
+                                    if (dropdown->isDropdownOpen()) {
+                                        dropdownHandled = dropdown->handleInput(inputEvent);
+                                        if (inputEvent.type == InputEventType::TouchPress && !dropdownHandled) {
+                                            dropdownHandled = true;
+                                        }
+                                        found = true;
+                                    }
+                                }
+                            }
+                            if (found) break;
+                        }
+                    }
+                }
+                
+                // Only pass to UI context if no dropdown handled it
+                if (!dropdownHandled) {
+                    uiContext->handleInput(inputEvent);
+                }
             }
         }
         
@@ -1720,9 +2643,83 @@ int main(int argc, char* argv[]) {
             lastPerfUpdate = currentTime;
         }
         
+        // Check audio stream status every second
+        if (std::chrono::duration<float>(currentTime - lastAudioCheck).count() > 1.0f) {
+            bool streamRunning = audioEngine->isStreamRunning();
+            bool engineHealthy = audioEngine->isHealthy();
+            
+            static bool lastStreamState = true;
+            static int retryCount = 0;
+            
+            // Detect when stream stops
+            if (!streamRunning && lastStreamState) {
+                std::cout << "\n!!! Audio stream stopped (device disconnected?) - attempting recovery..." << std::endl;
+                lastStreamState = false;
+                retryCount = 0;
+            }
+            
+            // Try to recover if stream is not running
+            if (!streamRunning && retryCount < 10) {
+                std::cout << "Recovery attempt " << (retryCount + 1) << "/10..." << std::endl;
+                
+                // Stop the current audio engine completely
+                std::cout << "  - Shutting down audio engine..." << std::endl;
+                audioEngine->shutdown();
+                
+                // Wait for device to settle
+                std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                
+                // Create a new audio engine instance
+                std::cout << "  - Creating new audio engine..." << std::endl;
+                audioEngine = std::make_unique<AudioEngine>();
+                
+                // Try to initialize with default device
+                if (audioEngine->initialize()) {
+                    std::cout << "  - Audio engine initialized!" << std::endl;
+                    
+                    // Re-set the audio callback
+                    audioEngine->setAudioCallback([&](float* outputBuffer, int numFrames) {
+                        std::lock_guard<std::mutex> lock(audioMutex);
+                        audioCallback(audioEngine.get(), synthesizer.get(), effectProcessor.get(),
+                                     sequencer.get(), waveformPtr, levelPtr, outputBuffer, numFrames);
+                    });
+                    
+                    if (audioEngine->isStreamRunning()) {
+                        std::cout << "✓ Audio recovery successful! Stream is running." << std::endl;
+                        lastStreamState = true;
+                        retryCount = 0;
+                        
+                        // Update any components that need the new sample rate
+                        if (synthesizer) {
+                            // Re-initialize synthesizer sample rate if needed
+                            std::cout << "  - Audio sample rate: " << audioEngine->getSampleRate() << " Hz" << std::endl;
+                        }
+                    } else {
+                        std::cout << "✗ Stream failed to start" << std::endl;
+                        retryCount++;
+                    }
+                } else {
+                    std::cerr << "✗ Failed to initialize audio engine" << std::endl;
+                    retryCount++;
+                    
+                    // Wait longer before next retry
+                    if (retryCount < 10) {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+                    }
+                }
+            } else if (streamRunning && !lastStreamState) {
+                // Stream recovered
+                std::cout << "✓ Audio stream is running again!" << std::endl;
+                lastStreamState = true;
+                retryCount = 0;
+            }
+            
+            lastAudioCheck = currentTime;
+        }
+        
         // Let UIContext render, but don't let it swap buffers
         // First, save the current render state
-        Screen* activeScreen = uiContext->getScreen("main");
+        Screen* activeScreen = uiContext->getScreen(uiContext->getActiveScreenId());
         if (activeScreen) {
             sdlDisplayManager->clear(activeScreen->getBackgroundColor());
             activeScreen->render(sdlDisplayManager.get());
@@ -1755,6 +2752,20 @@ int main(int argc, char* argv[]) {
             
             // Check preset dropdown
             if (auto* dropdown = dynamic_cast<PresetDropdown*>(activeScreen->getChild("preset_dropdown"))) {
+                if (dropdown->isDropdownOpen()) {
+                    dropdown->renderDropdownList(sdlDisplayManager.get());
+                }
+            }
+            
+            // Check LFO selector dropdown
+            if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("lfo_selector"))) {
+                if (dropdown->isDropdownOpen()) {
+                    dropdown->renderDropdownList(sdlDisplayManager.get());
+                }
+            }
+            
+            // Check MIDI device dropdown
+            if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("midi_device_selector"))) {
                 if (dropdown->isDropdownOpen()) {
                     dropdown->renderDropdownList(sdlDisplayManager.get());
                 }

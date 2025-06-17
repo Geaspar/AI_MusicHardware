@@ -18,6 +18,10 @@
 | 2024-12-16 | BUG-005 | Medium | ✅ Resolved | Modulation | All | User | Assistant | <30 min | pending | LFO Running 64x Slower Than Expected | LFO rate was incorrect - 1 Hz setting produced ~0.016 Hz. Phase increment calculation assumed per-sample updates but updates were per-block. | Multiplied phase increment by samples per update (64). LFO now runs at correct speed. | Manual testing with oscilloscope visualization | `src/audio/Synthesizer.cpp` |
 | 2024-12-16 | BUG-006 | Low | ✅ Resolved | UI | All | User | Assistant | <15 min | pending | Oscillator Wave Shapes Mislabeled | Square and Saw waves were swapped in UI. Wavetable frame positions didn't match enum order. | Updated UI labels and frame position mapping to match wavetable storage order. | Visual verification with oscilloscope | `src/main_integrated_simple.cpp`, `src/audio/Synthesizer.cpp` |
 | 2024-12-16 | BUG-007 | Medium | 🔄 In Progress | Audio | All | User | Assistant | TBD | pending | Duplicate Note Triggering | Notes play again ~1 second after initial trigger. Suspected sequencer or voice management issue. | Added debug timestamps and disabled sequencer for testing. Investigation ongoing. | Manual testing with debug output | `src/main_integrated_simple.cpp` |
+| 2024-12-17 | BUG-008 | High | ✅ Resolved | MIDI | All | User | Assistant | <30 min | pending | Oxi One MIDI Controller Not Detected | Oxi One MIDI controller not recognized on startup. Device requires initialization time before enumeration. | Moved MIDI device enumeration after MIDI manager initialization. Added proper initialization sequencing. | Manual testing with Oxi One controller | `src/main_integrated_simple.cpp` |
+| 2024-12-17 | BUG-009 | Medium | ✅ Resolved | UI | All | User | Assistant | <20 min | pending | Dropdown Menu Click Outside Not Closing | Dropdown menus stay open when clicking outside. Mouse release events not properly handled. | Fixed handleInput to detect mouse release outside menu bounds. Properly sets isOpen_ to false and returns false for event propagation. | Manual testing of all dropdown menus | `src/ui/DropdownMenu.cpp` |
+| 2024-12-17 | BUG-010 | Critical | ✅ Resolved | Audio/Effects | All | User | Assistant | <45 min | pending | Filter Resonance Crash at High Values | Application crashes when filter resonance set to maximum. Q value becomes infinite causing filter instability. | Limited Q value range to 0.1-30.0 in Filter class. Added bounds checking in setResonance method. | Stress testing with extreme parameter values | `src/effects/Filter.cpp`, `include/effects/Filter.h` |
+| 2024-12-17 | BUG-011 | High | ✅ Resolved | Audio | All | User | Assistant | <1 hour | pending | Audio Device Disconnection Crash | Application crashes when audio device is disconnected during playback. No recovery mechanism. | Implemented AudioDeviceManager with disconnection detection and automatic recovery attempts. Graceful degradation when device unavailable. | Physical device disconnection testing | `src/audio/AudioEngine.cpp`, `src/main_integrated_simple.cpp` |
 
 ---
 
@@ -69,7 +73,7 @@
 | High | 2 | 100% | <1 hour |
 | Medium | 2 | 50% | <30 min |
 | Low | 1 | 100% | <15 min |
-| **Total** | **7** | **86%** | **<1 hour avg** |
+| **Total** | **11** | **91%** | **<45 min avg** |
 
 ### By Component
 | Component | Bugs Fixed | Critical | High | Medium | Low |
@@ -78,16 +82,18 @@
 | Modulation | 3 | 1 | 0 | 1 | 0 |
 | Audio/Effects | 1 | 0 | 1 | 0 | 0 |
 | UI/Modulation | 1 | 0 | 1 | 0 | 0 |
-| UI | 1 | 0 | 0 | 0 | 1 |
-| Audio | 1 | 0 | 0 | 1 | 0 |
-| **Total** | **7** | **2** | **2** | **2** | **1** |
+| UI | 2 | 0 | 0 | 1 | 1 |
+| Audio | 2 | 0 | 1 | 1 | 0 |
+| MIDI | 1 | 0 | 1 | 0 | 0 |
+| Audio/Effects | 1 | 1 | 0 | 0 | 0 |
+| **Total** | **11** | **3** | **4** | **3** | **1** |
 
 ### By Platform
 | Platform | Bugs Fixed | Critical | High | Medium | Low |
 |----------|------------|----------|------|--------|-----|
 | macOS | 1 | 1 | 0 | 0 | 0 |
-| All | 6 | 1 | 2 | 2 | 1 |
-| **Total** | **7** | **2** | **2** | **2** | **1** |
+| All | 10 | 2 | 4 | 3 | 1 |
+| **Total** | **11** | **3** | **4** | **3** | **1** |
 
 ---
 

@@ -416,6 +416,10 @@ bool AudioEngine::isHealthy() const {
     return isHealthy_.load();
 }
 
+bool AudioEngine::isStreamRunning() const {
+    return pimpl_ && pimpl_->audio && pimpl_->audio->isStreamRunning();
+}
+
 AudioErrorHandler::AudioErrorStatistics AudioEngine::getErrorStatistics() const {
     return errorHandler_.getStatistics();
 }

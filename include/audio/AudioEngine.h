@@ -91,6 +91,12 @@ public:
     bool isHealthy() const;
     
     /**
+     * @brief Check if audio stream is currently running
+     * @return true if stream is active and running
+     */
+    bool isStreamRunning() const;
+    
+    /**
      * @brief Get error statistics from the error handler
      */
     AudioErrorHandler::AudioErrorStatistics getErrorStatistics() const;

@@ -1,6 +1,6 @@
 # UI Fixes Summary
 
-## Date: November 6, 2025 (Updated from October 6, 2025)
+## Date: December 17, 2024 (Updated from November 6, 2025)
 
 This document summarizes the major UI fixes and improvements implemented to address various issues with the synthesizer interface.
 
@@ -232,8 +232,74 @@ float cutoffToFrequency(float normalized) {
 - Fixed event handling in FilterVisualizer to properly process mouse input
 - Ensured bidirectional updates work correctly between sliders and visualizer
 
+## 11. Dropdown Menu Event Handling Fix (December 2024)
+
+### Problem
+- Dropdown menus were not closing when clicking outside their bounds
+- Mouse release events were not properly detected
+- Menu state (`isOpen_`) was not correctly managed
+
+### Solution
+- Fixed `handleInput()` method to detect mouse release outside menu bounds
+- Properly sets `isOpen_` to false when clicking outside
+- Returns false for event propagation to allow other components to handle the event
+- Added proper bounds checking for menu item selection
+
+### Implementation
+```cpp
+// Fixed mouse release handling
+if (event.type == InputEventType::TouchRelease) {
+    if (!isPointInside(mouseX, mouseY)) {
+        isOpen_ = false;
+        return false;  // Allow event propagation
+    }
+}
+```
+
+## 12. Multi-Screen Navigation System (December 2024)
+
+### Problem
+- All controls were crammed onto a single screen
+- No organized way to group related functionality
+- Difficult to add new features without cluttering the interface
+
+### Solution
+Implemented a comprehensive screen management system:
+- Created separate screens for different functionality (Main, LFO, Effects, etc.)
+- Added navigation buttons to switch between screens
+- Proper screen lifecycle management with enter/exit callbacks
+- Screen history tracking for back navigation
+
+### Features
+- Clean separation of UI concerns
+- Easy to add new screens without affecting existing ones
+- Improved user experience with logical grouping of controls
+- Memory efficient - only active screen is processed
+
+## 13. LFO 2 Implementation with Dropdown Routing (December 2024)
+
+### Problem
+- Only one LFO was available for modulation
+- No easy way to route LFOs to different destinations
+- CC learning buttons cluttered the interface
+
+### Solution
+- Added second LFO with independent controls
+- Implemented dropdown selectors for modulation destinations
+- Removed CC learning buttons from LFO sliders
+- Each LFO can be routed to: Off, Pitch, Filter Cutoff, Filter Resonance, Volume
+
+### UI Layout
+```cpp
+// LFO Screen layout
+LFO 1: Rate | Depth | Shape | [Destination Dropdown]
+LFO 2: Rate | Depth | Shape | [Destination Dropdown]
+```
+
 ## Conclusion
 
 These fixes significantly improve the stability and usability of the UI system. The grid layout provides a much more maintainable approach to component positioning, while the rendering checks ensure a clean visual experience during initialization. The reduced audio latency makes the synthesizer more responsive and suitable for live performance.
 
 The recent additions of the filter visualizer, modulation routing UI, and effects chain controls bring the interface up to professional standards, matching the functionality found in commercial synthesizers like Vital. The envelope visualizer fix ensures all ADSR parameters can be edited visually, completing the core synthesis control interface.
+
+The December 2024 updates further enhance the UI with proper dropdown menu handling, multi-screen navigation for better organization, and dual LFO implementation with intuitive routing controls. These improvements make the synthesizer more powerful while maintaining a clean, organized interface.
