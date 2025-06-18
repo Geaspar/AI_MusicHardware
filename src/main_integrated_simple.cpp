@@ -700,7 +700,7 @@ int main(int argc, char* argv[]) {
     
     auto attackSlider = std::make_unique<Slider>("attack_slider", "Attack", 590, 85, 40, 100);
     attackSlider->setRange(0.0f, 2.0f);
-    attackSlider->setValue(0.01f);
+    attackSlider->setValue(0.02f);  // Changed from 0.01f to 0.02f for smoother attack
     attackSlider->setValueFormatter([](float value) {
         std::stringstream ss;
         if (value < 0.1f) {
@@ -774,10 +774,11 @@ int main(int argc, char* argv[]) {
     volumeSlider->setValue(0.75f);
     volumeSlider->setValueFormatter([](float value) {
         std::stringstream ss;
-        if (value == 0.0f) {
+        if (value <= 0.0f) {
             ss << "-∞ dB";
         } else {
-            float db = 20.0f * std::log10(value);
+            // Map 0-1 to -40dB to +6dB range (matching the synthesizer)
+            float db = -40.0f + (value * 46.0f);
             ss << std::fixed << std::setprecision(1) << db << " dB";
         }
         return ss.str();
@@ -1872,7 +1873,7 @@ int main(int argc, char* argv[]) {
                            attackSliderPtr, decaySliderPtr, sustainSliderPtr, releaseSliderPtr);
     
     // Initialize envelope parameters in synthesizer
-    synthesizer->setParameter("envelope_attack", 0.01f);
+    synthesizer->setParameter("envelope_attack", 0.02f);  // Changed from 0.01f to 0.02f for smoother attack
     synthesizer->setParameter("envelope_decay", 0.1f);
     synthesizer->setParameter("envelope_sustain", 0.7f);
     synthesizer->setParameter("envelope_release", 0.5f);

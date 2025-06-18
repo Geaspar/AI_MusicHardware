@@ -245,6 +245,10 @@ private:
     std::mt19937 rng_;
     std::uniform_real_distribution<float> randomDist_{-1.0f, 1.0f};
     
+    // DC blocker filter state
+    float dcBlockerX1_;  // Previous input
+    float dcBlockerY1_;  // Previous output
+    
     // Internal frequency update
     void updateOscillatorFrequency();
 };

@@ -100,7 +100,7 @@ float ModEnvelope::generateValue() {
 }
 
 void ModEnvelope::setAttack(float seconds) {
-    attack_ = std::max(0.001f, seconds); // Minimum 1ms attack
+    attack_ = std::max(0.005f, seconds); // Minimum 5ms attack to prevent clicks
     updateRates();
 }
 
@@ -114,7 +114,7 @@ void ModEnvelope::setSustain(float level) {
 }
 
 void ModEnvelope::setRelease(float seconds) {
-    release_ = std::max(0.001f, seconds); // Minimum 1ms release
+    release_ = std::max(0.010f, seconds); // Minimum 10ms release to prevent clicks
     updateRates();
 }
 

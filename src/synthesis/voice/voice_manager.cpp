@@ -25,14 +25,16 @@ Voice::Voice(int sampleRate)
       sampleRate_(sampleRate),
       pressure_(0.0f),
       amplitudeModulation_(1.0f),
-      rng_(std::random_device{}()) {
+      rng_(std::random_device{}()),
+      dcBlockerX1_(0.0f),
+      dcBlockerY1_(0.0f) {
     
     // Create oscillator and envelope
     oscillator_ = std::make_unique<WavetableOscillator>(sampleRate);
     envelope_ = std::make_unique<ModEnvelope>(sampleRate);
     
-    // Setup default envelope
-    envelope_->setAttack(0.01f);     // 10ms attack
+    // Setup default envelope with slightly slower attack to prevent clicks
+    envelope_->setAttack(0.02f);     // 20ms attack (smoother)
     envelope_->setDecay(0.1f);       // 100ms decay
     envelope_->setSustain(0.7f);     // 70% sustain
     envelope_->setRelease(0.5f);     // 500ms release
@@ -90,6 +92,10 @@ void Voice::reset() {
     // Reset pitch modulation to defaults
     pitchMod_ = PitchModulation(); // Reset to default values
     
+    // Reset DC blocker state
+    dcBlockerX1_ = 0.0f;
+    dcBlockerY1_ = 0.0f;
+    
     envelope_->reset();
     
     state_ = State::Inactive;
@@ -134,6 +140,13 @@ float Voice::generateSample() {
     
     // Apply amplitude modulation
     sample *= amplitudeModulation_;
+    
+    // Apply DC blocker to remove any DC offset
+    // Simple high-pass filter: y[n] = x[n] - x[n-1] + 0.995 * y[n-1]
+    float dcBlockerOutput = sample - dcBlockerX1_ + 0.995f * dcBlockerY1_;
+    dcBlockerX1_ = sample;
+    dcBlockerY1_ = dcBlockerOutput;
+    sample = dcBlockerOutput;
     
     // Debug output for first few samples (removed verbose logging)
     
@@ -278,6 +291,15 @@ void VoiceManager::noteOn(int midiNote, float velocity, int channel) {
     
     // Trigger the voice with this note
     if (voice) {
+        // If the voice is currently active (voice stealing), apply a quick fade
+        if (voice->isActive()) {
+            // Force a very quick release to avoid clicks
+            if (auto* envelope = voice->getEnvelope()) {
+                envelope->setRelease(0.02f);  // 20ms quick fade
+                voice->noteOff();
+            }
+        }
+        
         voice->setChannel(channel);
         voice->noteOn(midiNote, velocity);
         

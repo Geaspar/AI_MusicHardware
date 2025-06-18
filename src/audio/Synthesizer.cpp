@@ -804,7 +804,19 @@ void Synthesizer::process(float* buffer, int numFrames) {
     effectChain_.process(buffer, numFrames);
     
     // Final limiter to prevent clipping
-    const float masterVolume = baseParameterValues_.count("master_volume") ? baseParameterValues_.at("master_volume") : 0.7f;
+    const float linearVolume = baseParameterValues_.count("master_volume") ? baseParameterValues_.at("master_volume") : 0.7f;
+    
+    // Convert linear slider value to logarithmic gain
+    // Use a more musical taper: -40dB to +6dB range for more usable volume
+    float masterVolume;
+    if (linearVolume <= 0.0f) {
+        masterVolume = 0.0f;  // -inf dB
+    } else {
+        // Map 0-1 to -40dB to +6dB range (more headroom)
+        float dbValue = -40.0f + (linearVolume * 46.0f);
+        masterVolume = std::pow(10.0f, dbValue / 20.0f);
+    }
+    
     for (int i = 0; i < numFrames * 2; ++i) {
         buffer[i] *= masterVolume;
         buffer[i] = std::clamp(buffer[i], -1.0f, 1.0f);
