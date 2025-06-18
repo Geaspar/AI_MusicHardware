@@ -506,7 +506,8 @@ void Synthesizer::setParameter(const std::string& paramId, float value) {
         std::cout << "Setting filter resonance to " << value << " (resonance: " << resonance << ")" << std::endl;
     }
     else if (paramId == "master_volume") {
-        // For future implementation - adjust master volume
+        // Update base parameter value
+        baseParameterValues_["master_volume"] = value;
         std::cout << "Setting master volume to " << value << std::endl;
     }
     else if (paramId == "envelope_attack") {
@@ -632,8 +633,8 @@ float Synthesizer::getParameter(const std::string& paramId) const {
         return 0.5f; // Default value
     }
     else if (paramId == "master_volume") {
-        // For future implementation - get master volume
-        return 0.7f; // Default value
+        // Return stored master volume value
+        return baseParameterValues_.count("master_volume") ? baseParameterValues_.at("master_volume") : 0.7f;
     }
     else if (paramId == "envelope_attack") {
         return baseParameterValues_.count("envelope_attack") ? baseParameterValues_.at("envelope_attack") : 0.01f;
@@ -803,7 +804,7 @@ void Synthesizer::process(float* buffer, int numFrames) {
     effectChain_.process(buffer, numFrames);
     
     // Final limiter to prevent clipping
-    const float masterVolume = 0.7f;
+    const float masterVolume = baseParameterValues_.count("master_volume") ? baseParameterValues_.at("master_volume") : 0.7f;
     for (int i = 0; i < numFrames * 2; ++i) {
         buffer[i] *= masterVolume;
         buffer[i] = std::clamp(buffer[i], -1.0f, 1.0f);
