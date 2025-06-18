@@ -4,7 +4,7 @@
 
 The UI system follows a modern, thread-safe architecture inspired by professional audio software and hardware synthesizers.
 
-### Recent Updates (December 2024)
+### Recent Updates (June 2025)
 - **Fixed**: Dropdown menu event handling - proper mouse release detection outside menu bounds
 - **Added**: LFO 2 implementation with dropdown selector for modulation destinations
 - **Improved**: Multi-screen navigation system with proper screen transitions

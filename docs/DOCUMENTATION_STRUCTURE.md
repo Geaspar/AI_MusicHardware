@@ -119,7 +119,7 @@ This document describes the organized documentation structure for the AIMusicHar
 
 ### For New Users
 1. Start with `PROJECT_STATUS.md` for project overview
-2. Check `RECENT_UPDATES_DECEMBER_2024.md` for latest changes
+2. Check the Recent Updates section in `PROJECT_STATUS.md` for latest changes
 3. Read relevant guides: `UI_GUIDE.md`, `SEQUENCER_GUIDE.md`, `IOT_MQTT_GUIDE.md`
 4. Refer to hardware docs if building physical devices
 

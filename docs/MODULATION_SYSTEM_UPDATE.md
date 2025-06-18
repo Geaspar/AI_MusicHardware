@@ -177,7 +177,7 @@ Modulation Matrix -------- Parameter Updates
 5. `lfo_rate_correction_summary.md`
 6. `duplicate_note_debug_summary.md`
 
-## Change Summary (December 17, 2024)
+## Change Summary (June 17, 2025)
 - Added LFO 2 with destination routing dropdown
 - Fixed dropdown menu event handling issues
 - Implemented multi-screen navigation system
@@ -188,4 +188,4 @@ Modulation Matrix -------- Parameter Updates
 
 ---
 
-*Last Updated: December 17, 2024*
+*Last Updated: June 17, 2025*

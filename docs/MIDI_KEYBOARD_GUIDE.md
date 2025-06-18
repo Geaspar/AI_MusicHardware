@@ -10,7 +10,7 @@ The MIDI keyboard integration allows you to play the synthesizer in real-time us
 2. **Synthesizer** - Generates audio based on MIDI input
 3. **Audio Engine** - Delivers the audio to your speakers/headphones
 
-### Recent Updates (December 2024)
+### Recent Updates (June 2025)
 - **Fixed**: Oxi One MIDI controller detection issue - now properly recognized on initialization
 - **Improved**: MIDI device enumeration now happens after MIDI manager is fully initialized
 - **Added**: Better error handling for MIDI device connection failures

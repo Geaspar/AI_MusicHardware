@@ -1,6 +1,6 @@
 # UI Fixes Summary
 
-## Date: December 17, 2024 (Updated from November 6, 2025)
+## Date: June 17, 2025
 
 This document summarizes the major UI fixes and improvements implemented to address various issues with the synthesizer interface.
 
@@ -232,7 +232,7 @@ float cutoffToFrequency(float normalized) {
 - Fixed event handling in FilterVisualizer to properly process mouse input
 - Ensured bidirectional updates work correctly between sliders and visualizer
 
-## 11. Dropdown Menu Event Handling Fix (December 2024)
+## 11. Dropdown Menu Event Handling Fix (June 2025)
 
 ### Problem
 - Dropdown menus were not closing when clicking outside their bounds
@@ -256,7 +256,7 @@ if (event.type == InputEventType::TouchRelease) {
 }
 ```
 
-## 12. Multi-Screen Navigation System (December 2024)
+## 12. Multi-Screen Navigation System (June 2025)
 
 ### Problem
 - All controls were crammed onto a single screen
@@ -276,7 +276,7 @@ Implemented a comprehensive screen management system:
 - Improved user experience with logical grouping of controls
 - Memory efficient - only active screen is processed
 
-## 13. LFO 2 Implementation with Dropdown Routing (December 2024)
+## 13. LFO 2 Implementation with Dropdown Routing (June 2025)
 
 ### Problem
 - Only one LFO was available for modulation
