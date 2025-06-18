@@ -3,7 +3,7 @@
 **Purpose**: Track all bug fixes, patches, and stability improvements throughout the project lifecycle.
 
 **Maintained By**: Development Team  
-**Last Updated**: June 17, 2025
+**Last Updated**: June 18, 2025
 
 ---
 
@@ -22,6 +22,9 @@
 | 2025-06-17 | BUG-009 | Medium | ✅ Resolved | UI | All | User | Assistant | <20 min | pending | Dropdown Menu Click Outside Not Closing | Dropdown menus stay open when clicking outside. Mouse release events not properly handled. | Fixed handleInput to detect mouse release outside menu bounds. Properly sets isOpen_ to false and returns false for event propagation. | Manual testing of all dropdown menus | `src/ui/DropdownMenu.cpp` |
 | 2025-06-17 | BUG-010 | Critical | ✅ Resolved | Audio/Effects | All | User | Assistant | <45 min | pending | Filter Resonance Crash at High Values | Application crashes when filter resonance set to maximum. Q value becomes infinite causing filter instability. | Limited Q value range to 0.1-30.0 in Filter class. Added bounds checking in setResonance method. | Stress testing with extreme parameter values | `src/effects/Filter.cpp`, `include/effects/Filter.h` |
 | 2025-06-17 | BUG-011 | High | ✅ Resolved | Audio | All | User | Assistant | <1 hour | pending | Audio Device Disconnection Crash | Application crashes when audio device is disconnected during playback. No recovery mechanism. | Implemented AudioDeviceManager with disconnection detection and automatic recovery attempts. Graceful degradation when device unavailable. | Physical device disconnection testing | `src/audio/AudioEngine.cpp`, `src/main_integrated_simple.cpp` |
+| 2025-06-18 | BUG-012 | Medium | ✅ Resolved | Audio/UI | All | User | Assistant | <30 min | pending | Volume Scaling Too Extreme | Volume range -60dB to 0dB made low settings inaudible. Users couldn't hear anything below 50% slider position. | Changed volume scaling from -60dB/0dB to -40dB/+6dB. More usable range with audible output throughout slider range. | Manual testing with various volume settings | `src/main_integrated_simple.cpp` |
+| 2025-06-18 | BUG-013 | Medium | ✅ Resolved | Audio | All | User | Assistant | <20 min | pending | Clicking on Note Attack | Notes produce clicking/popping sounds on attack. Default 10ms attack too fast for clean onset. | Increased default attack time from 10ms to 20ms. Provides smoother note onset while maintaining responsive feel. | Manual testing with various note velocities | `src/main_integrated_simple.cpp` |
+| 2025-06-18 | BUG-014 | High | ✅ Resolved | Audio/UI | All | User | Assistant | <30 min | pending | Master Volume Slider Not Working | Master volume slider had no effect on audio output. Gain not being applied to final output buffer. | Fixed volume parameter application in audio processing. Master volume now correctly scales output gain. | Manual testing of volume control | `src/main_integrated_simple.cpp` |
 
 ---
 
@@ -69,31 +72,31 @@
 
 | Severity | Count | Resolution Rate | Avg. Time to Resolution |
 |----------|-------|-----------------|-------------------------|
-| Critical | 2 | 100% | <1 day |
-| High | 2 | 100% | <1 hour |
-| Medium | 2 | 50% | <30 min |
+| Critical | 3 | 100% | <1 day |
+| High | 5 | 100% | <45 min |
+| Medium | 5 | 80% | <30 min |
 | Low | 1 | 100% | <15 min |
-| **Total** | **11** | **91%** | **<45 min avg** |
+| **Total** | **14** | **93%** | **<40 min avg** |
 
 ### By Component
 | Component | Bugs Fixed | Critical | High | Medium | Low |
 |-----------|------------|----------|------|--------|-----|
 | UI/Audio | 1 | 1 | 0 | 0 | 0 |
 | Modulation | 3 | 1 | 0 | 1 | 0 |
-| Audio/Effects | 1 | 0 | 1 | 0 | 0 |
+| Audio/Effects | 2 | 1 | 1 | 0 | 0 |
 | UI/Modulation | 1 | 0 | 1 | 0 | 0 |
 | UI | 2 | 0 | 0 | 1 | 1 |
-| Audio | 2 | 0 | 1 | 1 | 0 |
+| Audio | 3 | 0 | 1 | 2 | 0 |
 | MIDI | 1 | 0 | 1 | 0 | 0 |
-| Audio/Effects | 1 | 1 | 0 | 0 | 0 |
-| **Total** | **11** | **3** | **4** | **3** | **1** |
+| Audio/UI | 2 | 0 | 1 | 1 | 0 |
+| **Total** | **14** | **3** | **5** | **5** | **1** |
 
 ### By Platform
 | Platform | Bugs Fixed | Critical | High | Medium | Low |
 |----------|------------|----------|------|--------|-----|
 | macOS | 1 | 1 | 0 | 0 | 0 |
-| All | 10 | 2 | 4 | 3 | 1 |
-| **Total** | **11** | **3** | **4** | **3** | **1** |
+| All | 13 | 2 | 5 | 5 | 1 |
+| **Total** | **14** | **3** | **5** | **5** | **1** |
 
 ---
 

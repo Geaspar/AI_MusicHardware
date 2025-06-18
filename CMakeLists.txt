@@ -181,6 +181,8 @@ set(SYNTHESIS_SOURCES
     src/synthesis/framework/processor.cpp
     src/synthesis/wavetable/wavetable.cpp
     src/synthesis/wavetable/oscillator_stack.cpp
+    src/synthesis/wavetable/band_limited_wavetable.cpp
+    src/synthesis/oscillators/band_limited_oscillator.cpp
     src/synthesis/modulators/envelope.cpp
     src/synthesis/modulators/modulation_matrix.cpp
     src/synthesis/modulators/LFO.cpp
@@ -373,6 +375,14 @@ target_link_libraries(TestAudio PRIVATE
     AIMusicCore
 )
 message(STATUS "Building TestAudio")
+
+# Create TestBandLimitedOscillator executable
+add_executable(TestBandLimitedOscillator examples/TestBandLimitedOscillator.cpp)
+target_link_libraries(TestBandLimitedOscillator PRIVATE
+    AIMusicCore
+)
+message(STATUS "Building TestBandLimitedOscillator")
+message(STATUS "- Run ./bin/TestBandLimitedOscillator to test band-limited wavetable oscillators")
 
 # Test for effect controls
 add_executable(TestEffectControls examples/TestEffectControls.cpp)

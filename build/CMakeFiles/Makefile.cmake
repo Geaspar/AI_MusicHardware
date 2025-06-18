@@ -69,6 +69,7 @@ set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/MultiTimbralDemo.dir/DependInfo.cmake"
   "CMakeFiles/TestMpeVoiceManager.dir/DependInfo.cmake"
   "CMakeFiles/TestAudio.dir/DependInfo.cmake"
+  "CMakeFiles/TestBandLimitedOscillator.dir/DependInfo.cmake"
   "CMakeFiles/TestEffectControls.dir/DependInfo.cmake"
   "CMakeFiles/OscillatorStackDemo.dir/DependInfo.cmake"
   "CMakeFiles/AdvancedFilterDemo.dir/DependInfo.cmake"

@@ -195,6 +195,19 @@ TestAudio/fast:
 .PHONY : TestAudio/fast
 
 #=============================================================================
+# Target rules for targets named TestBandLimitedOscillator
+
+# Build rule for target.
+TestBandLimitedOscillator: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 TestBandLimitedOscillator
+.PHONY : TestBandLimitedOscillator
+
+# fast build rule for target.
+TestBandLimitedOscillator/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestBandLimitedOscillator.dir/build.make CMakeFiles/TestBandLimitedOscillator.dir/build
+.PHONY : TestBandLimitedOscillator/fast
+
+#=============================================================================
 # Target rules for targets named TestEffectControls
 
 # Build rule for target.
@@ -1283,6 +1296,30 @@ examples/TestAudio.s: examples/TestAudio.cpp.s
 examples/TestAudio.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestAudio.dir/build.make CMakeFiles/TestAudio.dir/examples/TestAudio.cpp.s
 .PHONY : examples/TestAudio.cpp.s
+
+examples/TestBandLimitedOscillator.o: examples/TestBandLimitedOscillator.cpp.o
+.PHONY : examples/TestBandLimitedOscillator.o
+
+# target to build an object file
+examples/TestBandLimitedOscillator.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestBandLimitedOscillator.dir/build.make CMakeFiles/TestBandLimitedOscillator.dir/examples/TestBandLimitedOscillator.cpp.o
+.PHONY : examples/TestBandLimitedOscillator.cpp.o
+
+examples/TestBandLimitedOscillator.i: examples/TestBandLimitedOscillator.cpp.i
+.PHONY : examples/TestBandLimitedOscillator.i
+
+# target to preprocess a source file
+examples/TestBandLimitedOscillator.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestBandLimitedOscillator.dir/build.make CMakeFiles/TestBandLimitedOscillator.dir/examples/TestBandLimitedOscillator.cpp.i
+.PHONY : examples/TestBandLimitedOscillator.cpp.i
+
+examples/TestBandLimitedOscillator.s: examples/TestBandLimitedOscillator.cpp.s
+.PHONY : examples/TestBandLimitedOscillator.s
+
+# target to generate assembly for a file
+examples/TestBandLimitedOscillator.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/TestBandLimitedOscillator.dir/build.make CMakeFiles/TestBandLimitedOscillator.dir/examples/TestBandLimitedOscillator.cpp.s
+.PHONY : examples/TestBandLimitedOscillator.cpp.s
 
 examples/TestEffectControls.o: examples/TestEffectControls.cpp.o
 .PHONY : examples/TestEffectControls.o
@@ -2700,6 +2737,30 @@ src/synthesis/multitimbral/MultiTimbralEngine.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/multitimbral/MultiTimbralEngine.cpp.s
 .PHONY : src/synthesis/multitimbral/MultiTimbralEngine.cpp.s
 
+src/synthesis/oscillators/band_limited_oscillator.o: src/synthesis/oscillators/band_limited_oscillator.cpp.o
+.PHONY : src/synthesis/oscillators/band_limited_oscillator.o
+
+# target to build an object file
+src/synthesis/oscillators/band_limited_oscillator.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/oscillators/band_limited_oscillator.cpp.o
+.PHONY : src/synthesis/oscillators/band_limited_oscillator.cpp.o
+
+src/synthesis/oscillators/band_limited_oscillator.i: src/synthesis/oscillators/band_limited_oscillator.cpp.i
+.PHONY : src/synthesis/oscillators/band_limited_oscillator.i
+
+# target to preprocess a source file
+src/synthesis/oscillators/band_limited_oscillator.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/oscillators/band_limited_oscillator.cpp.i
+.PHONY : src/synthesis/oscillators/band_limited_oscillator.cpp.i
+
+src/synthesis/oscillators/band_limited_oscillator.s: src/synthesis/oscillators/band_limited_oscillator.cpp.s
+.PHONY : src/synthesis/oscillators/band_limited_oscillator.s
+
+# target to generate assembly for a file
+src/synthesis/oscillators/band_limited_oscillator.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/oscillators/band_limited_oscillator.cpp.s
+.PHONY : src/synthesis/oscillators/band_limited_oscillator.cpp.s
+
 src/synthesis/voice/MpeAwareVoiceManager.o: src/synthesis/voice/MpeAwareVoiceManager.cpp.o
 .PHONY : src/synthesis/voice/MpeAwareVoiceManager.o
 
@@ -2819,6 +2880,30 @@ src/synthesis/voice/voice_manager.s: src/synthesis/voice/voice_manager.cpp.s
 src/synthesis/voice/voice_manager.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/voice/voice_manager.cpp.s
 .PHONY : src/synthesis/voice/voice_manager.cpp.s
+
+src/synthesis/wavetable/band_limited_wavetable.o: src/synthesis/wavetable/band_limited_wavetable.cpp.o
+.PHONY : src/synthesis/wavetable/band_limited_wavetable.o
+
+# target to build an object file
+src/synthesis/wavetable/band_limited_wavetable.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/band_limited_wavetable.cpp.o
+.PHONY : src/synthesis/wavetable/band_limited_wavetable.cpp.o
+
+src/synthesis/wavetable/band_limited_wavetable.i: src/synthesis/wavetable/band_limited_wavetable.cpp.i
+.PHONY : src/synthesis/wavetable/band_limited_wavetable.i
+
+# target to preprocess a source file
+src/synthesis/wavetable/band_limited_wavetable.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/band_limited_wavetable.cpp.i
+.PHONY : src/synthesis/wavetable/band_limited_wavetable.cpp.i
+
+src/synthesis/wavetable/band_limited_wavetable.s: src/synthesis/wavetable/band_limited_wavetable.cpp.s
+.PHONY : src/synthesis/wavetable/band_limited_wavetable.s
+
+# target to generate assembly for a file
+src/synthesis/wavetable/band_limited_wavetable.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/wavetable/band_limited_wavetable.cpp.s
+.PHONY : src/synthesis/wavetable/band_limited_wavetable.cpp.s
 
 src/synthesis/wavetable/oscillator_stack.o: src/synthesis/wavetable/oscillator_stack.cpp.o
 .PHONY : src/synthesis/wavetable/oscillator_stack.o
@@ -3417,6 +3502,7 @@ help:
 	@echo "... SimpleUIDemo"
 	@echo "... SynchronizedSequencerDemo"
 	@echo "... TestAudio"
+	@echo "... TestBandLimitedOscillator"
 	@echo "... TestEffectControls"
 	@echo "... TestLFO"
 	@echo "... TestLFOSimple"
@@ -3504,6 +3590,9 @@ help:
 	@echo "... examples/TestAudio.o"
 	@echo "... examples/TestAudio.i"
 	@echo "... examples/TestAudio.s"
+	@echo "... examples/TestBandLimitedOscillator.o"
+	@echo "... examples/TestBandLimitedOscillator.i"
+	@echo "... examples/TestBandLimitedOscillator.s"
 	@echo "... examples/TestEffectControls.o"
 	@echo "... examples/TestEffectControls.i"
 	@echo "... examples/TestEffectControls.s"
@@ -3681,6 +3770,9 @@ help:
 	@echo "... src/synthesis/multitimbral/MultiTimbralEngine.o"
 	@echo "... src/synthesis/multitimbral/MultiTimbralEngine.i"
 	@echo "... src/synthesis/multitimbral/MultiTimbralEngine.s"
+	@echo "... src/synthesis/oscillators/band_limited_oscillator.o"
+	@echo "... src/synthesis/oscillators/band_limited_oscillator.i"
+	@echo "... src/synthesis/oscillators/band_limited_oscillator.s"
 	@echo "... src/synthesis/voice/MpeAwareVoiceManager.o"
 	@echo "... src/synthesis/voice/MpeAwareVoiceManager.i"
 	@echo "... src/synthesis/voice/MpeAwareVoiceManager.s"
@@ -3696,6 +3788,9 @@ help:
 	@echo "... src/synthesis/voice/voice_manager.o"
 	@echo "... src/synthesis/voice/voice_manager.i"
 	@echo "... src/synthesis/voice/voice_manager.s"
+	@echo "... src/synthesis/wavetable/band_limited_wavetable.o"
+	@echo "... src/synthesis/wavetable/band_limited_wavetable.i"
+	@echo "... src/synthesis/wavetable/band_limited_wavetable.s"
 	@echo "... src/synthesis/wavetable/oscillator_stack.o"
 	@echo "... src/synthesis/wavetable/oscillator_stack.i"
 	@echo "... src/synthesis/wavetable/oscillator_stack.s"

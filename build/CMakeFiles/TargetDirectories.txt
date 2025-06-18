@@ -4,6 +4,7 @@
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/MultiTimbralDemo.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/TestMpeVoiceManager.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/TestAudio.dir
+/Users/geaspar/AIMusicHardware/build/CMakeFiles/TestBandLimitedOscillator.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/TestEffectControls.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/OscillatorStackDemo.dir
 /Users/geaspar/AIMusicHardware/build/CMakeFiles/AdvancedFilterDemo.dir
