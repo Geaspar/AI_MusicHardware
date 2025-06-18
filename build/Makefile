@@ -2809,6 +2809,30 @@ src/synthesis/voice/MpeVoice.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/voice/MpeVoice.cpp.s
 .PHONY : src/synthesis/voice/MpeVoice.cpp.s
 
+src/synthesis/voice/band_limited_voice.o: src/synthesis/voice/band_limited_voice.cpp.o
+.PHONY : src/synthesis/voice/band_limited_voice.o
+
+# target to build an object file
+src/synthesis/voice/band_limited_voice.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/voice/band_limited_voice.cpp.o
+.PHONY : src/synthesis/voice/band_limited_voice.cpp.o
+
+src/synthesis/voice/band_limited_voice.i: src/synthesis/voice/band_limited_voice.cpp.i
+.PHONY : src/synthesis/voice/band_limited_voice.i
+
+# target to preprocess a source file
+src/synthesis/voice/band_limited_voice.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/voice/band_limited_voice.cpp.i
+.PHONY : src/synthesis/voice/band_limited_voice.cpp.i
+
+src/synthesis/voice/band_limited_voice.s: src/synthesis/voice/band_limited_voice.cpp.s
+.PHONY : src/synthesis/voice/band_limited_voice.s
+
+# target to generate assembly for a file
+src/synthesis/voice/band_limited_voice.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/AIMusicCore.dir/build.make CMakeFiles/AIMusicCore.dir/src/synthesis/voice/band_limited_voice.cpp.s
+.PHONY : src/synthesis/voice/band_limited_voice.cpp.s
+
 src/synthesis/voice/stacked_voice.o: src/synthesis/voice/stacked_voice.cpp.o
 .PHONY : src/synthesis/voice/stacked_voice.o
 
@@ -3779,6 +3803,9 @@ help:
 	@echo "... src/synthesis/voice/MpeVoice.o"
 	@echo "... src/synthesis/voice/MpeVoice.i"
 	@echo "... src/synthesis/voice/MpeVoice.s"
+	@echo "... src/synthesis/voice/band_limited_voice.o"
+	@echo "... src/synthesis/voice/band_limited_voice.i"
+	@echo "... src/synthesis/voice/band_limited_voice.s"
 	@echo "... src/synthesis/voice/stacked_voice.o"
 	@echo "... src/synthesis/voice/stacked_voice.i"
 	@echo "... src/synthesis/voice/stacked_voice.s"

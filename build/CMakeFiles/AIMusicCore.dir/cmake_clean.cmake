@@ -101,6 +101,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/AIMusicCore.dir/src/synthesis/voice/MpeAwareVoiceManager.cpp.o.d"
   "CMakeFiles/AIMusicCore.dir/src/synthesis/voice/MpeVoice.cpp.o"
   "CMakeFiles/AIMusicCore.dir/src/synthesis/voice/MpeVoice.cpp.o.d"
+  "CMakeFiles/AIMusicCore.dir/src/synthesis/voice/band_limited_voice.cpp.o"
+  "CMakeFiles/AIMusicCore.dir/src/synthesis/voice/band_limited_voice.cpp.o.d"
   "CMakeFiles/AIMusicCore.dir/src/synthesis/voice/stacked_voice.cpp.o"
   "CMakeFiles/AIMusicCore.dir/src/synthesis/voice/stacked_voice.cpp.o.d"
   "CMakeFiles/AIMusicCore.dir/src/synthesis/voice/stacked_voice_manager.cpp.o"

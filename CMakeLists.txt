@@ -192,6 +192,7 @@ set(SYNTHESIS_SOURCES
     src/synthesis/voice/MpeAwareVoiceManager.cpp
     src/synthesis/voice/stacked_voice.cpp
     src/synthesis/voice/stacked_voice_manager.cpp
+    src/synthesis/voice/band_limited_voice.cpp
 )
 
 # Multi-Timbral sources

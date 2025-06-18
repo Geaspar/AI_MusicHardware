@@ -713,23 +713,48 @@ void Synthesizer::setAllParameters(const std::map<std::string, float>& parameter
 void Synthesizer::setOscillatorType(OscillatorType type) {
     currentOscType_ = type;
 
-    // Convert oscillator type to wavetable frame position
-    float framePos = oscTypeToFramePosition(type);
+    if (useBandLimitedOscillators_) {
+        // Convert to band-limited waveform type
+        BandLimitedWavetable::WaveType blWaveType = BandLimitedWavetable::WaveType::Saw;
+        switch (type) {
+            case OscillatorType::Sine:
+                blWaveType = BandLimitedWavetable::WaveType::Sine;
+                break;
+            case OscillatorType::Saw:
+                blWaveType = BandLimitedWavetable::WaveType::Saw;
+                break;
+            case OscillatorType::Square:
+                blWaveType = BandLimitedWavetable::WaveType::Square;
+                break;
+            case OscillatorType::Triangle:
+                blWaveType = BandLimitedWavetable::WaveType::Triangle;
+                break;
+            default:
+                break;
+        }
+        
+        // Update band-limited voice manager
+        if (auto* blVoiceManager = dynamic_cast<BandLimitedVoiceManager*>(voiceManager_.get())) {
+            blVoiceManager->setWaveform(blWaveType);
+        }
+    } else {
+        // Convert oscillator type to wavetable frame position
+        float framePos = oscTypeToFramePosition(type);
 
-    // Update frame position in all active voices
-    if (voiceManager_) {
-        // Iterate through all voices and set their oscillator's frame position
-        for (int i = 0; i < voiceManager_->getMaxVoices(); ++i) {
-            if (auto* voice = voiceManager_->getVoice(i)) {
-                if (auto* osc = voice->getOscillator()) {
-                    osc->setFramePosition(framePos);
+        // Update frame position in all active voices
+        if (voiceManager_) {
+            // Iterate through all voices and set their oscillator's frame position
+            for (int i = 0; i < voiceManager_->getMaxVoices(); ++i) {
+                if (auto* voice = voiceManager_->getVoice(i)) {
+                    if (auto* osc = voice->getOscillator()) {
+                        osc->setFramePosition(framePos);
+                    }
                 }
             }
         }
     }
 
-    std::cout << "Oscillator type changed to " << static_cast<int>(type)
-              << " (frame position: " << framePos << ")" << std::endl;
+    std::cout << "Oscillator type changed to " << static_cast<int>(type) << std::endl;
 }
 
 float Synthesizer::oscTypeToFramePosition(OscillatorType type) const {
@@ -920,6 +945,85 @@ void Synthesizer::setGlobalPitchModulationAmount(const std::string& source, floa
     }
     
     std::cout << "Set global pitch modulation for " << source << " to " << semitones << " semitones" << std::endl;
+}
+
+void Synthesizer::enableBandLimitedOscillators(bool enable) {
+    if (useBandLimitedOscillators_ != enable) {
+        useBandLimitedOscillators_ = enable;
+        
+        // Recreate voice manager with appropriate type
+        int maxVoices = voiceManager_ ? voiceManager_->getMaxVoices() : 16;
+        
+        if (enable) {
+            // Create band-limited voice manager
+            auto blVoiceManager = std::make_unique<BandLimitedVoiceManager>(
+                sampleRate_, maxVoices, oversamplingEnabled_);
+            
+            // Set initial waveform based on current oscillator type
+            BandLimitedWavetable::WaveType waveType = BandLimitedWavetable::WaveType::Saw;
+            switch (currentOscType_) {
+                case OscillatorType::Sine:
+                    waveType = BandLimitedWavetable::WaveType::Sine;
+                    break;
+                case OscillatorType::Saw:
+                    waveType = BandLimitedWavetable::WaveType::Saw;
+                    break;
+                case OscillatorType::Square:
+                    waveType = BandLimitedWavetable::WaveType::Square;
+                    break;
+                case OscillatorType::Triangle:
+                    waveType = BandLimitedWavetable::WaveType::Triangle;
+                    break;
+                default:
+                    break;
+            }
+            blVoiceManager->setWaveform(waveType);
+            blVoiceManager->setOversamplingFactor(oversamplingFactor_);
+            
+            voiceManager_ = std::move(blVoiceManager);
+        } else {
+            // Create standard voice manager
+            voiceManager_ = std::make_unique<VoiceManager>(sampleRate_, maxVoices);
+            if (currentWavetable_) {
+                voiceManager_->setWavetable(currentWavetable_);
+            }
+        }
+        
+        std::cout << "Band-limited oscillators " << (enable ? "enabled" : "disabled") << std::endl;
+    }
+}
+
+void Synthesizer::setOversamplingEnabled(bool enable) {
+    oversamplingEnabled_ = enable;
+    
+    // Update existing band-limited voice manager if active
+    if (useBandLimitedOscillators_) {
+        if (auto* blVoiceManager = dynamic_cast<BandLimitedVoiceManager*>(voiceManager_.get())) {
+            blVoiceManager->setOversamplingEnabled(enable);
+        }
+    }
+    
+    std::cout << "Oversampling " << (enable ? "enabled" : "disabled") << std::endl;
+}
+
+void Synthesizer::setOversamplingFactor(OversamplingProcessor::Factor factor) {
+    oversamplingFactor_ = factor;
+    
+    // Update existing band-limited voice manager if active
+    if (useBandLimitedOscillators_) {
+        if (auto* blVoiceManager = dynamic_cast<BandLimitedVoiceManager*>(voiceManager_.get())) {
+            blVoiceManager->setOversamplingFactor(factor);
+        }
+    }
+    
+    int factorInt = 1;
+    switch (factor) {
+        case OversamplingProcessor::Factor::x2: factorInt = 2; break;
+        case OversamplingProcessor::Factor::x4: factorInt = 4; break;
+        case OversamplingProcessor::Factor::x8: factorInt = 8; break;
+        default: break;
+    }
+    std::cout << "Oversampling factor set to " << factorInt << "x" << std::endl;
 }
 
 } // namespace AIMusicHardware

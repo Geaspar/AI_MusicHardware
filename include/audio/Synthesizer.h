@@ -14,6 +14,7 @@
 #include "../synthesis/wavetable/wavetable.h"
 #include "../synthesis/modulators/envelope.h"
 #include "../synthesis/modulators/modulation_matrix.h"
+#include "../synthesis/voice/band_limited_voice.h"
 
 namespace AIMusicHardware {
 
@@ -106,6 +107,14 @@ public:
         externalEffectProcessor_ = effectProcessor;
     }
     
+    // Band-limited oscillator control
+    void enableBandLimitedOscillators(bool enable = true);
+    bool areBandLimitedOscillatorsEnabled() const { return useBandLimitedOscillators_; }
+    
+    // Quality settings for band-limited oscillators
+    void setOversamplingEnabled(bool enable);
+    void setOversamplingFactor(OversamplingProcessor::Factor factor);
+    
 private:
     // Convert legacy oscillator type to wavetable frame position
     float oscTypeToFramePosition(OscillatorType type) const;
@@ -135,6 +144,11 @@ private:
     
     // External effect processor for filter control
     class EffectProcessor* externalEffectProcessor_ = nullptr;
+    
+    // Band-limited oscillator state
+    bool useBandLimitedOscillators_ = false;
+    bool oversamplingEnabled_ = false;
+    OversamplingProcessor::Factor oversamplingFactor_ = OversamplingProcessor::Factor::x1;
 };
 
 } // namespace AIMusicHardware

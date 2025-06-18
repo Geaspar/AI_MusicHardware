@@ -851,4 +851,10 @@ CMakeFiles/TestAudio.dir/examples/TestAudio.cpp.o: \
   /Users/geaspar/AIMusicHardware/examples/../include/audio/../synthesis/voice/../wavetable/wavetable.h \
   /Users/geaspar/AIMusicHardware/examples/../include/audio/../synthesis/wavetable/wavetable.h \
   /Users/geaspar/AIMusicHardware/examples/../include/audio/../synthesis/modulators/envelope.h \
-  /Users/geaspar/AIMusicHardware/examples/../include/audio/../synthesis/modulators/modulation_matrix.h
+  /Users/geaspar/AIMusicHardware/examples/../include/audio/../synthesis/modulators/modulation_matrix.h \
+  /Users/geaspar/AIMusicHardware/examples/../include/audio/../synthesis/voice/band_limited_voice.h \
+  /Users/geaspar/AIMusicHardware/examples/../include/audio/../synthesis/voice/../oscillators/band_limited_oscillator.h \
+  /Users/geaspar/AIMusicHardware/examples/../include/audio/../synthesis/voice/../oscillators/../wavetable/band_limited_wavetable.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/complex \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/sstream \
+  /Users/geaspar/AIMusicHardware/examples/../include/audio/../synthesis/voice/../wavetable/band_limited_wavetable.h

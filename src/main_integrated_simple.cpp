@@ -311,6 +311,11 @@ int main(int argc, char* argv[]) {
     // Create core audio components
     auto audioEngine = std::make_unique<AudioEngine>();
     auto synthesizer = std::make_unique<Synthesizer>();
+    
+    // Enable band-limited oscillators for zero aliasing
+    synthesizer->enableBandLimitedOscillators(true);
+    synthesizer->setOversamplingEnabled(false); // Start with no oversampling for best performance
+    
     auto effectProcessor = std::make_unique<EffectProcessor>();
     auto sequencer = std::make_unique<Sequencer>();
     auto midiInput = std::make_unique<MidiInput>();
@@ -2448,6 +2453,45 @@ int main(int argc, char* argv[]) {
     midiInfo->setSize(400, 20);
     midiInfo->setTextColor(Color(180, 180, 180));
     settingsScreen->addChild(std::move(midiInfo));
+    
+    // Add Audio Quality section
+    auto qualitySection = std::make_unique<Label>("quality_section", "Audio Quality");
+    qualitySection->setPosition(50, 280);
+    qualitySection->setSize(200, 25);
+    qualitySection->setTextColor(Color(200, 200, 255));
+    settingsScreen->addChild(std::move(qualitySection));
+    
+    auto qualityLabel = std::make_unique<Label>("quality_label", "Oversampling:");
+    qualityLabel->setPosition(70, 310);
+    qualityLabel->setSize(100, 20);
+    qualityLabel->setTextColor(Color(180, 180, 180));
+    settingsScreen->addChild(std::move(qualityLabel));
+    
+    auto qualityDropdown = std::make_unique<DropdownMenu>("quality", "1x (Draft)");
+    qualityDropdown->setPosition(170, 305);
+    qualityDropdown->setSize(120, 30);
+    qualityDropdown->addItem("1x (Draft)");
+    qualityDropdown->addItem("2x (Good)");
+    qualityDropdown->addItem("4x (Better)");
+    qualityDropdown->addItem("8x (Best)");
+    qualityDropdown->setSelectionCallback([&synthesizer](int index, const std::string& item) {
+        OversamplingProcessor::Factor factors[] = {
+            OversamplingProcessor::Factor::x1,
+            OversamplingProcessor::Factor::x2,
+            OversamplingProcessor::Factor::x4,
+            OversamplingProcessor::Factor::x8
+        };
+        
+        synthesizer->setOversamplingFactor(factors[index]);
+        std::cout << "Audio quality set to " << item << std::endl;
+    });
+    settingsScreen->addChild(std::move(qualityDropdown));
+    
+    auto aliasingInfo = std::make_unique<Label>("aliasing_info", "Band-limited oscillators enabled for zero aliasing");
+    aliasingInfo->setPosition(70, 345);
+    aliasingInfo->setSize(400, 20);
+    aliasingInfo->setTextColor(Color(150, 255, 150));
+    settingsScreen->addChild(std::move(aliasingInfo));
     
     uiContext->addScreen(std::move(settingsScreen));
     
