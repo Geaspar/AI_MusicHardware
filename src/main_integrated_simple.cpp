@@ -466,10 +466,11 @@ int main(int argc, char* argv[]) {
             parameterSliders[paramId] = slider;
             
             // Set up value change callback to update synthesizer
-            slider->setValueChangeCallback([&synthesizer, paramId](float normalizedValue) {
-                // Convert normalized value (0-1) to parameter range and update synthesizer
-                synthesizer->setParameter(paramId, normalizedValue);
-                std::cout << "Updated " << paramId << " to " << normalizedValue << std::endl;
+            slider->setValueChangeCallback([&synthesizer, paramId](float value) {
+                // For oscillator_type, pass the actual value (0-4)
+                // For other parameters, they're already in the correct range
+                synthesizer->setParameter(paramId, value);
+                std::cout << "Updated " << paramId << " to " << value << std::endl;
             });
             
             // Initialize slider with current parameter value
