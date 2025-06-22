@@ -89,11 +89,12 @@ public:
      */
     void setSampleRate(int sampleRate) override;
 
-protected:
     /**
-     * @brief Update oscillator frequency based on pitch modulation
+     * @brief Override note on to properly initialize
+     * @param midiNote MIDI note number
+     * @param velocity Note velocity (0-1)
      */
-    void updateOscillatorFrequency();
+    void noteOn(int midiNote, float velocity);
 
 private:
     // Band-limited oscillator instance

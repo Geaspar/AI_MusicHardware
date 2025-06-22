@@ -448,8 +448,11 @@ void Synthesizer::setParameter(const std::string& paramId, float value) {
     else if (paramId == "oscillator_type") {
         // Convert 0-4 float value to oscillator type
         int typeIndex = static_cast<int>(value);
+        std::cout << "setParameter: oscillator_type = " << value << " (typeIndex = " << typeIndex << ")" << std::endl;
         if (typeIndex >= 0 && typeIndex <= 4) {
             setOscillatorType(static_cast<OscillatorType>(typeIndex));
+        } else {
+            std::cout << "ERROR: Invalid oscillator type index: " << typeIndex << std::endl;
         }
     }
     else if (paramId == "filter_cutoff") {
@@ -712,6 +715,7 @@ void Synthesizer::setAllParameters(const std::map<std::string, float>& parameter
 
 void Synthesizer::setOscillatorType(OscillatorType type) {
     currentOscType_ = type;
+    std::cout << "Synthesizer::setOscillatorType(" << static_cast<int>(type) << "), useBandLimitedOscillators = " << useBandLimitedOscillators_ << std::endl;
 
     if (useBandLimitedOscillators_) {
         // Convert to band-limited waveform type
@@ -736,6 +740,9 @@ void Synthesizer::setOscillatorType(OscillatorType type) {
         // Update band-limited voice manager
         if (auto* blVoiceManager = dynamic_cast<BandLimitedVoiceManager*>(voiceManager_.get())) {
             blVoiceManager->setWaveform(blWaveType);
+            std::cout << "Updated BandLimitedVoiceManager waveform to " << static_cast<int>(blWaveType) << std::endl;
+        } else {
+            std::cout << "ERROR: VoiceManager is not a BandLimitedVoiceManager!" << std::endl;
         }
     } else {
         // Convert oscillator type to wavetable frame position
@@ -948,11 +955,13 @@ void Synthesizer::setGlobalPitchModulationAmount(const std::string& source, floa
 }
 
 void Synthesizer::enableBandLimitedOscillators(bool enable) {
+    std::cout << "Synthesizer::enableBandLimitedOscillators(" << enable << ")" << std::endl;
     if (useBandLimitedOscillators_ != enable) {
         useBandLimitedOscillators_ = enable;
         
         // Recreate voice manager with appropriate type
         int maxVoices = voiceManager_ ? voiceManager_->getMaxVoices() : 16;
+        std::cout << "Recreating VoiceManager with " << maxVoices << " voices" << std::endl;
         
         if (enable) {
             // Create band-limited voice manager

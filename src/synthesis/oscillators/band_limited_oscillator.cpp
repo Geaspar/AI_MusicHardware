@@ -1,6 +1,7 @@
 #include "../../../include/synthesis/oscillators/band_limited_oscillator.h"
 #include <algorithm>
 #include <cmath>
+#include <iostream>
 
 namespace AIMusicHardware {
 
@@ -103,11 +104,13 @@ void BandLimitedOscillator::updatePhaseIncrement() {
     }
     
     phaseIncrement_ = frequency_ / effectiveSampleRate;
+    
 }
 
 float BandLimitedOscillator::generateSampleDirect() {
     // Get sample from wavetable
     float sample = wavetable_->getSample(phase_, frequency_);
+    
     
     // Advance phase
     phase_ += phaseIncrement_;

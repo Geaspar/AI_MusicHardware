@@ -2,6 +2,8 @@
 #include "../../../include/synthesis/modulators/envelope.h"
 #include <iostream>
 #include <cmath>
+#include <algorithm>
+#include <random>
 
 namespace AIMusicHardware {
 
@@ -29,45 +31,45 @@ BandLimitedVoice::BandLimitedVoice(int sampleRate, bool enableOversampling)
         oversamplingEnabled_
     );
     
-    // Hide the base class oscillator since we're using our own
-    oscillator_.reset();
+    // Don't null out the base class oscillator - it's used by the base Voice class
+    // The base oscillator will exist but we won't use it for audio generation
 }
 
 BandLimitedVoice::~BandLimitedVoice() {
 }
 
+void BandLimitedVoice::noteOn(int midiNote, float velocity) {
+    // Call base class noteOn to handle all the state setup
+    Voice::noteOn(midiNote, velocity);
+    
+    // Also set frequency on our band-limited oscillator
+    float freq = midiNoteToFrequency(midiNote);
+    bandLimitedOscillator_->setFrequency(freq);
+    
+}
+
 float BandLimitedVoice::generateSample() {
+    // Call base class generateSample to handle all the voice state,
+    // pitch modulation, and frequency updates
+    float baseClassSample = Voice::generateSample();
+    
+    // If voice is not active, return immediately
     if (!isActive()) {
         return 0.0f;
     }
     
-    // Update age for voice stealing
-    incrementAge();
+    // Now that the base class has updated frequency_, sync our oscillator
+    bandLimitedOscillator_->setFrequency(frequency_);
     
-    // Get envelope value
-    float envelopeValue = envelope_->generateValue();
-    
-    // Check if voice is finished
-    if (getState() == State::Released && envelopeValue < 0.001f) {
-        state_ = State::Finished;
-        return 0.0f;
-    }
-    
-    // Update state if we're starting
-    if (getState() == State::Starting && envelopeValue > 0.0f) {
-        state_ = State::Playing;
-    }
-    
-    // Update oscillator frequency based on pitch modulation
-    updateOscillatorFrequency();
-    
-    // Generate oscillator sample
+    // Generate our own sample using the band-limited oscillator
     float sample = bandLimitedOscillator_->generateSample();
     
-    // Apply envelope and velocity
+    // The base class already applied envelope and velocity,
+    // so we need to extract the envelope value to apply it ourselves
+    float envelopeValue = envelope_->getCurrentValue();
     sample *= envelopeValue * velocity_ * getAmplitudeModulation();
     
-    // DC blocking filter (high-pass at ~20Hz)
+    // DC blocking filter (high-pass at ~20Hz) 
     const float dcBlockerCutoff = 0.995f;
     float dcBlockerOutput = sample - dcBlockerX1_ + dcBlockerCutoff * dcBlockerY1_;
     dcBlockerX1_ = sample;
@@ -85,6 +87,7 @@ void BandLimitedVoice::process(float* buffer, int numFrames) {
 void BandLimitedVoice::setWaveform(BandLimitedWavetable::WaveType waveType) {
     currentWaveform_ = waveType;
     bandLimitedOscillator_->setWaveform(waveType);
+    std::cout << "BandLimitedVoice::setWaveform(" << static_cast<int>(waveType) << ")" << std::endl;
 }
 
 BandLimitedWavetable::WaveType BandLimitedVoice::getWaveform() const {
@@ -126,16 +129,6 @@ void BandLimitedVoice::setSampleRate(int sampleRate) {
     bandLimitedOscillator_->setOversamplingFactor(oversamplingFactor_);
 }
 
-void BandLimitedVoice::updateOscillatorFrequency() {
-    // Get total pitch from modulation system
-    float totalPitch = getTotalPitch();
-    
-    // Convert to frequency
-    float frequency = midiNoteToFrequency(static_cast<int>(totalPitch));
-    
-    // Update oscillator
-    bandLimitedOscillator_->setFrequency(frequency);
-}
 
 //==============================================================================
 // BandLimitedVoiceManager Implementation
@@ -146,6 +139,18 @@ BandLimitedVoiceManager::BandLimitedVoiceManager(int sampleRate, int maxVoices, 
       defaultWaveform_(BandLimitedWavetable::WaveType::Saw),
       defaultOversamplingEnabled_(enableOversampling),
       defaultOversamplingFactor_(OversamplingProcessor::Factor::x1) {
+    std::cout << "BandLimitedVoiceManager created with " << maxVoices << " voices" << std::endl;
+    
+    // The base class constructor created regular Voice instances
+    // We need to replace them with BandLimitedVoice instances
+    voices_.clear();
+    
+    // Create band-limited voices
+    for (int i = 0; i < maxVoices; ++i) {
+        voices_.push_back(createVoice());
+    }
+    
+    std::cout << "Created " << voices_.size() << " BandLimitedVoice instances" << std::endl;
 }
 
 BandLimitedVoiceManager::~BandLimitedVoiceManager() {
@@ -153,13 +158,17 @@ BandLimitedVoiceManager::~BandLimitedVoiceManager() {
 
 void BandLimitedVoiceManager::setWaveform(BandLimitedWavetable::WaveType waveType) {
     defaultWaveform_ = waveType;
+    std::cout << "BandLimitedVoiceManager::setWaveform(" << static_cast<int>(waveType) << ") - updating " << voices_.size() << " voices" << std::endl;
     
     // Update all existing voices
+    int updatedCount = 0;
     for (auto& voice : voices_) {
         if (auto* blVoice = dynamic_cast<BandLimitedVoice*>(voice.get())) {
             blVoice->setWaveform(waveType);
+            updatedCount++;
         }
     }
+    std::cout << "Updated " << updatedCount << " BandLimitedVoice instances" << std::endl;
 }
 
 void BandLimitedVoiceManager::setOversamplingEnabled(bool enable) {

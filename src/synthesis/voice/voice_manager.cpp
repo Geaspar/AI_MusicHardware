@@ -65,13 +65,6 @@ void Voice::noteOn(int midiNote, float velocity) {
     // Update state
     state_ = State::Starting;
     
-    // Debug output
-    std::cout << "Voice::noteOn - Note: " << midiNote << ", Velocity: " << velocity 
-              << ", Freq: " << frequency_ << " Hz" << std::endl;
-    std::cout << "Envelope params - A: " << envelope_->getAttack() 
-              << ", D: " << envelope_->getDecay()
-              << ", S: " << envelope_->getSustain()
-              << ", R: " << envelope_->getRelease() << std::endl;
 }
 
 void Voice::noteOff() {

@@ -1,6 +1,7 @@
 #include "../../../include/synthesis/wavetable/band_limited_wavetable.h"
 #include <algorithm>
 #include <cstring>
+#include <iostream>
 
 namespace AIMusicHardware {
 
@@ -52,6 +53,7 @@ float BandLimitedWavetable::getSample(float phase, float frequency) const {
     
     // Find the appropriate band for this frequency
     int bandIndex = getBandIndex(frequency);
+    
     
     if (!bandInterpolation_ || bandIndex == 0 || bandIndex >= kNumBands - 1) {
         // No interpolation between bands
@@ -151,6 +153,7 @@ void BandLimitedWavetable::generateSineBand(WaveformBand& band, int maxHarmonic)
         float phase = static_cast<float>(i) / kWaveformSize;
         band.samples[i] = std::sin(TWO_PI * phase);
     }
+    
 }
 
 void BandLimitedWavetable::generateSawBand(WaveformBand& band, int maxHarmonic) {
@@ -240,12 +243,12 @@ void BandLimitedWavetable::generateTriangleBand(WaveformBand& band, int maxHarmo
 
 float BandLimitedWavetable::interpolateSample(const std::vector<float>& samples, float phase) const {
     // Convert phase to sample index
-    float indexFloat = phase * (samples.size() - 1);
-    int index1 = static_cast<int>(indexFloat);
+    float indexFloat = phase * samples.size();
+    int index1 = static_cast<int>(indexFloat) % samples.size();
     int index2 = (index1 + 1) % samples.size();
     
     // Fractional part for interpolation
-    float frac = indexFloat - index1;
+    float frac = indexFloat - std::floor(indexFloat);
     
     // Linear interpolation
     return samples[index1] * (1.0f - frac) + samples[index2] * frac;

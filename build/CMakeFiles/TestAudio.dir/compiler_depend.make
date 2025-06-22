@@ -658,6 +658,7 @@ CMakeFiles/TestAudio.dir/examples/TestAudio.cpp.o: /Users/geaspar/AIMusicHardwar
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/climits \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/cmath \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/compare \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/complex \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/concepts \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/cstdarg \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/cstddef \
@@ -692,6 +693,7 @@ CMakeFiles/TestAudio.dir/examples/TestAudio.cpp.o: /Users/geaspar/AIMusicHardwar
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/ostream \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/random \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/ratio \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/sstream \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/stddef.h \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/stdexcept \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/stdint.h \
@@ -848,13 +850,19 @@ CMakeFiles/TestAudio.dir/examples/TestAudio.cpp.o: /Users/geaspar/AIMusicHardwar
   /Users/geaspar/AIMusicHardware/include/synthesis/framework/processor.h \
   /Users/geaspar/AIMusicHardware/include/synthesis/modulators/envelope.h \
   /Users/geaspar/AIMusicHardware/include/synthesis/modulators/modulation_matrix.h \
+  /Users/geaspar/AIMusicHardware/include/synthesis/wavetable/band_limited_wavetable.h \
+  /Users/geaspar/AIMusicHardware/include/synthesis/oscillators/band_limited_oscillator.h \
+  /Users/geaspar/AIMusicHardware/include/synthesis/wavetable/band_limited_wavetable.h \
   /Users/geaspar/AIMusicHardware/include/synthesis/wavetable/wavetable.h \
+  /Users/geaspar/AIMusicHardware/include/synthesis/voice/band_limited_voice.h \
   /Users/geaspar/AIMusicHardware/include/synthesis/voice/voice_manager.h \
   /Users/geaspar/AIMusicHardware/include/synthesis/wavetable/wavetable.h \
   /Users/geaspar/AIMusicHardware/include/audio/AudioEngine.h \
   /Users/geaspar/AIMusicHardware/include/audio/AudioErrorHandler.h \
   /Users/geaspar/AIMusicHardware/include/audio/Synthesizer.h
 
+
+/Users/geaspar/AIMusicHardware/include/synthesis/wavetable/band_limited_wavetable.h:
 
 /Users/geaspar/AIMusicHardware/include/synthesis/modulators/modulation_matrix.h:
 
@@ -916,6 +924,8 @@ CMakeFiles/TestAudio.dir/examples/TestAudio.cpp.o: /Users/geaspar/AIMusicHardwar
 
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/sys/_types/_size_t.h:
 
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/sys/_types/_sigset_t.h:
+
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/sys/_types/_seek_set.h:
 
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/sys/_types/_nlink_t.h:
@@ -947,8 +957,6 @@ CMakeFiles/TestAudio.dir/examples/TestAudio.cpp.o: /Users/geaspar/AIMusicHardwar
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/ios:
 
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/sys/_types/_ct_rune_t.h:
-
-/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/sys/_types/_blksize_t.h:
 
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/sys/_types/_off_t.h:
 
@@ -1051,6 +1059,10 @@ CMakeFiles/TestAudio.dir/examples/TestAudio.cpp.o: /Users/geaspar/AIMusicHardwar
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/stdint.h:
 
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/stdexcept:
+
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/sys/_types/_blksize_t.h:
+
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/sstream:
 
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/ratio:
 
@@ -1228,8 +1240,6 @@ CMakeFiles/TestAudio.dir/examples/TestAudio.cpp.o: /Users/geaspar/AIMusicHardwar
 
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/__type_traits/is_trivially_copyable.h:
 
-/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/sys/_types/_sigset_t.h:
-
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/sys/_types/_null.h:
 
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/__type_traits/is_unsigned.h:
@@ -1283,6 +1293,8 @@ CMakeFiles/TestAudio.dir/examples/TestAudio.cpp.o: /Users/geaspar/AIMusicHardwar
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/__type_traits/is_member_pointer.h:
 
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/__type_traits/is_member_object_pointer.h:
+
+/Users/geaspar/AIMusicHardware/include/synthesis/oscillators/band_limited_oscillator.h:
 
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/__random/exponential_distribution.h:
 
@@ -2348,6 +2360,8 @@ CMakeFiles/TestAudio.dir/examples/TestAudio.cpp.o: /Users/geaspar/AIMusicHardwar
 
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/_ctype.h:
 
+/Users/geaspar/AIMusicHardware/include/synthesis/voice/band_limited_voice.h:
+
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/__chrono/weekday.h:
 
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/__memory/allocator_arg_t.h:
@@ -2443,6 +2457,8 @@ CMakeFiles/TestAudio.dir/examples/TestAudio.cpp.o: /Users/geaspar/AIMusicHardwar
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/__utility/integer_sequence.h:
 
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/__type_traits/result_of.h:
+
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/complex:
 
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk/usr/include/c++/v1/__algorithm/ranges_sample.h:
 
