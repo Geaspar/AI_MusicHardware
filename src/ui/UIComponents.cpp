@@ -38,6 +38,10 @@ void Label::setTextColor(const Color& color) {
     textColor_ = color;
 }
 
+void Label::setBackgroundColor(const Color& color) {
+    // Not implemented for Label
+}
+
 const Color& Label::getTextColor() const {
     return textColor_;
 }

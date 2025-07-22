@@ -92,6 +92,11 @@ void DisplayManager::swapBuffers() {
     frontBuffer_.swap(backBuffer_);
 }
 
+void DisplayManager::present() {
+    // This is a placeholder implementation. In a real application, this method
+    // would be responsible for copying the front buffer to the screen.
+}
+
 void DisplayManager::setPixel(int x, int y, const Color& color) {
     // Check bounds
     if (x < 0 || x >= width_ || y < 0 || y >= height_) {

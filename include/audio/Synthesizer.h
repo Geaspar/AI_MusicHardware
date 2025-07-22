@@ -18,6 +18,9 @@
 
 namespace AIMusicHardware {
 
+// Forward declaration
+class RealtimeWavetableVoiceManager;
+
 // Keep for backward compatibility
 enum class OscillatorType {
     Sine,
@@ -25,6 +28,12 @@ enum class OscillatorType {
     Saw,
     Triangle,
     Noise
+};
+
+enum class VoiceManagerType {
+    Standard,
+    BandLimited,
+    RealTime
 };
 
 /**
@@ -71,6 +80,8 @@ public:
     void setVoiceCount(int count);
     int getVoiceCount() const;
     VoiceManager* getVoiceManager() { return voiceManager_.get(); }
+    void setVoiceManagerType(VoiceManagerType type);
+    VoiceManagerType getVoiceManagerType() const { return voiceManagerType_; }
     
     // Modulation system
     ModulationMatrix* getModulationMatrix() { return &modulationMatrix_; }
@@ -107,10 +118,6 @@ public:
         externalEffectProcessor_ = effectProcessor;
     }
     
-    // Band-limited oscillator control
-    void enableBandLimitedOscillators(bool enable = true);
-    bool areBandLimitedOscillatorsEnabled() const { return useBandLimitedOscillators_; }
-    
     // Quality settings for band-limited oscillators
     void setOversamplingEnabled(bool enable);
     void setOversamplingFactor(OversamplingProcessor::Factor factor);
@@ -145,8 +152,8 @@ private:
     // External effect processor for filter control
     class EffectProcessor* externalEffectProcessor_ = nullptr;
     
-    // Band-limited oscillator state
-    bool useBandLimitedOscillators_ = false;
+    // Voice manager state
+    VoiceManagerType voiceManagerType_ = VoiceManagerType::Standard;
     bool oversamplingEnabled_ = false;
     OversamplingProcessor::Factor oversamplingFactor_ = OversamplingProcessor::Factor::x1;
 };

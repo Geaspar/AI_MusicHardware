@@ -23,6 +23,8 @@ public:
     const Color& getTextColor() const;
     void setTextAlignment(int alignment); // 0 = left, 1 = center, 2 = right
     int getTextAlignment() const;
+
+    void setBackgroundColor(const Color& color);
     
     // UIComponent overrides
     virtual void update(float deltaTime) override;

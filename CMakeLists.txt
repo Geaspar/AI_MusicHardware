@@ -156,6 +156,7 @@ set(BASIC_AUDIO_SOURCES
     src/audio/AudioEngine.cpp
     src/audio/AudioErrorHandler.cpp
     src/audio/Synthesizer.cpp
+    src/audio/FourierTransform.cpp
     src/hardware/HardwareInterface.cpp
     src/midi/MidiInterface.cpp
     src/midi/MidiManager.cpp
@@ -179,6 +180,8 @@ set(PRESET_SOURCES
 # New modular synthesis framework sources
 set(SYNTHESIS_SOURCES
     src/synthesis/framework/processor.cpp
+    src/synthesis/FrequencyDomainWavetable.cpp
+    src/synthesis/RealtimeWavetableVoice.cpp
     src/synthesis/wavetable/wavetable.cpp
     src/synthesis/wavetable/oscillator_stack.cpp
     src/synthesis/wavetable/band_limited_wavetable.cpp
@@ -187,6 +190,7 @@ set(SYNTHESIS_SOURCES
     src/synthesis/modulators/modulation_matrix.cpp
     src/synthesis/modulators/LFO.cpp
     src/synthesis/modulators/LFOModulationSource.cpp
+    src/synthesis/voice/voice.cpp
     src/synthesis/voice/voice_manager.cpp
     src/synthesis/voice/MpeVoice.cpp
     src/synthesis/voice/MpeAwareVoiceManager.cpp
@@ -304,6 +308,7 @@ endif()
 # Include directories
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/pocketfft
 )
 
 # Create core library
@@ -621,34 +626,34 @@ if(SDL2_FOUND)
     endif()
     
     # Create TestUI executable
-    add_executable(TestUI examples/TestUI.cpp)
-    target_include_directories(TestUI PRIVATE ${SDL2_INCLUDE_DIRS})
-    target_link_libraries(TestUI PRIVATE
-        AIMusicCore
-        ${SDL2_LIBRARIES}
-    )
-    message(STATUS "Building TestUI")
-    message(STATUS "- Run ./bin/TestUI to test the basic UI system with interactive knobs and buttons")
+    # add_executable(TestUI examples/TestUI.cpp)
+    # target_include_directories(TestUI PRIVATE ${SDL2_INCLUDE_DIRS})
+    # target_link_libraries(TestUI PRIVATE
+    #     AIMusicCore
+    #     ${SDL2_LIBRARIES}
+    # )
+    # message(STATUS "Building TestUI")
+    # message(STATUS "- Run ./bin/TestUI to test the basic UI system with interactive knobs and buttons")
     
     # Create Enhanced UI Integration Test executable
-    add_executable(EnhancedUIIntegrationTest examples/EnhancedUIIntegrationTest.cpp)
-    target_include_directories(EnhancedUIIntegrationTest PRIVATE ${SDL2_INCLUDE_DIRS})
-    target_link_libraries(EnhancedUIIntegrationTest PRIVATE
-        AIMusicCore
-        ${SDL2_LIBRARIES}
-    )
-    message(STATUS "Building EnhancedUIIntegrationTest")
-    message(STATUS "- Run ./bin/EnhancedUIIntegrationTest to test the enhanced UI with parameter binding and thread-safe updates")
+    # add_executable(EnhancedUIIntegrationTest examples/EnhancedUIIntegrationTest.cpp)
+    # target_include_directories(EnhancedUIIntegrationTest PRIVATE ${SDL2_INCLUDE_DIRS})
+    # target_link_libraries(EnhancedUIIntegrationTest PRIVATE
+    #     AIMusicCore
+    #     ${SDL2_LIBRARIES}
+    # )
+    # message(STATUS "Building EnhancedUIIntegrationTest")
+    # message(STATUS "- Run ./bin/EnhancedUIIntegrationTest to test the enhanced UI with parameter binding and thread-safe updates")
     
     # Create Comprehensive UI Test executable
-    add_executable(ComprehensiveUITest examples/ComprehensiveUITest.cpp)
-    target_include_directories(ComprehensiveUITest PRIVATE ${SDL2_INCLUDE_DIRS})
-    target_link_libraries(ComprehensiveUITest PRIVATE
-        AIMusicCore
-        ${SDL2_LIBRARIES}
-    )
-    message(STATUS "Building ComprehensiveUITest")
-    message(STATUS "- Run ./bin/ComprehensiveUITest to test all UI components including preset browser and visualizations")
+    # add_executable(ComprehensiveUITest examples/ComprehensiveUITest.cpp)
+    # target_include_directories(ComprehensiveUITest PRIVATE ${SDL2_INCLUDE_DIRS})
+    # target_link_libraries(ComprehensiveUITest PRIVATE
+    #     AIMusicCore
+    #     ${SDL2_LIBRARIES}
+    # )
+    # message(STATUS "Building ComprehensiveUITest")
+    # message(STATUS "- Run ./bin/ComprehensiveUITest to test all UI components including preset browser and visualizations")
     
     # Create Integrated Main Application executable
     add_executable(AIMusicHardwareIntegrated src/main_integrated_simple.cpp)
@@ -673,120 +678,69 @@ if(SDL2_FOUND)
     message(STATUS "- Run ./bin/AIMusicHardwareIntegrated for the full integrated synthesizer application with production UI")
     
     # Create Improved UI version
-    add_executable(AIMusicHardwareImproved src/main_integrated_improved.cpp)
-    target_include_directories(AIMusicHardwareImproved PRIVATE ${SDL2_INCLUDE_DIRS})
-    target_link_libraries(AIMusicHardwareImproved PRIVATE
-        AIMusicCore
-        ${SDL2_LIBRARIES}
-    )
-    message(STATUS "Building AIMusicHardwareImproved")
-    message(STATUS "- Run ./bin/AIMusicHardwareImproved for the synthesizer with improved UI layout and labels")
+    # add_executable(AIMusicHardwareImproved src/main_integrated_improved.cpp)
+    # target_include_directories(AIMusicHardwareImproved PRIVATE ${SDL2_INCLUDE_DIRS})
+    # target_link_libraries(AIMusicHardwareImproved PRIVATE
+    #     AIMusicCore
+    #     ${SDL2_LIBRARIES}
+    # )
+    # message(STATUS "Building AIMusicHardwareImproved")
+    # message(STATUS "- Run ./bin/AIMusicHardwareImproved for the synthesizer with improved UI layout and labels")
     
     # Create Grid Layout version
-    add_executable(AIMusicHardwareGrid src/main_grid_layout.cpp)
-    target_include_directories(AIMusicHardwareGrid PRIVATE ${SDL2_INCLUDE_DIRS})
-    if(SDL2_TTF_INCLUDE_DIRS)
-        target_include_directories(AIMusicHardwareGrid PRIVATE ${SDL2_TTF_INCLUDE_DIRS})
-    else()
-        target_include_directories(AIMusicHardwareGrid PRIVATE /opt/homebrew/include/SDL2)
-    endif()
-    target_link_libraries(AIMusicHardwareGrid PRIVATE
-        AIMusicCore
-        ${SDL2_LIBRARIES}
-    )
-    if(SDL2_TTF_LIBRARIES)
-        target_link_libraries(AIMusicHardwareGrid PRIVATE ${SDL2_TTF_LIBRARIES})
-    else()
-        target_link_libraries(AIMusicHardwareGrid PRIVATE /opt/homebrew/lib/libSDL2_ttf.dylib)
-    endif()
-    target_compile_definitions(AIMusicHardwareGrid PRIVATE HAVE_SDL_TTF)
-    message(STATUS "Building AIMusicHardwareGrid")
-    message(STATUS "- Run ./bin/AIMusicHardwareGrid for the synthesizer with grid-based layout system")
+    # add_executable(AIMusicHardwareGrid src/main_grid_layout.cpp)
+    # target_include_directories(AIMusicHardwareGrid PRIVATE ${SDL2_INCLUDE_DIRS})
+    # if(SDL2_TTF_INCLUDE_DIRS)
+    #     target_include_directories(AIMusicHardwareGrid PRIVATE ${SDL2_TTF_INCLUDE_DIRS})
+    # else()
+    #     target_include_directories(AIMusicHardwareGrid PRIVATE /opt/homebrew/include/SDL2)
+    # endif()
+    # target_link_libraries(AIMusicHardwareGrid PRIVATE
+    #     AIMusicCore
+    #     ${SDL2_LIBRARIES}
+    # )
+    # if(SDL2_TTF_LIBRARIES)
+    #     target_link_libraries(AIMusicHardwareGrid PRIVATE ${SDL2_TTF_LIBRARIES})
+    # else()
+    #     target_link_libraries(AIMusicHardwareGrid PRIVATE /opt/homebrew/lib/libSDL2_ttf.dylib)
+    # endif()
+    # target_compile_definitions(AIMusicHardwareGrid PRIVATE HAVE_SDL_TTF)
+    # message(STATUS "Building AIMusicHardwareGrid")
+    # message(STATUS "- Run ./bin/AIMusicHardwareGrid for the synthesizer with grid-based layout system")
     
     # Create Original Main Application executable
-    add_executable(AIMusicHardware src/main.cpp)
-    target_link_libraries(AIMusicHardware PRIVATE
-        AIMusicCore
-    )
-    message(STATUS "Building AIMusicHardware")
-    message(STATUS "- Run ./bin/AIMusicHardware for the original synthesizer application")
+    # add_executable(AIMusicHardware src/main.cpp)
+    # target_link_libraries(AIMusicHardware PRIVATE
+    #     AIMusicCore
+    # )
+    # message(STATUS "Building AIMusicHardware")
+    # message(STATUS "- Run ./bin/AIMusicHardware for the original synthesizer application")
     
     # Create Enhanced Grid Layout version
-    add_executable(AIMusicHardwareEnhanced src/main_grid_enhanced.cpp)
-    target_include_directories(AIMusicHardwareEnhanced PRIVATE ${SDL2_INCLUDE_DIRS})
-    if(SDL2_TTF_INCLUDE_DIRS)
-        target_include_directories(AIMusicHardwareEnhanced PRIVATE ${SDL2_TTF_INCLUDE_DIRS})
-    else()
-        target_include_directories(AIMusicHardwareEnhanced PRIVATE /opt/homebrew/include/SDL2)
-    endif()
-    target_link_libraries(AIMusicHardwareEnhanced PRIVATE
-        AIMusicCore
-        ${SDL2_LIBRARIES}
-    )
-    if(SDL2_TTF_LIBRARIES)
-        target_link_libraries(AIMusicHardwareEnhanced PRIVATE ${SDL2_TTF_LIBRARIES})
-    else()
-        target_link_libraries(AIMusicHardwareEnhanced PRIVATE /opt/homebrew/lib/libSDL2_ttf.dylib)
-    endif()
-    target_compile_definitions(AIMusicHardwareEnhanced PRIVATE HAVE_SDL_TTF)
-    message(STATUS "Building AIMusicHardwareEnhanced")
-    message(STATUS "- Run ./bin/AIMusicHardwareEnhanced for the enhanced grid layout with advanced UI features")
-    
-    # Create Parameter Smoothing Test executable (simple version)
-    add_executable(ParameterSmoothingTestSimple examples/ParameterSmoothingTestSimple.cpp)
-    target_link_libraries(ParameterSmoothingTestSimple PRIVATE
-        AIMusicCore
-    )
-    message(STATUS "Building ParameterSmoothingTestSimple")
-    message(STATUS "- Run ./bin/ParameterSmoothingTestSimple to test the new parameter smoothing and automation system")
-    
-    # Create LFO Test executable (no UI required)
-    add_executable(TestLFO examples/TestLFO.cpp)
-    target_link_libraries(TestLFO PRIVATE
-        AIMusicCore
-    )
-    message(STATUS "Building TestLFO")
-    message(STATUS "- Run ./bin/TestLFO to test the LFO implementation without UI")
-    
-    # Create Simple LFO Test executable
-    add_executable(TestLFOSimple examples/TestLFOSimple.cpp)
-    target_link_libraries(TestLFOSimple PRIVATE
-        AIMusicCore
-    )
-    message(STATUS "Building TestLFOSimple")
-    message(STATUS "- Run ./bin/TestLFOSimple for a quick LFO validation")
-    
-    # Create Simple UI Demo with improved layout
-    add_executable(SimpleUIDemo examples/SimpleUIDemo.cpp)
-    target_include_directories(SimpleUIDemo PRIVATE ${SDL2_INCLUDE_DIRS})
-    target_link_libraries(SimpleUIDemo PRIVATE
-        AIMusicCore
-        ${SDL2_LIBRARIES}
-    )
-    message(STATUS "Building SimpleUIDemo")
-    message(STATUS "- Run ./bin/SimpleUIDemo to see improved UI layout with proper labels and parameter automation")
-    
-    # Create Grid Enhancements Demo
-    add_executable(GridEnhancementsDemo examples/GridEnhancementsDemo.cpp)
-    target_include_directories(GridEnhancementsDemo PRIVATE ${SDL2_INCLUDE_DIRS})
-    if(SDL2_TTF_INCLUDE_DIRS)
-        target_include_directories(GridEnhancementsDemo PRIVATE ${SDL2_TTF_INCLUDE_DIRS})
-    else()
-        target_include_directories(GridEnhancementsDemo PRIVATE /opt/homebrew/include/SDL2)
-    endif()
-    target_link_libraries(GridEnhancementsDemo PRIVATE
-        AIMusicCore
-        ${SDL2_LIBRARIES}
-    )
-    if(SDL2_TTF_LIBRARIES)
-        target_link_libraries(GridEnhancementsDemo PRIVATE ${SDL2_TTF_LIBRARIES})
-    else()
-        target_link_libraries(GridEnhancementsDemo PRIVATE /opt/homebrew/lib/libSDL2_ttf.dylib)
-    endif()
-    target_compile_definitions(GridEnhancementsDemo PRIVATE HAVE_SDL_TTF)
-    message(STATUS "Building GridEnhancementsDemo")
-    message(STATUS "- Run ./bin/GridEnhancementsDemo to see enhanced UI features with better visuals and modulation hints")
+    # add_executable(AIMusicHardwareEnhanced src/main_grid_enhanced.cpp)
+    # target_include_directories(AIMusicHardwareEnhanced PRIVATE ${SDL2_INCLUDE_DIRS})
+    # if(SDL2_TTF_INCLUDE_DIRS)
+    #     target_include_directories(AIMusicHardwareEnhanced PRIVATE ${SDL2_TTF_INCLUDE_DIRS})
+    # else()
+    #     target_include_directories(AIMusicHardwareEnhanced PRIVATE /opt/homebrew/include/SDL2)
+    # endif()
+    # target_link_libraries(AIMusicHardwareEnhanced PRIVATE
+    #     AIMusicCore
+    #     ${SDL2_LIBRARIES}
+    # )
+    # if(SDL2_TTF_LIBRARIES)
+    #     target_link_libraries(AIMusicHardwareEnhanced PRIVATE ${SDL2_TTF_LIBRARIES})
+    # else()
+    #     target_link_libraries(AIMusicHardwareEnhanced PRIVATE /opt/homebrew/lib/libSDL2_ttf.dylib)
+    # endif()
+    # target_compile_definitions(GridEnhancementsDemo PRIVATE HAVE_SDL_TTF)
+    # message(STATUS "Building GridEnhancementsDemo")
+    # message(STATUS "- Run ./bin/GridEnhancementsDemo to see enhanced UI features with better visuals and modulation hints")
 else()
     message(WARNING "SDL2 not found. UI test applications will not be built.")
     message(WARNING "Install SDL2 to enable UI testing: brew install sdl2 (macOS) or sudo apt-get install libsdl2-dev (Linux)")
 endif()
+add_executable(wavetable_converter tools/wavetable_converter.cpp)
+target_link_libraries(wavetable_converter PRIVATE AIMusicCore)
+add_executable(TestRealtimeWavetableVoice examples/TestRealtimeWavetableVoice.cpp)
+target_link_libraries(TestRealtimeWavetableVoice PRIVATE AIMusicCore)

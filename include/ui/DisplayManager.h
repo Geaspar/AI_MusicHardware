@@ -113,6 +113,8 @@ public:
     
     // Direct access to framebuffer (use with care)
     uint8_t* getFramebuffer();
+
+    virtual void present();
     
 private:
     int width_;

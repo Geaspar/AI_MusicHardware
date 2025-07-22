@@ -2,6 +2,7 @@
 #include "../../include/sequencer/Sequencer.h"
 #include "../../include/effects/Filter.h"
 #include "../../include/effects/EffectProcessor.h"
+#include "../../include/synthesis/RealtimeWavetableVoice.h"
 #include <cmath>
 #include <algorithm>
 #include <random>
@@ -110,7 +111,7 @@ Synthesizer::Synthesizer(int sampleRate)
       currentOscType_(OscillatorType::Sine) {
       
     // Create VoiceManager
-    voiceManager_ = std::make_unique<VoiceManager>(sampleRate);
+    setVoiceManagerType(VoiceManagerType::Standard);
     
     // Create default wavetable
     createDefaultWavetable();
@@ -715,9 +716,9 @@ void Synthesizer::setAllParameters(const std::map<std::string, float>& parameter
 
 void Synthesizer::setOscillatorType(OscillatorType type) {
     currentOscType_ = type;
-    std::cout << "Synthesizer::setOscillatorType(" << static_cast<int>(type) << "), useBandLimitedOscillators = " << useBandLimitedOscillators_ << std::endl;
+    std::cout << "Synthesizer::setOscillatorType(" << static_cast<int>(type) << "), voiceManagerType = " << static_cast<int>(voiceManagerType_) << std::endl;
 
-    if (useBandLimitedOscillators_) {
+    if (voiceManagerType_ == VoiceManagerType::BandLimited) {
         // Convert to band-limited waveform type
         BandLimitedWavetable::WaveType blWaveType = BandLimitedWavetable::WaveType::Saw;
         switch (type) {
@@ -954,59 +955,63 @@ void Synthesizer::setGlobalPitchModulationAmount(const std::string& source, floa
     std::cout << "Set global pitch modulation for " << source << " to " << semitones << " semitones" << std::endl;
 }
 
-void Synthesizer::enableBandLimitedOscillators(bool enable) {
-    std::cout << "Synthesizer::enableBandLimitedOscillators(" << enable << ")" << std::endl;
-    if (useBandLimitedOscillators_ != enable) {
-        useBandLimitedOscillators_ = enable;
+void Synthesizer::setVoiceManagerType(VoiceManagerType type) {
+    if (voiceManagerType_ != type) {
+        voiceManagerType_ = type;
         
-        // Recreate voice manager with appropriate type
         int maxVoices = voiceManager_ ? voiceManager_->getMaxVoices() : 16;
         std::cout << "Recreating VoiceManager with " << maxVoices << " voices" << std::endl;
         
-        if (enable) {
-            // Create band-limited voice manager
-            auto blVoiceManager = std::make_unique<BandLimitedVoiceManager>(
-                sampleRate_, maxVoices, oversamplingEnabled_);
-            
-            // Set initial waveform based on current oscillator type
-            BandLimitedWavetable::WaveType waveType = BandLimitedWavetable::WaveType::Saw;
-            switch (currentOscType_) {
-                case OscillatorType::Sine:
-                    waveType = BandLimitedWavetable::WaveType::Sine;
-                    break;
-                case OscillatorType::Saw:
-                    waveType = BandLimitedWavetable::WaveType::Saw;
-                    break;
-                case OscillatorType::Square:
-                    waveType = BandLimitedWavetable::WaveType::Square;
-                    break;
-                case OscillatorType::Triangle:
-                    waveType = BandLimitedWavetable::WaveType::Triangle;
-                    break;
-                default:
-                    break;
-            }
-            blVoiceManager->setWaveform(waveType);
-            blVoiceManager->setOversamplingFactor(oversamplingFactor_);
-            
-            voiceManager_ = std::move(blVoiceManager);
-        } else {
-            // Create standard voice manager
-            voiceManager_ = std::make_unique<VoiceManager>(sampleRate_, maxVoices);
-            if (currentWavetable_) {
-                voiceManager_->setWavetable(currentWavetable_);
-            }
+        switch (type) {
+            case VoiceManagerType::Standard:
+                voiceManager_ = std::make_unique<VoiceManager>(sampleRate_, maxVoices);
+                if (currentWavetable_) {
+                    voiceManager_->setWavetable(currentWavetable_);
+                }
+                break;
+            case VoiceManagerType::BandLimited:
+                {
+                    auto blVoiceManager = std::make_unique<BandLimitedVoiceManager>(
+                        sampleRate_, maxVoices, oversamplingEnabled_);
+                    
+                    BandLimitedWavetable::WaveType waveType = BandLimitedWavetable::WaveType::Saw;
+                    switch (currentOscType_) {
+                        case OscillatorType::Sine:
+                            waveType = BandLimitedWavetable::WaveType::Sine;
+                            break;
+                        case OscillatorType::Saw:
+                            waveType = BandLimitedWavetable::WaveType::Saw;
+                            break;
+                        case OscillatorType::Square:
+                            waveType = BandLimitedWavetable::WaveType::Square;
+                            break;
+                        case OscillatorType::Triangle:
+                            waveType = BandLimitedWavetable::WaveType::Triangle;
+                            break;
+                        default:
+                            break;
+                    }
+                    blVoiceManager->setWaveform(waveType);
+                    blVoiceManager->setOversamplingFactor(oversamplingFactor_);
+                    
+                    voiceManager_ = std::move(blVoiceManager);
+                }
+                break;
+            case VoiceManagerType::RealTime:
+                voiceManager_ = std::make_unique<RealtimeWavetableVoiceManager>(sampleRate_, maxVoices);
+                // Note: RealtimeWavetableVoiceManager uses FrequencyDomainWavetable, not the standard Wavetable.
+                // A conversion or loading mechanism for frequency domain wavetables will be needed here.
+                break;
         }
         
-        std::cout << "Band-limited oscillators " << (enable ? "enabled" : "disabled") << std::endl;
+        std::cout << "VoiceManager type changed to " << static_cast<int>(type) << std::endl;
     }
 }
 
 void Synthesizer::setOversamplingEnabled(bool enable) {
     oversamplingEnabled_ = enable;
     
-    // Update existing band-limited voice manager if active
-    if (useBandLimitedOscillators_) {
+    if (voiceManagerType_ == VoiceManagerType::BandLimited) {
         if (auto* blVoiceManager = dynamic_cast<BandLimitedVoiceManager*>(voiceManager_.get())) {
             blVoiceManager->setOversamplingEnabled(enable);
         }
@@ -1018,8 +1023,7 @@ void Synthesizer::setOversamplingEnabled(bool enable) {
 void Synthesizer::setOversamplingFactor(OversamplingProcessor::Factor factor) {
     oversamplingFactor_ = factor;
     
-    // Update existing band-limited voice manager if active
-    if (useBandLimitedOscillators_) {
+    if (voiceManagerType_ == VoiceManagerType::BandLimited) {
         if (auto* blVoiceManager = dynamic_cast<BandLimitedVoiceManager*>(voiceManager_.get())) {
             blVoiceManager->setOversamplingFactor(factor);
         }
