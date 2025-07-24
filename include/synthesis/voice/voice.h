@@ -129,8 +129,14 @@ protected:
     float frequency_;
     float baseFrequency_;     // Frequency without any pitch bend
 
+    // Unified pitch modulation
+    PitchModulation pitchMod_;
+
     // Helper to convert MIDI note to frequency
     float midiNoteToFrequency(int midiNote) const;
+
+    // Internal frequency update
+    void updateOscillatorFrequency();
 
 private:
     int midiNote_;
@@ -142,9 +148,6 @@ private:
     float pressure_ = 0.0f;            // Pressure/aftertouch (0.0-1.0)
     float amplitudeModulation_ = 1.0f; // Amplitude modulation multiplier (0.0-1.0)
     
-    // Unified pitch modulation
-    PitchModulation pitchMod_;
-    
     // Random number generator for random pitch
     std::mt19937 rng_;
     std::uniform_real_distribution<float> randomDist_{-1.0f, 1.0f};
@@ -152,9 +155,6 @@ private:
     // DC blocker filter state
     float dcBlockerX1_;  // Previous input
     float dcBlockerY1_;  // Previous output
-    
-    // Internal frequency update
-    void updateOscillatorFrequency();
 };
 
 } // namespace AIMusicHardware

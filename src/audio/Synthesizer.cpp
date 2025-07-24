@@ -111,7 +111,7 @@ Synthesizer::Synthesizer(int sampleRate)
       currentOscType_(OscillatorType::Sine) {
       
     // Create VoiceManager
-    setVoiceManagerType(VoiceManagerType::Standard);
+    setVoiceManagerType(VoiceManagerType::RealTime);
     
     // Create default wavetable
     createDefaultWavetable();

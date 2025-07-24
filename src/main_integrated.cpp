@@ -235,7 +235,8 @@ int main(int argc, char* argv[]) {
     
     // Create core audio components
     auto audioEngine = std::make_unique<AudioEngine>();
-    auto synthesizer = std::make_unique<Synthesizer>();
+    """    auto synthesizer = std::make_unique<Synthesizer>();
+    synthesizer->setVoiceManagerType(VoiceManagerType::RealTime);""
     auto effectProcessor = std::make_unique<EffectProcessor>();
     auto sequencer = std::make_unique<Sequencer>();
     auto midiInput = std::make_unique<MidiInput>();

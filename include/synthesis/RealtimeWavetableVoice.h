@@ -15,15 +15,12 @@ public:
     void noteOn(int noteNumber, float velocity);
     void noteOff();
 
-    bool isPlaying() const { return is_playing_; }
+    bool isPlaying() const { return state_ != State::Inactive && state_ != State::Finished; }
 
 private:
     std::shared_ptr<FrequencyDomainWavetable> wavetable_;
     std::unique_ptr<FourierTransform> fft_;
     double sample_rate_;
-    float frequency_;
-    float amplitude_;
-    bool is_playing_ = false;
     int current_frame_ = 0;
     double phase_ = 0.0;
 };

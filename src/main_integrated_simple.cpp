@@ -313,7 +313,7 @@ int main(int argc, char* argv[]) {
     auto synthesizer = std::make_unique<Synthesizer>();
     
     // Enable band-limited oscillators for zero aliasing
-    synthesizer->setVoiceManagerType(AIMusicHardware::VoiceManagerType::BandLimited);
+    synthesizer->setVoiceManagerType(AIMusicHardware::VoiceManagerType::RealTime);
     synthesizer->setOversamplingEnabled(false); // Start with no oversampling for best performance
     
     auto effectProcessor = std::make_unique<EffectProcessor>();

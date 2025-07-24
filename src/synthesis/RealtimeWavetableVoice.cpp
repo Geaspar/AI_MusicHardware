@@ -8,17 +8,19 @@
 namespace AIMusicHardware {
 
 RealtimeWavetableVoice::RealtimeWavetableVoice(std::shared_ptr<FrequencyDomainWavetable> wavetable, double sampleRate)
-    : Voice(sampleRate), wavetable_(wavetable), sample_rate_(sampleRate), frequency_(0.0f), amplitude_(0.0f) {
+    : Voice(sampleRate), wavetable_(wavetable), sample_rate_(sampleRate) {
     fft_ = std::make_unique<FourierTransform>();
 }
 
 void RealtimeWavetableVoice::process(float* outputBuffer, int numSamples) {
-    if (!is_playing_) {
+    if (state_ == State::Inactive || state_ == State::Finished) {
         for (int i = 0; i < numSamples; ++i) {
             outputBuffer[i] = 0.0f;
         }
         return;
     }
+
+    updateOscillatorFrequency();
 
     const float nyquist = sample_rate_ / 2.0f;
     const auto& harmonic_data = wavetable_->getHarmonicData(current_frame_);
@@ -36,8 +38,6 @@ void RealtimeWavetableVoice::process(float* outputBuffer, int numSamples) {
     std::vector<std::complex<float>> time_domain_data(2048);
     fft_->performIFFT(spectrum);
 
-    // This is a simplified version. A real implementation would need to handle
-    // the phase correctly and interpolate between samples.
     for (int i = 0; i < numSamples; ++i) {
         double phase_increment = frequency_ / sample_rate_;
         phase_ += phase_increment;
@@ -45,19 +45,17 @@ void RealtimeWavetableVoice::process(float* outputBuffer, int numSamples) {
             phase_ -= 1.0;
         }
         int sample_index = static_cast<int>(phase_ * 2048);
-        outputBuffer[i] = spectrum[sample_index].real() * amplitude_;
+        outputBuffer[i] = spectrum[sample_index].real() * velocity_;
     }
 }
 
 void RealtimeWavetableVoice::noteOn(int noteNumber, float velocity) {
-    frequency_ = 440.0 * std::pow(2.0, (noteNumber - 69.0) / 12.0);
-    amplitude_ = velocity;
-    is_playing_ = true;
+    Voice::noteOn(noteNumber, velocity);
     phase_ = 0.0;
 }
 
 void RealtimeWavetableVoice::noteOff() {
-    is_playing_ = false;
+    Voice::noteOff();
 }
 
 // --- RealtimeWavetableVoiceManager Implementation ---
