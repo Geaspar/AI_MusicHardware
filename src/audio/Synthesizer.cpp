@@ -1,4 +1,6 @@
 #include "../../include/audio/Synthesizer.h"
+#include "../../include/synthesis/RealtimeWavetableVoice.h"
+#include "../../include/synthesis/RealtimeWavetableVoice.h"
 #include "../../include/sequencer/Sequencer.h"
 #include "../../include/effects/Filter.h"
 #include "../../include/effects/EffectProcessor.h"

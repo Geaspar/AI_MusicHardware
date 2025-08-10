@@ -10,7 +10,6 @@
 
 // Include the new architecture
 #include "../synthesis/framework/processor.h"
-#include "../synthesis/voice/voice_manager.h"
 #include "../synthesis/wavetable/wavetable.h"
 #include "../synthesis/modulators/envelope.h"
 #include "../synthesis/modulators/modulation_matrix.h"
@@ -19,6 +18,7 @@
 namespace AIMusicHardware {
 
 // Forward declaration
+class VoiceManager;
 class RealtimeWavetableVoiceManager;
 
 // Keep for backward compatibility

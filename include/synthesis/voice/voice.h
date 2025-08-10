@@ -117,6 +117,7 @@ public:
     
     // Sample rate control
     virtual void setSampleRate(int sampleRate);
+    int getSampleRate() const { return sampleRate_; }
 
 protected:
     // Voice components that derived classes might need access to
@@ -132,17 +133,15 @@ protected:
     // Unified pitch modulation
     PitchModulation pitchMod_;
 
+    int midiNote_;
+    int age_;
+    int channel_;
+
     // Helper to convert MIDI note to frequency
     float midiNoteToFrequency(int midiNote) const;
 
     // Internal frequency update
     void updateOscillatorFrequency();
-
-private:
-    int midiNote_;
-    int age_;                 // Number of samples this voice has been active
-    int channel_ = 0;         // MIDI channel for this voice
-    int sampleRate_;
 
     // MIDI expression parameters
     float pressure_ = 0.0f;            // Pressure/aftertouch (0.0-1.0)
@@ -155,6 +154,9 @@ private:
     // DC blocker filter state
     float dcBlockerX1_;  // Previous input
     float dcBlockerY1_;  // Previous output
+
+private:
+    int sampleRate_;
 };
 
 } // namespace AIMusicHardware
