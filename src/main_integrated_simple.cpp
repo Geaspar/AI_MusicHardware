@@ -8,6 +8,7 @@
 #include <sstream>
 #include <cmath>
 #include <unordered_map>
+#include <vector>
 #include <SDL2/SDL.h>
 #ifdef HAVE_SDL_TTF
 #include <SDL_ttf.h>
@@ -2389,7 +2390,7 @@ int main(int argc, char* argv[]) {
     // Multi-slot Effects UI (per-slot Type, Bypass, Mix + 4 vertical sliders)
     const int fxSlotCount = 6;
     const int rowStartY = 150;   // shifted up by 10px for tighter placement
-    const int rowHeight = 140;   // taller rows for wider spacing
+    const int rowHeight = 100;   // adjusted to fit within 800px height
 
     // Per-slot state
     std::vector<std::string> slotSelectedType(fxSlotCount, "None");
@@ -2511,8 +2512,8 @@ int main(int argc, char* argv[]) {
 
         auto mix = std::make_unique<Slider>("fx_mix_" + std::to_string(s), "Mix", 0,0,40,40);
         mix->setOrientation(Slider::Orientation::Horizontal);
-        mix->setPosition(360, y - 10);
-        mix->setSize(260, 36);
+        mix->setPosition(360, y - 8);
+        mix->setSize(280, 34);
         mix->setRange(0.0f, 1.0f);
         mix->setValue(slotMix[s]);
         mix->setValueFormatter([](float v){ std::stringstream ss; ss<<"Mix "<<std::fixed<<std::setprecision(0)<<(v*100.0f)<<"%"; return ss.str();});
@@ -2520,13 +2521,13 @@ int main(int argc, char* argv[]) {
 
         // Add four vertical sliders to the right of the mix slider (placeholders for per-slot params)
         const int vBaseX = 660;
-        const int vSpacing = 80;  // wider spacing between vertical sliders
-        const int vWidth = 28;
-        const int vHeight = 120;
-        const int vY = y - 50;    // raise above row baseline
+        const int vSpacing = 90;  // wider spacing between vertical sliders
+        const int vWidth = 26;
+        const int vHeight = 110;
+        const int vY = y - 45;    // raise above row baseline, fit within screen
 
         auto v1Label = std::make_unique<Label>("fx_v1_label_" + std::to_string(s), "Param 1");
-        v1Label->setPosition(vBaseX - 10, vY - 18);
+        v1Label->setPosition(vBaseX - 12, vY - 16);
         v1Label->setSize(70, 16);
         v1Label->setTextColor(Color(200, 200, 200));
         effectsScreen->addChild(std::move(v1Label));
@@ -2541,7 +2542,7 @@ int main(int argc, char* argv[]) {
         slotV1Slider[s] = v1.get();
 
         auto v2Label = std::make_unique<Label>("fx_v2_label_" + std::to_string(s), "Param 2");
-        v2Label->setPosition(vBaseX + vSpacing - 10, vY - 18);
+        v2Label->setPosition(vBaseX + vSpacing - 12, vY - 16);
         v2Label->setSize(70, 16);
         v2Label->setTextColor(Color(200, 200, 200));
         effectsScreen->addChild(std::move(v2Label));
@@ -2556,7 +2557,7 @@ int main(int argc, char* argv[]) {
         slotV2Slider[s] = v2.get();
 
         auto v3Label = std::make_unique<Label>("fx_v3_label_" + std::to_string(s), "Param 3");
-        v3Label->setPosition(vBaseX + 2*vSpacing - 10, vY - 18);
+        v3Label->setPosition(vBaseX + 2*vSpacing - 12, vY - 16);
         v3Label->setSize(70, 16);
         v3Label->setTextColor(Color(200, 200, 200));
         effectsScreen->addChild(std::move(v3Label));
@@ -2571,7 +2572,7 @@ int main(int argc, char* argv[]) {
         slotV3Slider[s] = v3.get();
 
         auto v4Label = std::make_unique<Label>("fx_v4_label_" + std::to_string(s), "Param 4");
-        v4Label->setPosition(vBaseX + 3*vSpacing - 10, vY - 18);
+        v4Label->setPosition(vBaseX + 3*vSpacing - 12, vY - 16);
         v4Label->setSize(70, 16);
         v4Label->setTextColor(Color(200, 200, 200));
         effectsScreen->addChild(std::move(v4Label));
@@ -2589,6 +2590,14 @@ int main(int argc, char* argv[]) {
         typeDd->setSelectionCallback([&, s](int index, const std::string& item){
             slotSelectedType[s] = item;
             rebuildEffectsChain();
+            // Enable/disable controls if None is selected
+            bool enableControls = (item != std::string("None"));
+            slotMixSlider[s]->setEnabled(enableControls);
+            slotBypassBtn[s]->setEnabled(enableControls);
+            if (slotV1Slider[s]) slotV1Slider[s]->setEnabled(enableControls);
+            if (slotV2Slider[s]) slotV2Slider[s]->setEnabled(enableControls);
+            if (slotV3Slider[s]) slotV3Slider[s]->setEnabled(enableControls);
+            if (slotV4Slider[s]) slotV4Slider[s]->setEnabled(enableControls);
             // Update current slot's mix/bypass visuals
             slotMixSlider[s]->setValue(slotMix[s]);
             slotBypassBtn[s]->setText(slotEnabled[s] ? "ON" : "OFF");
