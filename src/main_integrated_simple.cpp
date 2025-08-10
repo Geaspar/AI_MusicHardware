@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <sstream>
 #include <cmath>
+#include <unordered_map>
 #include <SDL2/SDL.h>
 #ifdef HAVE_SDL_TTF
 #include <SDL_ttf.h>
@@ -2457,6 +2458,11 @@ int main(int argc, char* argv[]) {
     auto p2SliderPtr = p2Slider.get();
     auto p3SliderPtr = p3Slider.get();
 
+    // Persist values per effect type so parameters don't reset/disappear on change
+    std::unordered_map<std::string, std::unordered_map<std::string, float>> effectValueCache;
+    std::unordered_map<std::string, float> effectMixCache;
+    std::unordered_map<std::string, bool> effectEnabledCache; // true => ON (not bypassed)
+
     // Helper to set mix or wet/dry depending on effect
     auto setEffectMix = [&](Effect* fx, const std::string& type, float mixVal) {
         if (!fx) return;
@@ -2508,113 +2514,167 @@ int main(int argc, char* argv[]) {
                 fx->setParameter("mix", 1.0f);
             }
             effectProcessor->addEffect(std::move(fx));
+
+            // Apply cached values if available
+            auto* addedFx = effectProcessor->getNumEffects() > 1 ? effectProcessor->getEffect(1) : nullptr;
+            if (addedFx) {
+                if (effectValueCache.count(type)) {
+                    const auto& vals = effectValueCache[type];
+                    for (const auto& kv : vals) {
+                        addedFx->setParameter(kv.first, kv.second);
+                    }
+                }
+            }
         }
     };
 
     // Map the three generic parameter sliders to actual effect parameters per type
     auto configureParamSliders = [&](const std::string& type) {
-        // Default: clear labels and neutral ranges
-        auto clearParam = [](Label* l, Slider* s) {
-            if (l) l->setText("");
+        // Helper: mark a param slot as unused but visible
+        auto unusedParam = [](Label* l, Slider* s) {
+            if (l) l->setText("N/A");
             if (s) {
-                // Disconnect callbacks before changing value to avoid calling stale lambdas
                 s->setValueChangeCallback(nullptr);
                 s->setValueFormatter(nullptr);
                 s->setRange(0.0f, 1.0f);
                 s->setValue(0.0f);
+                s->setEnabled(false);
             }
         };
-        clearParam(p1LabelPtr, p1SliderPtr);
-        clearParam(p2LabelPtr, p2SliderPtr);
-        clearParam(p3LabelPtr, p3SliderPtr);
 
         auto* fx = effectProcessor->getNumEffects() > 1 ? effectProcessor->getEffect(1) : nullptr;
-        if (!fx) return;
+        if (!fx) {
+            // Keep controls visible, just disable them temporarily
+            unusedParam(p1LabelPtr, p1SliderPtr);
+            unusedParam(p2LabelPtr, p2SliderPtr);
+            unusedParam(p3LabelPtr, p3SliderPtr);
+            return;
+        }
 
+        // Enable all by default
+        p1SliderPtr->setEnabled(true);
+        p2SliderPtr->setEnabled(true);
+        p3SliderPtr->setEnabled(true);
+
+        auto getCachedOr = [&](const std::string& paramName, float fallback) {
+            if (effectValueCache.count(type) && effectValueCache[type].count(paramName)) {
+                return effectValueCache[type][paramName];
+            }
+            return fallback;
+        };
+
+        // Reconfigure per type without blanking first to avoid flicker
         if (type == "Reverb") {
             p1LabelPtr->setText("Room Size");
+            p1SliderPtr->setValueChangeCallback(nullptr);
             p1SliderPtr->setRange(0.0f, 1.0f);
-            p1SliderPtr->setValue(fx->getParameter("roomSize"));
-            p1SliderPtr->setValueChangeCallback([fx](float v){ fx->setParameter("roomSize", v); });
+            p1SliderPtr->setValue(getCachedOr("roomSize", fx->getParameter("roomSize")));
+            p1SliderPtr->setValueChangeCallback([&, fx, type](float v){ fx->setParameter("roomSize", v); effectValueCache[type]["roomSize"] = v; });
 
             p2LabelPtr->setText("Damping");
+            p2SliderPtr->setValueChangeCallback(nullptr);
             p2SliderPtr->setRange(0.0f, 1.0f);
-            p2SliderPtr->setValue(fx->getParameter("damping"));
-            p2SliderPtr->setValueChangeCallback([fx](float v){ fx->setParameter("damping", v); });
+            p2SliderPtr->setValue(getCachedOr("damping", fx->getParameter("damping")));
+            p2SliderPtr->setValueChangeCallback([&, fx, type](float v){ fx->setParameter("damping", v); effectValueCache[type]["damping"] = v; });
 
             p3LabelPtr->setText("Width");
+            p3SliderPtr->setValueChangeCallback(nullptr);
             p3SliderPtr->setRange(0.0f, 1.0f);
-            p3SliderPtr->setValue(fx->getParameter("width"));
-            p3SliderPtr->setValueChangeCallback([fx](float v){ fx->setParameter("width", v); });
+            p3SliderPtr->setValue(getCachedOr("width", fx->getParameter("width")));
+            p3SliderPtr->setValueChangeCallback([&, fx, type](float v){ fx->setParameter("width", v); effectValueCache[type]["width"] = v; });
         } else if (type == "Delay") {
             p1LabelPtr->setText("Time (s)");
+            p1SliderPtr->setValueChangeCallback(nullptr);
             p1SliderPtr->setRange(0.01f, 1.0f);
-            p1SliderPtr->setValue(fx->getParameter("delayTime"));
             p1SliderPtr->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(2)<<v<<" s"; return ss.str();});
-            p1SliderPtr->setValueChangeCallback([fx](float v){ fx->setParameter("delayTime", v); });
+            p1SliderPtr->setValue(getCachedOr("delayTime", fx->getParameter("delayTime")));
+            p1SliderPtr->setValueChangeCallback([&, fx, type](float v){ fx->setParameter("delayTime", v); effectValueCache[type]["delayTime"] = v; });
 
             p2LabelPtr->setText("Feedback");
+            p2SliderPtr->setValueChangeCallback(nullptr);
             p2SliderPtr->setRange(0.0f, 0.95f);
-            p2SliderPtr->setValue(fx->getParameter("feedback"));
             p2SliderPtr->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(0)<<v*100.0f<<"%"; return ss.str();});
-            p2SliderPtr->setValueChangeCallback([fx](float v){ fx->setParameter("feedback", v); });
+            p2SliderPtr->setValue(getCachedOr("feedback", fx->getParameter("feedback")));
+            p2SliderPtr->setValueChangeCallback([&, fx, type](float v){ fx->setParameter("feedback", v); effectValueCache[type]["feedback"] = v; });
+
+            // No third param for Delay in this view; keep it visible but disabled
+            unusedParam(p3LabelPtr, p3SliderPtr);
         } else if (type == "Distortion") {
             p1LabelPtr->setText("Drive");
+            p1SliderPtr->setValueChangeCallback(nullptr);
             p1SliderPtr->setRange(0.0f, 10.0f);
-            p1SliderPtr->setValue(fx->getParameter("drive"));
-            p1SliderPtr->setValueChangeCallback([fx](float v){ fx->setParameter("drive", v); });
+            p1SliderPtr->setValue(getCachedOr("drive", fx->getParameter("drive")));
+            p1SliderPtr->setValueChangeCallback([&, fx, type](float v){ fx->setParameter("drive", v); effectValueCache[type]["drive"] = v; });
 
             p2LabelPtr->setText("Tone");
+            p2SliderPtr->setValueChangeCallback(nullptr);
             p2SliderPtr->setRange(0.0f, 1.0f);
-            p2SliderPtr->setValue(fx->getParameter("tone"));
-            p2SliderPtr->setValueChangeCallback([fx](float v){ fx->setParameter("tone", v); });
+            p2SliderPtr->setValue(getCachedOr("tone", fx->getParameter("tone")));
+            p2SliderPtr->setValueChangeCallback([&, fx, type](float v){ fx->setParameter("tone", v); effectValueCache[type]["tone"] = v; });
 
             p3LabelPtr->setText("Level");
+            p3SliderPtr->setValueChangeCallback(nullptr);
             p3SliderPtr->setRange(0.0f, 1.0f);
-            p3SliderPtr->setValue(fx->getParameter("level"));
-            p3SliderPtr->setValueChangeCallback([fx](float v){ fx->setParameter("level", v); });
+            p3SliderPtr->setValue(getCachedOr("level", fx->getParameter("level")));
+            p3SliderPtr->setValueChangeCallback([&, fx, type](float v){ fx->setParameter("level", v); effectValueCache[type]["level"] = v; });
         } else if (type == "Phaser") {
             p1LabelPtr->setText("Rate (Hz)");
+            p1SliderPtr->setValueChangeCallback(nullptr);
             p1SliderPtr->setRange(0.05f, 5.0f);
-            p1SliderPtr->setValue(fx->getParameter("rate"));
             p1SliderPtr->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(2)<<v<<" Hz"; return ss.str();});
-            p1SliderPtr->setValueChangeCallback([fx](float v){ fx->setParameter("rate", v); });
+            p1SliderPtr->setValue(getCachedOr("rate", fx->getParameter("rate")));
+            p1SliderPtr->setValueChangeCallback([&, fx, type](float v){ fx->setParameter("rate", v); effectValueCache[type]["rate"] = v; });
 
             p2LabelPtr->setText("Depth");
+            p2SliderPtr->setValueChangeCallback(nullptr);
             p2SliderPtr->setRange(0.0f, 1.0f);
-            p2SliderPtr->setValue(fx->getParameter("depth"));
-            p2SliderPtr->setValueChangeCallback([fx](float v){ fx->setParameter("depth", v); });
+            p2SliderPtr->setValue(getCachedOr("depth", fx->getParameter("depth")));
+            p2SliderPtr->setValueChangeCallback([&, fx, type](float v){ fx->setParameter("depth", v); effectValueCache[type]["depth"] = v; });
 
             p3LabelPtr->setText("Feedback");
+            p3SliderPtr->setValueChangeCallback(nullptr);
             p3SliderPtr->setRange(0.0f, 0.9f);
-            p3SliderPtr->setValue(fx->getParameter("feedback"));
-            p3SliderPtr->setValueChangeCallback([fx](float v){ fx->setParameter("feedback", v); });
+            p3SliderPtr->setValue(getCachedOr("feedback", fx->getParameter("feedback")));
+            p3SliderPtr->setValueChangeCallback([&, fx, type](float v){ fx->setParameter("feedback", v); effectValueCache[type]["feedback"] = v; });
         } else if (type == "EQ") {
             p1LabelPtr->setText("Low Gain (dB)");
+            p1SliderPtr->setValueChangeCallback(nullptr);
             p1SliderPtr->setRange(-12.0f, 12.0f);
-            p1SliderPtr->setValue(fx->getParameter("lowGain"));
-            p1SliderPtr->setValueChangeCallback([fx](float v){ fx->setParameter("lowGain", v); });
+            p1SliderPtr->setValue(getCachedOr("lowGain", fx->getParameter("lowGain")));
+            p1SliderPtr->setValueChangeCallback([&, fx, type](float v){ fx->setParameter("lowGain", v); effectValueCache[type]["lowGain"] = v; });
 
             p2LabelPtr->setText("Mid Gain (dB)");
+            p2SliderPtr->setValueChangeCallback(nullptr);
             p2SliderPtr->setRange(-12.0f, 12.0f);
-            p2SliderPtr->setValue(fx->getParameter("midGain"));
-            p2SliderPtr->setValueChangeCallback([fx](float v){ fx->setParameter("midGain", v); });
+            p2SliderPtr->setValue(getCachedOr("midGain", fx->getParameter("midGain")));
+            p2SliderPtr->setValueChangeCallback([&, fx, type](float v){ fx->setParameter("midGain", v); effectValueCache[type]["midGain"] = v; });
 
             p3LabelPtr->setText("High Gain (dB)");
+            p3SliderPtr->setValueChangeCallback(nullptr);
             p3SliderPtr->setRange(-12.0f, 12.0f);
-            p3SliderPtr->setValue(fx->getParameter("highGain"));
-            p3SliderPtr->setValueChangeCallback([fx](float v){ fx->setParameter("highGain", v); });
+            p3SliderPtr->setValue(getCachedOr("highGain", fx->getParameter("highGain")));
+            p3SliderPtr->setValueChangeCallback([&, fx, type](float v){ fx->setParameter("highGain", v); effectValueCache[type]["highGain"] = v; });
         } else if (type == "LowPassFilter") {
             p1LabelPtr->setText("Cutoff (Hz)");
+            p1SliderPtr->setValueChangeCallback(nullptr);
             p1SliderPtr->setRange(20.0f, 20000.0f);
-            p1SliderPtr->setValue(fx->getParameter("frequency"));
             p1SliderPtr->setValueFormatter([](float v){ std::stringstream ss; if (v>=1000.0f){ ss<<std::fixed<<std::setprecision(1)<<v/1000.0f<<" kHz"; } else { ss<<std::fixed<<std::setprecision(0)<<v<<" Hz";} return ss.str();});
-            p1SliderPtr->setValueChangeCallback([fx](float v){ fx->setParameter("frequency", v); });
+            p1SliderPtr->setValue(getCachedOr("frequency", fx->getParameter("frequency")));
+            p1SliderPtr->setValueChangeCallback([&, fx, type](float v){ fx->setParameter("frequency", v); effectValueCache[type]["frequency"] = v; });
 
             p2LabelPtr->setText("Resonance");
+            p2SliderPtr->setValueChangeCallback(nullptr);
             p2SliderPtr->setRange(0.7f, 5.0f);
-            p2SliderPtr->setValue(fx->getParameter("resonance"));
-            p2SliderPtr->setValueChangeCallback([fx](float v){ fx->setParameter("resonance", v); });
+            p2SliderPtr->setValue(getCachedOr("resonance", fx->getParameter("resonance")));
+            p2SliderPtr->setValueChangeCallback([&, fx, type](float v){ fx->setParameter("resonance", v); effectValueCache[type]["resonance"] = v; });
+
+            // No third param; keep visible but disabled
+            unusedParam(p3LabelPtr, p3SliderPtr);
+        } else {
+            // Unknown type; keep controls visible but disabled
+            unusedParam(p1LabelPtr, p1SliderPtr);
+            unusedParam(p2LabelPtr, p2SliderPtr);
+            unusedParam(p3LabelPtr, p3SliderPtr);
         }
     };
 
@@ -2622,14 +2682,26 @@ int main(int argc, char* argv[]) {
     effectTypeDropdown->setSelectionCallback([&](int index, const std::string& item){
         std::cout << "Effects Tab: selecting type '" << item << "'" << std::endl;
         installEffect(item);
-        // Set mix to current slider value
+        // Set mix to cached value for this type (or keep current slider value)
         auto* fx = effectProcessor->getNumEffects() > 1 ? effectProcessor->getEffect(1) : nullptr;
-        if (fx) {
-            setEffectMix(fx, item, mixSliderPtr->getValue());
+        float targetMix = mixSliderPtr->getValue();
+        if (effectMixCache.count(item)) {
+            targetMix = effectMixCache[item];
         }
-        // Reset bypass to ON (enabled)
-        bypassButtonPtr->setText("ON");
-        bypassButtonPtr->setBackgroundColor(Color(50, 100, 50));
+        // Update slider which will trigger its callback to set parameters
+        mixSliderPtr->setValue(targetMix);
+
+        // Restore bypass/enabled state per type
+        bool enabled = true;
+        if (effectEnabledCache.count(item)) {
+            enabled = effectEnabledCache[item];
+        }
+        bypassButtonPtr->setText(enabled ? "ON" : "OFF");
+        bypassButtonPtr->setBackgroundColor(enabled ? Color(50, 100, 50) : Color(100, 50, 50));
+        if (fx) {
+            std::lock_guard<std::mutex> lock(audioMutex);
+            setEffectMix(fx, item, enabled ? targetMix : 0.0f);
+        }
         configureParamSliders(item);
     });
 
@@ -2638,6 +2710,7 @@ int main(int argc, char* argv[]) {
         auto* fx = effectProcessor->getNumEffects() > 1 ? effectProcessor->getEffect(1) : nullptr;
         if (!fx) return;
         std::string currentType = effectTypeDropdownPtr->getSelectedItem();
+        effectMixCache[currentType] = v;
         setEffectMix(fx, currentType, v);
     });
 
@@ -2650,6 +2723,7 @@ int main(int argc, char* argv[]) {
         if (!fx) return;
         std::string currentType = effectTypeDropdownPtr->getSelectedItem();
         float mixVal = enabled ? mixSliderPtr->getValue() : 0.0f;
+        effectEnabledCache[currentType] = enabled;
         setEffectMix(fx, currentType, mixVal);
     });
 
