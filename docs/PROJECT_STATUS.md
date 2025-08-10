@@ -253,6 +253,21 @@ Integration Layer (Ready for Deployment)
 
 ## 📅 Recent Updates
 
+### **August 10, 2025** — Effects Tab UI and Audio-Thread Safety
+
+**Status**: 🟢 **COMPLETE**
+
+- Implemented an Effects tab in `AIMusicHardwareIntegrated` with:
+  - Effect type dropdown (Delay, Reverb, Distortion, Phaser, EQ, LowPassFilter, etc.).
+  - Bypass toggle and Mix control (handles Reverb wet/dry vs generic mix).
+  - Three context-aware parameter sliders mapped per-effect with correct ranges/formatters.
+- Fixed dropdown rendering and event routing so effect choices are visible and selectable on the active screen.
+- Prevented UI-to-audio race conditions that caused SIGSEGV in the audio thread when switching effects:
+  - Added shared mutex guarding the audio callback and UI handlers that modify the `EffectProcessor` (install, mix, bypass). This ensures effects aren’t destroyed while being processed.
+- Eliminated stale slider callbacks during effect reconfiguration by clearing callbacks before resetting ranges/values, preventing crashes from lambdas capturing freed effect objects.
+
+Outcome: stable, real-time effect selection and editing from the UI without audio thread crashes.
+
 ### **August 9, 2025** — Wavetable Sweep Fix and Stability Cleanup
 
 **Status**: 🟢 **COMPLETE**
