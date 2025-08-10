@@ -268,6 +268,70 @@ Integration Layer (Ready for Deployment)
 
 Outcome: stable, real-time effect selection and editing from the UI without audio thread crashes.
 
+#### Next Steps — Effects Tab Multi-slot Plan (Aug 10, 2025)
+
+- **Define scope**
+  - Expand the Effects tab to support a richer multi-slot chain (target: 6–8 slots), mirroring the main tab’s chain but with more detailed controls per slot.
+  - Keep the global filter reserved at index 0 in `EffectProcessor`; user-editable effect slots begin at index 1.
+
+- **Refactor the Effects tab UI in `src/main_integrated_simple.cpp`**
+  - Replace the current single-slot editor with a row-based layout per slot: Type dropdown ("None" + `getAvailableEffects()`), Bypass toggle, Mix slider, and 2–3 parameter sliders.
+  - Keep parameter controls always visible to prevent layout jumps; disable and label as “N/A” when a parameter is not applicable.
+
+- **Maintain per-slot state (persistence across type switches)**
+  - Store selected type per slot: `slotSelectedType[slot]`.
+  - Cache parameter values per slot and type: `slotParamCache[slot][type][paramName]`.
+  - Cache mix per slot and type: `slotMixCache[slot][type]`.
+  - Cache bypass/enabled per slot and type: `slotEnabledCache[slot][type]` (true = ON).
+
+- **Rebuild the chain when a slot changes (authoritative sync)**
+  - Implement `rebuildEffectsChain()`:
+    - Lock the shared audio mutex.
+    - Remove all effects beyond index 0 (keep filter).
+    - For each slot in order: if type != "None", create the effect with safe defaults, add to chain, reapply cached parameters, then set mix/wet-dry based on cached mix and enabled state (0 mix when bypassed).
+  - Provide a small helper `createEffectWithDefaults(type)` to centralize safe default parameters per effect.
+
+- **Map slot → effect instance**
+  - Implement `getFxForSlot(slot)` that counts non-"None" slots before the given slot and returns `effectProcessor->getEffect(1 + countBefore)`. This ensures UI callbacks target the correct effect after rebuilds.
+
+- **Wire callbacks for each slot**
+  - Dropdown: update `slotSelectedType`, call `rebuildEffectsChain()`, restore mix/bypass UI from caches, and call `configureSlotParams(slot, type)` to set up param sliders from cached/current values.
+  - Mix slider: update `slotMixCache[slot][type]` and call `setEffectMix(fx, type, value)` on the mapped effect.
+  - Bypass toggle: update `slotEnabledCache[slot][type]`; set mix to 0 when OFF, restore to cached mix when ON.
+  - Param sliders: on change, set parameter on the mapped effect and update `slotParamCache` accordingly.
+
+- **Parameter mapping per effect (examples)**
+  - Reverb: Room Size (0–1), Damping (0–1), Width (0–1); mix uses wet/dry pair.
+  - Delay: Time (0.01–1.0s with formatter), Feedback (0–0.95), optional third slot disabled.
+  - Distortion: Drive (0–10), Tone (0–1), Level (0–1).
+  - Phaser: Rate (0.05–5.0 Hz with formatter), Depth (0–1), Feedback (0–0.9).
+  - EQ: Low/Mid/High Gain (−12 to +12 dB).
+  - LowPassFilter: Cutoff (20–20000 Hz with Hz/kHz formatter), Resonance (0.7–5.0), third param disabled.
+
+- **Thread safety**
+  - Guard chain rebuilds and all audio-thread-facing writes (parameter, mix/wet-dry, bypass) with the existing shared audio mutex to prevent races/SIGSEGV.
+
+- **Layout and UX**
+  - Arrange rows with consistent spacing; ensure two param sliders fit on the row and optionally place the third on a wrapped sub-row.
+  - Consider scroll/pagination if slots exceed vertical space; maintain consistent label formatting and value formatters.
+
+- **Clean up old code**
+  - Remove single-slot-only variables, helpers, and callbacks to avoid conflicting behavior.
+
+- **Test**
+  - Build and run `./build/bin/AIMusicHardwareIntegrated`.
+  - Verify: multi-slot selection, persistence when switching types and returning, per-slot bypass/mix behavior, and parameter updates affecting the correct effect instance without audio thread crashes.
+
+- **Optional enhancements**
+  - Per-slot remove button (sets type to “None”).
+  - Reordering (up/down arrows or drag-and-drop) with chain rebuild.
+  - Expose additional parameters for complex effects beyond the core 2–3.
+  - Persist the full effects chain in presets (save/load).
+
+- **Files to edit**
+  - `src/main_integrated_simple.cpp` for UI and logic. No CMake updates required.
+
+
 ### **August 9, 2025** — Wavetable Sweep Fix and Stability Cleanup
 
 **Status**: 🟢 **COMPLETE**
