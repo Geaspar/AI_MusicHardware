@@ -2386,84 +2386,25 @@ int main(int argc, char* argv[]) {
     effectsTitle->setTextColor(Color(255, 255, 100));
     effectsScreen->addChild(std::move(effectsTitle));
 
-    // Single-slot, full-parameter editor (the processor currently applies at most one effect after the filter)
-    auto effectTypeLabel = std::make_unique<Label>("fx_type_label", "Effect Type");
-    effectTypeLabel->setPosition(50, 100);
-    effectTypeLabel->setSize(120, 22);
-    effectTypeLabel->setTextColor(Color(200, 200, 200));
-    effectsScreen->addChild(std::move(effectTypeLabel));
+    // Multi-slot Effects UI (per-slot Type, Bypass, Mix + 4 vertical sliders)
+    const int fxSlotCount = 6;
+    const int rowStartY = 150;   // shifted up by 10px for tighter placement
+    const int rowHeight = 140;   // taller rows for wider spacing
 
-    auto effectTypeDropdown = std::make_unique<DropdownMenu>("fx_type", "None");
-    effectTypeDropdown->setPosition(170, 96);
-    effectTypeDropdown->setSize(180, 28);
-    effectTypeDropdown->addItem("None");
-    for (const auto& typeName : AIMusicHardware::getAvailableEffects()) {
-        effectTypeDropdown->addItem(typeName);
-    }
+    // Per-slot state
+    std::vector<std::string> slotSelectedType(fxSlotCount, "None");
+    std::vector<float> slotMix(fxSlotCount, 0.5f);
+    std::vector<bool> slotEnabled(fxSlotCount, true);
 
-    // Bypass and Mix
-    auto bypassButton = std::make_unique<Button>("fx_bypass", "ON");
-    bypassButton->setPosition(370, 96);
-    bypassButton->setSize(50, 28);
-    bypassButton->setToggleMode(true);
-    bypassButton->setBackgroundColor(Color(50, 100, 50));
-    bypassButton->setTextColor(Color(255, 255, 255));
+    // Per-slot UI pointers
+    std::vector<DropdownMenu*> slotTypeDd(fxSlotCount, nullptr);
+    std::vector<Button*>       slotBypassBtn(fxSlotCount, nullptr);
+    std::vector<Slider*>       slotMixSlider(fxSlotCount, nullptr);
+    std::vector<Slider*>       slotV1Slider(fxSlotCount, nullptr);
+    std::vector<Slider*>       slotV2Slider(fxSlotCount, nullptr);
+    std::vector<Slider*>       slotV3Slider(fxSlotCount, nullptr);
+    std::vector<Slider*>       slotV4Slider(fxSlotCount, nullptr);
 
-    auto mixSlider = std::make_unique<Slider>("fx_mix", "Mix", 440, 90, 40, 40);
-    mixSlider->setOrientation(Slider::Orientation::Horizontal);
-    mixSlider->setPosition(440, 96);
-    mixSlider->setSize(180, 28);
-    mixSlider->setRange(0.0f, 1.0f);
-    mixSlider->setValue(0.5f);
-    mixSlider->setValueFormatter([](float v) {
-        std::stringstream ss; ss << "Mix " << std::fixed << std::setprecision(0) << (v*100.0f) << "%"; return ss.str();
-    });
-
-    // Parameter area labels and sliders (3 generic params mapped per effect type)
-    auto p1Label = std::make_unique<Label>("fx_p1_label", "Param 1");
-    p1Label->setPosition(50, 160);
-    p1Label->setSize(180, 22);
-    p1Label->setTextColor(Color(200, 200, 200));
-    auto p1Slider = std::make_unique<Slider>("fx_p1", "", 240, 150, 40, 40);
-    p1Slider->setOrientation(Slider::Orientation::Horizontal);
-    p1Slider->setPosition(240, 156);
-    p1Slider->setSize(380, 28);
-
-    auto p2Label = std::make_unique<Label>("fx_p2_label", "Param 2");
-    p2Label->setPosition(50, 210);
-    p2Label->setSize(180, 22);
-    p2Label->setTextColor(Color(200, 200, 200));
-    auto p2Slider = std::make_unique<Slider>("fx_p2", "", 240, 200, 40, 40);
-    p2Slider->setOrientation(Slider::Orientation::Horizontal);
-    p2Slider->setPosition(240, 206);
-    p2Slider->setSize(380, 28);
-
-    auto p3Label = std::make_unique<Label>("fx_p3_label", "Param 3");
-    p3Label->setPosition(50, 260);
-    p3Label->setSize(180, 22);
-    p3Label->setTextColor(Color(200, 200, 200));
-    auto p3Slider = std::make_unique<Slider>("fx_p3", "", 240, 250, 40, 40);
-    p3Slider->setOrientation(Slider::Orientation::Horizontal);
-    p3Slider->setPosition(240, 256);
-    p3Slider->setSize(380, 28);
-
-    // Capture raw pointers for callbacks
-    auto effectTypeDropdownPtr = effectTypeDropdown.get();
-    auto bypassButtonPtr = bypassButton.get();
-    auto mixSliderPtr = mixSlider.get();
-    auto p1LabelPtr = p1Label.get();
-    auto p2LabelPtr = p2Label.get();
-    auto p3LabelPtr = p3Label.get();
-    auto p1SliderPtr = p1Slider.get();
-    auto p2SliderPtr = p2Slider.get();
-    auto p3SliderPtr = p3Slider.get();
-
-    // Persist values per effect type so parameters don't reset/disappear on change
-    std::unordered_map<std::string, std::unordered_map<std::string, float>> effectValueCache;
-    std::unordered_map<std::string, float> effectMixCache;
-    std::unordered_map<std::string, bool> effectEnabledCache; // true => ON (not bypassed)
-
-    // Helper to set mix or wet/dry depending on effect
     auto setEffectMix = [&](Effect* fx, const std::string& type, float mixVal) {
         if (!fx) return;
         if (type == "Reverb") {
@@ -2474,269 +2415,212 @@ int main(int argc, char* argv[]) {
         }
     };
 
-    // Replace any existing post-filter effect with a new one
-    auto installEffect = [&](const std::string& type) {
+    auto createEffectWithDefaults = [&](const std::string& type) -> std::unique_ptr<Effect> {
+        auto fx = createEffectComplete(type, audioEngine->getSampleRate());
+        if (!fx) return nullptr;
+        if (type == "Reverb") {
+            fx->setParameter("roomSize", 0.7f);
+            fx->setParameter("damping", 0.3f);
+            fx->setParameter("wetLevel", 0.3f);
+            fx->setParameter("dryLevel", 0.7f);
+            fx->setParameter("width", 1.0f);
+        } else if (type == "Delay") {
+            fx->setParameter("delayTime", 0.35f);
+            fx->setParameter("feedback", 0.35f);
+            fx->setParameter("mix", 0.35f);
+        } else if (type == "Distortion") {
+            fx->setParameter("drive", 5.0f);
+            fx->setParameter("level", 0.5f);
+            fx->setParameter("tone", 0.5f);
+            fx->setParameter("mix", 0.6f);
+        } else if (type == "Phaser") {
+            fx->setParameter("rate", 0.5f);
+            fx->setParameter("depth", 0.5f);
+            fx->setParameter("feedback", 0.2f);
+            fx->setParameter("mix", 0.5f);
+        } else if (type == "EQ") {
+            fx->setParameter("lowGain", 0.0f);
+            fx->setParameter("midGain", 0.0f);
+            fx->setParameter("highGain", 0.0f);
+        } else if (type == "LowPassFilter") {
+            fx->setParameter("frequency", 8000.0f);
+            fx->setParameter("resonance", 1.0f);
+            fx->setParameter("mix", 1.0f);
+        }
+        return fx;
+    };
+
+    // Rebuild effects chain from slots
+    auto rebuildEffectsChain = [&]() {
         std::lock_guard<std::mutex> lock(audioMutex);
-        // Remove all effects after the first (slot 0 is the global filter)
+        // Remove all effects after the first (global filter)
         while (effectProcessor->getNumEffects() > 1) {
             effectProcessor->removeEffect(effectProcessor->getNumEffects() - 1);
         }
-        if (type == "None") return;
-        if (auto fx = createEffectComplete(type, audioEngine->getSampleRate())) {
-            // Set safe defaults per type
-            if (type == "Reverb") {
-                fx->setParameter("roomSize", 0.7f);
-                fx->setParameter("damping", 0.3f);
-                fx->setParameter("wetLevel", 0.3f);
-                fx->setParameter("dryLevel", 0.7f);
-                fx->setParameter("width", 1.0f);
-            } else if (type == "Delay") {
-                fx->setParameter("delayTime", 0.35f);
-                fx->setParameter("feedback", 0.35f);
-                fx->setParameter("mix", 0.35f);
-            } else if (type == "Distortion") {
-                fx->setParameter("drive", 5.0f);
-                fx->setParameter("level", 0.5f);
-                fx->setParameter("tone", 0.5f);
-                fx->setParameter("mix", 0.6f);
-            } else if (type == "Phaser") {
-                fx->setParameter("rate", 0.5f);
-                fx->setParameter("depth", 0.5f);
-                fx->setParameter("feedback", 0.2f);
-                fx->setParameter("mix", 0.5f);
-            } else if (type == "EQ") {
-                fx->setParameter("lowGain", 0.0f);
-                fx->setParameter("midGain", 0.0f);
-                fx->setParameter("highGain", 0.0f);
-            } else if (type == "LowPassFilter") {
-                fx->setParameter("frequency", 8000.0f);
-                fx->setParameter("resonance", 1.0f);
-                fx->setParameter("mix", 1.0f);
-            }
+        for (int s = 0; s < fxSlotCount; ++s) {
+            const std::string& type = slotSelectedType[s];
+            if (type == "None") continue;
+            auto fx = createEffectWithDefaults(type);
+            if (!fx) continue;
             effectProcessor->addEffect(std::move(fx));
-
-            // Apply cached values if available
-            auto* addedFx = effectProcessor->getNumEffects() > 1 ? effectProcessor->getEffect(1) : nullptr;
-            if (addedFx) {
-                if (effectValueCache.count(type)) {
-                    const auto& vals = effectValueCache[type];
-                    for (const auto& kv : vals) {
-                        addedFx->setParameter(kv.first, kv.second);
-                    }
-                }
-            }
+            // Apply mix/bypass
+            auto* added = effectProcessor->getEffect(effectProcessor->getNumEffects() - 1);
+            setEffectMix(added, type, slotEnabled[s] ? slotMix[s] : 0.0f);
         }
     };
 
-    // Map the three generic parameter sliders to actual effect parameters per type
-    auto configureParamSliders = [&](const std::string& type) {
-        // Helper: mark a param slot as unused but visible
-        auto unusedParam = [](Label* l, Slider* s) {
-            if (l) l->setText("N/A");
-            if (s) {
-                s->setValueChangeCallback(nullptr);
-                s->setValueFormatter(nullptr);
-                s->setRange(0.0f, 1.0f);
-                s->setValue(0.0f);
-                s->setEnabled(false);
+    // Helper: map slot index to effect instance in processor
+    auto getFxForSlot = [&]() -> std::function<Effect*(int)> {
+        return [&](int slotIndex) -> Effect* {
+            int countBefore = 0;
+            for (int i = 0; i < slotIndex; ++i) {
+                if (slotSelectedType[i] != "None") ++countBefore;
             }
-        };
-
-        auto* fx = effectProcessor->getNumEffects() > 1 ? effectProcessor->getEffect(1) : nullptr;
-        if (!fx) {
-            // Keep controls visible, just disable them temporarily
-            unusedParam(p1LabelPtr, p1SliderPtr);
-            unusedParam(p2LabelPtr, p2SliderPtr);
-            unusedParam(p3LabelPtr, p3SliderPtr);
-            return;
-        }
-
-        // Enable all by default
-        p1SliderPtr->setEnabled(true);
-        p2SliderPtr->setEnabled(true);
-        p3SliderPtr->setEnabled(true);
-
-        auto getCachedOr = [&](const std::string& paramName, float fallback) {
-            if (effectValueCache.count(type) && effectValueCache[type].count(paramName)) {
-                return effectValueCache[type][paramName];
+            size_t effectIndex = 1 + static_cast<size_t>(countBefore);
+            if (effectIndex < effectProcessor->getNumEffects()) {
+                return effectProcessor->getEffect(effectIndex);
             }
-            return fallback;
+            return nullptr;
         };
+    }();
 
-        // Reconfigure per type without blanking first to avoid flicker
-        if (type == "Reverb") {
-            p1LabelPtr->setText("Room Size");
-            p1SliderPtr->setValueChangeCallback(nullptr);
-            p1SliderPtr->setRange(0.0f, 1.0f);
-            p1SliderPtr->setValue(getCachedOr("roomSize", fx->getParameter("roomSize")));
-            p1SliderPtr->setValueChangeCallback([&, fx, type](float v){ fx->setParameter("roomSize", v); effectValueCache[type]["roomSize"] = v; });
+    // Build per-slot rows
+    for (int s = 0; s < fxSlotCount; ++s) {
+        int y = rowStartY + s * rowHeight;
 
-            p2LabelPtr->setText("Damping");
-            p2SliderPtr->setValueChangeCallback(nullptr);
-            p2SliderPtr->setRange(0.0f, 1.0f);
-            p2SliderPtr->setValue(getCachedOr("damping", fx->getParameter("damping")));
-            p2SliderPtr->setValueChangeCallback([&, fx, type](float v){ fx->setParameter("damping", v); effectValueCache[type]["damping"] = v; });
+        auto slotLabel = std::make_unique<Label>("fx_slot_label_" + std::to_string(s), "Slot " + std::to_string(s+1));
+        slotLabel->setPosition(50, y);
+        slotLabel->setSize(60, 20);
+        slotLabel->setTextColor(Color(180, 180, 180));
+        effectsScreen->addChild(std::move(slotLabel));
 
-            p3LabelPtr->setText("Width");
-            p3SliderPtr->setValueChangeCallback(nullptr);
-            p3SliderPtr->setRange(0.0f, 1.0f);
-            p3SliderPtr->setValue(getCachedOr("width", fx->getParameter("width")));
-            p3SliderPtr->setValueChangeCallback([&, fx, type](float v){ fx->setParameter("width", v); effectValueCache[type]["width"] = v; });
-        } else if (type == "Delay") {
-            p1LabelPtr->setText("Time (s)");
-            p1SliderPtr->setValueChangeCallback(nullptr);
-            p1SliderPtr->setRange(0.01f, 1.0f);
-            p1SliderPtr->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(2)<<v<<" s"; return ss.str();});
-            p1SliderPtr->setValue(getCachedOr("delayTime", fx->getParameter("delayTime")));
-            p1SliderPtr->setValueChangeCallback([&, fx, type](float v){ fx->setParameter("delayTime", v); effectValueCache[type]["delayTime"] = v; });
+        auto typeDd = std::make_unique<DropdownMenu>("fx_type_" + std::to_string(s), "None");
+        typeDd->setPosition(120, y-4);
+        typeDd->setSize(160, 28);
+        typeDd->addItem("None");
+        for (const auto& t : AIMusicHardware::getAvailableEffects()) typeDd->addItem(t);
+        slotTypeDd[s] = typeDd.get();
 
-            p2LabelPtr->setText("Feedback");
-            p2SliderPtr->setValueChangeCallback(nullptr);
-            p2SliderPtr->setRange(0.0f, 0.95f);
-            p2SliderPtr->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(0)<<v*100.0f<<"%"; return ss.str();});
-            p2SliderPtr->setValue(getCachedOr("feedback", fx->getParameter("feedback")));
-            p2SliderPtr->setValueChangeCallback([&, fx, type](float v){ fx->setParameter("feedback", v); effectValueCache[type]["feedback"] = v; });
+        auto bypassBtn = std::make_unique<Button>("fx_bypass_" + std::to_string(s), "ON");
+        bypassBtn->setPosition(290, y-4);
+        bypassBtn->setSize(50, 28);
+        bypassBtn->setToggleMode(true);
+        bypassBtn->setBackgroundColor(Color(50,100,50));
+        bypassBtn->setTextColor(Color(255,255,255));
+        slotBypassBtn[s] = bypassBtn.get();
 
-            // No third param for Delay in this view; keep it visible but disabled
-            unusedParam(p3LabelPtr, p3SliderPtr);
-        } else if (type == "Distortion") {
-            p1LabelPtr->setText("Drive");
-            p1SliderPtr->setValueChangeCallback(nullptr);
-            p1SliderPtr->setRange(0.0f, 10.0f);
-            p1SliderPtr->setValue(getCachedOr("drive", fx->getParameter("drive")));
-            p1SliderPtr->setValueChangeCallback([&, fx, type](float v){ fx->setParameter("drive", v); effectValueCache[type]["drive"] = v; });
+        auto mix = std::make_unique<Slider>("fx_mix_" + std::to_string(s), "Mix", 0,0,40,40);
+        mix->setOrientation(Slider::Orientation::Horizontal);
+        mix->setPosition(360, y - 10);
+        mix->setSize(260, 36);
+        mix->setRange(0.0f, 1.0f);
+        mix->setValue(slotMix[s]);
+        mix->setValueFormatter([](float v){ std::stringstream ss; ss<<"Mix "<<std::fixed<<std::setprecision(0)<<(v*100.0f)<<"%"; return ss.str();});
+        slotMixSlider[s] = mix.get();
 
-            p2LabelPtr->setText("Tone");
-            p2SliderPtr->setValueChangeCallback(nullptr);
-            p2SliderPtr->setRange(0.0f, 1.0f);
-            p2SliderPtr->setValue(getCachedOr("tone", fx->getParameter("tone")));
-            p2SliderPtr->setValueChangeCallback([&, fx, type](float v){ fx->setParameter("tone", v); effectValueCache[type]["tone"] = v; });
+        // Add four vertical sliders to the right of the mix slider (placeholders for per-slot params)
+        const int vBaseX = 660;
+        const int vSpacing = 80;  // wider spacing between vertical sliders
+        const int vWidth = 28;
+        const int vHeight = 120;
+        const int vY = y - 50;    // raise above row baseline
 
-            p3LabelPtr->setText("Level");
-            p3SliderPtr->setValueChangeCallback(nullptr);
-            p3SliderPtr->setRange(0.0f, 1.0f);
-            p3SliderPtr->setValue(getCachedOr("level", fx->getParameter("level")));
-            p3SliderPtr->setValueChangeCallback([&, fx, type](float v){ fx->setParameter("level", v); effectValueCache[type]["level"] = v; });
-        } else if (type == "Phaser") {
-            p1LabelPtr->setText("Rate (Hz)");
-            p1SliderPtr->setValueChangeCallback(nullptr);
-            p1SliderPtr->setRange(0.05f, 5.0f);
-            p1SliderPtr->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(2)<<v<<" Hz"; return ss.str();});
-            p1SliderPtr->setValue(getCachedOr("rate", fx->getParameter("rate")));
-            p1SliderPtr->setValueChangeCallback([&, fx, type](float v){ fx->setParameter("rate", v); effectValueCache[type]["rate"] = v; });
+        auto v1Label = std::make_unique<Label>("fx_v1_label_" + std::to_string(s), "Param 1");
+        v1Label->setPosition(vBaseX - 10, vY - 18);
+        v1Label->setSize(70, 16);
+        v1Label->setTextColor(Color(200, 200, 200));
+        effectsScreen->addChild(std::move(v1Label));
 
-            p2LabelPtr->setText("Depth");
-            p2SliderPtr->setValueChangeCallback(nullptr);
-            p2SliderPtr->setRange(0.0f, 1.0f);
-            p2SliderPtr->setValue(getCachedOr("depth", fx->getParameter("depth")));
-            p2SliderPtr->setValueChangeCallback([&, fx, type](float v){ fx->setParameter("depth", v); effectValueCache[type]["depth"] = v; });
+        auto v1 = std::make_unique<Slider>("fx_v1_" + std::to_string(s), "", 0, 0, vWidth, vHeight);
+        v1->setOrientation(Slider::Orientation::Vertical);
+        v1->setPosition(vBaseX, vY);
+        v1->setSize(vWidth, vHeight);
+        v1->setRange(0.0f, 1.0f);
+        v1->setValue(0.0f);
+        v1->setShowValue(false);
+        slotV1Slider[s] = v1.get();
 
-            p3LabelPtr->setText("Feedback");
-            p3SliderPtr->setValueChangeCallback(nullptr);
-            p3SliderPtr->setRange(0.0f, 0.9f);
-            p3SliderPtr->setValue(getCachedOr("feedback", fx->getParameter("feedback")));
-            p3SliderPtr->setValueChangeCallback([&, fx, type](float v){ fx->setParameter("feedback", v); effectValueCache[type]["feedback"] = v; });
-        } else if (type == "EQ") {
-            p1LabelPtr->setText("Low Gain (dB)");
-            p1SliderPtr->setValueChangeCallback(nullptr);
-            p1SliderPtr->setRange(-12.0f, 12.0f);
-            p1SliderPtr->setValue(getCachedOr("lowGain", fx->getParameter("lowGain")));
-            p1SliderPtr->setValueChangeCallback([&, fx, type](float v){ fx->setParameter("lowGain", v); effectValueCache[type]["lowGain"] = v; });
+        auto v2Label = std::make_unique<Label>("fx_v2_label_" + std::to_string(s), "Param 2");
+        v2Label->setPosition(vBaseX + vSpacing - 10, vY - 18);
+        v2Label->setSize(70, 16);
+        v2Label->setTextColor(Color(200, 200, 200));
+        effectsScreen->addChild(std::move(v2Label));
 
-            p2LabelPtr->setText("Mid Gain (dB)");
-            p2SliderPtr->setValueChangeCallback(nullptr);
-            p2SliderPtr->setRange(-12.0f, 12.0f);
-            p2SliderPtr->setValue(getCachedOr("midGain", fx->getParameter("midGain")));
-            p2SliderPtr->setValueChangeCallback([&, fx, type](float v){ fx->setParameter("midGain", v); effectValueCache[type]["midGain"] = v; });
+        auto v2 = std::make_unique<Slider>("fx_v2_" + std::to_string(s), "", 0, 0, vWidth, vHeight);
+        v2->setOrientation(Slider::Orientation::Vertical);
+        v2->setPosition(vBaseX + vSpacing, vY);
+        v2->setSize(vWidth, vHeight);
+        v2->setRange(0.0f, 1.0f);
+        v2->setValue(0.0f);
+        v2->setShowValue(false);
+        slotV2Slider[s] = v2.get();
 
-            p3LabelPtr->setText("High Gain (dB)");
-            p3SliderPtr->setValueChangeCallback(nullptr);
-            p3SliderPtr->setRange(-12.0f, 12.0f);
-            p3SliderPtr->setValue(getCachedOr("highGain", fx->getParameter("highGain")));
-            p3SliderPtr->setValueChangeCallback([&, fx, type](float v){ fx->setParameter("highGain", v); effectValueCache[type]["highGain"] = v; });
-        } else if (type == "LowPassFilter") {
-            p1LabelPtr->setText("Cutoff (Hz)");
-            p1SliderPtr->setValueChangeCallback(nullptr);
-            p1SliderPtr->setRange(20.0f, 20000.0f);
-            p1SliderPtr->setValueFormatter([](float v){ std::stringstream ss; if (v>=1000.0f){ ss<<std::fixed<<std::setprecision(1)<<v/1000.0f<<" kHz"; } else { ss<<std::fixed<<std::setprecision(0)<<v<<" Hz";} return ss.str();});
-            p1SliderPtr->setValue(getCachedOr("frequency", fx->getParameter("frequency")));
-            p1SliderPtr->setValueChangeCallback([&, fx, type](float v){ fx->setParameter("frequency", v); effectValueCache[type]["frequency"] = v; });
+        auto v3Label = std::make_unique<Label>("fx_v3_label_" + std::to_string(s), "Param 3");
+        v3Label->setPosition(vBaseX + 2*vSpacing - 10, vY - 18);
+        v3Label->setSize(70, 16);
+        v3Label->setTextColor(Color(200, 200, 200));
+        effectsScreen->addChild(std::move(v3Label));
 
-            p2LabelPtr->setText("Resonance");
-            p2SliderPtr->setValueChangeCallback(nullptr);
-            p2SliderPtr->setRange(0.7f, 5.0f);
-            p2SliderPtr->setValue(getCachedOr("resonance", fx->getParameter("resonance")));
-            p2SliderPtr->setValueChangeCallback([&, fx, type](float v){ fx->setParameter("resonance", v); effectValueCache[type]["resonance"] = v; });
+        auto v3 = std::make_unique<Slider>("fx_v3_" + std::to_string(s), "", 0, 0, vWidth, vHeight);
+        v3->setOrientation(Slider::Orientation::Vertical);
+        v3->setPosition(vBaseX + 2*vSpacing, vY);
+        v3->setSize(vWidth, vHeight);
+        v3->setRange(0.0f, 1.0f);
+        v3->setValue(0.0f);
+        v3->setShowValue(false);
+        slotV3Slider[s] = v3.get();
 
-            // No third param; keep visible but disabled
-            unusedParam(p3LabelPtr, p3SliderPtr);
-        } else {
-            // Unknown type; keep controls visible but disabled
-            unusedParam(p1LabelPtr, p1SliderPtr);
-            unusedParam(p2LabelPtr, p2SliderPtr);
-            unusedParam(p3LabelPtr, p3SliderPtr);
-        }
-    };
+        auto v4Label = std::make_unique<Label>("fx_v4_label_" + std::to_string(s), "Param 4");
+        v4Label->setPosition(vBaseX + 3*vSpacing - 10, vY - 18);
+        v4Label->setSize(70, 16);
+        v4Label->setTextColor(Color(200, 200, 200));
+        effectsScreen->addChild(std::move(v4Label));
 
-    // Wire up callbacks
-    effectTypeDropdown->setSelectionCallback([&](int index, const std::string& item){
-        std::cout << "Effects Tab: selecting type '" << item << "'" << std::endl;
-        installEffect(item);
-        // Set mix to cached value for this type (or keep current slider value)
-        auto* fx = effectProcessor->getNumEffects() > 1 ? effectProcessor->getEffect(1) : nullptr;
-        float targetMix = mixSliderPtr->getValue();
-        if (effectMixCache.count(item)) {
-            targetMix = effectMixCache[item];
-        }
-        // Update slider which will trigger its callback to set parameters
-        mixSliderPtr->setValue(targetMix);
+        auto v4 = std::make_unique<Slider>("fx_v4_" + std::to_string(s), "", 0, 0, vWidth, vHeight);
+        v4->setOrientation(Slider::Orientation::Vertical);
+        v4->setPosition(vBaseX + 3*vSpacing, vY);
+        v4->setSize(vWidth, vHeight);
+        v4->setRange(0.0f, 1.0f);
+        v4->setValue(0.0f);
+        v4->setShowValue(false);
+        slotV4Slider[s] = v4.get();
 
-        // Restore bypass/enabled state per type
-        bool enabled = true;
-        if (effectEnabledCache.count(item)) {
-            enabled = effectEnabledCache[item];
-        }
-        bypassButtonPtr->setText(enabled ? "ON" : "OFF");
-        bypassButtonPtr->setBackgroundColor(enabled ? Color(50, 100, 50) : Color(100, 50, 50));
-        if (fx) {
+        // Callbacks
+        typeDd->setSelectionCallback([&, s](int index, const std::string& item){
+            slotSelectedType[s] = item;
+            rebuildEffectsChain();
+            // Update current slot's mix/bypass visuals
+            slotMixSlider[s]->setValue(slotMix[s]);
+            slotBypassBtn[s]->setText(slotEnabled[s] ? "ON" : "OFF");
+            slotBypassBtn[s]->setBackgroundColor(slotEnabled[s] ? Color(50,100,50) : Color(100,50,50));
+        });
+
+        mix->setValueChangeCallback([&, s](float v){
             std::lock_guard<std::mutex> lock(audioMutex);
-            setEffectMix(fx, item, enabled ? targetMix : 0.0f);
-        }
-        configureParamSliders(item);
-    });
+            slotMix[s] = v;
+            const std::string type = slotSelectedType[s];
+            if (auto* fx = getFxForSlot(s)) setEffectMix(fx, type, slotEnabled[s] ? v : 0.0f);
+        });
 
-    mixSlider->setValueChangeCallback([&](float v){
-        std::lock_guard<std::mutex> lock(audioMutex);
-        auto* fx = effectProcessor->getNumEffects() > 1 ? effectProcessor->getEffect(1) : nullptr;
-        if (!fx) return;
-        std::string currentType = effectTypeDropdownPtr->getSelectedItem();
-        effectMixCache[currentType] = v;
-        setEffectMix(fx, currentType, v);
-    });
+        bypassBtn->setClickCallback([&, s](){
+            std::lock_guard<std::mutex> lock(audioMutex);
+            bool enabled = slotBypassBtn[s]->getText() == std::string("OFF");
+            slotEnabled[s] = enabled;
+            slotBypassBtn[s]->setText(enabled ? "ON" : "OFF");
+            slotBypassBtn[s]->setBackgroundColor(enabled ? Color(50,100,50) : Color(100,50,50));
+            const std::string type = slotSelectedType[s];
+            if (auto* fx = getFxForSlot(s)) setEffectMix(fx, type, enabled ? slotMix[s] : 0.0f);
+        });
 
-    bypassButton->setClickCallback([&](){
-        std::lock_guard<std::mutex> lock(audioMutex);
-        bool enabled = bypassButtonPtr->getText() == std::string("OFF");
-        bypassButtonPtr->setText(enabled ? "ON" : "OFF");
-        bypassButtonPtr->setBackgroundColor(enabled ? Color(50,100,50) : Color(100,50,50));
-        auto* fx = effectProcessor->getNumEffects() > 1 ? effectProcessor->getEffect(1) : nullptr;
-        if (!fx) return;
-        std::string currentType = effectTypeDropdownPtr->getSelectedItem();
-        float mixVal = enabled ? mixSliderPtr->getValue() : 0.0f;
-        effectEnabledCache[currentType] = enabled;
-        setEffectMix(fx, currentType, mixVal);
-    });
-
-    // Add controls to screen
-    effectsScreen->addChild(std::move(effectTypeDropdown));
-    effectsScreen->addChild(std::move(bypassButton));
-    effectsScreen->addChild(std::move(mixSlider));
-    effectsScreen->addChild(std::move(p1Label));
-    effectsScreen->addChild(std::move(p1Slider));
-    effectsScreen->addChild(std::move(p2Label));
-    effectsScreen->addChild(std::move(p2Slider));
-    effectsScreen->addChild(std::move(p3Label));
-    effectsScreen->addChild(std::move(p3Slider));
+        // Add to screen
+        effectsScreen->addChild(std::move(typeDd));
+        effectsScreen->addChild(std::move(bypassBtn));
+        effectsScreen->addChild(std::move(mix));
+        effectsScreen->addChild(std::move(v1));
+        effectsScreen->addChild(std::move(v2));
+        effectsScreen->addChild(std::move(v3));
+        effectsScreen->addChild(std::move(v4));
+    }
 
     uiContext->addScreen(std::move(effectsScreen));
     

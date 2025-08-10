@@ -332,6 +332,64 @@ Outcome: stable, real-time effect selection and editing from the UI without audi
   - `src/main_integrated_simple.cpp` for UI and logic. No CMake updates required.
 
 
+##### Step 1 — Multi-slot Effects UI Refactor: granular breakdown (to execute incrementally)
+
+- UI scaffolding
+  - Add constants for slot count (e.g., 6), row start Y, and row height.
+  - Add per-slot state containers: `slotSelectedType[]`, `slotMix[]`, `slotEnabled[]` with defaults.
+  - Add per-slot UI pointer containers: dropdown, bypass button, mix slider.
+  - Insert a loop to create one UI row per slot with positions and sizes.
+
+- Effect creation helpers
+  - Implement `createEffectWithDefaults(type)` to centralize safe defaults per effect type.
+  - Implement `setEffectMix(fx, type, mix)` that maps to wet/dry for Reverb and `mix` for general effects.
+
+- Chain rebuild and mapping
+  - Implement `rebuildEffectsChain()`:
+    - Lock audio mutex.
+    - Remove all effects beyond index 0 (reserve global filter).
+    - Iterate slots; for non-"None" types, create effect, add to chain, apply mix/bypass state.
+  - Implement `getFxForSlot(slot)` mapping:
+    - Count non-"None" slots before `slot`.
+    - Return `effectProcessor->getEffect(1 + countBefore)`; return `nullptr` if not present.
+
+- Wire per-slot callbacks
+  - Type dropdown `setSelectionCallback`:
+    - Update `slotSelectedType[slot]`.
+    - Call `rebuildEffectsChain()`.
+    - Refresh current slot UI (mix slider value and bypass button colors/text).
+  - Mix slider `setValueChangeCallback`:
+    - Update `slotMix[slot]`.
+    - Lock audio mutex and call `setEffectMix(getFxForSlot(slot), type, enabled ? mix : 0)`.
+  - Bypass button `setClickCallback` (toggle):
+    - Flip `slotEnabled[slot]`.
+    - Update button text and color; apply mix 0 or restore to slider value.
+
+- Visual polish (first pass)
+  - Ensure all rows align and fit within 1280×800; adjust column widths if needed.
+  - Add a small label per row: "Slot N" for clarity.
+
+- Compilation and smoke tests
+  - Build the project; fix any missing includes (e.g., `<vector>`, `<string>` if needed).
+  - Run `./build/bin/AIMusicHardwareIntegrated` and confirm:
+    - Selecting effect types in multiple slots populates the chain in order.
+    - Mix and bypass for each slot affect audio without crashes.
+    - Switching a slot to "None" removes that effect while preserving other slots.
+
+- Parameter controls (defer to Step 1b)
+  - Add per-slot parameter labels/sliders (2–3) after core UI stabilizes.
+  - Map parameters per effect with sensible ranges/formatters.
+  - Keep controls visible; disable if unused.
+
+- Persistence (defer to Step 1c)
+  - Add per-slot, per-type caches for parameters, mix, and enabled.
+  - On type change, restore cached values; on edits, update caches.
+
+- Code cleanup
+  - Remove legacy single-slot editor variables and callbacks.
+  - Keep helper functions local to the Effects tab scope; avoid global state.
+
+
 ### **August 9, 2025** — Wavetable Sweep Fix and Stability Cleanup
 
 **Status**: 🟢 **COMPLETE**
