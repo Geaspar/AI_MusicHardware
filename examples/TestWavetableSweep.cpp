@@ -57,14 +57,21 @@ int main() {
     const int block_size = 64;
     int samples_processed = 0;
 
+    // Extend pitch bend range to cover wide sweep (e.g., 8 octaves)
+    if (auto* vm = synthesizer->getVoiceManager()) {
+        vm->setPitchBendRange(96.0f); // ±96 semitones
+    }
+
     synthesizer->noteOn(69, 1.0f);
 
     while (samples_processed < num_samples) {
         float progress = static_cast<float>(samples_processed) / num_samples;
         float current_freq = start_freq * pow(end_freq / start_freq, progress);
-        float pitch_bend = 12.0f * log2(current_freq / 440.0f);
+        float pitch_bend_semitones = 12.0f * log2(current_freq / 440.0f);
+        // Normalize to [-1, 1] based on configured range (±96 semitones)
+        float normalized_bend = pitch_bend_semitones / 96.0f;
 
-        synthesizer->setPitchBend(pitch_bend);
+        synthesizer->setPitchBend(normalized_bend);
 
         int samples_to_process = std::min(block_size, num_samples - samples_processed);
         synthesizer->process(audio_buffer.data() + (samples_processed * 2), samples_to_process);

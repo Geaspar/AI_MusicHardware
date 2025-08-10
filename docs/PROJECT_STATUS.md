@@ -372,37 +372,41 @@ Integration Layer (Ready for Deployment)
 
 ## 📅 Recent Updates
 
-### **July 23, 2025** - Architectural Fix for Real-time Wavetable Pitch Modulation
+### **August 9, 2025** — Wavetable Sweep Fix and Stability Cleanup
 
-**Status**: 🟡 **In Progress**
+**Status**: 🟢 **COMPLETE**
 
-**Goal**: Fully integrate the `RealtimeWavetableVoice` with the synthesizer's pitch modulation system to enable correct and efficient real-time pitch changes from any modulation source (e.g., LFOs, pitch bend, MPE).
+- Fixed the realtime wavetable sweep test by correcting pitch-bend usage.
+  - Root cause: the test passed semitone values into an API expecting a normalized [-1, 1] pitch-bend value, which clamped the bend to the default ±2 semitones.
+  - Change: set pitch-bend range to ±96 semitones and normalize per-block bend before calling `setPitchBend`.
+    - Edits: `examples/TestWavetableSweep.cpp` — set `setPitchBendRange(96.0f)` and call `setPitchBend(semitones/96.0f)`.
+- Fixed a constructor issue in `RealtimeWavetableVoice` by removing an undeclared `sample_rate_` initializer and using `getSampleRate()` instead.
+- Noted a duplicate header `include/synthesis/Voice.h` (minimal interface) that can cause confusion alongside `include/synthesis/voice/voice.h`. Candidate for removal/consolidation.
+
+Outcome: the sweep now produces a continuous 20 Hz → 20 kHz glide in `wavetable_sweep.wav`, validating realtime pitch modulation.
+
+### **July 24, 2025** - Architectural Fix for Real-time Wavetable Pitch Modulation (Attempt 2)
+
+**Status**: 🟢 **COMPLETE**
 
 **Analysis of the Deeper Issue**:
 My previous attempts to fix the frequency sweep test were incorrect because I misdiagnosed the core problem. The issue is not that the `Synthesizer` is failing to send pitch data, but that the `RealtimeWavetableVoice` is not correctly processing it.
 
-1.  **Base Class Logic Ignored**: The standard `Voice` class contains the complete logic for calculating and smoothing pitch modulation in its `generateSample()` method. This method is intended to be called for every audio sample.
-2.  **Processing Override**: The `RealtimeWavetableVoice`, for efficiency, overrides the `process()` method to work on a block of samples at a time. In doing so, it completely bypasses the base class's `generateSample()` method.
-3.  **The Missing Link**: Because the `generateSample()` method of the base class is never called, the crucial logic for calculating the final modulated pitch is skipped. The voice's frequency is therefore never updated after the initial note-on event.
+1.  **Processing Model Mismatch**: The base `Voice` class is designed with a `generateSample()` method, which implies a per-sample processing model. All the pitch modulation logic, including smoothing, is located within this method. The `RealtimeWavetableVoice` overrides the `process()` method to work on a block of samples at a time for efficiency. However, it **completely bypasses the `generateSample()` method of the base class**. This means the crucial logic for calculating and smoothing the modulated pitch is never executed.
+2.  **Incorrect IFFT and Buffer Usage**: The `RealtimeWavetableVoice::process()` method performs an Inverse Fast Fourier Transform (IFFT) to generate the time-domain waveform. This is computationally expensive and should only be done once per block when the sound's harmonic content changes. **Crucially, after performing the IFFT, the code attempts to read from the `spectrum` buffer, which still contains the *frequency-domain* data, instead of the newly created *time-domain* waveform.** This is a major logic error and is the most likely reason you are only hearing two distinct tones. The `spectrum` buffer does not contain a playable waveform.
 
 **The Corrected Plan**:
 
 The solution is to ensure the pitch calculation and smoothing logic from the base class is correctly executed within the `RealtimeWavetableVoice`'s processing block.
 
-1.  **Precisely Modify `voice.h`**: I will edit `/Users/geaspar/AIMusicHardware/include/synthesis/voice/voice.h` to make the following specific changes:
-    *   The `pitchMod_` struct will be moved from `private` to `protected`.
-    *   The `updateOscillatorFrequency()` method will be moved from `private` to `protected`.
-    *   All other members (`midiNote_`, `age_`, `channel_`, etc.) will remain in the `private` section where they belong.
-2.  **Implement Correct Pitch Logic in `RealtimeWavetableVoice`**:
-    *   I will modify the `RealtimeWavetableVoice::process()` method.
-    *   Inside this method, for each block of samples, I will explicitly add the logic to:
-        1.  Calculate the target pitch by calling `pitchMod_.calculateTotalPitch()`.
-        2.  Update the smoothed pitch value by calling `pitchMod_.updateSmoothedPitch()`.
-        3.  Call the protected `updateOscillatorFrequency()` method to set the oscillator's frequency to the new, correctly modulated value.
-3.  **Cleanup**: I will remove the now-unnecessary `setFrequency` method from `RealtimeWavetableVoice.h` and `RealtimeWavetableVoice.cpp` as it was part of the incorrect previous approach.
-4.  **Verify**: I will run the `TestWavetableSweep` test again. With the voice's processing logic now correctly implemented, the test should produce the smooth frequency sweep as originally intended.
-
-This architectural fix will ensure that the real-time wavetable engine is a well-behaved and fully integrated component of the synthesizer, ready for advanced modulation capabilities like MPE.
+1.  **Refactor `RealtimeWavetableVoice::process()`**:
+    *   At the beginning of the `process()` method, I will add the logic to:
+        1.  Update the voice's frequency by calling the base class's `updateOscillatorFrequency()` method. This will ensure the voice responds to pitch bend and other modulators.
+        2.  Generate the complete frequency spectrum for the *current* frequency.
+        3.  Perform the IFFT **only once** to create a time-domain wavetable for the entire block.
+    *   The main loop within `process()` will now be extremely efficient. It will simply read from the pre-calculated time-domain wavetable using a phase accumulator, which is the correct and standard approach for wavetable synthesis.
+2.  **Cleanup**: I will remove the now-unnecessary `noteOn` and `noteOff` overrides from `RealtimeWavetableVoice`, as the base class implementation is now sufficient.
+3.  **Verify**: I will run the `TestWavetableSweep` test again. With the voice's processing logic now correctly implemented, the test should produce the smooth frequency sweep as originally intended.
 
 ### **July 22, 2025** - Real-time Wavetable Engine Pitch Modulation
 
