@@ -1540,7 +1540,49 @@ int main(int argc, char* argv[]) {
         modDestDropdowns.push_back(std::move(destDropdown));
     }
     
-    // [Removed legacy single-screen effects chain UI in favor of Effects tab]
+    // Quick Effects access on Main screen (synced with Effects tab slots 1-3)
+    auto quickFxLabel = std::make_unique<Label>("quick_fx_label", "FX (Quick)");
+    quickFxLabel->setPosition(850, 570);
+    quickFxLabel->setSize(120, 20);
+    quickFxLabel->setTextColor(Color(100, 200, 200));
+    mainScreen->addChild(std::move(quickFxLabel));
+
+    const int quickFxStartY = 600;
+    const int quickFxSlotHeight = 35;
+    const int quickFxCount = 3;
+
+    // Create three main-page effect type dropdowns that mirror fx_type_0..2 on Effects screen
+    std::vector<std::unique_ptr<DropdownMenu>> mainEffectDropdowns;
+    mainEffectDropdowns.reserve(quickFxCount);
+
+    // Helper to find index of an effect name in the shared list ("None" + getAvailableEffects())
+    auto findEffectIndexByName = [] (const std::string& name) -> int {
+        if (name == "None") return 0;
+        const auto effects = AIMusicHardware::getAvailableEffects();
+        for (size_t i = 0; i < effects.size(); ++i) {
+            if (effects[i] == name) return static_cast<int>(i + 1);
+        }
+        return -1;
+    };
+
+    for (int i = 0; i < quickFxCount; ++i) {
+        int yPos = quickFxStartY + i * quickFxSlotHeight;
+        auto dd = std::make_unique<DropdownMenu>("effect_type_" + std::to_string(i), "Effect " + std::to_string(i + 1));
+        dd->setPosition(850, yPos);
+        dd->setSize(180, 25);
+        dd->addItem("None");
+        for (const auto& t : AIMusicHardware::getAvailableEffects()) dd->addItem(t);
+        dd->selectItem(0);
+        dd->setSelectionCallback([i, &uiContext](int index, const std::string& item){
+            // Proxy selection to Effects tab slot dropdown to keep a single source of truth
+            if (auto* effectsScreen = uiContext->getScreen("effects")) {
+                if (auto* fxDd = dynamic_cast<DropdownMenu*>(effectsScreen->getChild("fx_type_" + std::to_string(i)))) {
+                    fxDd->selectItem(index);
+                }
+            }
+        });
+        mainEffectDropdowns.push_back(std::move(dd));
+    }
     
     // Get pointers to visualization components for audio thread
     WaveformVisualizer* waveformPtr = 
@@ -1897,8 +1939,8 @@ int main(int argc, char* argv[]) {
         mainScreen->addChild(std::move(dropdown));
     }
     
-    // Add effect dropdowns
-    for (auto& dropdown : effectDropdowns) {
+    // Add main-screen quick FX dropdowns last for z-order
+    for (auto& dropdown : mainEffectDropdowns) {
         mainScreen->addChild(std::move(dropdown));
     }
 
@@ -2914,7 +2956,20 @@ int main(int argc, char* argv[]) {
                         }
                     }
 
-                    // [Removed legacy main-screen effect dropdown handling]
+                    // Main-screen quick FX dropdowns: handle open lists before other inputs
+                    if (!dropdownHandled) {
+                        for (int i = 2; i >= 0; --i) {
+                            if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("effect_type_" + std::to_string(i)))) {
+                                if (dropdown->isDropdownOpen()) {
+                                    dropdownHandled = dropdown->handleInput(inputEvent);
+                                    if (inputEvent.type == InputEventType::TouchPress && !dropdownHandled) {
+                                        dropdownHandled = true;
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
                     
                     // Modulation dropdowns
                     if (!dropdownHandled) {
@@ -3118,6 +3173,14 @@ int main(int argc, char* argv[]) {
             // Effects tab: effect type dropdowns (multi-slot)
             for (int i = 0; i < fxSlotCount; ++i) {
                 if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("fx_type_" + std::to_string(i)))) {
+                    if (dropdown->isDropdownOpen()) {
+                        dropdown->renderDropdownList(sdlDisplayManager.get());
+                    }
+                }
+            }
+            // Main-screen quick FX dropdowns
+            for (int i = 0; i < 3; ++i) {
+                if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("effect_type_" + std::to_string(i)))) {
                     if (dropdown->isDropdownOpen()) {
                         dropdown->renderDropdownList(sdlDisplayManager.get());
                     }
