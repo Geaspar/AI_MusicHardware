@@ -2686,13 +2686,14 @@ int main(int argc, char* argv[]) {
             configureSlotParams(s, item);
             // Mirror selection to main-screen quick FX dropdowns (first 3 slots)
             if (s < 3) {
-                // Avoid recursive loop by using the guards defined near main-screen quick FX setup
-                // Guards are captured by reference from outer scope if present; otherwise best-effort
-                extern std::vector<bool> suppressEffectsToMain; // not actually extern; workaround not viable here
-                // Instead, look up the dropdown and set selection directly on main screen (no guard available here)
-                if (auto* mainScreenPtr = uiContext->getScreen("main")) {
-                    if (auto* mainDd = dynamic_cast<DropdownMenu*>(mainScreenPtr->getChild("effect_type_" + std::to_string(s)))) {
-                        mainDd->selectItem(index);
+                // If this selection originated from the main screen, do not mirror back
+                if (!suppressMainToEffects[s]) {
+                    if (auto* mainScreenPtr = uiContext->getScreen("main")) {
+                        if (auto* mainDd = dynamic_cast<DropdownMenu*>(mainScreenPtr->getChild("effect_type_" + std::to_string(s)))) {
+                            suppressEffectsToMain[s] = true;
+                            mainDd->selectItem(index);
+                            suppressEffectsToMain[s] = false;
+                        }
                     }
                 }
             }
