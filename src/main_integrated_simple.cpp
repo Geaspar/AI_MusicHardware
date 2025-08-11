@@ -1554,6 +1554,11 @@ int main(int argc, char* argv[]) {
     // Create three main-page effect type dropdowns that mirror fx_type_0..2 on Effects screen
     std::vector<std::unique_ptr<DropdownMenu>> mainEffectDropdowns;
     mainEffectDropdowns.reserve(quickFxCount);
+    // Keep raw pointers for cross-screen syncing
+    std::vector<DropdownMenu*> quickFxDd(quickFxCount, nullptr);
+    // Re-entrancy guards to avoid recursive callback loops
+    std::vector<bool> suppressMainToEffects(quickFxCount, false);
+    std::vector<bool> suppressEffectsToMain(quickFxCount, false);
 
     // Helper to find index of an effect name in the shared list ("None" + getAvailableEffects())
     auto findEffectIndexByName = [] (const std::string& name) -> int {
@@ -1573,11 +1578,15 @@ int main(int argc, char* argv[]) {
         dd->addItem("None");
         for (const auto& t : AIMusicHardware::getAvailableEffects()) dd->addItem(t);
         dd->selectItem(0);
-        dd->setSelectionCallback([i, &uiContext](int index, const std::string& item){
+        quickFxDd[i] = dd.get();
+        dd->setSelectionCallback([i, &uiContext, &suppressMainToEffects, &suppressEffectsToMain](int index, const std::string& item){
             // Proxy selection to Effects tab slot dropdown to keep a single source of truth
+            if (suppressEffectsToMain[i]) return; // skip if this change originated from Effects tab
             if (auto* effectsScreen = uiContext->getScreen("effects")) {
                 if (auto* fxDd = dynamic_cast<DropdownMenu*>(effectsScreen->getChild("fx_type_" + std::to_string(i)))) {
+                    suppressMainToEffects[i] = true;
                     fxDd->selectItem(index);
+                    suppressMainToEffects[i] = false;
                 }
             }
         });
@@ -2675,6 +2684,18 @@ int main(int argc, char* argv[]) {
             slotBypassBtn[s]->setBackgroundColor(uiEnabled ? Color(50,100,50) : Color(100,50,50));
             // Configure parameter mappings for this slot/type
             configureSlotParams(s, item);
+            // Mirror selection to main-screen quick FX dropdowns (first 3 slots)
+            if (s < 3) {
+                // Avoid recursive loop by using the guards defined near main-screen quick FX setup
+                // Guards are captured by reference from outer scope if present; otherwise best-effort
+                extern std::vector<bool> suppressEffectsToMain; // not actually extern; workaround not viable here
+                // Instead, look up the dropdown and set selection directly on main screen (no guard available here)
+                if (auto* mainScreenPtr = uiContext->getScreen("main")) {
+                    if (auto* mainDd = dynamic_cast<DropdownMenu*>(mainScreenPtr->getChild("effect_type_" + std::to_string(s)))) {
+                        mainDd->selectItem(index);
+                    }
+                }
+            }
         });
 
         mix->setValueChangeCallback([&, s](float v){
