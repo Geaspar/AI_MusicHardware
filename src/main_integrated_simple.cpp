@@ -2325,6 +2325,12 @@ int main(int argc, char* argv[]) {
             fx->setParameter("frequency", 8000.0f);
             fx->setParameter("resonance", 1.0f);
             fx->setParameter("mix", 1.0f);
+        } else if (type == "Chorus") {
+            // Chorus implemented via Modulation effect
+            fx->setParameter("rate", 0.8f);
+            fx->setParameter("depth", 0.4f);
+            fx->setParameter("spread", 0.3f);
+            fx->setParameter("feedback", 0.0f);
         }
         return fx;
     };
@@ -2511,6 +2517,24 @@ int main(int argc, char* argv[]) {
             slotV2Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("resonance", v); slotParamCache[s][type]["resonance"] = v; } });
 
             disableParam(slotV3Label[s], slotV3Slider[s]);
+            disableParam(slotV4Label[s], slotV4Slider[s]);
+        } else if (type == "Chorus") {
+            // Chorus (Modulation) parameter mapping
+            if (slotV1Label[s]) slotV1Label[s]->setText("Rate (Hz)");
+            slotV1Slider[s]->setRange(0.1f, 5.0f);
+            slotV1Slider[s]->setValue(fx->getParameter("rate"));
+            slotV1Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("rate", v); slotParamCache[s][type]["rate"] = v; } });
+
+            if (slotV2Label[s]) slotV2Label[s]->setText("Depth");
+            slotV2Slider[s]->setRange(0.0f, 1.0f);
+            slotV2Slider[s]->setValue(fx->getParameter("depth"));
+            slotV2Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("depth", v); slotParamCache[s][type]["depth"] = v; } });
+
+            if (slotV3Label[s]) slotV3Label[s]->setText("Spread");
+            slotV3Slider[s]->setRange(0.0f, 1.0f);
+            slotV3Slider[s]->setValue(fx->getParameter("spread"));
+            slotV3Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("spread", v); slotParamCache[s][type]["spread"] = v; } });
+
             disableParam(slotV4Label[s], slotV4Slider[s]);
         } else {
             // Unknown: disable all

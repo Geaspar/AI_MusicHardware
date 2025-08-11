@@ -33,6 +33,10 @@ inline std::unique_ptr<Effect> createEffectComplete(const std::string& type, int
     else if (type == "Modulation") {
         return std::make_unique<Modulation>(sampleRate);
     }
+    else if (type == "Chorus") {
+        // Chorus is implemented by the Modulation effect with chorus defaults
+        return std::make_unique<Modulation>(sampleRate);
+    }
     else if (type == "LowPassFilter") {
         return std::make_unique<Filter>(sampleRate, Filter::Type::LowPass);
     }
@@ -71,6 +75,7 @@ inline std::vector<std::string> getAvailableEffects() {
         "Saturation",
         "BassBoost",
         "Modulation",
+        "Chorus",
         "LowPassFilter",
         "HighPassFilter",
         "BandPassFilter",
