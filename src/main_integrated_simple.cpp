@@ -1585,10 +1585,8 @@ int main(int argc, char* argv[]) {
             if (auto* effectsScreen = uiContext->getScreen("effects")) {
                 if (auto* fxDd = dynamic_cast<DropdownMenu*>(effectsScreen->getChild("fx_type_" + std::to_string(i)))) {
                     suppressMainToEffects[i] = true;
-                    // Silent mirror to avoid firing effects callback here; the main dropdown already reflects the change
-                    fxDd->selectItemSilently(index);
-                    // Manually invoke effects callback logic by simulating a user change is not needed; the chain logic
-                    // remains driven by effects tab when the user interacts there. Here we only mirror UI state.
+                    // Use normal selection so Effects tab callback runs to rebuild chain and configure parameters
+                    fxDd->selectItem(index);
                     suppressMainToEffects[i] = false;
                 }
             }
