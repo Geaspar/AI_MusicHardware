@@ -390,6 +390,43 @@ Outcome: stable, real-time effect selection and editing from the UI without audi
   - Keep helper functions local to the Effects tab scope; avoid global state.
 
 
+### **August 10, 2025** — Effects Tab Multi-slot UI Implementation (Step 1)
+
+**Status**: 🟢 COMPLETE (base multi-slot editor with interaction fixes)
+
+- **Multi-slot scaffolding (6 slots)**
+  - Added row layout per slot with Type dropdown, Bypass toggle, Mix slider, and 4 vertical parameter sliders labeled “Param 1–4”.
+  - Introduced per-slot state and UI pointers: selected type, mix, enabled, and controls.
+
+- **Effect helpers and chain management**
+  - Implemented `createEffectWithDefaults(type)` to instantiate effects with safe defaults.
+  - Implemented `setEffectMix(fx, type, mix)` to map Mix to wet/dry for Reverb and `mix` for others.
+  - Implemented `rebuildEffectsChain()` to authoritatively reconstruct the chain from slot states.
+  - Implemented `getFxForSlot(slot)` to map UI slots to the correct effect instance after rebuild.
+
+- **Parameter mapping per effect (vertical sliders)**
+  - Reverb: Room Size, Damping, Width (Param 4 disabled).
+  - Delay: Time (s), Feedback (Param 3–4 disabled).
+  - Distortion: Drive, Tone, Level (Param 4 disabled).
+  - Phaser: Rate (Hz), Depth, Feedback (Param 4 disabled).
+  - EQ: Low/Mid/High Gain (dB) (Param 4 disabled).
+  - LowPassFilter: Cutoff (Hz), Resonance (Param 3–4 disabled).
+  - Thread-safe UI→audio updates via shared audio mutex.
+
+- **Dropdown rendering and interaction fixes**
+  - Default-selected “None” for each dropdown so text is visible.
+  - Widened dropdowns and adjusted control positions to avoid overlapping the arrow.
+  - Rendered all slot dropdown lists on top (like main tab) to ensure visibility.
+  - Added pre-pass input handling for fx_type_[N..0] dropdowns (reverse order) to consume click events on open lists, preventing underlying dropdowns from toggling.
+
+- **Layout polish**
+  - Increased vertical spacing and adjusted row height; shrank vertical sliders and spread them horizontally to reduce overlap and improve legibility.
+  - Labeled vertical sliders clearly and positioned labels tightly.
+
+- **Result**
+  - Effects tab now supports a clear, multi-slot workflow with reliable dropdown interaction and per-effect parameter control. Lists render over other widgets, and clicks on open lists no longer trigger underlying controls.
+
+
 ### **August 9, 2025** — Wavetable Sweep Fix and Stability Cleanup
 
 **Status**: 🟢 **COMPLETE**
