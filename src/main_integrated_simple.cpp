@@ -348,6 +348,9 @@ int main(int argc, char* argv[]) {
     auto midiOutput = std::make_unique<MidiOutput>();
     auto midiHandler = std::make_unique<MidiHandler>();
     auto hardwareInterface = std::make_unique<HardwareInterface>();
+    // MIDI activity indicator state
+    std::atomic<bool> midiActivityPulse{false};
+    float midiActivityTimer = 0.0f; // seconds to keep the light on after a message
     
     // Initialize external MIDI input - but don't open any device yet
     std::cout << "\n=== Initializing External MIDI Controller Support ===" << std::endl;
@@ -1101,6 +1104,20 @@ int main(int argc, char* argv[]) {
     
     // Store pointer for potential external MIDI input display
     MidiKeyboard* midiKeyboardPtr = midiKeyboard.get();
+    // MIDI activity light UI on main screen (bottom left)
+    auto midiActivityLabel = std::make_unique<Label>("midi_activity_label", "MIDI");
+    midiActivityLabel->setPosition(50, 760);
+    midiActivityLabel->setSize(50, 20);
+    midiActivityLabel->setTextColor(Color(180, 180, 180));
+
+    auto midiActivityLight = std::make_unique<Button>("midi_activity_light", "");
+    midiActivityLight->setPosition(100, 755);
+    midiActivityLight->setSize(20, 20);
+    midiActivityLight->setBackgroundColor(Color(40, 60, 40)); // idle/dim state
+    midiActivityLight->setHighlightColor(Color(0, 200, 80));  // active/bright state
+    Button* midiActivityLightPtr = midiActivityLight.get();
+    mainScreen->addChild(std::move(midiActivityLabel));
+    mainScreen->addChild(std::move(midiActivityLight));
     mainScreen->addChild(std::move(midiKeyboard));
     
     // Add octave control buttons (positioned after keyboard ends)
@@ -2405,6 +2422,10 @@ int main(int argc, char* argv[]) {
     std::vector<Slider*>       slotV2Slider(fxSlotCount, nullptr);
     std::vector<Slider*>       slotV3Slider(fxSlotCount, nullptr);
     std::vector<Slider*>       slotV4Slider(fxSlotCount, nullptr);
+    std::vector<Label*>        slotV1Label(fxSlotCount, nullptr);
+    std::vector<Label*>        slotV2Label(fxSlotCount, nullptr);
+    std::vector<Label*>        slotV3Label(fxSlotCount, nullptr);
+    std::vector<Label*>        slotV4Label(fxSlotCount, nullptr);
 
     auto setEffectMix = [&](Effect* fx, const std::string& type, float mixVal) {
         if (!fx) return;
@@ -2485,6 +2506,149 @@ int main(int argc, char* argv[]) {
         };
     }();
 
+    // Helper to configure parameter sliders per slot and type
+    auto configureSlotParams = [&](int s, const std::string& type){
+        // Utility to disable a param slot
+        auto disableParam = [&](Label* l, Slider* sl){
+            if (l) l->setText("N/A");
+            if (sl) { sl->setEnabled(false); sl->setValueChangeCallback(nullptr); sl->setRange(0.0f, 1.0f); }
+        };
+
+        // Handle None selection
+        if (type == "None") {
+            disableParam(slotV1Label[s], slotV1Slider[s]);
+            disableParam(slotV2Label[s], slotV2Slider[s]);
+            disableParam(slotV3Label[s], slotV3Slider[s]);
+            disableParam(slotV4Label[s], slotV4Slider[s]);
+            return;
+        }
+
+        // Get effect for this slot
+        Effect* fx = getFxForSlot(s);
+        if (!fx) {
+            disableParam(slotV1Label[s], slotV1Slider[s]);
+            disableParam(slotV2Label[s], slotV2Slider[s]);
+            disableParam(slotV3Label[s], slotV3Slider[s]);
+            disableParam(slotV4Label[s], slotV4Slider[s]);
+            return;
+        }
+
+        // Enable all by default
+        if (slotV1Slider[s]) slotV1Slider[s]->setEnabled(true);
+        if (slotV2Slider[s]) slotV2Slider[s]->setEnabled(true);
+        if (slotV3Slider[s]) slotV3Slider[s]->setEnabled(true);
+        if (slotV4Slider[s]) slotV4Slider[s]->setEnabled(true);
+
+        // Clear callbacks before reassigning
+        if (slotV1Slider[s]) slotV1Slider[s]->setValueChangeCallback(nullptr);
+        if (slotV2Slider[s]) slotV2Slider[s]->setValueChangeCallback(nullptr);
+        if (slotV3Slider[s]) slotV3Slider[s]->setValueChangeCallback(nullptr);
+        if (slotV4Slider[s]) slotV4Slider[s]->setValueChangeCallback(nullptr);
+
+        // Mapping per type
+        if (type == "Reverb") {
+            if (slotV1Label[s]) slotV1Label[s]->setText("Room Size");
+            slotV1Slider[s]->setRange(0.0f, 1.0f);
+            slotV1Slider[s]->setValue(fx->getParameter("roomSize"));
+            slotV1Slider[s]->setValueChangeCallback([&, s](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) f->setParameter("roomSize", v); });
+
+            if (slotV2Label[s]) slotV2Label[s]->setText("Damping");
+            slotV2Slider[s]->setRange(0.0f, 1.0f);
+            slotV2Slider[s]->setValue(fx->getParameter("damping"));
+            slotV2Slider[s]->setValueChangeCallback([&, s](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) f->setParameter("damping", v); });
+
+            if (slotV3Label[s]) slotV3Label[s]->setText("Width");
+            slotV3Slider[s]->setRange(0.0f, 1.0f);
+            slotV3Slider[s]->setValue(fx->getParameter("width"));
+            slotV3Slider[s]->setValueChangeCallback([&, s](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) f->setParameter("width", v); });
+
+            disableParam(slotV4Label[s], slotV4Slider[s]);
+        } else if (type == "Delay") {
+            if (slotV1Label[s]) slotV1Label[s]->setText("Time (s)");
+            slotV1Slider[s]->setRange(0.01f, 1.0f);
+            slotV1Slider[s]->setValue(fx->getParameter("delayTime"));
+            slotV1Slider[s]->setValueChangeCallback([&, s](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) f->setParameter("delayTime", v); });
+
+            if (slotV2Label[s]) slotV2Label[s]->setText("Feedback");
+            slotV2Slider[s]->setRange(0.0f, 0.95f);
+            slotV2Slider[s]->setValue(fx->getParameter("feedback"));
+            slotV2Slider[s]->setValueChangeCallback([&, s](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) f->setParameter("feedback", v); });
+
+            disableParam(slotV3Label[s], slotV3Slider[s]);
+            disableParam(slotV4Label[s], slotV4Slider[s]);
+        } else if (type == "Distortion") {
+            if (slotV1Label[s]) slotV1Label[s]->setText("Drive");
+            slotV1Slider[s]->setRange(0.0f, 10.0f);
+            slotV1Slider[s]->setValue(fx->getParameter("drive"));
+            slotV1Slider[s]->setValueChangeCallback([&, s](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) f->setParameter("drive", v); });
+
+            if (slotV2Label[s]) slotV2Label[s]->setText("Tone");
+            slotV2Slider[s]->setRange(0.0f, 1.0f);
+            slotV2Slider[s]->setValue(fx->getParameter("tone"));
+            slotV2Slider[s]->setValueChangeCallback([&, s](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) f->setParameter("tone", v); });
+
+            if (slotV3Label[s]) slotV3Label[s]->setText("Level");
+            slotV3Slider[s]->setRange(0.0f, 1.0f);
+            slotV3Slider[s]->setValue(fx->getParameter("level"));
+            slotV3Slider[s]->setValueChangeCallback([&, s](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) f->setParameter("level", v); });
+
+            disableParam(slotV4Label[s], slotV4Slider[s]);
+        } else if (type == "Phaser") {
+            if (slotV1Label[s]) slotV1Label[s]->setText("Rate (Hz)");
+            slotV1Slider[s]->setRange(0.05f, 5.0f);
+            slotV1Slider[s]->setValue(fx->getParameter("rate"));
+            slotV1Slider[s]->setValueChangeCallback([&, s](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) f->setParameter("rate", v); });
+
+            if (slotV2Label[s]) slotV2Label[s]->setText("Depth");
+            slotV2Slider[s]->setRange(0.0f, 1.0f);
+            slotV2Slider[s]->setValue(fx->getParameter("depth"));
+            slotV2Slider[s]->setValueChangeCallback([&, s](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) f->setParameter("depth", v); });
+
+            if (slotV3Label[s]) slotV3Label[s]->setText("Feedback");
+            slotV3Slider[s]->setRange(0.0f, 0.9f);
+            slotV3Slider[s]->setValue(fx->getParameter("feedback"));
+            slotV3Slider[s]->setValueChangeCallback([&, s](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) f->setParameter("feedback", v); });
+
+            disableParam(slotV4Label[s], slotV4Slider[s]);
+        } else if (type == "EQ") {
+            if (slotV1Label[s]) slotV1Label[s]->setText("Low (dB)");
+            slotV1Slider[s]->setRange(-12.0f, 12.0f);
+            slotV1Slider[s]->setValue(fx->getParameter("lowGain"));
+            slotV1Slider[s]->setValueChangeCallback([&, s](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) f->setParameter("lowGain", v); });
+
+            if (slotV2Label[s]) slotV2Label[s]->setText("Mid (dB)");
+            slotV2Slider[s]->setRange(-12.0f, 12.0f);
+            slotV2Slider[s]->setValue(fx->getParameter("midGain"));
+            slotV2Slider[s]->setValueChangeCallback([&, s](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) f->setParameter("midGain", v); });
+
+            if (slotV3Label[s]) slotV3Label[s]->setText("High (dB)");
+            slotV3Slider[s]->setRange(-12.0f, 12.0f);
+            slotV3Slider[s]->setValue(fx->getParameter("highGain"));
+            slotV3Slider[s]->setValueChangeCallback([&, s](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) f->setParameter("highGain", v); });
+
+            disableParam(slotV4Label[s], slotV4Slider[s]);
+        } else if (type == "LowPassFilter") {
+            if (slotV1Label[s]) slotV1Label[s]->setText("Cutoff (Hz)");
+            slotV1Slider[s]->setRange(20.0f, 20000.0f);
+            slotV1Slider[s]->setValue(fx->getParameter("frequency"));
+            slotV1Slider[s]->setValueChangeCallback([&, s](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) f->setParameter("frequency", v); });
+
+            if (slotV2Label[s]) slotV2Label[s]->setText("Resonance");
+            slotV2Slider[s]->setRange(0.7f, 5.0f);
+            slotV2Slider[s]->setValue(fx->getParameter("resonance"));
+            slotV2Slider[s]->setValueChangeCallback([&, s](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) f->setParameter("resonance", v); });
+
+            disableParam(slotV3Label[s], slotV3Slider[s]);
+            disableParam(slotV4Label[s], slotV4Slider[s]);
+        } else {
+            // Unknown: disable all
+            disableParam(slotV1Label[s], slotV1Slider[s]);
+            disableParam(slotV2Label[s], slotV2Slider[s]);
+            disableParam(slotV3Label[s], slotV3Slider[s]);
+            disableParam(slotV4Label[s], slotV4Slider[s]);
+        }
+    };
+
     // Build per-slot rows
     for (int s = 0; s < fxSlotCount; ++s) {
         int y = rowStartY + s * rowHeight;
@@ -2497,13 +2661,16 @@ int main(int argc, char* argv[]) {
 
         auto typeDd = std::make_unique<DropdownMenu>("fx_type_" + std::to_string(s), "None");
         typeDd->setPosition(120, y-4);
-        typeDd->setSize(160, 28);
+        typeDd->setSize(200, 28); // wider to show text fully
         typeDd->addItem("None");
         for (const auto& t : AIMusicHardware::getAvailableEffects()) typeDd->addItem(t);
         slotTypeDd[s] = typeDd.get();
+        // Default to "None" selected so text is visible
+        typeDd->selectItem(0);
 
         auto bypassBtn = std::make_unique<Button>("fx_bypass_" + std::to_string(s), "ON");
-        bypassBtn->setPosition(290, y-4);
+        // Position bypass to the right of the dropdown to avoid overlapping the arrow
+        bypassBtn->setPosition(330, y-4);
         bypassBtn->setSize(50, 28);
         bypassBtn->setToggleMode(true);
         bypassBtn->setBackgroundColor(Color(50,100,50));
@@ -2520,7 +2687,7 @@ int main(int argc, char* argv[]) {
         slotMixSlider[s] = mix.get();
 
         // Add four vertical sliders to the right of the mix slider (placeholders for per-slot params)
-        const int vBaseX = 660;
+        const int vBaseX = 700;
         const int vSpacing = 90;  // wider spacing between vertical sliders
         const int vWidth = 26;
         const int vHeight = 110;
@@ -2530,6 +2697,7 @@ int main(int argc, char* argv[]) {
         v1Label->setPosition(vBaseX - 12, vY - 16);
         v1Label->setSize(70, 16);
         v1Label->setTextColor(Color(200, 200, 200));
+        slotV1Label[s] = v1Label.get();
         effectsScreen->addChild(std::move(v1Label));
 
         auto v1 = std::make_unique<Slider>("fx_v1_" + std::to_string(s), "", 0, 0, vWidth, vHeight);
@@ -2545,6 +2713,7 @@ int main(int argc, char* argv[]) {
         v2Label->setPosition(vBaseX + vSpacing - 12, vY - 16);
         v2Label->setSize(70, 16);
         v2Label->setTextColor(Color(200, 200, 200));
+        slotV2Label[s] = v2Label.get();
         effectsScreen->addChild(std::move(v2Label));
 
         auto v2 = std::make_unique<Slider>("fx_v2_" + std::to_string(s), "", 0, 0, vWidth, vHeight);
@@ -2560,6 +2729,7 @@ int main(int argc, char* argv[]) {
         v3Label->setPosition(vBaseX + 2*vSpacing - 12, vY - 16);
         v3Label->setSize(70, 16);
         v3Label->setTextColor(Color(200, 200, 200));
+        slotV3Label[s] = v3Label.get();
         effectsScreen->addChild(std::move(v3Label));
 
         auto v3 = std::make_unique<Slider>("fx_v3_" + std::to_string(s), "", 0, 0, vWidth, vHeight);
@@ -2575,6 +2745,7 @@ int main(int argc, char* argv[]) {
         v4Label->setPosition(vBaseX + 3*vSpacing - 12, vY - 16);
         v4Label->setSize(70, 16);
         v4Label->setTextColor(Color(200, 200, 200));
+        slotV4Label[s] = v4Label.get();
         effectsScreen->addChild(std::move(v4Label));
 
         auto v4 = std::make_unique<Slider>("fx_v4_" + std::to_string(s), "", 0, 0, vWidth, vHeight);
@@ -2602,6 +2773,8 @@ int main(int argc, char* argv[]) {
             slotMixSlider[s]->setValue(slotMix[s]);
             slotBypassBtn[s]->setText(slotEnabled[s] ? "ON" : "OFF");
             slotBypassBtn[s]->setBackgroundColor(slotEnabled[s] ? Color(50,100,50) : Color(100,50,50));
+            // Configure parameter mappings for this slot/type
+            configureSlotParams(s, item);
         });
 
         mix->setValueChangeCallback([&, s](float v){
@@ -2629,6 +2802,8 @@ int main(int argc, char* argv[]) {
         effectsScreen->addChild(std::move(v2));
         effectsScreen->addChild(std::move(v3));
         effectsScreen->addChild(std::move(v4));
+        // Initialize controls disabled for None, with N/A labels
+        configureSlotParams(s, slotSelectedType[s]);
     }
 
     uiContext->addScreen(std::move(effectsScreen));
@@ -2791,6 +2966,10 @@ int main(int argc, char* argv[]) {
     midiHandler->setControlChangeCallback([&](int channel, int ccNumber, int value) {
         ccLearning.getLearning().processMidiCC(channel, ccNumber, value, "MIDI Input");
     });
+    // Blink activity light on any MIDI message
+    midiHandler->setGenericCallback([&](const MidiMessage& /*message*/) {
+        midiActivityPulse.store(true, std::memory_order_relaxed);
+    });
     
     // Set up sequencer callbacks
     sequencer->setNoteCallbacks(
@@ -2877,13 +3056,16 @@ int main(int argc, char* argv[]) {
                         }
                     }
                     
-                    // Effects tab: main effect type dropdown
+                    // Effects tab: multi-slot effect type dropdowns (handle in reverse order)
                     if (!dropdownHandled) {
-                        if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("fx_type"))) {
-                            if (dropdown->isDropdownOpen()) {
-                                dropdownHandled = dropdown->handleInput(inputEvent);
-                                if (inputEvent.type == InputEventType::TouchPress && !dropdownHandled) {
-                                    dropdownHandled = true;
+                        for (int i = fxSlotCount - 1; i >= 0; --i) {
+                            if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("fx_type_" + std::to_string(i)))) {
+                                if (dropdown->isDropdownOpen()) {
+                                    dropdownHandled = dropdown->handleInput(inputEvent);
+                                    if (inputEvent.type == InputEventType::TouchPress && !dropdownHandled) {
+                                        dropdownHandled = true; // consume to avoid underlying toggles
+                                    }
+                                    break;
                                 }
                             }
                         }
@@ -2946,6 +3128,25 @@ int main(int argc, char* argv[]) {
         lastFrameTime = currentTime;
         
         uiContext->update(deltaTime);
+
+        // Update MIDI activity indicator
+        if (midiActivityPulse.exchange(false, std::memory_order_relaxed)) {
+            midiActivityTimer = 0.20f; // 200 ms blink on activity
+        }
+        if (midiActivityTimer > 0.0f) {
+            midiActivityTimer -= deltaTime;
+            if (auto* activeScreen = uiContext->getScreen("main")) {
+                if (auto* light = dynamic_cast<Button*>(activeScreen->getChild("midi_activity_light"))) {
+                    light->setBackgroundColor(Color(0, 200, 80));
+                }
+            }
+        } else {
+            if (auto* activeScreen = uiContext->getScreen("main")) {
+                if (auto* light = dynamic_cast<Button*>(activeScreen->getChild("midi_activity_light"))) {
+                    light->setBackgroundColor(Color(40, 60, 40));
+                }
+            }
+        }
         
         // Update performance info every second
         frameCount++;
@@ -3084,10 +3285,12 @@ int main(int argc, char* argv[]) {
                 }
             }
             
-            // Effects tab: effect type dropdown
-            if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("fx_type"))) {
-                if (dropdown->isDropdownOpen()) {
-                    dropdown->renderDropdownList(sdlDisplayManager.get());
+            // Effects tab: effect type dropdowns (multi-slot)
+            for (int i = 0; i < fxSlotCount; ++i) {
+                if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("fx_type_" + std::to_string(i)))) {
+                    if (dropdown->isDropdownOpen()) {
+                        dropdown->renderDropdownList(sdlDisplayManager.get());
+                    }
                 }
             }
 

@@ -253,6 +253,16 @@ Integration Layer (Ready for Deployment)
 
 ## 📅 Recent Updates
 
+### **August 10, 2025** — MIDI Activity Indicator and External MIDI Hookup
+
+**Status**: 🟢 **COMPLETE**
+
+- Added a MIDI activity indicator on the main screen (bottom-left) that briefly lights up on any incoming MIDI message.
+- Hooked `MidiInput` to `MidiHandler` with a generic callback to trigger the indicator safely from the UI thread.
+- Confirmed external MIDI input handling: device dropdown on the main screen opens the selected device and sets callbacks; accepts Note On/Off and CC.
+- External MIDI notes update the on-screen keyboard state; CC messages are routed to the CC Learning subsystem.
+- `HAVE_RTMIDI` already enabled via CMake; no build system changes required.
+
 ### **August 10, 2025** — Effects Tab UI and Audio-Thread Safety
 
 **Status**: 🟢 **COMPLETE**
