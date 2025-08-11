@@ -46,6 +46,20 @@ std::string DropdownMenu::getSelectedItem() const {
     return "";
 }
 
+void DropdownMenu::selectItemSilently(int index) {
+    if (index >= 0 && index < static_cast<int>(items_.size())) {
+        selectedIndex_ = index;
+        // Do not call selectionCallback_
+    }
+}
+
+void DropdownMenu::selectItemSilently(const std::string& item) {
+    auto it = std::find(items_.begin(), items_.end(), item);
+    if (it != items_.end()) {
+        selectItemSilently(static_cast<int>(std::distance(items_.begin(), it)));
+    }
+}
+
 void DropdownMenu::update(float deltaTime) {
     // Could add animations here
 }

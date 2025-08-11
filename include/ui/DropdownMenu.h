@@ -20,6 +20,9 @@ public:
     // Selection
     void selectItem(int index);
     void selectItem(const std::string& item);
+    // Silent selection (does not fire selectionCallback_)
+    void selectItemSilently(int index);
+    void selectItemSilently(const std::string& item);
     int getSelectedIndex() const { return selectedIndex_; }
     std::string getSelectedItem() const;
     
