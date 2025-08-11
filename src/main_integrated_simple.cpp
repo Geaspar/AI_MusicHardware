@@ -2832,6 +2832,13 @@ int main(int argc, char* argv[]) {
         effectsScreen->addChild(std::move(v4));
         // Initialize controls disabled for None, with N/A labels
         configureSlotParams(s, slotSelectedType[s]);
+        bool enableControlsInit = (slotSelectedType[s] != std::string("None"));
+        slotMixSlider[s]->setEnabled(enableControlsInit);
+        slotBypassBtn[s]->setEnabled(enableControlsInit);
+        if (slotV1Slider[s]) slotV1Slider[s]->setEnabled(enableControlsInit);
+        if (slotV2Slider[s]) slotV2Slider[s]->setEnabled(enableControlsInit);
+        if (slotV3Slider[s]) slotV3Slider[s]->setEnabled(enableControlsInit);
+        if (slotV4Slider[s]) slotV4Slider[s]->setEnabled(enableControlsInit);
     }
 
     uiContext->addScreen(std::move(effectsScreen));
