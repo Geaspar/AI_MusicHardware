@@ -2414,6 +2414,13 @@ int main(int argc, char* argv[]) {
     std::vector<float> slotMix(fxSlotCount, 0.5f);
     std::vector<bool> slotEnabled(fxSlotCount, true);
 
+    // Per-slot, per-type caches (persistence across type switches)
+    // slotParamCache[slot][type][paramName] = value
+    std::vector<std::unordered_map<std::string, std::unordered_map<std::string, float>>> slotParamCache(fxSlotCount);
+    // Mix and enabled caches per slot/type
+    std::vector<std::unordered_map<std::string, float>> slotMixCache(fxSlotCount);
+    std::vector<std::unordered_map<std::string, bool>>  slotEnabledCache(fxSlotCount);
+
     // Per-slot UI pointers
     std::vector<DropdownMenu*> slotTypeDd(fxSlotCount, nullptr);
     std::vector<Button*>       slotBypassBtn(fxSlotCount, nullptr);
@@ -2487,7 +2494,22 @@ int main(int argc, char* argv[]) {
             effectProcessor->addEffect(std::move(fx));
             // Apply mix/bypass
             auto* added = effectProcessor->getEffect(effectProcessor->getNumEffects() - 1);
-            setEffectMix(added, type, slotEnabled[s] ? slotMix[s] : 0.0f);
+            // Apply cached parameters if present
+            if (slotParamCache[s].count(type)) {
+                for (const auto& kv : slotParamCache[s][type]) {
+                    added->setParameter(kv.first, kv.second);
+                }
+            }
+            // Determine enabled and mix from caches if available, else current vectors
+            bool enabledForType = slotEnabled[s];
+            if (slotEnabledCache[s].count(type)) {
+                enabledForType = slotEnabledCache[s][type];
+            }
+            float mixForType = slotMix[s];
+            if (slotMixCache[s].count(type)) {
+                mixForType = slotMixCache[s][type];
+            }
+            setEffectMix(added, type, enabledForType ? mixForType : 0.0f);
         }
     };
 
@@ -2550,29 +2572,29 @@ int main(int argc, char* argv[]) {
             if (slotV1Label[s]) slotV1Label[s]->setText("Room Size");
             slotV1Slider[s]->setRange(0.0f, 1.0f);
             slotV1Slider[s]->setValue(fx->getParameter("roomSize"));
-            slotV1Slider[s]->setValueChangeCallback([&, s](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) f->setParameter("roomSize", v); });
+            slotV1Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("roomSize", v); slotParamCache[s][type]["roomSize"] = v; } });
 
             if (slotV2Label[s]) slotV2Label[s]->setText("Damping");
             slotV2Slider[s]->setRange(0.0f, 1.0f);
             slotV2Slider[s]->setValue(fx->getParameter("damping"));
-            slotV2Slider[s]->setValueChangeCallback([&, s](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) f->setParameter("damping", v); });
+            slotV2Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("damping", v); slotParamCache[s][type]["damping"] = v; } });
 
             if (slotV3Label[s]) slotV3Label[s]->setText("Width");
             slotV3Slider[s]->setRange(0.0f, 1.0f);
             slotV3Slider[s]->setValue(fx->getParameter("width"));
-            slotV3Slider[s]->setValueChangeCallback([&, s](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) f->setParameter("width", v); });
+            slotV3Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("width", v); slotParamCache[s][type]["width"] = v; } });
 
             disableParam(slotV4Label[s], slotV4Slider[s]);
         } else if (type == "Delay") {
             if (slotV1Label[s]) slotV1Label[s]->setText("Time (s)");
             slotV1Slider[s]->setRange(0.01f, 1.0f);
             slotV1Slider[s]->setValue(fx->getParameter("delayTime"));
-            slotV1Slider[s]->setValueChangeCallback([&, s](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) f->setParameter("delayTime", v); });
+            slotV1Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("delayTime", v); slotParamCache[s][type]["delayTime"] = v; } });
 
             if (slotV2Label[s]) slotV2Label[s]->setText("Feedback");
             slotV2Slider[s]->setRange(0.0f, 0.95f);
             slotV2Slider[s]->setValue(fx->getParameter("feedback"));
-            slotV2Slider[s]->setValueChangeCallback([&, s](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) f->setParameter("feedback", v); });
+            slotV2Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("feedback", v); slotParamCache[s][type]["feedback"] = v; } });
 
             disableParam(slotV3Label[s], slotV3Slider[s]);
             disableParam(slotV4Label[s], slotV4Slider[s]);
@@ -2580,63 +2602,63 @@ int main(int argc, char* argv[]) {
             if (slotV1Label[s]) slotV1Label[s]->setText("Drive");
             slotV1Slider[s]->setRange(0.0f, 10.0f);
             slotV1Slider[s]->setValue(fx->getParameter("drive"));
-            slotV1Slider[s]->setValueChangeCallback([&, s](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) f->setParameter("drive", v); });
+            slotV1Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("drive", v); slotParamCache[s][type]["drive"] = v; } });
 
             if (slotV2Label[s]) slotV2Label[s]->setText("Tone");
             slotV2Slider[s]->setRange(0.0f, 1.0f);
             slotV2Slider[s]->setValue(fx->getParameter("tone"));
-            slotV2Slider[s]->setValueChangeCallback([&, s](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) f->setParameter("tone", v); });
+            slotV2Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("tone", v); slotParamCache[s][type]["tone"] = v; } });
 
             if (slotV3Label[s]) slotV3Label[s]->setText("Level");
             slotV3Slider[s]->setRange(0.0f, 1.0f);
             slotV3Slider[s]->setValue(fx->getParameter("level"));
-            slotV3Slider[s]->setValueChangeCallback([&, s](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) f->setParameter("level", v); });
+            slotV3Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("level", v); slotParamCache[s][type]["level"] = v; } });
 
             disableParam(slotV4Label[s], slotV4Slider[s]);
         } else if (type == "Phaser") {
             if (slotV1Label[s]) slotV1Label[s]->setText("Rate (Hz)");
             slotV1Slider[s]->setRange(0.05f, 5.0f);
             slotV1Slider[s]->setValue(fx->getParameter("rate"));
-            slotV1Slider[s]->setValueChangeCallback([&, s](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) f->setParameter("rate", v); });
+            slotV1Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("rate", v); slotParamCache[s][type]["rate"] = v; } });
 
             if (slotV2Label[s]) slotV2Label[s]->setText("Depth");
             slotV2Slider[s]->setRange(0.0f, 1.0f);
             slotV2Slider[s]->setValue(fx->getParameter("depth"));
-            slotV2Slider[s]->setValueChangeCallback([&, s](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) f->setParameter("depth", v); });
+            slotV2Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("depth", v); slotParamCache[s][type]["depth"] = v; } });
 
             if (slotV3Label[s]) slotV3Label[s]->setText("Feedback");
             slotV3Slider[s]->setRange(0.0f, 0.9f);
             slotV3Slider[s]->setValue(fx->getParameter("feedback"));
-            slotV3Slider[s]->setValueChangeCallback([&, s](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) f->setParameter("feedback", v); });
+            slotV3Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("feedback", v); slotParamCache[s][type]["feedback"] = v; } });
 
             disableParam(slotV4Label[s], slotV4Slider[s]);
         } else if (type == "EQ") {
             if (slotV1Label[s]) slotV1Label[s]->setText("Low (dB)");
             slotV1Slider[s]->setRange(-12.0f, 12.0f);
             slotV1Slider[s]->setValue(fx->getParameter("lowGain"));
-            slotV1Slider[s]->setValueChangeCallback([&, s](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) f->setParameter("lowGain", v); });
+            slotV1Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("lowGain", v); slotParamCache[s][type]["lowGain"] = v; } });
 
             if (slotV2Label[s]) slotV2Label[s]->setText("Mid (dB)");
             slotV2Slider[s]->setRange(-12.0f, 12.0f);
             slotV2Slider[s]->setValue(fx->getParameter("midGain"));
-            slotV2Slider[s]->setValueChangeCallback([&, s](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) f->setParameter("midGain", v); });
+            slotV2Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("midGain", v); slotParamCache[s][type]["midGain"] = v; } });
 
             if (slotV3Label[s]) slotV3Label[s]->setText("High (dB)");
             slotV3Slider[s]->setRange(-12.0f, 12.0f);
             slotV3Slider[s]->setValue(fx->getParameter("highGain"));
-            slotV3Slider[s]->setValueChangeCallback([&, s](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) f->setParameter("highGain", v); });
+            slotV3Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("highGain", v); slotParamCache[s][type]["highGain"] = v; } });
 
             disableParam(slotV4Label[s], slotV4Slider[s]);
         } else if (type == "LowPassFilter") {
             if (slotV1Label[s]) slotV1Label[s]->setText("Cutoff (Hz)");
             slotV1Slider[s]->setRange(20.0f, 20000.0f);
             slotV1Slider[s]->setValue(fx->getParameter("frequency"));
-            slotV1Slider[s]->setValueChangeCallback([&, s](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) f->setParameter("frequency", v); });
+            slotV1Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("frequency", v); slotParamCache[s][type]["frequency"] = v; } });
 
             if (slotV2Label[s]) slotV2Label[s]->setText("Resonance");
             slotV2Slider[s]->setRange(0.7f, 5.0f);
             slotV2Slider[s]->setValue(fx->getParameter("resonance"));
-            slotV2Slider[s]->setValueChangeCallback([&, s](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) f->setParameter("resonance", v); });
+            slotV2Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("resonance", v); slotParamCache[s][type]["resonance"] = v; } });
 
             disableParam(slotV3Label[s], slotV3Slider[s]);
             disableParam(slotV4Label[s], slotV4Slider[s]);
@@ -2769,10 +2791,14 @@ int main(int argc, char* argv[]) {
             if (slotV2Slider[s]) slotV2Slider[s]->setEnabled(enableControls);
             if (slotV3Slider[s]) slotV3Slider[s]->setEnabled(enableControls);
             if (slotV4Slider[s]) slotV4Slider[s]->setEnabled(enableControls);
-            // Update current slot's mix/bypass visuals
-            slotMixSlider[s]->setValue(slotMix[s]);
-            slotBypassBtn[s]->setText(slotEnabled[s] ? "ON" : "OFF");
-            slotBypassBtn[s]->setBackgroundColor(slotEnabled[s] ? Color(50,100,50) : Color(100,50,50));
+            // Restore per-type cached mix/enabled UI if available
+            float uiMix = slotMix[s];
+            if (slotMixCache[s].count(item)) uiMix = slotMixCache[s][item];
+            slotMixSlider[s]->setValue(uiMix);
+            bool uiEnabled = slotEnabled[s];
+            if (slotEnabledCache[s].count(item)) uiEnabled = slotEnabledCache[s][item];
+            slotBypassBtn[s]->setText(uiEnabled ? "ON" : "OFF");
+            slotBypassBtn[s]->setBackgroundColor(uiEnabled ? Color(50,100,50) : Color(100,50,50));
             // Configure parameter mappings for this slot/type
             configureSlotParams(s, item);
         });
@@ -2781,6 +2807,7 @@ int main(int argc, char* argv[]) {
             std::lock_guard<std::mutex> lock(audioMutex);
             slotMix[s] = v;
             const std::string type = slotSelectedType[s];
+            slotMixCache[s][type] = v; // cache per-type mix
             if (auto* fx = getFxForSlot(s)) setEffectMix(fx, type, slotEnabled[s] ? v : 0.0f);
         });
 
@@ -2791,6 +2818,7 @@ int main(int argc, char* argv[]) {
             slotBypassBtn[s]->setText(enabled ? "ON" : "OFF");
             slotBypassBtn[s]->setBackgroundColor(enabled ? Color(50,100,50) : Color(100,50,50));
             const std::string type = slotSelectedType[s];
+            slotEnabledCache[s][type] = enabled; // cache per-type enabled
             if (auto* fx = getFxForSlot(s)) setEffectMix(fx, type, enabled ? slotMix[s] : 0.0f);
         });
 
