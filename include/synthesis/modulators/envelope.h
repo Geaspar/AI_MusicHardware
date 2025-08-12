@@ -37,6 +37,8 @@ public:
     void setDecay(float seconds);
     void setSustain(float level); // 0.0 - 1.0
     void setRelease(float seconds);
+    // Set a one-shot release time used for the next noteOff only
+    void setReleaseOverrideOnce(float seconds);
     
     // Parameter getters
     float getAttack() const { return attack_; }
@@ -67,6 +69,9 @@ private:
     float decay_;         // seconds
     float sustain_;       // level (0-1)
     float release_;       // seconds
+    // One-shot release override
+    bool releaseOverrideActive_ = false;
+    float releaseOverrideSeconds_ = 0.0f;
     
     float attackCurve_;   // curve shape (-1 to 1)
     float decayCurve_;    // curve shape (-1 to 1)
@@ -81,6 +86,7 @@ private:
     int sampleRate_;      // current sample rate
     
     float stageProgress_; // progress through current stage (0-1)
+    float releaseStartValue_; // value captured at noteOff() to release from actual level
 };
 
 } // namespace AIMusicHardware

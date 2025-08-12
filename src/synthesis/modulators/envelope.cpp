@@ -15,7 +15,8 @@ ModEnvelope::ModEnvelope(int sampleRate)
       value_(0.0f),
       currentStage_(Stage::Idle),
       sampleRate_(sampleRate),
-      stageProgress_(0.0f) {
+      stageProgress_(0.0f),
+      releaseStartValue_(0.0f) {
     updateRates();
 }
 
@@ -24,11 +25,24 @@ ModEnvelope::~ModEnvelope() {
 
 void ModEnvelope::noteOn() {
     stageProgress_ = 0.0f;
+    // Ensure rates reflect current base parameters for a fresh note
+    updateRates();
     currentStage_ = Stage::Attack;
 }
 
 void ModEnvelope::noteOff() {
     if (currentStage_ != Stage::Idle && currentStage_ != Stage::Killed) {
+        // Capture the current value so release decays from the actual level
+        releaseStartValue_ = value_;
+        // Apply one-shot release override if requested
+        if (releaseOverrideActive_) {
+            float originalRelease = release_;
+            release_ = releaseOverrideSeconds_;
+            updateRates();
+            // Revert base release after computing rates so future noteOns use the base value
+            release_ = originalRelease;
+            releaseOverrideActive_ = false;
+        }
         stageProgress_ = 0.0f;
         currentStage_ = Stage::Release;
     }
@@ -87,7 +101,7 @@ float ModEnvelope::generateValue() {
             } else {
                 // Apply curve to the linear release progression and scale from sustain level
                 float curvedProgress = applyCurve(stageProgress_, releaseCurve_);
-                value_ = sustain_ * (1.0f - curvedProgress);
+                value_ = releaseStartValue_ * (1.0f - curvedProgress);
             }
             break;
             
@@ -116,6 +130,11 @@ void ModEnvelope::setSustain(float level) {
 void ModEnvelope::setRelease(float seconds) {
     release_ = std::max(0.010f, seconds); // Minimum 10ms release to prevent clicks
     updateRates();
+}
+
+void ModEnvelope::setReleaseOverrideOnce(float seconds) {
+    releaseOverrideSeconds_ = std::max(0.010f, seconds);
+    releaseOverrideActive_ = true;
 }
 
 void ModEnvelope::setAttackCurve(float curve) {

@@ -68,9 +68,9 @@ void VoiceManager::noteOn(int midiNote, float velocity, int channel) {
     if (voice) {
         // If the voice is currently active (voice stealing), apply a quick fade
         if (voice->isActive()) {
-            // Force a very quick release to avoid clicks
+            // Apply a one-shot quick release to avoid clicks without altering base release
             if (auto* envelope = voice->getEnvelope()) {
-                envelope->setRelease(0.02f);  // 20ms quick fade
+                envelope->setReleaseOverrideOnce(0.02f);  // 20ms quick fade (one-shot)
                 voice->noteOff();
             }
         }
@@ -158,11 +158,19 @@ void VoiceManager::process(float* buffer, int numFrames) {
         }
     }
     
-    // Apply output gain based on active voice count
-    if (activeVoiceCount > 1) {
-        float gain = 1.0f / std::sqrt(static_cast<float>(activeVoiceCount));
-        for (int i = 0; i < numFrames * 2; ++i) {
-            buffer[i] *= gain;
+    // Gentle polyphony gain normalization: only count loud voices
+    {
+        int loudCount = 0;
+        for (auto& voice : voices_) {
+            if (voice->isActive() && voice->getCurrentAmplitude() > 0.05f) {
+                loudCount++;
+            }
+        }
+        if (loudCount > 1) {
+            float gain = 1.0f / std::sqrt(static_cast<float>(loudCount));
+            for (int i = 0; i < numFrames * 2; ++i) {
+                buffer[i] *= gain;
+            }
         }
     }
     

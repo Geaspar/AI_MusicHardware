@@ -482,13 +482,15 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     
-    // Add filter to the external effect processor
-    auto filter = std::make_unique<Filter>(audioEngine->getSampleRate(), Filter::Type::LowPass);
-    filter->setParameter("mix", 1.0f); // Full wet signal
-    filter->setParameter("frequency", 20000.0f); // Start with filter wide open
-    filter->setParameter("resonance", 1.0f); // Low resonance (0.7 + 0.1 * 9.3 ≈ 1.0)
-    effectProcessor->addEffect(std::move(filter));
-    std::cout << "Added low-pass filter to effect processor chain" << std::endl;
+    // Add a global low-pass filter to the external effect processor (will be kept at chain END)
+    {
+        auto filter = std::make_unique<Filter>(audioEngine->getSampleRate(), Filter::Type::LowPass);
+        filter->setParameter("mix", 1.0f); // Full wet signal
+        filter->setParameter("frequency", 20000.0f); // Start wide open
+        filter->setParameter("resonance", 1.0f); // Low resonance
+        effectProcessor->addEffect(std::move(filter));
+        std::cout << "Added global low-pass filter to effect processor (initial)" << std::endl;
+    }
     
     // Connect synthesizer to external effect processor so it can control the filter
     synthesizer->setExternalEffectProcessor(effectProcessor.get());
@@ -873,6 +875,8 @@ int main(int argc, char* argv[]) {
     volumeSlider->setThumbColor(Color(150, 200, 255));
     Slider* volumeSliderPtr = volumeSlider.get();
     mainScreen->addChild(std::move(volumeSlider));
+
+    // (Reset button will be added later, after MIDI indicator, for correct z-order)
     
     // Create LFO section with selector dropdown
     auto lfoSection = std::make_unique<Label>("lfo_section", "LFO");
@@ -1169,6 +1173,7 @@ int main(int argc, char* argv[]) {
     Button* midiActivityLightPtr = midiActivityLight.get();
     mainScreen->addChild(std::move(midiActivityLabel));
     mainScreen->addChild(std::move(midiActivityLight));
+    // (Reset button will be added near the end for top-most z-order)
     mainScreen->addChild(std::move(midiKeyboard));
     
     // Add octave control buttons (positioned after keyboard ends)
@@ -2113,6 +2118,70 @@ int main(int argc, char* argv[]) {
         mainScreen->addChild(std::move(dropdown));
     }
 
+    // Finally add Reset button to the right of MIDI indicator, ensure top-most among buttons
+    {
+        auto resetButton = std::make_unique<Button>("reset_params_btn", "Reset");
+        // Position relative to MIDI indicator: (100,755) -> place at (130, 748)
+        resetButton->setPosition(130, 748);
+        resetButton->setSize(100, 30);
+        resetButton->setBackgroundColor(Color(220, 40, 40)); // bright red for visibility
+        resetButton->setTextColor(Color(255, 255, 255));
+        // One-time log to confirm creation and placement
+        std::cout << "[UI] Adding reset button at (" << 130 << "," << 748
+                  << ") size (" << 100 << "x" << 30 << ")" << std::endl;
+        resetButton->setClickCallback([&, waveSliderPtr, cutoffSliderPtr, resSliderPtr,
+                                       attackSliderPtr, decaySliderPtr, sustainSliderPtr, releaseSliderPtr,
+                                       volumeSliderPtr, filterVizPtr, lfoRateSliderPtr, lfoDepthSliderPtr, lfoShapeSliderPtr, mainScreen = mainScreen.get()]() {
+            if (waveSliderPtr) waveSliderPtr->setValue(0.0f);
+            synthesizer->setParameter("oscillator_type", 0.0f);
+            if (cutoffSliderPtr) cutoffSliderPtr->setValue(1.0f);
+            if (resSliderPtr)    resSliderPtr->setValue(0.1f);
+            if (filterVizPtr) {
+                filterVizPtr->setCutoffFrequency(20000.0f);
+                filterVizPtr->setResonance(0.7f + 0.1f * 9.3f);
+            }
+            if (attackSliderPtr)  attackSliderPtr->setValue(0.02f);
+            if (decaySliderPtr)   decaySliderPtr->setValue(0.1f);
+            if (sustainSliderPtr) sustainSliderPtr->setValue(0.7f);
+            if (releaseSliderPtr) releaseSliderPtr->setValue(0.5f);
+            synthesizer->setParameter("envelope_attack", 0.02f);
+            synthesizer->setParameter("envelope_decay", 0.1f);
+            synthesizer->setParameter("envelope_sustain", 0.7f);
+            synthesizer->setParameter("envelope_release", 0.5f);
+            if (volumeSliderPtr)  volumeSliderPtr->setValue(0.75f);
+            synthesizer->setParameter("master_volume", 0.75f);
+            int lfoSelIndex = 0;
+            if (auto* dd = dynamic_cast<DropdownMenu*>(mainScreen->getChild("lfo_selector"))) {
+                lfoSelIndex = dd->getSelectedIndex();
+            }
+            auto applyLFO = [&](int idx, float rate, float depth, float shape){
+                if (auto* dd = dynamic_cast<DropdownMenu*>(mainScreen->getChild("lfo_selector"))) {
+                    dd->selectItem(idx);
+                }
+                if (lfoRateSliderPtr)  lfoRateSliderPtr->setValue(rate);
+                if (lfoDepthSliderPtr) lfoDepthSliderPtr->setValue(depth);
+                if (lfoShapeSliderPtr) lfoShapeSliderPtr->setValue(shape);
+                synthesizer->setParameter(idx == 0 ? "lfo1_rate"  : "lfo2_rate",  rate);
+                synthesizer->setParameter(idx == 0 ? "lfo1_depth" : "lfo2_depth", depth);
+                synthesizer->setParameter(idx == 0 ? "lfo1_shape" : "lfo2_shape", shape);
+            };
+            applyLFO(0, 1.0f, 1.0f, 0.0f);
+            applyLFO(1, 2.0f, 0.5f, 2.0f);
+            if (auto* dd = dynamic_cast<DropdownMenu*>(mainScreen->getChild("lfo_selector"))) {
+                dd->selectItem(std::max(0, std::min(1, lfoSelIndex)));
+            }
+            std::cout << "Reset: Synth parameters restored to defaults" << std::endl;
+        });
+        mainScreen->addChild(std::move(resetButton));
+        if (auto* rb = mainScreen->getChild("reset_params_btn")) {
+            std::cout << "[UI] Reset button added: visible="
+                      << (rb->isVisible() ? "true" : "false")
+                      << ", enabled=" << (rb->isEnabled() ? "true" : "false") << std::endl;
+        } else {
+            std::cout << "[UI] Reset button NOT found after addChild" << std::endl;
+        }
+    }
+
 
     // Add screen to context
     uiContext->addScreen(std::move(mainScreen));
@@ -2531,28 +2600,29 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // Rebuild effects chain from slots
+    // Rebuild effects chain from slots, keeping the GLOBAL FILTER at the END of the chain
     auto rebuildEffectsChain = [&]() {
         std::lock_guard<std::mutex> lock(audioMutex);
-        // Remove all effects after the first (global filter)
-        while (effectProcessor->getNumEffects() > 1) {
+
+        // Clear entire chain
+        while (effectProcessor->getNumEffects() > 0) {
             effectProcessor->removeEffect(effectProcessor->getNumEffects() - 1);
         }
+
+        // Re-add all user-selected effects in slot order
         for (int s = 0; s < fxSlotCount; ++s) {
             const std::string& type = slotSelectedType[s];
             if (type == "None") continue;
             auto fx = createEffectWithDefaults(type);
             if (!fx) continue;
             effectProcessor->addEffect(std::move(fx));
-            // Apply mix/bypass
+            // Apply parameters/mix/bypass
             auto* added = effectProcessor->getEffect(effectProcessor->getNumEffects() - 1);
-            // Apply cached parameters if present
             if (slotParamCache[s].count(type)) {
                 for (const auto& kv : slotParamCache[s][type]) {
                     added->setParameter(kv.first, kv.second);
                 }
             }
-            // Determine enabled and mix from caches if available, else current vectors
             bool enabledForType = slotEnabled[s];
             if (slotEnabledCache[s].count(type)) {
                 enabledForType = slotEnabledCache[s][type];
@@ -2563,18 +2633,41 @@ int main(int argc, char* argv[]) {
             }
             setEffectMix(added, type, enabledForType ? mixForType : 0.0f);
         }
+
+        // Append GLOBAL FILTER last
+        {
+            auto globalFilter = std::make_unique<Filter>(audioEngine->getSampleRate(), Filter::Type::LowPass);
+            globalFilter->setParameter("mix", 1.0f);
+            // Apply current synth base parameters for cutoff/resonance
+            float cutoffNorm = synthesizer->getParameter("filter_cutoff");
+            cutoffNorm = std::max(0.0f, std::min(1.0f, cutoffNorm));
+            float frequencyHz = 20.0f * std::pow(1000.0f, cutoffNorm);
+            globalFilter->setParameter("frequency", frequencyHz);
+
+            float resNorm = synthesizer->getParameter("filter_resonance");
+            resNorm = std::max(0.0f, std::min(1.0f, resNorm));
+            float resonanceQ = 0.7f + resNorm * 9.3f;
+            globalFilter->setParameter("resonance", resonanceQ);
+
+            effectProcessor->addEffect(std::move(globalFilter));
+        }
     };
 
-    // Helper: map slot index to effect instance in processor
+    // Helper: map slot index to effect instance in processor (filter reserved at END)
     auto getFxForSlot = [&]() -> std::function<Effect*(int)> {
         return [&](int slotIndex) -> Effect* {
             int countBefore = 0;
             for (int i = 0; i < slotIndex; ++i) {
                 if (slotSelectedType[i] != "None") ++countBefore;
             }
-            size_t effectIndex = 1 + static_cast<size_t>(countBefore);
-            if (effectIndex < effectProcessor->getNumEffects()) {
-                return effectProcessor->getEffect(effectIndex);
+            // User effects occupy indices [0 .. N-1]; global filter is at index N
+            if (static_cast<size_t>(countBefore) < effectProcessor->getNumEffects()) {
+                // Guard against returning the final global filter
+                size_t lastIndex = effectProcessor->getNumEffects() - 1;
+                size_t effectIndex = static_cast<size_t>(countBefore);
+                if (effectIndex < lastIndex) {
+                    return effectProcessor->getEffect(effectIndex);
+                }
             }
             return nullptr;
         };

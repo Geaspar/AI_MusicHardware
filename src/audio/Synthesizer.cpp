@@ -190,12 +190,12 @@ void Synthesizer::createModulationSources() {
                 }
             }
             
-            // If not found internally, check external effect processor
+            // If not found internally, check external effect processor (target LAST filter in chain)
             if (!foundFilter && externalEffectProcessor_) {
-                for (size_t i = 0; i < externalEffectProcessor_->getNumEffects(); ++i) {
+                for (size_t idx = externalEffectProcessor_->getNumEffects(); idx > 0; --idx) {
+                    size_t i = idx - 1;
                     if (auto* filter = dynamic_cast<Filter*>(externalEffectProcessor_->getEffect(i))) {
                         filter->setParameter("frequency", freq);
-                        // std::cout << "Setting filter cutoff to " << freq << " Hz (normalized: " << value << ")" << std::endl;
                         break;
                     }
                 }
@@ -222,12 +222,12 @@ void Synthesizer::createModulationSources() {
                 }
             }
             
-            // If not found internally, check external effect processor
+            // If not found internally, check external effect processor (target LAST filter in chain)
             if (!foundFilter && externalEffectProcessor_) {
-                for (size_t i = 0; i < externalEffectProcessor_->getNumEffects(); ++i) {
+                for (size_t idx = externalEffectProcessor_->getNumEffects(); idx > 0; --idx) {
+                    size_t i = idx - 1;
                     if (auto* filter = dynamic_cast<Filter*>(externalEffectProcessor_->getEffect(i))) {
                         filter->setParameter("resonance", resonance);
-                        // std::cout << "Setting filter resonance to " << resonance << " (normalized: " << value << ")" << std::endl;
                         break;
                     }
                 }

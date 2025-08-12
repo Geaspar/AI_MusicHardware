@@ -16,3 +16,6 @@ build/
 *.so
 *.dylib
 *.dll
+
+# Local runtime config/state
+user_config.json

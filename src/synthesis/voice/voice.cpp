@@ -134,9 +134,9 @@ float Voice::generateSample() {
     // Apply amplitude modulation
     sample *= amplitudeModulation_;
     
-    // Apply DC blocker to remove any DC offset
-    // Simple high-pass filter: y[n] = x[n] - x[n-1] + 0.995 * y[n-1]
-    float dcBlockerOutput = sample - dcBlockerX1_ + 0.995f * dcBlockerY1_;
+    // Apply lighter DC blocker to avoid aggressively removing low-level tails
+    const float dc = 0.9995f; // gentler high-pass to preserve long releases
+    float dcBlockerOutput = sample - dcBlockerX1_ + dc * dcBlockerY1_;
     dcBlockerX1_ = sample;
     dcBlockerY1_ = dcBlockerOutput;
     sample = dcBlockerOutput;

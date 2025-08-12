@@ -253,6 +253,50 @@ Integration Layer (Ready for Deployment)
 
 ## 📅 Recent Updates
 
+### **August 12, 2025** — Filter Cutoff Persistence & Real-Time Control
+
+**Status**: 🟢 COMPLETE
+
+- **What we attempted (chronology)**
+  - Wired `Cutoff` slider (normalized 0–1) to synthesizer parameter `filter_cutoff` and updated the `FilterVisualizer` using a log mapping (20 Hz → 20 kHz).
+  - Added a global low‑pass `Filter` effect at index 0 in the external `EffectProcessor` and routed synth control to it.
+  - Implemented JSON persistence of synth parameters on shutdown and re-apply on startup.
+
+- **Problems observed**
+  - Cutoff changes weren’t audibly affecting the sound in a predictable way.
+  - Cutoff wouldn’t persist after restart, appearing to snap back to a wide-open or mid value.
+  - On `noteOn`, code auto-bumped cutoff to 0.5 if it was below 0.3, masking user intent.
+  - `Synthesizer::getParameter("filter_cutoff")` returned a hardcoded default instead of the real base value, so saves didn’t match the actual state.
+  - Config save path sometimes referenced UI pointers during shutdown, risking stale values.
+
+- **Fixes implemented**
+  - Store/return real base values for `filter_cutoff` and `filter_resonance` in `Synthesizer` via `baseParameterValues_` and correct `getParameter()` handling.
+  - Remove the `noteOn` auto-bump for low cutoff to preserve user settings and ensure audible response to UI movement.
+  - Save synth parameters directly from the synthesizer (not UI widgets) to guarantee consistency at shutdown.
+  - Ensure envelope `decay` and `sustain` base values are persisted like other ADSR params to keep config coherent.
+
+- **Impact**
+  - Moving the cutoff slider now audibly changes the global low-pass filter immediately.
+  - Cutoff and resonance persist across runs and load correctly on startup (with a deferred re-apply to avoid callback races).
+  - Visualizer and audio stay in sync with normalized/log mappings.
+
+- **Verification**
+  - While holding a note, sweep `Cutoff` and raise `Resonance`; audible tonal change is consistent with UI/visualizer.
+  - Quit and relaunch; check `~/Library/Application Support/AIMusicHardware/user_config.json` → `synth.filter_cutoff` matches last setting; UI and audio reflect it on startup.
+
+- **Potential future repercussions / considerations**
+  - Modulation vs base value: Destinations currently apply modulated values; ensure UI conveys base vs modulated cutoff to avoid confusion when LFOs are active.
+  - Multiple filters: If future chains add additional filters before the global slot, ensure the control still targets the intended filter instance.
+  - Preset compatibility: Presets expecting absolute Hz may need normalized mapping; keep normalized 0–1 as internal canonical and convert at UI/FX boundaries.
+  - Automation saving: If modulation routes/amounts are persisted later, make sure base parameter persistence remains distinct from modulation state.
+
+- **Next step (aligned with roadmap: Real-time Control Enhancement → Modulation Visualization)**
+  - Implement real-time modulation visualization for `filter_cutoff`:
+    - Show a secondary “modulated” indicator on the cutoff slider and in `FilterVisualizer` (e.g., ghost handle or shaded band) reflecting base ± modulation in Hz.
+    - Expose and persist modulation connections (source, destination, amount) in config to restore routes on startup.
+    - Acceptance: with LFO→Cutoff active, user sees base cutoff handle plus animated modulated range; audio, UI, and persisted state stay consistent.
+
+
 ### **August 10, 2025** — MIDI Activity Indicator and External MIDI Hookup
 
 **Status**: 🟢 **COMPLETE**

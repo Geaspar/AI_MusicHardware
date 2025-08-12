@@ -7,6 +7,7 @@
 #include "Saturation.h"
 #include "BassBoost.h"
 #include "Modulation.h"
+#include "EffectProcessor.h" // includes Delay/Reverb classes
 #include "Filter.h"
 #include "Distortion.h"
 #include "BitCrusher.h"
