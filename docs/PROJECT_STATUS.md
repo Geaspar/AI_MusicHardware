@@ -297,6 +297,48 @@ Integration Layer (Ready for Deployment)
     - Acceptance: with LFO→Cutoff active, user sees base cutoff handle plus animated modulated range; audio, UI, and persisted state stay consistent.
 
 
+### **August 12, 2025** — Global Filter Placement and Chain Rebuild
+
+**Status**: 🟢 COMPLETE
+
+- **Problem**: The global low-pass filter only affected currently-playing notes and not the overall output (e.g., effect tails) due to its early placement in the chain.
+- **Fixes implemented**:
+  - Reworked `rebuildEffectsChain()` to clear the chain, re-add user-selected effects in order, then append a single global low-pass `Filter` at the very end.
+  - Updated modulation destinations and `Synthesizer::setParameter` logic to iterate the external effects chain backward to target the last `Filter` instance (the global one).
+- **Impact**: Filter now processes the complete output, including effect tails, matching user expectations.
+- **Verification**: Delay/reverb tails respond to cutoff/resonance changes; cutoff sweeps are audible even after note release.
+
+
+### **August 12, 2025** — Envelope Release Consistency (Polyphony & Voice Stealing)
+
+**Status**: 🟢 COMPLETE
+
+- **Problems**: Release stage decayed from sustain level (not current amplitude) and voice stealing required permanently shortening release times.
+- **Fixes implemented**:
+  - Added `releaseStartValue_`; `noteOff()` now captures the current value so release decays from actual level.
+  - Implemented `setReleaseOverrideOnce(float)`; voice stealing uses a one-shot 20 ms release without changing the base release parameter.
+  - Ensured `updateRates()` is called on `noteOn()` and made the DC blocker gentler to preserve low-level tails.
+- **Impact**: Smooth, reliable releases for single notes and chords; no abrupt cut-offs when voices are stolen.
+- **Verification**: Sustained chords fade naturally; rapidly retriggered notes avoid clicks while preserving normal release on subsequent notes.
+
+
+### **August 12, 2025** — Polyphony Gain Normalization and Delay Effect
+
+**Status**: 🟢 COMPLETE
+
+- **Audio clipping**: Reintroduced a gentle normalization that scales output by `1/sqrt(loudVoiceCount)` where voices above an amplitude threshold (0.05) are considered, preventing clipping while preserving quiet tails.
+- **Delay availability**: Corrected include to ensure `Delay` is available via `EffectProcessor`; confirmed user-reported Delay issue was due to bypass being enabled.
+- **Impact**: Chords no longer clip; Delay effect functions as expected alongside Chorus and others.
+
+
+### **August 12, 2025** — UI Reset Button Visibility
+
+**Status**: 🟢 COMPLETE
+
+- **Problem**: Reset button was obscured in the main tab.
+- **Changes**: Moved its creation to the end of main screen setup to ensure top-most z-order; positioned at (130, 748), sized (100×30), and styled bright red for visibility. Added one-time logs to confirm presence/visibility.
+- **Impact**: Reset control is clearly visible and accessible next to the MIDI indicator.
+
 ### **August 10, 2025** — MIDI Activity Indicator and External MIDI Hookup
 
 **Status**: 🟢 **COMPLETE**
