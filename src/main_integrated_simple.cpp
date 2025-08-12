@@ -2849,19 +2849,23 @@ int main(int argc, char* argv[]) {
 
         auto mix = std::make_unique<Slider>("fx_mix_" + std::to_string(s), "Mix", 0,0,40,40);
         mix->setOrientation(Slider::Orientation::Horizontal);
-        mix->setPosition(360, y - 8);
-        mix->setSize(280, 34);
+        // Shift mix slider 200px right from baseline, keep 5px down
+        mix->setPosition(400, y - 3);
+        // Reduce horizontal slider size by an additional ~30%
+        mix->setSize(156, 19);
         mix->setRange(0.0f, 1.0f);
         mix->setValue(slotMix[s]);
         mix->setValueFormatter([](float v){ std::stringstream ss; ss<<"Mix "<<std::fixed<<std::setprecision(0)<<(v*100.0f)<<"%"; return ss.str();});
         slotMixSlider[s] = mix.get();
 
         // Add four vertical sliders to the right of the mix slider (placeholders for per-slot params)
-        const int vBaseX = 700;
-        const int vSpacing = 90;  // wider spacing between vertical sliders
-        const int vWidth = 26;
-        const int vHeight = 110;
-        const int vY = y - 45;    // raise above row baseline, fit within screen
+        // Shift vertical sliders 100px to the right from previous position
+        const int vBaseX = 610;
+        const int vSpacing = 90;  // keep spacing; only scale slider size
+        const int vWidth = 15;    // ~30% smaller than previous 21
+        const int vHeight = 62;   // ~30% smaller than previous 88
+        // Shift vertical sliders an additional 10px down for alignment
+        const int vY = y - 30;    // keep vertical alignment
 
         auto v1Label = std::make_unique<Label>("fx_v1_label_" + std::to_string(s), "Param 1");
         v1Label->setPosition(vBaseX - 12, vY - 16);
