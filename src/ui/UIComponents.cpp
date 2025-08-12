@@ -246,22 +246,30 @@ void Button::render(DisplayManager* display) {
     display->fillRect(x_, y_, width_, height_, bgColor);
     display->drawRect(x_, y_, width_, height_, textColor_);
     
-    // Draw button text
-    Font* font = nullptr;
-    // TODO: Get font from context
+    // Draw button text (fallback-friendly if no font configured)
+    Font* font = nullptr; // TODO: fetch from UIContext when available
+    
+    int textX;
+    int textY;
     
     if (font) {
-        // Calculate text dimensions for centering
+        // Calculate text dimensions for precise centering
         int textWidth = 0;
         int textHeight = 0;
         font->getTextDimensions(text_, textWidth, textHeight);
-        
-        int textX = x_ + (width_ - textWidth) / 2;
-        int textY = y_ + (height_ - textHeight) / 2;
-        
-        // Draw text
-        display->drawText(textX, textY, text_, font, textColor_);
+        textX = x_ + (width_ - textWidth) / 2;
+        textY = y_ + (height_ - textHeight) / 2;
+    } else {
+        // Approximate centering assuming ~8px average character width and ~16px height
+        int approxCharWidth = 8;
+        int approxTextHeight = 16;
+        int approxTextWidth = static_cast<int>(text_.length()) * approxCharWidth;
+        textX = x_ + (width_ - approxTextWidth) / 2;
+        textY = y_ + (height_ - approxTextHeight) / 2;
     }
+    
+    // Always draw text; DisplayManager handles null font gracefully
+    display->drawText(textX, textY, text_, font, textColor_);
     
     // Render children
     renderChildren(display);

@@ -2125,7 +2125,7 @@ int main(int argc, char* argv[]) {
         resetButton->setPosition(130, 748);
         resetButton->setSize(100, 30);
         resetButton->setBackgroundColor(Color(220, 40, 40)); // bright red for visibility
-        resetButton->setTextColor(Color(255, 255, 255));
+        resetButton->setTextColor(Color(255, 255, 255)); // force white label
         // One-time log to confirm creation and placement
         std::cout << "[UI] Adding reset button at (" << 130 << "," << 748
                   << ") size (" << 100 << "x" << 30 << ")" << std::endl;
