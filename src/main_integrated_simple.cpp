@@ -9,6 +9,10 @@
 #include <cmath>
 #include <unordered_map>
 #include <vector>
+#include <fstream>
+#include <cstdlib>
+#include <filesystem>
+#include <nlohmann/json.hpp>
 #include <SDL2/SDL.h>
 #ifdef HAVE_SDL_TTF
 #include <SDL_ttf.h>
@@ -352,6 +356,45 @@ int main(int argc, char* argv[]) {
     std::atomic<bool> midiActivityPulse{false};
     float midiActivityTimer = 0.0f; // seconds to keep the light on after a message
     
+    // Persistence config
+    auto getUserConfigPath = []() -> std::string {
+        try {
+            std::string home;
+            if (const char* h = std::getenv("HOME")) home = h;
+#ifdef __APPLE__
+            std::filesystem::path dir = std::filesystem::path(home) / "Library" / "Application Support" / "AIMusicHardware";
+#else
+            std::filesystem::path dir = std::filesystem::path(home) / ".aimusichardware";
+#endif
+            std::filesystem::create_directories(dir);
+            auto path = (dir / "user_config.json").string();
+            return path;
+        } catch (...) {
+            return std::string("user_config.json");
+        }
+    };
+    const std::string userConfigPath = getUserConfigPath();
+    nlohmann::json loadedConfig;
+    // Try to load user config
+    {
+        std::ifstream in(userConfigPath);
+        if (in.good()) {
+            try {
+                in >> loadedConfig;
+                std::cout << "Loaded user config from: " << userConfigPath << std::endl;
+            } catch (...) {
+                loadedConfig = nlohmann::json{};
+            }
+        } else {
+            std::cout << "No user config found at: " << userConfigPath << std::endl;
+        }
+    }
+
+    std::string persistedMidiDeviceName;
+    if (loadedConfig.contains("midi") && loadedConfig["midi"].contains("deviceName")) {
+        persistedMidiDeviceName = loadedConfig["midi"]["deviceName"].get<std::string>();
+    }
+
     // Initialize external MIDI input - but don't open any device yet
     std::cout << "\n=== Initializing External MIDI Controller Support ===" << std::endl;
     auto midiDevices = midiInput->getDevices();
@@ -375,13 +418,21 @@ int main(int argc, char* argv[]) {
             }
         }
         
-        // Auto-select device based on priority: command line arg > Oxi One > first device
+        // Auto-select device based on priority: command line arg > persisted name > Oxi One > first device
         int selectedDevice = -1;
         if (argc > 1) {
             selectedDevice = std::atoi(argv[1]);
             if (selectedDevice < 0 || selectedDevice >= static_cast<int>(midiDevices.size())) {
                 std::cout << "Invalid device index. Will select later." << std::endl;
                 selectedDevice = -1;
+            }
+        } else if (!persistedMidiDeviceName.empty()) {
+            for (size_t i = 0; i < midiDevices.size(); ++i) {
+                if (midiDevices[i] == persistedMidiDeviceName) {
+                    selectedDevice = static_cast<int>(i);
+                    std::cout << "Auto-selecting persisted MIDI device: " << persistedMidiDeviceName << std::endl;
+                    break;
+                }
             }
         } else if (oxiIndex >= 0) {
             selectedDevice = oxiIndex;
@@ -1021,7 +1072,7 @@ int main(int argc, char* argv[]) {
     }
     
     // Add callback to handle device selection
-    midiDeviceDropdownPtr->setSelectionCallback([&midiInput, &midiHandler, &currentMidiDevice, &midiDevices](int index, const std::string& item) {
+    midiDeviceDropdownPtr->setSelectionCallback([&midiInput, &midiHandler, &currentMidiDevice, &midiDevices, &persistedMidiDeviceName](int index, const std::string& item) {
         std::cout << "MIDI Device Selection: " << item << " (index " << index << ")" << std::endl;
         
         // Close current device if any
@@ -1040,9 +1091,13 @@ int main(int argc, char* argv[]) {
                 // Re-establish callback connection
                 midiInput->setCallback(midiHandler.get());
                 std::cout << "Successfully opened MIDI device: " << midiDevices[deviceIndex] << std::endl;
+                persistedMidiDeviceName = midiDevices[deviceIndex];
             } else {
                 std::cerr << "Failed to open MIDI device: " << midiDevices[deviceIndex] << std::endl;
             }
+        } else {
+            // None selected
+            persistedMidiDeviceName.clear();
         }
     });
     
@@ -1088,11 +1143,7 @@ int main(int argc, char* argv[]) {
             std::cout << "Filter Cutoff: " << synthesizer->getParameter("filter_cutoff") << std::endl;
             std::cout << "Oscillator Type: " << synthesizer->getParameter("oscillator_type") << std::endl;
             
-            // Try setting reasonable filter cutoff if it's too low
-            if (synthesizer->getParameter("filter_cutoff") < 0.3f) {
-                std::cout << "Filter cutoff too low, setting to 0.5 (mid-range)" << std::endl;
-                synthesizer->setParameter("filter_cutoff", 0.5f);
-            }
+            // Removed auto-bumping low filter cutoff to preserve user setting
         } else {
             auto now = std::chrono::high_resolution_clock::now();
             auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
@@ -1849,6 +1900,114 @@ int main(int argc, char* argv[]) {
     
     std::cout << "Parameter connections and CC learning established" << std::endl;
 
+    // Apply persisted synthesizer parameters if available
+    if (loadedConfig.contains("synth") && loadedConfig["synth"].is_object()) {
+        const auto& sc = loadedConfig["synth"];
+        auto getf = [&](const char* key, float& out) {
+            if (sc.contains(key)) {
+                try { out = sc[key].get<float>(); } catch (...) {}
+            }
+        };
+        float v;
+        // Oscillator type (0-4)
+        if (sc.contains("oscillator_type")) {
+            v = 0.0f; getf("oscillator_type", v);
+            if (waveSliderPtr) waveSliderPtr->setValue(v);
+            synthesizer->setParameter("oscillator_type", v);
+        }
+        // Filter cutoff (normalized 0-1)
+        if (sc.contains("filter_cutoff")) {
+            v = 1.0f; getf("filter_cutoff", v);
+            // Avoid double-callback recursion during initial apply
+            if (cutoffSliderPtr) {
+                updatingFromVisualizer = true; // reuse guard to suppress slider callback path temporarily
+                cutoffSliderPtr->setValue(v);
+                updatingFromVisualizer = false;
+            }
+            // Ensure synthesizer and visualizer reflect the value even if callback is suppressed
+            synthesizer->setParameter("filter_cutoff", v);
+            if (filterVizPtr) {
+                float frequencyHz = 20.0f * std::pow(1000.0f, std::max(0.0f, std::min(1.0f, v)));
+                filterVizPtr->setCutoffFrequency(frequencyHz);
+            }
+            std::cout << "Loaded filter_cutoff (norm): " << v << std::endl;
+        }
+        // Filter resonance (normalized 0-1)
+        if (sc.contains("filter_resonance")) {
+            v = 0.1f; getf("filter_resonance", v);
+            if (resSliderPtr) {
+                updatingFromVisualizer = true;
+                resSliderPtr->setValue(v);
+                updatingFromVisualizer = false;
+            }
+            synthesizer->setParameter("filter_resonance", v);
+            if (filterVizPtr) {
+                float resonanceQ = 0.7f + std::max(0.0f, std::min(1.0f, v)) * 9.3f;
+                filterVizPtr->setResonance(resonanceQ);
+            }
+            std::cout << "Loaded filter_resonance (norm): " << v << std::endl;
+        }
+        // Master volume (0-1)
+        if (sc.contains("master_volume")) {
+            v = 0.7f; getf("master_volume", v);
+            if (volumeSliderPtr) volumeSliderPtr->setValue(v);
+        }
+        // Envelope ADSR
+        float a = 0.02f, d = 0.1f, s = 0.7f, r = 0.5f;
+        getf("envelope_attack", a);
+        getf("envelope_decay", d);
+        getf("envelope_sustain", s);
+        getf("envelope_release", r);
+        if (attackSliderPtr) attackSliderPtr->setValue(a);
+        if (decaySliderPtr) decaySliderPtr->setValue(d);
+        if (sustainSliderPtr) sustainSliderPtr->setValue(s);
+        if (releaseSliderPtr) releaseSliderPtr->setValue(r);
+        if (envelopePtr) envelopePtr->setADSR(a, d, s, r);
+        synthesizer->setParameter("envelope_attack", a);
+        synthesizer->setParameter("envelope_decay", d);
+        synthesizer->setParameter("envelope_sustain", s);
+        synthesizer->setParameter("envelope_release", r);
+        // LFOs
+        float l1r = lfo1State.rate, l1d = lfo1State.depth, l1s = lfo1State.shape;
+        float l2r = lfo2State.rate, l2d = lfo2State.depth, l2s = lfo2State.shape;
+        getf("lfo1_rate", l1r);
+        getf("lfo1_depth", l1d);
+        getf("lfo1_shape", l1s);
+        getf("lfo2_rate", l2r);
+        getf("lfo2_depth", l2d);
+        getf("lfo2_shape", l2s);
+        // Apply to synthesizer and internal state
+        lfo1State.rate = l1r; lfo1State.depth = l1d; lfo1State.shape = l1s;
+        lfo2State.rate = l2r; lfo2State.depth = l2d; lfo2State.shape = l2s;
+        synthesizer->setParameter("lfo1_rate", l1r);
+        synthesizer->setParameter("lfo1_depth", l1d);
+        synthesizer->setParameter("lfo1_shape", l1s);
+        synthesizer->setParameter("lfo2_rate", l2r);
+        synthesizer->setParameter("lfo2_depth", l2d);
+        synthesizer->setParameter("lfo2_shape", l2s);
+        // Update shared sliders by toggling LFO selector if available
+        if (lfoRateSliderPtr && lfoDepthSliderPtr && lfoShapeSliderPtr) {
+            // Set LFO 1
+            if (lfoSelectorDropdown) {
+                lfoSelectorDropdown->selectItem(0);
+            }
+            lfoRateSliderPtr->setValue(l1r);
+            lfoDepthSliderPtr->setValue(l1d);
+            lfoShapeSliderPtr->setValue(l1s);
+            // Set LFO 2
+            if (lfoSelectorDropdown) {
+                lfoSelectorDropdown->selectItem(1);
+            }
+            lfoRateSliderPtr->setValue(l2r);
+            lfoDepthSliderPtr->setValue(l2d);
+            lfoShapeSliderPtr->setValue(l2s);
+            // Return to LFO 1
+            if (lfoSelectorDropdown) {
+                lfoSelectorDropdown->selectItem(0);
+            }
+        }
+    }
+
     // Create preset section at bottom right
     auto presetSection = std::make_unique<Label>("preset_section", "PRESETS");
     presetSection->setPosition(850, 720);  // Near bottom of 800px window
@@ -2345,6 +2504,33 @@ int main(int argc, char* argv[]) {
         return fx;
     };
 
+    // Load persisted effects configuration if available
+    struct LoadedSlot {
+        std::string type = "None";
+        float mix = 0.5f;
+        bool enabled = true;
+        std::unordered_map<std::string, float> params; // per current type
+    };
+    std::vector<LoadedSlot> loadedSlots;
+    if (loadedConfig.contains("effects") && loadedConfig["effects"].contains("slots")) {
+        try {
+            for (const auto& s : loadedConfig["effects"]["slots"]) {
+                LoadedSlot ls;
+                if (s.contains("type")) ls.type = s["type"].get<std::string>();
+                if (s.contains("mix")) ls.mix = s["mix"].get<float>();
+                if (s.contains("enabled")) ls.enabled = s["enabled"].get<bool>();
+                if (s.contains("params") && s["params"].is_object()) {
+                    for (auto it = s["params"].begin(); it != s["params"].end(); ++it) {
+                        ls.params[it.key()] = it.value().get<float>();
+                    }
+                }
+                loadedSlots.push_back(std::move(ls));
+            }
+        } catch (...) {
+            loadedSlots.clear();
+        }
+    }
+
     // Rebuild effects chain from slots
     auto rebuildEffectsChain = [&]() {
         std::lock_guard<std::mutex> lock(audioMutex);
@@ -2727,15 +2913,42 @@ int main(int argc, char* argv[]) {
         effectsScreen->addChild(std::move(v2));
         effectsScreen->addChild(std::move(v3));
         effectsScreen->addChild(std::move(v4));
-        // Initialize controls disabled for None, with N/A labels
-        configureSlotParams(s, slotSelectedType[s]);
-        bool enableControlsInit = (slotSelectedType[s] != std::string("None"));
-        slotMixSlider[s]->setEnabled(enableControlsInit);
-        slotBypassBtn[s]->setEnabled(enableControlsInit);
-        if (slotV1Slider[s]) slotV1Slider[s]->setEnabled(enableControlsInit);
-        if (slotV2Slider[s]) slotV2Slider[s]->setEnabled(enableControlsInit);
-        if (slotV3Slider[s]) slotV3Slider[s]->setEnabled(enableControlsInit);
-        if (slotV4Slider[s]) slotV4Slider[s]->setEnabled(enableControlsInit);
+        // Initialize controls; apply loaded state if present
+        if (s < static_cast<int>(loadedSlots.size())) {
+            const auto& ls = loadedSlots[s];
+            slotSelectedType[s] = ls.type;
+            slotMix[s] = ls.mix;
+            slotEnabled[s] = ls.enabled;
+            if (!ls.type.empty() && ls.type != "None" && !ls.params.empty()) {
+                slotParamCache[s][ls.type] = ls.params;
+            }
+            // Select type in UI (this will trigger rebuild and configure)
+            int idx = 0;
+            if (ls.type == "None") idx = 0; else {
+                // find in list
+                int found = -1;
+                const auto effects = AIMusicHardware::getAvailableEffects();
+                for (size_t ii = 0; ii < effects.size(); ++ii) {
+                    if (effects[ii] == ls.type) { found = static_cast<int>(ii + 1); break; }
+                }
+                idx = (found >= 0) ? found : 0;
+            }
+            slotTypeDd[s]->selectItem(idx);
+            // Restore mix and bypass UI
+            slotMixSlider[s]->setValue(slotMix[s]);
+            slotBypassBtn[s]->setText(slotEnabled[s] ? "ON" : "OFF");
+            slotBypassBtn[s]->setBackgroundColor(slotEnabled[s] ? Color(50,100,50) : Color(100,50,50));
+        } else {
+            // Initialize controls disabled for None, with N/A labels
+            configureSlotParams(s, slotSelectedType[s]);
+            bool enableControlsInit = (slotSelectedType[s] != std::string("None"));
+            slotMixSlider[s]->setEnabled(enableControlsInit);
+            slotBypassBtn[s]->setEnabled(enableControlsInit);
+            if (slotV1Slider[s]) slotV1Slider[s]->setEnabled(enableControlsInit);
+            if (slotV2Slider[s]) slotV2Slider[s]->setEnabled(enableControlsInit);
+            if (slotV3Slider[s]) slotV3Slider[s]->setEnabled(enableControlsInit);
+            if (slotV4Slider[s]) slotV4Slider[s]->setEnabled(enableControlsInit);
+        }
     }
 
     uiContext->addScreen(std::move(effectsScreen));
@@ -2922,6 +3135,10 @@ int main(int argc, char* argv[]) {
                      sequencer.get(), waveformPtr, levelPtr, outputBuffer, numFrames);
     });
     
+    // Deferred apply: if synth settings were loaded, re-apply once after UI has fully initialized
+    bool needsDeferredSynthApply = loadedConfig.contains("synth") && loadedConfig["synth"].is_object();
+    nlohmann::json deferredSynthConfig = needsDeferredSynthApply ? loadedConfig["synth"] : nlohmann::json{};
+
     // Main loop
     bool running = true;
     auto lastFrameTime = std::chrono::high_resolution_clock::now();
@@ -3060,6 +3277,32 @@ int main(int argc, char* argv[]) {
         lastFrameTime = currentTime;
         
         uiContext->update(deltaTime);
+
+        // Run deferred synth apply exactly once a short time after startup to ensure callbacks are connected
+        if (needsDeferredSynthApply) {
+            // Re-apply cutoff and resonance to ensure persistence
+            try {
+                if (deferredSynthConfig.contains("filter_cutoff")) {
+                    float v = deferredSynthConfig["filter_cutoff"].get<float>();
+                    if (cutoffSliderPtr) cutoffSliderPtr->setValue(v);
+                    synthesizer->setParameter("filter_cutoff", v);
+                    if (filterVizPtr) {
+                        float frequencyHz = 20.0f * std::pow(1000.0f, std::max(0.0f, std::min(1.0f, v)));
+                        filterVizPtr->setCutoffFrequency(frequencyHz);
+                    }
+                }
+                if (deferredSynthConfig.contains("filter_resonance")) {
+                    float v = deferredSynthConfig["filter_resonance"].get<float>();
+                    if (resSliderPtr) resSliderPtr->setValue(v);
+                    synthesizer->setParameter("filter_resonance", v);
+                    if (filterVizPtr) {
+                        float resonanceQ = 0.7f + std::max(0.0f, std::min(1.0f, v)) * 9.3f;
+                        filterVizPtr->setResonance(resonanceQ);
+                    }
+                }
+            } catch (...) {}
+            needsDeferredSynthApply = false;
+        }
 
         // Update MIDI activity indicator
         if (midiActivityPulse.exchange(false, std::memory_order_relaxed)) {
@@ -3307,6 +3550,60 @@ int main(int argc, char* argv[]) {
         hardwareInterface->shutdown();
     }
     
+    // Save user configuration (MIDI + Effects + Synth)
+    try {
+        nlohmann::json outCfg;
+        outCfg["midi"]["deviceName"] = persistedMidiDeviceName;
+        // Effects
+        nlohmann::json slots = nlohmann::json::array();
+        for (int s = 0; s < fxSlotCount; ++s) {
+            nlohmann::json sj;
+            sj["type"] = slotSelectedType[s];
+            sj["mix"] = slotMix[s];
+            sj["enabled"] = slotEnabled[s];
+            // Save params for current type if available
+            if (slotParamCache[s].count(slotSelectedType[s])) {
+                nlohmann::json pj;
+                for (const auto& kv : slotParamCache[s][slotSelectedType[s]]) {
+                    pj[kv.first] = kv.second;
+                }
+                sj["params"] = pj;
+            }
+            slots.push_back(sj);
+        }
+        outCfg["effects"]["slots"] = slots;
+        // Synth params
+        nlohmann::json sj;
+        sj["oscillator_type"] = synthesizer->getParameter("oscillator_type");
+        // Always read from synthesizer (UI may be shut down here)
+        sj["filter_cutoff"] = synthesizer->getParameter("filter_cutoff");
+        sj["filter_resonance"] = synthesizer->getParameter("filter_resonance");
+        sj["master_volume"] = synthesizer->getParameter("master_volume");
+        sj["envelope_attack"] = synthesizer->getParameter("envelope_attack");
+        sj["envelope_decay"] = synthesizer->getParameter("envelope_decay");
+        sj["envelope_sustain"] = synthesizer->getParameter("envelope_sustain");
+        sj["envelope_release"] = synthesizer->getParameter("envelope_release");
+        sj["lfo1_rate"] = synthesizer->getParameter("lfo1_rate");
+        sj["lfo1_depth"] = synthesizer->getParameter("lfo1_depth");
+        sj["lfo1_shape"] = synthesizer->getParameter("lfo1_shape");
+        sj["lfo2_rate"] = synthesizer->getParameter("lfo2_rate");
+        sj["lfo2_depth"] = synthesizer->getParameter("lfo2_depth");
+        sj["lfo2_shape"] = synthesizer->getParameter("lfo2_shape");
+        outCfg["synth"] = sj;
+        std::ofstream out(userConfigPath);
+        out << outCfg.dump(2);
+        out.flush();
+        std::cout << "Saved user config to: " << userConfigPath << std::endl;
+        if (outCfg.contains("synth")) {
+            try {
+                std::cout << "Saved filter_cutoff: " << outCfg["synth"]["filter_cutoff"].get<float>()
+                          << ", filter_resonance: " << outCfg["synth"]["filter_resonance"].get<float>() << std::endl;
+            } catch (...) {}
+        }
+    } catch (...) {
+        // ignore save errors
+    }
+
     // 7. Cleanup SDL in correct order: renderer first, then window, then SDL
     std::cout << "Cleaning up SDL..." << std::endl;
     if (renderer) {

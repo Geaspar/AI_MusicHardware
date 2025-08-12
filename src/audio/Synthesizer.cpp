@@ -167,6 +167,8 @@ void Synthesizer::createModulationSources() {
     baseParameterValues_["master_volume"] = 0.7f;
     baseParameterValues_["pitch"] = 0.0f;
     baseParameterValues_["envelope_attack"] = 0.01f;
+    baseParameterValues_["envelope_decay"] = 0.1f;
+    baseParameterValues_["envelope_sustain"] = 0.7f;
     baseParameterValues_["envelope_release"] = 0.5f;
     
     // Create modulation destinations
@@ -533,6 +535,8 @@ void Synthesizer::setParameter(const std::string& paramId, float value) {
         std::cout << "Setting envelope attack to " << value << " seconds" << std::endl;
     }
     else if (paramId == "envelope_decay") {
+        // Update base parameter value
+        baseParameterValues_["envelope_decay"] = value;
         // Update all voices' decay time
         if (voiceManager_) {
             for (int i = 0; i < voiceManager_->getMaxVoices(); ++i) {
@@ -546,6 +550,8 @@ void Synthesizer::setParameter(const std::string& paramId, float value) {
         std::cout << "Setting envelope decay to " << value << " seconds" << std::endl;
     }
     else if (paramId == "envelope_sustain") {
+        // Update base parameter value
+        baseParameterValues_["envelope_sustain"] = value;
         // Update all voices' sustain level
         if (voiceManager_) {
             for (int i = 0; i < voiceManager_->getMaxVoices(); ++i) {
@@ -631,12 +637,12 @@ float Synthesizer::getParameter(const std::string& paramId) const {
         return static_cast<float>(currentOscType_);
     }
     else if (paramId == "filter_cutoff") {
-        // For future implementation - will need to add filter to VoiceManager
-        return 1.0f; // Default value
+        // Return stored normalized cutoff
+        return baseParameterValues_.count("filter_cutoff") ? baseParameterValues_.at("filter_cutoff") : 1.0f;
     }
     else if (paramId == "filter_resonance") {
-        // For future implementation - will need to add filter to VoiceManager
-        return 0.5f; // Default value
+        // Return stored normalized resonance
+        return baseParameterValues_.count("filter_resonance") ? baseParameterValues_.at("filter_resonance") : 0.1f;
     }
     else if (paramId == "master_volume") {
         // Return stored master volume value
@@ -646,10 +652,10 @@ float Synthesizer::getParameter(const std::string& paramId) const {
         return baseParameterValues_.count("envelope_attack") ? baseParameterValues_.at("envelope_attack") : 0.01f;
     }
     else if (paramId == "envelope_decay") {
-        return 0.1f; // Default 100ms decay
+        return baseParameterValues_.count("envelope_decay") ? baseParameterValues_.at("envelope_decay") : 0.1f;
     }
     else if (paramId == "envelope_sustain") {
-        return 0.7f; // Default 70% sustain
+        return baseParameterValues_.count("envelope_sustain") ? baseParameterValues_.at("envelope_sustain") : 0.7f;
     }
     else if (paramId == "envelope_release") {
         return baseParameterValues_.count("envelope_release") ? baseParameterValues_.at("envelope_release") : 0.5f;
