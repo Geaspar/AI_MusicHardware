@@ -152,9 +152,11 @@ void Modulation::process(float* buffer, int numFrames) {
         // Update write position
         writePos_ = (writePos_ + 1) % MAX_DELAY_SAMPLES;
         
-        // Mix original and delayed signals (50/50 for classic chorus/flanger)
-        buffer[i] = 0.5f * (inputL + delayedL);
-        buffer[i + 1] = 0.5f * (inputR + delayedR);
+        // Mix original and delayed signals using mix_
+        float dry = 1.0f - mix_;
+        float wet = mix_;
+        buffer[i] = dry * inputL + wet * delayedL;
+        buffer[i + 1] = dry * inputR + wet * delayedR;
     }
 }
 
@@ -172,6 +174,9 @@ void Modulation::setParameter(const std::string& name, float value) {
     }
     else if (name == "spread") {
         spread_ = clamp(value, 0.0f, 1.0f);
+    }
+    else if (name == "mix") {
+        mix_ = clamp(value, 0.0f, 1.0f);
     }
     else if (name == "waveType") {
         int typeInt = static_cast<int>(value);
@@ -193,6 +198,9 @@ float Modulation::getParameter(const std::string& name) const {
     }
     else if (name == "spread") {
         return spread_;
+    }
+    else if (name == "mix") {
+        return mix_;
     }
     else if (name == "waveType") {
         return static_cast<float>(waveType_);

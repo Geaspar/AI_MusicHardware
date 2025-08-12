@@ -599,11 +599,7 @@ int main(int argc, char* argv[]) {
     });
     mainScreen->addChild(std::move(mainNavButton));
     
-    auto mainNavLabel = std::make_unique<Label>("main_nav_label", "Main");
-    mainNavLabel->setPosition(70, 10);
-    mainNavLabel->setSize(40, 20);
-    mainNavLabel->setTextColor(Color(255, 255, 255));
-    mainScreen->addChild(std::move(mainNavLabel));
+    // Removed duplicate nav text label; button text is sufficient
     
     // Effects button
     auto effectsNavButton = std::make_unique<Button>("effects_nav_btn", "Effects");
@@ -616,11 +612,7 @@ int main(int argc, char* argv[]) {
     });
     mainScreen->addChild(std::move(effectsNavButton));
     
-    auto effectsNavLabel = std::make_unique<Label>("effects_nav_label", "Effects");
-    effectsNavLabel->setPosition(155, 10);
-    effectsNavLabel->setSize(50, 20);
-    effectsNavLabel->setTextColor(Color(255, 255, 255));
-    mainScreen->addChild(std::move(effectsNavLabel));
+    // Removed duplicate nav text label; button text is sufficient
     
     // Modulation button
     auto modNavButton = std::make_unique<Button>("mod_nav_btn", "Modulation");
@@ -633,11 +625,7 @@ int main(int argc, char* argv[]) {
     });
     mainScreen->addChild(std::move(modNavButton));
     
-    auto modNavLabel = std::make_unique<Label>("mod_nav_label", "Modulation");
-    modNavLabel->setPosition(245, 10);
-    modNavLabel->setSize(70, 20);
-    modNavLabel->setTextColor(Color(255, 255, 255));
-    mainScreen->addChild(std::move(modNavLabel));
+    // Removed duplicate nav text label; button text is sufficient
     
     // Presets button
     auto presetsNavButton = std::make_unique<Button>("presets_nav_btn", "Presets");
@@ -650,11 +638,7 @@ int main(int argc, char* argv[]) {
     });
     mainScreen->addChild(std::move(presetsNavButton));
     
-    auto presetsNavLabel = std::make_unique<Label>("presets_nav_label", "Presets");
-    presetsNavLabel->setPosition(355, 10);
-    presetsNavLabel->setSize(50, 20);
-    presetsNavLabel->setTextColor(Color(255, 255, 255));
-    mainScreen->addChild(std::move(presetsNavLabel));
+    // Removed duplicate nav text label; button text is sufficient
     
     // Settings button
     auto settingsNavButton = std::make_unique<Button>("settings_nav_btn", "Settings");
@@ -667,11 +651,7 @@ int main(int argc, char* argv[]) {
     });
     mainScreen->addChild(std::move(settingsNavButton));
     
-    auto settingsNavLabel = std::make_unique<Label>("settings_nav_label", "Settings");
-    settingsNavLabel->setPosition(445, 10);
-    settingsNavLabel->setSize(50, 20);
-    settingsNavLabel->setTextColor(Color(255, 255, 255));
-    mainScreen->addChild(std::move(settingsNavLabel));
+    // Removed duplicate nav text label; button text is sufficient
     
     // Sequencer button
     auto sequencerNavButton = std::make_unique<Button>("seq_nav_btn", "Sequencer");
@@ -684,11 +664,7 @@ int main(int argc, char* argv[]) {
     });
     mainScreen->addChild(std::move(sequencerNavButton));
     
-    auto sequencerNavLabel = std::make_unique<Label>("seq_nav_label", "Sequencer");
-    sequencerNavLabel->setPosition(540, 10);
-    sequencerNavLabel->setSize(60, 20);
-    sequencerNavLabel->setTextColor(Color(255, 255, 255));
-    mainScreen->addChild(std::move(sequencerNavLabel));
+    // Removed duplicate nav text label; button text is sufficient
     
     // Create oscillator section with bright colors
     auto oscSection = std::make_unique<Label>("osc_section", "OSCILLATOR");
@@ -2123,7 +2099,7 @@ int main(int argc, char* argv[]) {
         auto resetButton = std::make_unique<Button>("reset_params_btn", "Reset parameters");
         // Position relative to MIDI indicator: (100,755) -> place at (130, 748)
         resetButton->setPosition(130, 748);
-        resetButton->setSize(100, 30);
+        resetButton->setSize(170, 30);
         resetButton->setBackgroundColor(Color(220, 40, 40)); // bright red for visibility
         resetButton->setTextColor(Color(255, 255, 255)); // force white label
         // One-time log to confirm creation and placement
@@ -2131,7 +2107,8 @@ int main(int argc, char* argv[]) {
                   << ") size (" << 100 << "x" << 30 << ")" << std::endl;
         resetButton->setClickCallback([&, waveSliderPtr, cutoffSliderPtr, resSliderPtr,
                                        attackSliderPtr, decaySliderPtr, sustainSliderPtr, releaseSliderPtr,
-                                       volumeSliderPtr, filterVizPtr, lfoRateSliderPtr, lfoDepthSliderPtr, lfoShapeSliderPtr, mainScreen = mainScreen.get()]() {
+                                       volumeSliderPtr, filterVizPtr, lfoRateSliderPtr, lfoDepthSliderPtr, lfoShapeSliderPtr,
+                                       mainScreen = mainScreen.get(), uiCtx = uiContext.get()]() {
             if (waveSliderPtr) waveSliderPtr->setValue(0.0f);
             synthesizer->setParameter("oscillator_type", 0.0f);
             if (cutoffSliderPtr) cutoffSliderPtr->setValue(1.0f);
@@ -2170,7 +2147,39 @@ int main(int argc, char* argv[]) {
             if (auto* dd = dynamic_cast<DropdownMenu*>(mainScreen->getChild("lfo_selector"))) {
                 dd->selectItem(std::max(0, std::min(1, lfoSelIndex)));
             }
-            std::cout << "Reset: Synth parameters restored to defaults" << std::endl;
+            // Reset Effects: set all slots to None, mix to defaults, enabled ON, clear param caches, rebuild chain
+            {
+                // Switch to Effects screen contextually to access its UI components
+                Screen* effectsScreen = uiCtx->getScreen("effects");
+                if (effectsScreen) {
+                    // Reset effect type dropdowns to "None" (index 0) and mix sliders to 50%
+                    for (int s = 0; s < 6; ++s) {
+                        if (auto* dd = dynamic_cast<DropdownMenu*>(effectsScreen->getChild("fx_type_" + std::to_string(s)))) {
+                            dd->selectItem(0);
+                        }
+                        if (auto* mix = dynamic_cast<Slider*>(effectsScreen->getChild("fx_mix_" + std::to_string(s)))) {
+                            mix->setValue(0.5f);
+                        }
+                    }
+                    // Also reset quick FX dropdowns on main screen (first 3 mirror slots) and zero their param sliders
+                    if (auto* ms = uiCtx->getScreen("main")) {
+                        for (int i = 0; i < 3; ++i) {
+                            if (auto* qdd = dynamic_cast<DropdownMenu*>(ms->getChild("effect_type_" + std::to_string(i)))) {
+                                qdd->selectItem(0);
+                            }
+                        }
+                    }
+
+                    // Zero vertical parameter sliders for all slots (even when None), as requested
+                    for (int s = 0; s < 6; ++s) {
+                        if (auto* v1 = dynamic_cast<Slider*>(effectsScreen->getChild("fx_v1_" + std::to_string(s)))) v1->setValue(0.0f);
+                        if (auto* v2 = dynamic_cast<Slider*>(effectsScreen->getChild("fx_v2_" + std::to_string(s)))) v2->setValue(0.0f);
+                        if (auto* v3 = dynamic_cast<Slider*>(effectsScreen->getChild("fx_v3_" + std::to_string(s)))) v3->setValue(0.0f);
+                        if (auto* v4 = dynamic_cast<Slider*>(effectsScreen->getChild("fx_v4_" + std::to_string(s)))) v4->setValue(0.0f);
+                    }
+                }
+            }
+            std::cout << "Reset: Synth parameters and effects restored to defaults" << std::endl;
         });
         mainScreen->addChild(std::move(resetButton));
         if (auto* rb = mainScreen->getChild("reset_params_btn")) {
@@ -2205,11 +2214,7 @@ int main(int argc, char* argv[]) {
         mainButton->setClickCallback([uiContext]() { uiContext->setActiveScreen("main"); });
         screen->addChild(std::move(mainButton));
         
-        auto mainLabel = std::make_unique<Label>("nav_main_label", "Main");
-        mainLabel->setPosition(70, 10);
-        mainLabel->setSize(40, 20);
-        mainLabel->setTextColor(Color(255, 255, 255));
-        screen->addChild(std::move(mainLabel));
+        // Remove duplicate label; button caption suffices
         
         // Effects button
         auto effectsButton = std::make_unique<Button>("nav_effects", "Effects");
@@ -2220,11 +2225,7 @@ int main(int argc, char* argv[]) {
         effectsButton->setClickCallback([uiContext]() { uiContext->setActiveScreen("effects"); });
         screen->addChild(std::move(effectsButton));
         
-        auto effectsLabel = std::make_unique<Label>("nav_effects_label", "Effects");
-        effectsLabel->setPosition(155, 10);
-        effectsLabel->setSize(50, 20);
-        effectsLabel->setTextColor(Color(255, 255, 255));
-        screen->addChild(std::move(effectsLabel));
+        // Remove duplicate label; button caption suffices
         
         // Modulation button
         auto modButton = std::make_unique<Button>("nav_mod", "Modulation");
@@ -2235,11 +2236,7 @@ int main(int argc, char* argv[]) {
         modButton->setClickCallback([uiContext]() { uiContext->setActiveScreen("modulation"); });
         screen->addChild(std::move(modButton));
         
-        auto modLabel = std::make_unique<Label>("nav_mod_label", "Modulation");
-        modLabel->setPosition(245, 10);
-        modLabel->setSize(70, 20);
-        modLabel->setTextColor(Color(255, 255, 255));
-        screen->addChild(std::move(modLabel));
+        // Remove duplicate label; button caption suffices
         
         // Presets button
         auto presetsButton = std::make_unique<Button>("nav_presets", "Presets");
@@ -2250,11 +2247,7 @@ int main(int argc, char* argv[]) {
         presetsButton->setClickCallback([uiContext]() { uiContext->setActiveScreen("presets"); });
         screen->addChild(std::move(presetsButton));
         
-        auto presetsLabel = std::make_unique<Label>("nav_presets_label", "Presets");
-        presetsLabel->setPosition(355, 10);
-        presetsLabel->setSize(50, 20);
-        presetsLabel->setTextColor(Color(255, 255, 255));
-        screen->addChild(std::move(presetsLabel));
+        // Remove duplicate label; button caption suffices
         
         // Settings button
         auto settingsButton = std::make_unique<Button>("nav_settings", "Settings");
@@ -2265,11 +2258,7 @@ int main(int argc, char* argv[]) {
         settingsButton->setClickCallback([uiContext]() { uiContext->setActiveScreen("settings"); });
         screen->addChild(std::move(settingsButton));
         
-        auto settingsLabel = std::make_unique<Label>("nav_settings_label", "Settings");
-        settingsLabel->setPosition(445, 10);
-        settingsLabel->setSize(50, 20);
-        settingsLabel->setTextColor(Color(255, 255, 255));
-        screen->addChild(std::move(settingsLabel));
+        // Remove duplicate label; button caption suffices
         
         // Sequencer button
         auto seqButton = std::make_unique<Button>("nav_seq", "Sequencer");
@@ -2280,11 +2269,7 @@ int main(int argc, char* argv[]) {
         seqButton->setClickCallback([uiContext]() { uiContext->setActiveScreen("sequencer"); });
         screen->addChild(std::move(seqButton));
         
-        auto seqLabel = std::make_unique<Label>("nav_seq_label", "Sequencer");
-        seqLabel->setPosition(540, 10);
-        seqLabel->setSize(60, 20);
-        seqLabel->setTextColor(Color(255, 255, 255));
-        screen->addChild(std::move(seqLabel));
+        // Remove duplicate label; button caption suffices
     };
     
     // Add navigation to sequencer screen

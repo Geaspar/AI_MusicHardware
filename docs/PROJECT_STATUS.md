@@ -339,6 +339,31 @@ Integration Layer (Ready for Deployment)
 - **Changes**: Moved its creation to the end of main screen setup to ensure top-most z-order; positioned at (130, 748), sized (100×30), and styled bright red for visibility. Added one-time logs to confirm presence/visibility.
 - **Impact**: Reset control is clearly visible and accessible next to the MIDI indicator.
 
+
+### **August 12, 2025** — Effects Tab Polish: Chorus Mix/Bypass, Full Reset, Nav Cleanup
+
+**Status**: 🟢 COMPLETE
+
+- **Problems**:
+  - Chorus effect Mix slider had no audible effect; bypass felt ineffective.
+  - Reset button didn’t fully reset effects; Mix sliders and per-effect parameter sliders retained values.
+  - Duplicate tab labels appeared (buttons plus separate labels) on tab screens.
+
+- **Fixes implemented**:
+  - Added proper wet/dry `mix` parameter to `Modulation` (Chorus) and applied it in processing. UI Mix now controls Chorus wet/dry.
+  - Bypass now consistently sets Mix=0 (OFF) and restores Mix when enabled (ON) across effects, including Chorus.
+  - Reset button now fully resets effects: sets all slots to “None”, sets all Mix sliders to 50%, and zeros all vertical parameter sliders even when a slot is “None”. Main quick-FX dropdowns are mirrored to “None”.
+  - Removed duplicate nav text labels from tab views; only the tab buttons remain for a cleaner header.
+
+- **Impact**:
+  - Chorus Mix and bypass behave as expected; audible wet/dry control and reliable enable/disable.
+  - One-click reset returns the entire effects UI to a clean baseline (types, Mix, and per-parameter sliders).
+  - Cleaner UI header without duplicated labels.
+
+- **Verification**:
+  - Select Chorus in a slot, move Mix: wet/dry changes are clearly audible; toggle bypass: effect mutes/returns.
+  - Press Reset: all slots show “None”, all Mix sliders at 50%, vertical param sliders at 0.0; main quick FX entries show “None”.
+
 ### **August 10, 2025** — MIDI Activity Indicator and External MIDI Hookup
 
 **Status**: 🟢 **COMPLETE**
