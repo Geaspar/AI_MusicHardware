@@ -2120,7 +2120,7 @@ int main(int argc, char* argv[]) {
 
     // Finally add Reset button to the right of MIDI indicator, ensure top-most among buttons
     {
-        auto resetButton = std::make_unique<Button>("reset_params_btn", "Reset");
+        auto resetButton = std::make_unique<Button>("reset_params_btn", "Reset parameters");
         // Position relative to MIDI indicator: (100,755) -> place at (130, 748)
         resetButton->setPosition(130, 748);
         resetButton->setSize(100, 30);
