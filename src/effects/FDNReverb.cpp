@@ -68,13 +68,14 @@ void FDNReverb::process(float* buffer, int numFrames) {
         float xinR = buffer[2*n + 1];
         const float xin = 0.5f * (xinL + xinR);
 
-        // Collect outputs from each delay line with basic RT60 decay per loop
-        float fdnOut = 0.0f;
+        // Read all delay lines (with modulation), apply HF damping, and compute per-loop gains
+        float y[kNumDelays_];
+        float z[kNumDelays_];
+        float sumZ = 0.0f;
         for (int k = 0; k < kNumDelays_; ++k) {
             auto& buf = fdnBuffer_[k];
-            size_t w = fdnWriteIndex_[k];
+            const size_t w = fdnWriteIndex_[k];
 
-            // Compute modulated read index around base delay (use mix mod params)
             const float size = 1.0f; // placeholder for future Size control
             const float baseDelaySamples = (fdnBaseDelayMs_[k] * size) * (static_cast<float>(getSampleRate())/1000.0f);
             const float lfoRate = std::max(0.05f, parameters_.at("mod_rate"));
@@ -86,7 +87,7 @@ void FDNReverb::process(float* buffer, int numFrames) {
             while (readIndex < 0.0f) readIndex += static_cast<float>(buf.size());
             const float yk = readFrac(buf, readIndex);
 
-            // HF damping (one-pole LP) placeholder controlled by er_level for now
+            // HF damping (one-pole LP) placeholder controlled by high_damping (0..1)
             const float highDamp = 0.2f + 0.6f * std::clamp(parameters_.count("high_damping") ? parameters_.at("high_damping") : 0.3f, 0.0f, 1.0f);
             fdnLpA_[k] = highDamp;
             fdnLpY_[k] = fdnLpA_[k] * fdnLpY_[k] + (1.0f - fdnLpA_[k]) * yk;
@@ -95,17 +96,27 @@ void FDNReverb::process(float* buffer, int numFrames) {
             const float Td = baseDelaySamples / static_cast<float>(getSampleRate());
             const float gLoop = std::pow(10.0f, -3.0f * (Td / decayS));
 
-            // Write new sample: input feed + feedback (no matrix mix yet)
-            const float writeVal = xin + gLoop * fdnLpY_[k];
-            buf[w] = writeVal;
-            fdnWriteIndex_[k] = (w + 1) % buf.size();
-
-            fdnOut += yk;
+            y[k] = yk;
+            z[k] = gLoop * fdnLpY_[k];
+            sumZ += z[k];
         }
 
+        // Householder feedback mixing: A = I - 2*u*u^T, u_i=1/sqrt(N)
+        const float twoOverN = 2.0f / static_cast<float>(kNumDelays_);
+        for (int k = 0; k < kNumDelays_; ++k) {
+            auto& buf = fdnBuffer_[k];
+            size_t w = fdnWriteIndex_[k];
+            const float mixed = z[k] - twoOverN * sumZ; // since u_i = 1/sqrt(N)
+            const float writeVal = xin + mixed;
+            buf[w] = writeVal + 1e-20f; // denormal guard
+            fdnWriteIndex_[k] = (w + 1) % buf.size();
+        }
+
+        // Output: average of current y (pre-feedback) as wet contribution
+        float fdnOut = 0.0f;
+        for (int k = 0; k < kNumDelays_; ++k) fdnOut += y[k];
         fdnOut /= static_cast<float>(kNumDelays_);
 
-        // Mix dry/wet; copy back interleaved
         const float outL = dry * xinL + wet * fdnOut;
         const float outR = dry * xinR + wet * fdnOut;
         buffer[2*n + 0] = outL;
