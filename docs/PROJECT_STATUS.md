@@ -384,6 +384,28 @@ Integration Layer (Ready for Deployment)
 - **Known limitation**:
   - Still a little hot on low notes at extreme settings; acceptable for now. Plan: add output trim and refine compensation curve for bass-heavy content.
 
+### **August 13, 2025** — Reverb: Phase 0 and Phase 1 (Early Reflections + Input Diffusion)
+
+**Status**: 🟢 IN PROGRESS (Phase 0 complete; Phase 1 underway)
+
+- **Phase 0 (Scaffolding)**
+  - Added new effect types `FDNReverb (Hall)` and `PlateReverb` with basic Mix control and factory/available list integration.
+  - UI wiring in Effects tab; selecting either shows Mix and parameter sliders.
+
+- **Phase 1 (Early Reflections + Input Diffusion)**
+  - Implemented `EarlyReflections` with stereo tap clusters (decorrelated L/R), predelay in samples, ring buffers, and tap normalization.
+  - Exposed parameters: `predelay_ms`, `er_level` (0–1), `er_width` (internal center/side mix; width currently implicit via decorrelation).
+  - Implemented `AllpassDiffuser` (modulated allpass with fractional delay, denormal guard) and integrated 2 stages per channel after ER to raise early density and reduce metallic coloration.
+  - Exposed UI parameters on Effects tab for both verbs: `Predelay (ms)`, `ER Level`, `Diffusion` (maps to allpass gain), `Mod Depth (%)`; Mix uses the horizontal slider.
+
+- **Impact**
+  - Audible early reflections and smoother, denser early field on both verbs; stable operation with green builds.
+  - Parameter changes are click‑free at typical settings.
+
+- **Next**
+  - Expose `mod_rate` on UI and finalize Phase 1.
+  - Begin Phase 2: FDN‑8 late tail in `FDNReverb` (delay lines, Householder matrix, per‑loop HF damping + RT60 mapping, modulation, gain normalization).
+
 ### **August 10, 2025** — MIDI Activity Indicator and External MIDI Hookup
 
 **Status**: 🟢 **COMPLETE**
