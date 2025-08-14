@@ -160,6 +160,7 @@ set(BASIC_AUDIO_SOURCES
     src/audio/Synthesizer.cpp
     src/audio/FourierTransform.cpp
     src/audio/EarlyReflections.cpp
+    src/audio/AllpassDiffuser.cpp
     src/hardware/HardwareInterface.cpp
     src/midi/MidiInterface.cpp
     src/midi/MidiManager.cpp

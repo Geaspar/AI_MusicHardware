@@ -2837,7 +2837,7 @@ int main(int argc, char* argv[]) {
 
             disableParam(slotV4Label[s], slotV4Slider[s]);
         } else if (type == "FDNReverb (Hall)") {
-            // Phase 1: expose ER params on verticals for now
+            // Phase 1: expose ER + Diffusion params on verticals
             if (slotV1Label[s]) slotV1Label[s]->setText("Predelay (ms)");
             slotV1Slider[s]->setRange(0.0f, 100.0f);
             slotV1Slider[s]->setValue(fx->getParameter("predelay_ms"));
@@ -2854,17 +2854,23 @@ int main(int argc, char* argv[]) {
                 if (auto* f = getFxForSlot(s)) { f->setParameter("er_level", v); slotParamCache[s][type]["er_level"] = v; }
             });
 
-            if (slotV3Label[s]) slotV3Label[s]->setText("ER Width");
+            if (slotV3Label[s]) slotV3Label[s]->setText("Diffusion");
             slotV3Slider[s]->setRange(0.0f, 1.0f);
-            slotV3Slider[s]->setValue(fx->getParameter("er_width"));
+            slotV3Slider[s]->setValue(fx->getParameter("diffusion"));
             slotV3Slider[s]->setValueChangeCallback([&, s, type](float v){
                 std::lock_guard<std::mutex> lock(audioMutex);
-                if (auto* f = getFxForSlot(s)) { f->setParameter("er_width", v); slotParamCache[s][type]["er_width"] = v; }
+                if (auto* f = getFxForSlot(s)) { f->setParameter("diffusion", v); slotParamCache[s][type]["diffusion"] = v; }
             });
 
-            disableParam(slotV4Label[s], slotV4Slider[s]);
+            if (slotV4Label[s]) slotV4Label[s]->setText("Mod Depth (%)");
+            slotV4Slider[s]->setRange(0.0f, 1.0f);
+            slotV4Slider[s]->setValue(fx->getParameter("mod_depth"));
+            slotV4Slider[s]->setValueChangeCallback([&, s, type](float v){
+                std::lock_guard<std::mutex> lock(audioMutex);
+                if (auto* f = getFxForSlot(s)) { f->setParameter("mod_depth", v); slotParamCache[s][type]["mod_depth"] = v; }
+            });
         } else if (type == "PlateReverb") {
-            // Phase 1: expose ER params on verticals for now
+            // Phase 1: expose ER + Diffusion params on verticals
             if (slotV1Label[s]) slotV1Label[s]->setText("Predelay (ms)");
             slotV1Slider[s]->setRange(0.0f, 100.0f);
             slotV1Slider[s]->setValue(fx->getParameter("predelay_ms"));
@@ -2881,15 +2887,21 @@ int main(int argc, char* argv[]) {
                 if (auto* f = getFxForSlot(s)) { f->setParameter("er_level", v); slotParamCache[s][type]["er_level"] = v; }
             });
 
-            if (slotV3Label[s]) slotV3Label[s]->setText("ER Width");
+            if (slotV3Label[s]) slotV3Label[s]->setText("Diffusion");
             slotV3Slider[s]->setRange(0.0f, 1.0f);
-            slotV3Slider[s]->setValue(fx->getParameter("er_width"));
+            slotV3Slider[s]->setValue(fx->getParameter("diffusion"));
             slotV3Slider[s]->setValueChangeCallback([&, s, type](float v){
                 std::lock_guard<std::mutex> lock(audioMutex);
-                if (auto* f = getFxForSlot(s)) { f->setParameter("er_width", v); slotParamCache[s][type]["er_width"] = v; }
+                if (auto* f = getFxForSlot(s)) { f->setParameter("diffusion", v); slotParamCache[s][type]["diffusion"] = v; }
             });
 
-            disableParam(slotV4Label[s], slotV4Slider[s]);
+            if (slotV4Label[s]) slotV4Label[s]->setText("Mod Depth (%)");
+            slotV4Slider[s]->setRange(0.0f, 1.0f);
+            slotV4Slider[s]->setValue(fx->getParameter("mod_depth"));
+            slotV4Slider[s]->setValueChangeCallback([&, s, type](float v){
+                std::lock_guard<std::mutex> lock(audioMutex);
+                if (auto* f = getFxForSlot(s)) { f->setParameter("mod_depth", v); slotParamCache[s][type]["mod_depth"] = v; }
+            });
         } else {
             // Unknown: disable all
             disableParam(slotV1Label[s], slotV1Slider[s]);

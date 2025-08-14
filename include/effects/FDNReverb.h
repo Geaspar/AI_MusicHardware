@@ -2,6 +2,7 @@
 
 #include "EffectProcessor.h"
 #include "audio/EarlyReflections.h"
+#include "audio/AllpassDiffuser.h"
 #include <map>
 #include <string>
 
@@ -24,6 +25,12 @@ private:
 
     // Phase 1: Early Reflections (scaffolded)
     EarlyReflections er_;
+
+    // Phase 1: Input diffusers (2 stages per channel for now)
+    AllpassDiffuser inDiffL1_;
+    AllpassDiffuser inDiffL2_;
+    AllpassDiffuser inDiffR1_;
+    AllpassDiffuser inDiffR2_;
 };
 
 } // namespace AIMusicHardware
