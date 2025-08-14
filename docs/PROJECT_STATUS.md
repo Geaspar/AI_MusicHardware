@@ -406,6 +406,24 @@ Integration Layer (Ready for Deployment)
   - Expose `mod_rate` on UI and finalize Phase 1.
   - Begin Phase 2: FDN‑8 late tail in `FDNReverb` (delay lines, Householder matrix, per‑loop HF damping + RT60 mapping, modulation, gain normalization).
 
+### **August 13, 2025** — Reverb: Phase 2 (FDN‑8 Late Tail Scaffold) + Tails/Mod Rate UI
+
+**Status**: 🟢 IN PROGRESS (FDN scaffold implemented)
+
+- **Additions**
+  - `FDNReverb`: Introduced FDN‑8 scaffold with per‑line buffers, modulated fractional reads, simple HF damping, and RT60‑based loop gain using new `decay_rt60_s` parameter.
+  - UI: Added “Decay (s)” slider (0.2–20 s) mapped to `decay_rt60_s` for both `FDNReverb` and `PlateReverb`.
+  - UI: Added “Mod Rate (Hz)” slider (0.05–1.0 Hz) for input diffusers on both verbs.
+
+- **Impact**
+  - Reverb tails are now governed by the Decay (RT60) control. Sound is already more tail‑like; density and smoothness will further improve with the full matrix and per‑loop filtering.
+
+- **Next (Phase 2 completion plan)**
+  - Implement Householder feedback mixing (energy‑preserving) and proper summation to outputs.
+  - Add `size` (delay scaling), `high_damping` (per‑loop LP cutoff mapping), `bass_mult` (LF shelf in loops), and `stereo_width`.
+  - Add internal gain normalization and a light safety limiter; randomize LFO phases per line; parameter smoothing for Size/Decay/Damping.
+  - Expose new params on UI with sensible ranges and formatters.
+
 ### **August 10, 2025** — MIDI Activity Indicator and External MIDI Hookup
 
 **Status**: 🟢 **COMPLETE**
