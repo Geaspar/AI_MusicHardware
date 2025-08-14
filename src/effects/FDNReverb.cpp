@@ -9,6 +9,7 @@ FDNReverb::FDNReverb(int sampleRate) : Effect(sampleRate), er_(sampleRate),
     parameters_["predelay_ms"] = 0.0f;
     parameters_["er_level"] = 0.0f;
     parameters_["er_width"] = 1.0f;
+    parameters_["decay_rt60_s"] = 1.5f;
     parameters_["diffusion"] = 0.5f;     // maps to allpass gain (0.3..0.75)
     parameters_["mod_rate"] = 0.15f;     // Hz
     parameters_["mod_depth"] = 0.2f;     // % of delay -> map to samples
