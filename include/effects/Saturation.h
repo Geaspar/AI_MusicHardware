@@ -16,6 +16,7 @@ public:
     Saturation(int sampleRate = 44100);
     ~Saturation() override;
     
+    void setSampleRate(int sampleRate) override;
     void process(float* buffer, int numFrames) override;
     void setParameter(const std::string& name, float value) override;
     float getParameter(const std::string& name) const override;

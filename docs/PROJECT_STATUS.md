@@ -364,6 +364,26 @@ Integration Layer (Ready for Deployment)
   - Select Chorus in a slot, move Mix: wet/dry changes are clearly audible; toggle bypass: effect mutes/returns.
   - Press Reset: all slots show “None”, all Mix sliders at 50%, vertical param sliders at 0.0; main quick FX entries show “None”.
 
+
+### **August 12, 2025** — Saturation Effect: UI Controls and Safety Guardrails
+
+**Status**: 🟡 IMPROVED (acceptable; further tuning noted)
+
+- **Additions**:
+  - Exposed Saturation parameters on Effects tab: Drive (1–20), Tone (0–1), Mix (0–1).
+  - Applied defaults on effect creation (Drive=2.0, Tone=0.5, Mix=0.5).
+
+- **Safety fixes**:
+  - Recompute tone filter on sample-rate change; guard coefficient math and clamp to stable ranges.
+  - Output level control: stronger compensation vs Drive, soft limiting, and final safety clamp to avoid engine overload.
+
+- **Impact**:
+  - Saturation no longer destabilizes the audio engine; output stays under control in typical settings.
+  - User can tweak Drive/Tone/Mix directly from Effects tab.
+
+- **Known limitation**:
+  - Still a little hot on low notes at extreme settings; acceptable for now. Plan: add output trim and refine compensation curve for bass-heavy content.
+
 ### **August 10, 2025** — MIDI Activity Indicator and External MIDI Hookup
 
 **Status**: 🟢 **COMPLETE**

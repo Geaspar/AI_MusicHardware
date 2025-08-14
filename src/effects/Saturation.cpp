@@ -25,6 +25,12 @@ Saturation::Saturation(int sampleRate)
 Saturation::~Saturation() {
 }
 
+void Saturation::setSampleRate(int sampleRate) {
+    Effect::setSampleRate(sampleRate);
+    // Recompute tone filter when sample rate changes
+    calculateToneCoefficients();
+}
+
 void Saturation::process(float* buffer, int numFrames) {
     for (int i = 0; i < numFrames * 2; i += 2) {
         // Get input samples
@@ -66,6 +72,7 @@ void Saturation::process(float* buffer, int numFrames) {
         
         // Apply tone control (high shelf filter)
         // Process left channel
+        // One-pole style high-shelf approximation; guard against NaN/Inf
         float toneL = b0_ * saturatedL + b1_ * x1_[0] - a1_ * y1_[0];
         x1_[0] = saturatedL;
         y1_[0] = toneL;
@@ -76,13 +83,21 @@ void Saturation::process(float* buffer, int numFrames) {
         y1_[1] = toneR;
         
         // Apply compensation gain to avoid clipping
-        float compensationGain = 1.0f / (0.5f + 0.5f * drive_);
+        // Aggressive compensation to keep level under control as drive increases
+        float denom = 0.25f + 0.75f * std::max(1.0f, drive_);
+        float compensationGain = 1.0f / denom;
         toneL *= compensationGain;
         toneR *= compensationGain;
         
         // Mix dry and wet signals
-        buffer[i] = inputL * (1.0f - mix_) + toneL * mix_;
-        buffer[i + 1] = inputR * (1.0f - mix_) + toneR * mix_;
+        float outL = inputL * (1.0f - mix_) + toneL * mix_;
+        float outR = inputR * (1.0f - mix_) + toneR * mix_;
+        // Soft limiting to tame peaks before final clamp
+        outL = std::tanh(outL * 1.2f) * 0.9f;
+        outR = std::tanh(outR * 1.2f) * 0.9f;
+        // Safety clamp to prevent hard clipping from blowing up the engine
+        buffer[i]     = std::clamp(outL, -0.98f, 0.98f);
+        buffer[i + 1] = std::clamp(outR, -0.98f, 0.98f);
     }
 }
 
@@ -133,7 +148,9 @@ void Saturation::calculateToneCoefficients() {
     float A = std::pow(10.0f, gain / 40.0f); // Divide by 40 instead of 20 for shelving filter
     
     // Compute filter coefficients
-    float w0 = 2.0f * PI * frequency / sampleRate_;
+    // Guard sampleRate to avoid division by zero
+    float sr = static_cast<float>(std::max(1000, sampleRate_));
+    float w0 = 2.0f * PI * frequency / sr;
     float cosw0 = std::cos(w0);
     float alpha = std::sin(w0) * 0.5f;
     
@@ -147,10 +164,21 @@ void Saturation::calculateToneCoefficients() {
     float a1 = 2.0f * ((A - 1.0f) - (A + 1.0f) * cosw0);
     float a2 = (A + 1.0f) - (A - 1.0f) * cosw0 - beta * std::sin(w0);
     
-    // Normalize coefficients by a0
+    // Normalize coefficients by a0 (guard against very small a0)
+    if (!std::isfinite(a0) || std::abs(a0) < 1e-6f) {
+        // Fallback to neutral filter
+        b0_ = 1.0f;
+        b1_ = 0.0f;
+        a1_ = 0.0f;
+        return;
+    }
     b0_ = b0 / a0;
     b1_ = b1 / a0;
     a1_ = a1 / a0;
+    // Clamp to stable range
+    a1_ = std::clamp(a1_, -0.99f, 0.99f);
+    b0_ = std::clamp(b0_, -8.0f, 8.0f);
+    b1_ = std::clamp(b1_, -8.0f, 8.0f);
     
     // We're using a simplified first-order filter, so b2 and a2 aren't used
 }
