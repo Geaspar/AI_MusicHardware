@@ -2837,16 +2837,58 @@ int main(int argc, char* argv[]) {
 
             disableParam(slotV4Label[s], slotV4Slider[s]);
         } else if (type == "FDNReverb (Hall)") {
-            // For now: expose Mix only via the horizontal Mix slider; disable verticals
-            disableParam(slotV1Label[s], slotV1Slider[s]);
-            disableParam(slotV2Label[s], slotV2Slider[s]);
-            disableParam(slotV3Label[s], slotV3Slider[s]);
+            // Phase 1: expose ER params on verticals for now
+            if (slotV1Label[s]) slotV1Label[s]->setText("Predelay (ms)");
+            slotV1Slider[s]->setRange(0.0f, 100.0f);
+            slotV1Slider[s]->setValue(fx->getParameter("predelay_ms"));
+            slotV1Slider[s]->setValueChangeCallback([&, s, type](float v){
+                std::lock_guard<std::mutex> lock(audioMutex);
+                if (auto* f = getFxForSlot(s)) { f->setParameter("predelay_ms", v); slotParamCache[s][type]["predelay_ms"] = v; }
+            });
+
+            if (slotV2Label[s]) slotV2Label[s]->setText("ER Level");
+            slotV2Slider[s]->setRange(0.0f, 1.0f);
+            slotV2Slider[s]->setValue(fx->getParameter("er_level"));
+            slotV2Slider[s]->setValueChangeCallback([&, s, type](float v){
+                std::lock_guard<std::mutex> lock(audioMutex);
+                if (auto* f = getFxForSlot(s)) { f->setParameter("er_level", v); slotParamCache[s][type]["er_level"] = v; }
+            });
+
+            if (slotV3Label[s]) slotV3Label[s]->setText("ER Width");
+            slotV3Slider[s]->setRange(0.0f, 1.0f);
+            slotV3Slider[s]->setValue(fx->getParameter("er_width"));
+            slotV3Slider[s]->setValueChangeCallback([&, s, type](float v){
+                std::lock_guard<std::mutex> lock(audioMutex);
+                if (auto* f = getFxForSlot(s)) { f->setParameter("er_width", v); slotParamCache[s][type]["er_width"] = v; }
+            });
+
             disableParam(slotV4Label[s], slotV4Slider[s]);
         } else if (type == "PlateReverb") {
-            // For now: expose Mix only via the horizontal Mix slider; disable verticals
-            disableParam(slotV1Label[s], slotV1Slider[s]);
-            disableParam(slotV2Label[s], slotV2Slider[s]);
-            disableParam(slotV3Label[s], slotV3Slider[s]);
+            // Phase 1: expose ER params on verticals for now
+            if (slotV1Label[s]) slotV1Label[s]->setText("Predelay (ms)");
+            slotV1Slider[s]->setRange(0.0f, 100.0f);
+            slotV1Slider[s]->setValue(fx->getParameter("predelay_ms"));
+            slotV1Slider[s]->setValueChangeCallback([&, s, type](float v){
+                std::lock_guard<std::mutex> lock(audioMutex);
+                if (auto* f = getFxForSlot(s)) { f->setParameter("predelay_ms", v); slotParamCache[s][type]["predelay_ms"] = v; }
+            });
+
+            if (slotV2Label[s]) slotV2Label[s]->setText("ER Level");
+            slotV2Slider[s]->setRange(0.0f, 1.0f);
+            slotV2Slider[s]->setValue(fx->getParameter("er_level"));
+            slotV2Slider[s]->setValueChangeCallback([&, s, type](float v){
+                std::lock_guard<std::mutex> lock(audioMutex);
+                if (auto* f = getFxForSlot(s)) { f->setParameter("er_level", v); slotParamCache[s][type]["er_level"] = v; }
+            });
+
+            if (slotV3Label[s]) slotV3Label[s]->setText("ER Width");
+            slotV3Slider[s]->setRange(0.0f, 1.0f);
+            slotV3Slider[s]->setValue(fx->getParameter("er_width"));
+            slotV3Slider[s]->setValueChangeCallback([&, s, type](float v){
+                std::lock_guard<std::mutex> lock(audioMutex);
+                if (auto* f = getFxForSlot(s)) { f->setParameter("er_width", v); slotParamCache[s][type]["er_width"] = v; }
+            });
+
             disableParam(slotV4Label[s], slotV4Slider[s]);
         } else {
             // Unknown: disable all

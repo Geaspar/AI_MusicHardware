@@ -1,6 +1,7 @@
 #pragma once
 
 #include "EffectProcessor.h"
+#include "audio/EarlyReflections.h"
 #include <map>
 #include <string>
 
@@ -12,6 +13,7 @@ public:
     ~FDNReverb() override;
 
     void process(float* buffer, int numFrames) override;
+    void setSampleRate(int sampleRate) override { Effect::setSampleRate(sampleRate); er_.setSampleRate(sampleRate); }
     void setParameter(const std::string& name, float value) override;
     float getParameter(const std::string& name) const override;
     std::string getName() const override { return "FDNReverb (Hall)"; }
@@ -19,6 +21,9 @@ public:
 private:
     std::map<std::string, float> parameters_;
     float mix_ = 0.25f;
+
+    // Phase 1: Early Reflections (scaffolded)
+    EarlyReflections er_;
 };
 
 } // namespace AIMusicHardware

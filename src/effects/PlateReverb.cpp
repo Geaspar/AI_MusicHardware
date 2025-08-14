@@ -3,8 +3,11 @@
 
 namespace AIMusicHardware {
 
-PlateReverb::PlateReverb(int sampleRate) : Effect(sampleRate) {
+PlateReverb::PlateReverb(int sampleRate) : Effect(sampleRate), er_(sampleRate) {
     parameters_["mix"] = mix_;
+    parameters_["predelay_ms"] = 0.0f;
+    parameters_["er_level"] = 0.0f;
+    parameters_["er_width"] = 1.0f;
 }
 
 PlateReverb::~PlateReverb() = default;
@@ -12,10 +15,17 @@ PlateReverb::~PlateReverb() = default;
 void PlateReverb::process(float* buffer, int numFrames) {
     const float wet = clamp(mix_, 0.0f, 1.0f);
     const float dry = 1.0f - wet;
+
+    // Phase 1: apply ER (currently pass-through but wired for params)
+    er_.setPredelayMs(parameters_.at("predelay_ms"));
+    er_.setLevel(parameters_.at("er_level"));
+    er_.setWidth(parameters_.at("er_width"));
+    er_.process(buffer, numFrames);
+
     for (int i = 0; i < numFrames * 2; i += 2) {
         const float inL = buffer[i];
         const float inR = buffer[i + 1];
-        // Placeholder: wet path equals dry input
+        // Placeholder: wet path equals ER output (currently equal to input)
         const float wetL = inL;
         const float wetR = inR;
         buffer[i]     = dry * inL + wet * wetL;
