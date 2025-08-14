@@ -2539,6 +2539,10 @@ int main(int argc, char* argv[]) {
             fx->setParameter("drive", 2.0f);
             fx->setParameter("tone", 0.5f);
             fx->setParameter("mix", 0.5f);
+        } else if (type == "FDNReverb (Hall)") {
+            fx->setParameter("mix", 0.25f);
+        } else if (type == "PlateReverb") {
+            fx->setParameter("mix", 0.25f);
         } else if (type == "Phaser") {
             fx->setParameter("rate", 0.5f);
             fx->setParameter("depth", 0.5f);
@@ -2831,6 +2835,18 @@ int main(int argc, char* argv[]) {
             slotV3Slider[s]->setValue(fx->getParameter("mix"));
             slotV3Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("mix", v); slotParamCache[s][type]["mix"] = v; } });
 
+            disableParam(slotV4Label[s], slotV4Slider[s]);
+        } else if (type == "FDNReverb (Hall)") {
+            // For now: expose Mix only via the horizontal Mix slider; disable verticals
+            disableParam(slotV1Label[s], slotV1Slider[s]);
+            disableParam(slotV2Label[s], slotV2Slider[s]);
+            disableParam(slotV3Label[s], slotV3Slider[s]);
+            disableParam(slotV4Label[s], slotV4Slider[s]);
+        } else if (type == "PlateReverb") {
+            // For now: expose Mix only via the horizontal Mix slider; disable verticals
+            disableParam(slotV1Label[s], slotV1Slider[s]);
+            disableParam(slotV2Label[s], slotV2Slider[s]);
+            disableParam(slotV3Label[s], slotV3Slider[s]);
             disableParam(slotV4Label[s], slotV4Slider[s]);
         } else {
             // Unknown: disable all

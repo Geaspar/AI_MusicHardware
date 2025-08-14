@@ -8,6 +8,8 @@
 #include "BassBoost.h"
 #include "Modulation.h"
 #include "EffectProcessor.h" // includes Delay/Reverb classes
+#include "FDNReverb.h"
+#include "PlateReverb.h"
 #include "Filter.h"
 #include "Distortion.h"
 #include "BitCrusher.h"
@@ -24,6 +26,12 @@ inline std::unique_ptr<Effect> createEffectComplete(const std::string& type, int
     }
     else if (type == "Reverb") {
         return std::make_unique<Reverb>(sampleRate);
+    }
+    else if (type == "FDNReverb (Hall)") {
+        return std::make_unique<FDNReverb>(sampleRate);
+    }
+    else if (type == "PlateReverb") {
+        return std::make_unique<PlateReverb>(sampleRate);
     }
     else if (type == "Saturation") {
         return std::make_unique<Saturation>(sampleRate);
@@ -73,6 +81,8 @@ inline std::vector<std::string> getAvailableEffects() {
     return {
         "Delay",
         "Reverb",
+        "FDNReverb (Hall)",
+        "PlateReverb",
         "Saturation",
         "BassBoost",
         "Modulation",
@@ -115,7 +125,7 @@ inline std::vector<std::string> getEffectsByCategory(EffectCategory category) {
             return {"Phaser", "Modulation"};
             
         case EffectCategory::TimeBased:
-            return {"Delay", "Reverb"};
+            return {"Delay", "Reverb", "FDNReverb (Hall)", "PlateReverb"};
             
         case EffectCategory::Utility:
             return {};

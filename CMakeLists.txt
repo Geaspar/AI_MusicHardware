@@ -150,6 +150,8 @@ set(EFFECTS_SOURCES
     src/effects/LadderFilter.cpp
     src/effects/CombFilter.cpp
     src/effects/FormantFilter.cpp
+    src/effects/FDNReverb.cpp
+    src/effects/PlateReverb.cpp
 )
 
 set(BASIC_AUDIO_SOURCES
@@ -157,6 +159,7 @@ set(BASIC_AUDIO_SOURCES
     src/audio/AudioErrorHandler.cpp
     src/audio/Synthesizer.cpp
     src/audio/FourierTransform.cpp
+    src/audio/EarlyReflections.cpp
     src/hardware/HardwareInterface.cpp
     src/midi/MidiInterface.cpp
     src/midi/MidiManager.cpp
