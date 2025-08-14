@@ -5,6 +5,7 @@
 #include "audio/AllpassDiffuser.h"
 #include <map>
 #include <string>
+#include <vector>
 
 namespace AIMusicHardware {
 
@@ -31,6 +32,17 @@ private:
     AllpassDiffuser inDiffL2_;
     AllpassDiffuser inDiffR1_;
     AllpassDiffuser inDiffR2_;
+
+    // Phase 2: FDN-8 late tail
+    static constexpr int kNumDelays_ = 8;
+    std::vector<float> fdnBuffer_[kNumDelays_];
+    size_t fdnWriteIndex_[kNumDelays_] = {0,0,0,0,0,0,0,0};
+    float fdnBaseDelayMs_[kNumDelays_] = {15.3f, 19.7f, 23.1f, 29.9f, 37.1f, 51.7f, 67.9f, 89.7f};
+    float fdnLfoPhase_[kNumDelays_] = {0,0,0,0,0,0,0,0};
+    float fdnLpA_[kNumDelays_] = {0,0,0,0,0,0,0,0};
+    float fdnLpY_[kNumDelays_] = {0,0,0,0,0,0,0,0};
+    void ensureFdnCapacity();
+    inline float readFrac(const std::vector<float>& buf, float index) const;
 };
 
 } // namespace AIMusicHardware

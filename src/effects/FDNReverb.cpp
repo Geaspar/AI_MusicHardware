@@ -1,5 +1,7 @@
 #include "../../include/effects/FDNReverb.h"
 #include "../../include/effects/EffectUtils.h"
+#include <cmath>
+#include <algorithm>
 
 namespace AIMusicHardware {
 
@@ -56,14 +58,58 @@ void FDNReverb::process(float* buffer, int numFrames) {
         buffer[i + 1] = r;
     }
 
-    for (int i = 0; i < numFrames * 2; i += 2) {
-        const float inL = buffer[i];
-        const float inR = buffer[i + 1];
-        // Placeholder: wet path equals ER output (currently equal to input)
-        const float wetL = inL;
-        const float wetR = inR;
-        buffer[i]     = dry * inL + wet * wetL;
-        buffer[i + 1] = dry * inR + wet * wetR;
+    // Phase 2: simple FDN-8 scaffold (no matrix yet): sum diffused input into a bank of delays
+    ensureFdnCapacity();
+    const float decayS = std::max(0.2f, parameters_.at("decay_rt60_s"));
+    // Householder shortcut precompute u dot x factor will be added later
+
+    for (int n = 0; n < numFrames; ++n) {
+        float xinL = buffer[2*n + 0];
+        float xinR = buffer[2*n + 1];
+        const float xin = 0.5f * (xinL + xinR);
+
+        // Collect outputs from each delay line with basic RT60 decay per loop
+        float fdnOut = 0.0f;
+        for (int k = 0; k < kNumDelays_; ++k) {
+            auto& buf = fdnBuffer_[k];
+            size_t w = fdnWriteIndex_[k];
+
+            // Compute modulated read index around base delay (use mix mod params)
+            const float size = 1.0f; // placeholder for future Size control
+            const float baseDelaySamples = (fdnBaseDelayMs_[k] * size) * (static_cast<float>(getSampleRate())/1000.0f);
+            const float lfoRate = std::max(0.05f, parameters_.at("mod_rate"));
+            const float lfoDepth = std::max(0.0f, parameters_.at("mod_depth")) * 0.01f; // percent
+            fdnLfoPhase_[k] += (2.0f * 3.14159265358979323846f) * (lfoRate / static_cast<float>(getSampleRate()));
+            if (fdnLfoPhase_[k] > 2.0f * 3.14159265358979323846f) fdnLfoPhase_[k] -= 2.0f * 3.14159265358979323846f;
+            const float modSamples = baseDelaySamples * lfoDepth * std::sin(fdnLfoPhase_[k]);
+            float readIndex = static_cast<float>(w) - (baseDelaySamples + modSamples);
+            while (readIndex < 0.0f) readIndex += static_cast<float>(buf.size());
+            const float yk = readFrac(buf, readIndex);
+
+            // HF damping (one-pole LP) placeholder controlled by er_level for now
+            const float highDamp = 0.2f + 0.6f * std::clamp(parameters_.count("high_damping") ? parameters_.at("high_damping") : 0.3f, 0.0f, 1.0f);
+            fdnLpA_[k] = highDamp;
+            fdnLpY_[k] = fdnLpA_[k] * fdnLpY_[k] + (1.0f - fdnLpA_[k]) * yk;
+
+            // RT60 gain per loop (Schroeder approximation)
+            const float Td = baseDelaySamples / static_cast<float>(getSampleRate());
+            const float gLoop = std::pow(10.0f, -3.0f * (Td / decayS));
+
+            // Write new sample: input feed + feedback (no matrix mix yet)
+            const float writeVal = xin + gLoop * fdnLpY_[k];
+            buf[w] = writeVal;
+            fdnWriteIndex_[k] = (w + 1) % buf.size();
+
+            fdnOut += yk;
+        }
+
+        fdnOut /= static_cast<float>(kNumDelays_);
+
+        // Mix dry/wet; copy back interleaved
+        const float outL = dry * xinL + wet * fdnOut;
+        const float outR = dry * xinR + wet * fdnOut;
+        buffer[2*n + 0] = outL;
+        buffer[2*n + 1] = outR;
     }
 }
 
@@ -76,6 +122,31 @@ float FDNReverb::getParameter(const std::string& name) const {
     auto it = parameters_.find(name);
     if (it != parameters_.end()) return it->second;
     return 0.0f;
+}
+
+void FDNReverb::ensureFdnCapacity() {
+    // Allocate buffers based on base delays and sample rate (~2x margin)
+    for (int k = 0; k < kNumDelays_; ++k) {
+        const float baseDelaySamples = (fdnBaseDelayMs_[k]) * (static_cast<float>(getSampleRate())/1000.0f);
+        size_t need = static_cast<size_t>(std::ceil(baseDelaySamples * 2.5f));
+        need = std::max<size_t>(need, 64);
+        if (fdnBuffer_[k].size() != need) {
+            fdnBuffer_[k].assign(need, 0.0f);
+            fdnWriteIndex_[k] = 0;
+            fdnLpY_[k] = 0.0f;
+            fdnLfoPhase_[k] = 0.0f;
+        }
+    }
+}
+
+inline float FDNReverb::readFrac(const std::vector<float>& buf, float index) const {
+    const size_t size = buf.size();
+    int i0 = static_cast<int>(std::floor(index)) % static_cast<int>(size);
+    if (i0 < 0) i0 += static_cast<int>(size);
+    int i1 = i0 + 1;
+    if (i1 >= static_cast<int>(size)) i1 = 0;
+    const float frac = index - std::floor(index);
+    return buf[static_cast<size_t>(i0)] * (1.0f - frac) + buf[static_cast<size_t>(i1)] * frac;
 }
 
 } // namespace AIMusicHardware
