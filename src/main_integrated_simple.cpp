@@ -2862,12 +2862,12 @@ int main(int argc, char* argv[]) {
                 if (auto* f = getFxForSlot(s)) { f->setParameter("diffusion", v); slotParamCache[s][type]["diffusion"] = v; }
             });
 
-            if (slotV4Label[s]) slotV4Label[s]->setText("Mod Depth (%)");
-            slotV4Slider[s]->setRange(0.0f, 1.0f);
-            slotV4Slider[s]->setValue(fx->getParameter("mod_depth"));
+            if (slotV4Label[s]) slotV4Label[s]->setText("Mod Rate (Hz)");
+            slotV4Slider[s]->setRange(0.05f, 1.0f);
+            slotV4Slider[s]->setValue(fx->getParameter("mod_rate"));
             slotV4Slider[s]->setValueChangeCallback([&, s, type](float v){
                 std::lock_guard<std::mutex> lock(audioMutex);
-                if (auto* f = getFxForSlot(s)) { f->setParameter("mod_depth", v); slotParamCache[s][type]["mod_depth"] = v; }
+                if (auto* f = getFxForSlot(s)) { f->setParameter("mod_rate", v); slotParamCache[s][type]["mod_rate"] = v; }
             });
         } else if (type == "PlateReverb") {
             // Phase 1: expose ER + Diffusion params on verticals
@@ -2895,12 +2895,12 @@ int main(int argc, char* argv[]) {
                 if (auto* f = getFxForSlot(s)) { f->setParameter("diffusion", v); slotParamCache[s][type]["diffusion"] = v; }
             });
 
-            if (slotV4Label[s]) slotV4Label[s]->setText("Mod Depth (%)");
-            slotV4Slider[s]->setRange(0.0f, 1.0f);
-            slotV4Slider[s]->setValue(fx->getParameter("mod_depth"));
+            if (slotV4Label[s]) slotV4Label[s]->setText("Mod Rate (Hz)");
+            slotV4Slider[s]->setRange(0.05f, 1.0f);
+            slotV4Slider[s]->setValue(fx->getParameter("mod_rate"));
             slotV4Slider[s]->setValueChangeCallback([&, s, type](float v){
                 std::lock_guard<std::mutex> lock(audioMutex);
-                if (auto* f = getFxForSlot(s)) { f->setParameter("mod_depth", v); slotParamCache[s][type]["mod_depth"] = v; }
+                if (auto* f = getFxForSlot(s)) { f->setParameter("mod_rate", v); slotParamCache[s][type]["mod_rate"] = v; }
             });
         } else {
             // Unknown: disable all
