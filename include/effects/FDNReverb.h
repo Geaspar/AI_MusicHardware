@@ -15,7 +15,7 @@ public:
     ~FDNReverb() override;
 
     void process(float* buffer, int numFrames) override;
-    void setSampleRate(int sampleRate) override { Effect::setSampleRate(sampleRate); er_.setSampleRate(sampleRate); }
+    void setSampleRate(int sampleRate) override;
     void setParameter(const std::string& name, float value) override;
     float getParameter(const std::string& name) const override;
     std::string getName() const override { return "FDNReverb (Hall)"; }

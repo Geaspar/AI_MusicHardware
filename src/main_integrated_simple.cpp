@@ -2837,7 +2837,7 @@ int main(int argc, char* argv[]) {
 
             disableParam(slotV4Label[s], slotV4Slider[s]);
         } else if (type == "FDNReverb (Hall)") {
-            // Phase 1: expose ER + Diffusion + Decay
+            // Phase 2: expose Predelay, Size, Diffusion, Mod Rate. (Add Decay/HiDamp/Bass/Width in next page later.)
             if (slotV1Label[s]) slotV1Label[s]->setText("Predelay (ms)");
             slotV1Slider[s]->setRange(0.0f, 100.0f);
             slotV1Slider[s]->setValue(fx->getParameter("predelay_ms"));
@@ -2846,12 +2846,12 @@ int main(int argc, char* argv[]) {
                 if (auto* f = getFxForSlot(s)) { f->setParameter("predelay_ms", v); slotParamCache[s][type]["predelay_ms"] = v; }
             });
 
-            if (slotV2Label[s]) slotV2Label[s]->setText("Decay (s)");
-            slotV2Slider[s]->setRange(0.2f, 20.0f);
-            slotV2Slider[s]->setValue(fx->getParameter("decay_rt60_s"));
+            if (slotV2Label[s]) slotV2Label[s]->setText("Size");
+            slotV2Slider[s]->setRange(0.5f, 2.0f);
+            slotV2Slider[s]->setValue(fx->getParameter("size"));
             slotV2Slider[s]->setValueChangeCallback([&, s, type](float v){
                 std::lock_guard<std::mutex> lock(audioMutex);
-                if (auto* f = getFxForSlot(s)) { f->setParameter("decay_rt60_s", v); slotParamCache[s][type]["decay_rt60_s"] = v; }
+                if (auto* f = getFxForSlot(s)) { f->setParameter("size", v); slotParamCache[s][type]["size"] = v; }
             });
 
             if (slotV3Label[s]) slotV3Label[s]->setText("Diffusion");
@@ -2870,7 +2870,7 @@ int main(int argc, char* argv[]) {
                 if (auto* f = getFxForSlot(s)) { f->setParameter("mod_rate", v); slotParamCache[s][type]["mod_rate"] = v; }
             });
         } else if (type == "PlateReverb") {
-            // Phase 1: expose ER + Diffusion + Decay
+            // Keep Plate simple for now: Predelay/Decay/Diffusion/Mod Rate
             if (slotV1Label[s]) slotV1Label[s]->setText("Predelay (ms)");
             slotV1Slider[s]->setRange(0.0f, 100.0f);
             slotV1Slider[s]->setValue(fx->getParameter("predelay_ms"));

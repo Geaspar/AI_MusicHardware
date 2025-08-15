@@ -15,9 +15,27 @@ FDNReverb::FDNReverb(int sampleRate) : Effect(sampleRate), er_(sampleRate),
     parameters_["diffusion"] = 0.5f;     // maps to allpass gain (0.3..0.75)
     parameters_["mod_rate"] = 0.15f;     // Hz
     parameters_["mod_depth"] = 0.2f;     // % of delay -> map to samples
+    parameters_["size"] = 1.0f;
+    parameters_["high_damping"] = 0.3f;
+    parameters_["bass_mult"] = 1.0f;
+    parameters_["stereo_width"] = 1.0f;
+
+    // Randomize per-line LFO phases for decorrelation
+    for (int k = 0; k < kNumDelays_; ++k) {
+        // Simple deterministic phase seeds
+        fdnLfoPhase_[k] = std::fmod(0.37f * (k + 1) * 2.0f * 3.14159265358979323846f, 2.0f * 3.14159265358979323846f);
+    }
 }
 
 FDNReverb::~FDNReverb() = default;
+
+void FDNReverb::setSampleRate(int sampleRate) {
+    Effect::setSampleRate(sampleRate);
+    er_.setSampleRate(sampleRate);
+    // Recompute capacity for current size value
+    const float sizeScale = std::clamp(parameters_.count("size") ? parameters_.at("size") : 1.0f, 0.5f, 2.0f);
+    ensureFdnCapacity(sizeScale);
+}
 
 void FDNReverb::process(float* buffer, int numFrames) {
     const float wet = clamp(mix_, 0.0f, 1.0f);
@@ -59,8 +77,23 @@ void FDNReverb::process(float* buffer, int numFrames) {
     }
 
     // Phase 2: simple FDN-8 scaffold (no matrix yet): sum diffused input into a bank of delays
-    ensureFdnCapacity();
-    const float decayS = std::max(0.2f, parameters_.at("decay_rt60_s"));
+    // Smooth key parameters
+    const float sizeTarget = std::clamp(parameters_.at("size"), 0.5f, 2.0f);
+    const float decayTarget = std::max(0.2f, parameters_.at("decay_rt60_s"));
+    const float highDampTarget = std::clamp(parameters_.at("high_damping"), 0.0f, 1.0f);
+    const float bassMultTarget = std::clamp(parameters_.at("bass_mult"), 0.5f, 2.0f);
+    const float widthTarget = std::clamp(parameters_.at("stereo_width"), 0.0f, 1.0f);
+
+    // Smoothing factors per block (assume ~64-sample blocks typical). Here we approximate with per-call smoothing.
+    auto smooth = [](float current, float target, float alpha){ return current + alpha * (target - current); };
+    sizeSmoothed_ = smooth(sizeSmoothed_, sizeTarget, 0.1f);
+    decaySmoothed_ = smooth(decaySmoothed_, decayTarget, 0.05f);
+    highDampSmoothed_ = smooth(highDampSmoothed_, highDampTarget, 0.03f);
+    bassMultSmoothed_ = smooth(bassMultSmoothed_, bassMultTarget, 0.03f);
+    widthSmoothed_ = smooth(widthSmoothed_, widthTarget, 0.15f);
+
+    ensureFdnCapacity(sizeSmoothed_);
+    const float decayS = decaySmoothed_;
     // Householder shortcut precompute u dot x factor will be added later
 
     for (int n = 0; n < numFrames; ++n) {
@@ -76,8 +109,7 @@ void FDNReverb::process(float* buffer, int numFrames) {
             auto& buf = fdnBuffer_[k];
             const size_t w = fdnWriteIndex_[k];
 
-            const float size = 1.0f; // placeholder for future Size control
-            const float baseDelaySamples = (fdnBaseDelayMs_[k] * size) * (static_cast<float>(getSampleRate())/1000.0f);
+            const float baseDelaySamples = (fdnBaseDelayMs_[k] * sizeSmoothed_) * (static_cast<float>(getSampleRate())/1000.0f);
             const float lfoRate = std::max(0.05f, parameters_.at("mod_rate"));
             const float lfoDepth = std::max(0.0f, parameters_.at("mod_depth")) * 0.01f; // percent
             fdnLfoPhase_[k] += (2.0f * 3.14159265358979323846f) * (lfoRate / static_cast<float>(getSampleRate()));
@@ -87,14 +119,17 @@ void FDNReverb::process(float* buffer, int numFrames) {
             while (readIndex < 0.0f) readIndex += static_cast<float>(buf.size());
             const float yk = readFrac(buf, readIndex);
 
-            // HF damping (one-pole LP) placeholder controlled by high_damping (0..1)
-            const float highDamp = 0.2f + 0.6f * std::clamp(parameters_.count("high_damping") ? parameters_.at("high_damping") : 0.3f, 0.0f, 1.0f);
-            fdnLpA_[k] = highDamp;
+            // HF damping (one-pole LP) cutoff mapping 2k..12k
+            const float fc = 2000.0f + highDampSmoothed_ * (12000.0f - 2000.0f);
+            const float a = std::exp(-(2.0f * 3.14159265358979323846f * fc) / static_cast<float>(getSampleRate()));
+            fdnLpA_[k] = a;
             fdnLpY_[k] = fdnLpA_[k] * fdnLpY_[k] + (1.0f - fdnLpA_[k]) * yk;
 
             // RT60 gain per loop (Schroeder approximation)
             const float Td = baseDelaySamples / static_cast<float>(getSampleRate());
-            const float gLoop = std::pow(10.0f, -3.0f * (Td / decayS));
+            float gLoop = std::pow(10.0f, -3.0f * (Td / decayS));
+            // Bass Mult: subtle tilt - increase/decrease loop gain
+            gLoop *= std::pow(bassMultSmoothed_, 0.2f);
 
             y[k] = yk;
             z[k] = gLoop * fdnLpY_[k];
@@ -112,13 +147,21 @@ void FDNReverb::process(float* buffer, int numFrames) {
             fdnWriteIndex_[k] = (w + 1) % buf.size();
         }
 
-        // Output: average of current y (pre-feedback) as wet contribution
-        float fdnOut = 0.0f;
-        for (int k = 0; k < kNumDelays_; ++k) fdnOut += y[k];
-        fdnOut /= static_cast<float>(kNumDelays_);
+        // Output: mid/side mix for stereo width
+        float sumEven = 0.0f, sumOdd = 0.0f;
+        for (int k = 0; k < kNumDelays_; ++k) {
+            if ((k & 1) == 0) sumEven += y[k]; else sumOdd += y[k];
+        }
+        const float mid = (sumEven + sumOdd) / static_cast<float>(kNumDelays_);
+        const float side = (sumEven - sumOdd) / static_cast<float>(kNumDelays_);
+        float wetL = mid + widthSmoothed_ * side;
+        float wetR = mid - widthSmoothed_ * side;
+        // Gentle safety limiter
+        wetL = std::tanh(wetL);
+        wetR = std::tanh(wetR);
 
-        const float outL = dry * xinL + wet * fdnOut;
-        const float outR = dry * xinR + wet * fdnOut;
+        const float outL = dry * xinL + wet * wetL;
+        const float outR = dry * xinR + wet * wetR;
         buffer[2*n + 0] = outL;
         buffer[2*n + 1] = outR;
     }
@@ -135,10 +178,10 @@ float FDNReverb::getParameter(const std::string& name) const {
     return 0.0f;
 }
 
-void FDNReverb::ensureFdnCapacity() {
+void FDNReverb::ensureFdnCapacity(float sizeScale) {
     // Allocate buffers based on base delays and sample rate (~2x margin)
     for (int k = 0; k < kNumDelays_; ++k) {
-        const float baseDelaySamples = (fdnBaseDelayMs_[k]) * (static_cast<float>(getSampleRate())/1000.0f);
+        const float baseDelaySamples = (fdnBaseDelayMs_[k] * sizeScale) * (static_cast<float>(getSampleRate())/1000.0f);
         size_t need = static_cast<size_t>(std::ceil(baseDelaySamples * 2.5f));
         need = std::max<size_t>(need, 64);
         if (fdnBuffer_[k].size() != need) {
