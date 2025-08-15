@@ -2541,6 +2541,15 @@ int main(int argc, char* argv[]) {
             fx->setParameter("mix", 0.5f);
         } else if (type == "FDNReverb (Hall)") {
             fx->setParameter("mix", 0.25f);
+            fx->setParameter("size", 1.0f);
+            fx->setParameter("decay_rt60_s", 1.5f);
+            fx->setParameter("high_damping", 0.3f);
+            fx->setParameter("bass_mult", 1.0f);
+            fx->setParameter("stereo_width", 1.0f);
+            fx->setParameter("predelay_ms", 0.0f);
+            fx->setParameter("diffusion", 0.5f);
+            fx->setParameter("mod_rate", 0.15f);
+            fx->setParameter("mod_depth", 0.2f);
         } else if (type == "PlateReverb") {
             fx->setParameter("mix", 0.25f);
         } else if (type == "Phaser") {
@@ -2837,37 +2846,37 @@ int main(int argc, char* argv[]) {
 
             disableParam(slotV4Label[s], slotV4Slider[s]);
         } else if (type == "FDNReverb (Hall)") {
-            // Phase 2: expose Predelay, Size, Diffusion, Mod Rate. (Add Decay/HiDamp/Bass/Width in next page later.)
-            if (slotV1Label[s]) slotV1Label[s]->setText("Predelay (ms)");
-            slotV1Slider[s]->setRange(0.0f, 100.0f);
-            slotV1Slider[s]->setValue(fx->getParameter("predelay_ms"));
+            // Expose: Decay, High Damping, Bass Mult, Stereo Width
+            if (slotV1Label[s]) slotV1Label[s]->setText("Decay (s)");
+            slotV1Slider[s]->setRange(0.2f, 20.0f);
+            slotV1Slider[s]->setValue(fx->getParameter("decay_rt60_s"));
             slotV1Slider[s]->setValueChangeCallback([&, s, type](float v){
                 std::lock_guard<std::mutex> lock(audioMutex);
-                if (auto* f = getFxForSlot(s)) { f->setParameter("predelay_ms", v); slotParamCache[s][type]["predelay_ms"] = v; }
+                if (auto* f = getFxForSlot(s)) { f->setParameter("decay_rt60_s", v); slotParamCache[s][type]["decay_rt60_s"] = v; }
             });
 
-            if (slotV2Label[s]) slotV2Label[s]->setText("Size");
-            slotV2Slider[s]->setRange(0.5f, 2.0f);
-            slotV2Slider[s]->setValue(fx->getParameter("size"));
+            if (slotV2Label[s]) slotV2Label[s]->setText("High Damp");
+            slotV2Slider[s]->setRange(0.0f, 1.0f);
+            slotV2Slider[s]->setValue(fx->getParameter("high_damping"));
             slotV2Slider[s]->setValueChangeCallback([&, s, type](float v){
                 std::lock_guard<std::mutex> lock(audioMutex);
-                if (auto* f = getFxForSlot(s)) { f->setParameter("size", v); slotParamCache[s][type]["size"] = v; }
+                if (auto* f = getFxForSlot(s)) { f->setParameter("high_damping", v); slotParamCache[s][type]["high_damping"] = v; }
             });
 
-            if (slotV3Label[s]) slotV3Label[s]->setText("Diffusion");
-            slotV3Slider[s]->setRange(0.0f, 1.0f);
-            slotV3Slider[s]->setValue(fx->getParameter("diffusion"));
+            if (slotV3Label[s]) slotV3Label[s]->setText("Bass Mult");
+            slotV3Slider[s]->setRange(0.5f, 2.0f);
+            slotV3Slider[s]->setValue(fx->getParameter("bass_mult"));
             slotV3Slider[s]->setValueChangeCallback([&, s, type](float v){
                 std::lock_guard<std::mutex> lock(audioMutex);
-                if (auto* f = getFxForSlot(s)) { f->setParameter("diffusion", v); slotParamCache[s][type]["diffusion"] = v; }
+                if (auto* f = getFxForSlot(s)) { f->setParameter("bass_mult", v); slotParamCache[s][type]["bass_mult"] = v; }
             });
 
-            if (slotV4Label[s]) slotV4Label[s]->setText("Mod Rate (Hz)");
-            slotV4Slider[s]->setRange(0.05f, 1.0f);
-            slotV4Slider[s]->setValue(fx->getParameter("mod_rate"));
+            if (slotV4Label[s]) slotV4Label[s]->setText("Width");
+            slotV4Slider[s]->setRange(0.0f, 1.0f);
+            slotV4Slider[s]->setValue(fx->getParameter("stereo_width"));
             slotV4Slider[s]->setValueChangeCallback([&, s, type](float v){
                 std::lock_guard<std::mutex> lock(audioMutex);
-                if (auto* f = getFxForSlot(s)) { f->setParameter("mod_rate", v); slotParamCache[s][type]["mod_rate"] = v; }
+                if (auto* f = getFxForSlot(s)) { f->setParameter("stereo_width", v); slotParamCache[s][type]["stereo_width"] = v; }
             });
         } else if (type == "PlateReverb") {
             // Keep Plate simple for now: Predelay/Decay/Diffusion/Mod Rate
