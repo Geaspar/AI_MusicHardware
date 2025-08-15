@@ -24,6 +24,7 @@ FDNReverb::FDNReverb(int sampleRate) : Effect(sampleRate), er_(sampleRate),
     for (int k = 0; k < kNumDelays_; ++k) {
         // Simple deterministic phase seeds
         fdnLfoPhase_[k] = std::fmod(0.37f * (k + 1) * 2.0f * 3.14159265358979323846f, 2.0f * 3.14159265358979323846f);
+        fdnLfoRateMul_[k] = 0.9f + 0.2f * ((k % 3) / 2.0f); // 0.9, 1.0, 1.1 pattern
     }
 }
 
@@ -110,7 +111,7 @@ void FDNReverb::process(float* buffer, int numFrames) {
             const size_t w = fdnWriteIndex_[k];
 
             const float baseDelaySamples = (fdnBaseDelayMs_[k] * sizeSmoothed_) * (static_cast<float>(getSampleRate())/1000.0f);
-            const float lfoRate = std::max(0.05f, parameters_.at("mod_rate"));
+            const float lfoRate = std::max(0.05f, parameters_.at("mod_rate")) * fdnLfoRateMul_[k];
             const float lfoDepth = std::max(0.0f, parameters_.at("mod_depth")) * 0.01f; // percent
             fdnLfoPhase_[k] += (2.0f * 3.14159265358979323846f) * (lfoRate / static_cast<float>(getSampleRate()));
             if (fdnLfoPhase_[k] > 2.0f * 3.14159265358979323846f) fdnLfoPhase_[k] -= 2.0f * 3.14159265358979323846f;
@@ -156,6 +157,13 @@ void FDNReverb::process(float* buffer, int numFrames) {
         const float side = (sumEven - sumOdd) / static_cast<float>(kNumDelays_);
         float wetL = mid + widthSmoothed_ * side;
         float wetR = mid - widthSmoothed_ * side;
+        // Wet normalization (simple RMS-based gain target ~0.7)
+        const float wetMono = 0.5f * (wetL + wetR);
+        wetRms_ = 0.995f * wetRms_ + 0.005f * (wetMono * wetMono);
+        const float targetGain = 0.7f / std::sqrt(std::max(wetRms_, 1e-6f));
+        wetNormGainSmoothed_ = 0.99f * wetNormGainSmoothed_ + 0.01f * targetGain;
+        wetL *= wetNormGainSmoothed_;
+        wetR *= wetNormGainSmoothed_;
         // Gentle safety limiter
         wetL = std::tanh(wetL);
         wetR = std::tanh(wetR);

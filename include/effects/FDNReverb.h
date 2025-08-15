@@ -39,6 +39,7 @@ private:
     size_t fdnWriteIndex_[kNumDelays_] = {0,0,0,0,0,0,0,0};
     float fdnBaseDelayMs_[kNumDelays_] = {15.3f, 19.7f, 23.1f, 29.9f, 37.1f, 51.7f, 67.9f, 89.7f};
     float fdnLfoPhase_[kNumDelays_] = {0,0,0,0,0,0,0,0};
+    float fdnLfoRateMul_[kNumDelays_] = {1,1,1,1,1,1,1,1};
     float fdnLpA_[kNumDelays_] = {0,0,0,0,0,0,0,0};
     float fdnLpY_[kNumDelays_] = {0,0,0,0,0,0,0,0};
     void ensureFdnCapacity(float sizeScale);
@@ -50,6 +51,10 @@ private:
     float highDampSmoothed_ = 0.3f;
     float bassMultSmoothed_ = 1.0f;
     float widthSmoothed_ = 1.0f;
+
+    // Wet normalization
+    float wetRms_ = 0.0f;
+    float wetNormGainSmoothed_ = 1.0f;
 };
 
 } // namespace AIMusicHardware
