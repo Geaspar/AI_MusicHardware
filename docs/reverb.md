@@ -199,6 +199,19 @@ Then apply HF/LF shaping via filters in the loop. Global Decay controls T_60; Ba
     *   Run `./build.sh`.
     *   Test `FDNReverb (Hall)`: listen for lush, dense tails. Sweep parameters (Size, Decay, Damping) and check for stability, no clicks, and smooth transitions.
 
+#### Phase 2 completion details (engineering notes)
+- **Feedback matrix (Householder)**: Implement A = I − 2uuᵀ with u_i = 1/√N. Efficient form: y = x − 2·(uᵀx)·u (one dot + scaled add). Apply after per‑loop filtering/gains.
+- **Size scaling (`size` 0.5–2.0)**: D_i’ = size·D_i. Reallocate delay buffers when size changes by >5%; apply 150–250 ms smoothing to `size` to avoid zippering.
+- **HF damping (`high_damping` 0–1)**: Map to LP cutoff 2–12 kHz; compute one‑pole coefficient a = exp(−2π·fc/sr) per block or when value changes; smooth over 250–500 ms.
+- **LF shaping (`bass_mult` 0.5–2.0)**: Start as gain tilt in loop (gLoop *= bass_mult^0.2). Later, replace with proper low‑shelf biquad (G = 20·log10(bass_mult), fc ≈ 200–400 Hz).
+- **RT60 mapping (`decay_rt60_s` 0.2–20 s)**: gLoop = 10^(−3·Td/T60), Td in seconds. Smooth 100–200 ms; clamp T60≥0.2 s.
+- **Modulation (`mod_rate`, `mod_depth`)**: Depth as fraction of base delay (0–0.25%). Randomize LFO phases; decorrelate per‑line rates by ±10%.
+- **Stereo width (`stereo_width` 0–1)**: Mid/side mixing from odd/even sums; smooth 50–100 ms.
+- **Gain staging**: Add internal wet normalization (short RMS tracking with 500 ms smoothing) plus gentle limiter to keep perceived loudness consistent across Size/Decay.
+- **Sample‑rate invariance**: Recompute LP, base delays, and reallocate buffers on `setSampleRate`.
+- **UI mapping (Hall)**: Current page: Predelay, Size, Diffusion, Mod Rate. Secondary page (later): Decay, High Damping, Bass Mult, Stereo Width, Mod Depth.
+- **Smoothing policy**: Fast (10–30 ms): Mix/Diffusion/Mod; Medium (100–250 ms): Size/Decay; Slow (250–750 ms): High Damping/Bass/Width.
+
 ### Phase 3 — Plate Reverb (Dattorro‑style) (3–5 days)
 1.  **Implement `PlateReverb` core logic:**
     *   Follow Dattorro’s topology: input allpasses, then main plate tank with figure-8 feedback routing.

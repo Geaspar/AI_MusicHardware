@@ -41,8 +41,15 @@ private:
     float fdnLfoPhase_[kNumDelays_] = {0,0,0,0,0,0,0,0};
     float fdnLpA_[kNumDelays_] = {0,0,0,0,0,0,0,0};
     float fdnLpY_[kNumDelays_] = {0,0,0,0,0,0,0,0};
-    void ensureFdnCapacity();
+    void ensureFdnCapacity(float sizeScale);
     inline float readFrac(const std::vector<float>& buf, float index) const;
+
+    // Smoothed parameters for click-free updates
+    float sizeSmoothed_ = 1.0f;
+    float decaySmoothed_ = 1.5f;
+    float highDampSmoothed_ = 0.3f;
+    float bassMultSmoothed_ = 1.0f;
+    float widthSmoothed_ = 1.0f;
 };
 
 } // namespace AIMusicHardware
