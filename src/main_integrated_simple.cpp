@@ -2846,7 +2846,34 @@ int main(int argc, char* argv[]) {
 
             disableParam(slotV4Label[s], slotV4Slider[s]);
         } else if (type == "FDNReverb (Hall)") {
-            // Expose: Decay, High Damping, Bass Mult, Stereo Width
+            // FDN Hall: switchable pages via fx_page_[s] dropdown
+            int page = 0;
+            if (auto* p = dynamic_cast<DropdownMenu*>(effectsScreen->getChild("fx_page_" + std::to_string(s)))) {
+                page = p->getSelectedIndex();
+            }
+            if (page == 0) {
+                if (slotV1Label[s]) slotV1Label[s]->setText("Predelay (ms)");
+                slotV1Slider[s]->setRange(0.0f, 100.0f);
+                slotV1Slider[s]->setValue(fx->getParameter("predelay_ms"));
+                slotV1Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("predelay_ms", v); slotParamCache[s][type]["predelay_ms"] = v; } });
+
+                if (slotV2Label[s]) slotV2Label[s]->setText("Size");
+                slotV2Slider[s]->setRange(0.5f, 2.0f);
+                slotV2Slider[s]->setValue(fx->getParameter("size"));
+                slotV2Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("size", v); slotParamCache[s][type]["size"] = v; } });
+
+                if (slotV3Label[s]) slotV3Label[s]->setText("Diffusion");
+                slotV3Slider[s]->setRange(0.0f, 1.0f);
+                slotV3Slider[s]->setValue(fx->getParameter("diffusion"));
+                slotV3Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("diffusion", v); slotParamCache[s][type]["diffusion"] = v; } });
+
+                if (slotV4Label[s]) slotV4Label[s]->setText("Mod Rate (Hz)");
+                slotV4Slider[s]->setRange(0.05f, 1.0f);
+                slotV4Slider[s]->setValue(fx->getParameter("mod_rate"));
+                slotV4Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("mod_rate", v); slotParamCache[s][type]["mod_rate"] = v; } });
+                return;
+            }
+            // Page 2: Expose Decay, High Damping, Bass Mult, Stereo Width
             if (slotV1Label[s]) slotV1Label[s]->setText("Decay (s)");
             slotV1Slider[s]->setRange(0.2f, 20.0f);
             slotV1Slider[s]->setValue(fx->getParameter("decay_rt60_s"));
@@ -3031,8 +3058,20 @@ int main(int argc, char* argv[]) {
         v4->setValue(0.0f);
         v4->setShowValue(false);
         slotV4Slider[s] = v4.get();
-
+        
+        // Page dropdown to switch parameter pages for effects (e.g., Hall Page1/Page2)
+        auto pageDd = std::make_unique<DropdownMenu>("fx_page_" + std::to_string(s), "Page 1");
+        pageDd->setPosition(vBaseX + 3*vSpacing + 40, vY - 4);
+        pageDd->setSize(90, 22);
+        pageDd->addItem("Page 1");
+        pageDd->addItem("Page 2");
+        DropdownMenu* pageDdPtr = pageDd.get();
+        effectsScreen->addChild(std::move(pageDd));
+        
         // Callbacks
+        // Track page per slot
+        static std::vector<int> slotPage(fxSlotCount, 0);
+
         typeDd->setSelectionCallback([&, s](int index, const std::string& item){
             slotSelectedType[s] = item;
             rebuildEffectsChain();
@@ -3054,6 +3093,11 @@ int main(int argc, char* argv[]) {
             slotBypassBtn[s]->setBackgroundColor(uiEnabled ? Color(50,100,50) : Color(100,50,50));
             // Configure parameter mappings for this slot/type
             configureSlotParams(s, item);
+            // Reset to Page 1 on type change
+            if (auto* p = dynamic_cast<DropdownMenu*>(effectsScreen->getChild("fx_page_" + std::to_string(s)))) {
+                p->selectItemSilently(0);
+                slotPage[s] = 0;
+            }
             // Mirror selection to main-screen quick FX dropdowns (first 3 slots)
             if (s < 3) {
                 // If this selection originated from the main screen, do not mirror back
@@ -3086,6 +3130,13 @@ int main(int argc, char* argv[]) {
             const std::string type = slotSelectedType[s];
             slotEnabledCache[s][type] = enabled; // cache per-type enabled
             if (auto* fx = getFxForSlot(s)) setEffectMix(fx, type, enabled ? slotMix[s] : 0.0f);
+        });
+
+        // Page dropdown callback
+        pageDdPtr->setSelectionCallback([&, s](int idx, const std::string& item){
+            slotPage[s] = idx;
+            // Reconfigure with same type to redraw param set
+            configureSlotParams(s, slotSelectedType[s]);
         });
 
         // Add to screen
