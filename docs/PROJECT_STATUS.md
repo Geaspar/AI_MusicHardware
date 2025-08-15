@@ -440,6 +440,21 @@ Integration Layer (Ready for Deployment)
   - Expose `decay_rt60_s`, `high_damping`, `bass_mult`, and `stereo_width` on the Hall UI (with formatters and smoothing).
   - Final SR‑invariance review and minor CPU optimizations (avoid repeated exp/alloc inside the hot loop).
 
+### **August 13, 2025** — Reverb: Hall UI Exposure (Decay/HiDamp/Bass/Width) + SR/CPU polish
+
+**Status**: 🟢 IN PROGRESS (user‑visible controls added)
+
+- **Implemented**
+  - Exposed additional Hall parameters on the Effects tab: Decay (s), High Damping (0–1), Bass Mult (0.5–2.0), Stereo Width (0–1). Sensible defaults applied when creating Hall.
+  - SR invariance and CPU improvements in FDN Hall:
+    - Precompute per‑block loop gains (RT60), low‑pass coefficients (High Damping), and LFO angular rates; avoid repeated expensive math inside inner loop.
+    - Reset wet normalization state on sample‑rate change.
+
+- **Planned – UI “More” Page**
+  - Add a small dropdown to the right of the vertical sliders to switch parameter pages (Page 1 / Page 2), reusing the same vertical slider area (similar to Main view LFO1/LFO2 switch).
+  - Page 1 (current): Predelay, Size, Diffusion, Mod Rate. Page 2: Decay, High Damping, Bass Mult, Stereo Width (and Mod Depth if needed).
+  - Persist selected page per slot; update `configureSlotParams()` to render sliders based on the page selection; keep slider callbacks and ranges in sync with caching.
+
 ### **August 10, 2025** — MIDI Activity Indicator and External MIDI Hookup
 
 **Status**: 🟢 **COMPLETE**
