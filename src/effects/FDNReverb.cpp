@@ -36,6 +36,9 @@ void FDNReverb::setSampleRate(int sampleRate) {
     // Recompute capacity for current size value
     const float sizeScale = std::clamp(parameters_.count("size") ? parameters_.at("size") : 1.0f, 0.5f, 2.0f);
     ensureFdnCapacity(sizeScale);
+    // Reset normalization state
+    wetRms_ = 0.0f;
+    wetNormGainSmoothed_ = 1.0f;
 }
 
 void FDNReverb::process(float* buffer, int numFrames) {
@@ -97,6 +100,24 @@ void FDNReverb::process(float* buffer, int numFrames) {
     const float decayS = decaySmoothed_;
     // Householder shortcut precompute u dot x factor will be added later
 
+    // Precompute per-line constants for this block
+    float baseDelaySamplesArr[kNumDelays_];
+    float gLoopArr[kNumDelays_];
+    float aLpArr[kNumDelays_];
+    float lfoOmegaArr[kNumDelays_];
+    const float twoPiOverSr = (2.0f * 3.14159265358979323846f) / static_cast<float>(getSampleRate());
+    for (int k = 0; k < kNumDelays_; ++k) {
+        baseDelaySamplesArr[k] = (fdnBaseDelayMs_[k] * sizeSmoothed_) * (static_cast<float>(getSampleRate())/1000.0f);
+        const float Td = baseDelaySamplesArr[k] / static_cast<float>(getSampleRate());
+        float gLoop = std::pow(10.0f, -3.0f * (Td / decayS));
+        gLoop *= std::pow(bassMultSmoothed_, 0.2f);
+        gLoopArr[k] = gLoop;
+        const float fc = 2000.0f + highDampSmoothed_ * (12000.0f - 2000.0f);
+        aLpArr[k] = std::exp(-(2.0f * 3.14159265358979323846f * fc) / static_cast<float>(getSampleRate()));
+        const float lfoRate = std::max(0.05f, parameters_.at("mod_rate")) * fdnLfoRateMul_[k];
+        lfoOmegaArr[k] = twoPiOverSr * lfoRate;
+    }
+
     for (int n = 0; n < numFrames; ++n) {
         float xinL = buffer[2*n + 0];
         float xinR = buffer[2*n + 1];
@@ -110,30 +131,21 @@ void FDNReverb::process(float* buffer, int numFrames) {
             auto& buf = fdnBuffer_[k];
             const size_t w = fdnWriteIndex_[k];
 
-            const float baseDelaySamples = (fdnBaseDelayMs_[k] * sizeSmoothed_) * (static_cast<float>(getSampleRate())/1000.0f);
-            const float lfoRate = std::max(0.05f, parameters_.at("mod_rate")) * fdnLfoRateMul_[k];
+            const float baseDelaySamples = baseDelaySamplesArr[k];
             const float lfoDepth = std::max(0.0f, parameters_.at("mod_depth")) * 0.01f; // percent
-            fdnLfoPhase_[k] += (2.0f * 3.14159265358979323846f) * (lfoRate / static_cast<float>(getSampleRate()));
+            fdnLfoPhase_[k] += lfoOmegaArr[k];
             if (fdnLfoPhase_[k] > 2.0f * 3.14159265358979323846f) fdnLfoPhase_[k] -= 2.0f * 3.14159265358979323846f;
             const float modSamples = baseDelaySamples * lfoDepth * std::sin(fdnLfoPhase_[k]);
             float readIndex = static_cast<float>(w) - (baseDelaySamples + modSamples);
             while (readIndex < 0.0f) readIndex += static_cast<float>(buf.size());
             const float yk = readFrac(buf, readIndex);
 
-            // HF damping (one-pole LP) cutoff mapping 2k..12k
-            const float fc = 2000.0f + highDampSmoothed_ * (12000.0f - 2000.0f);
-            const float a = std::exp(-(2.0f * 3.14159265358979323846f * fc) / static_cast<float>(getSampleRate()));
-            fdnLpA_[k] = a;
+            // HF damping (one-pole LP)
+            fdnLpA_[k] = aLpArr[k];
             fdnLpY_[k] = fdnLpA_[k] * fdnLpY_[k] + (1.0f - fdnLpA_[k]) * yk;
 
-            // RT60 gain per loop (Schroeder approximation)
-            const float Td = baseDelaySamples / static_cast<float>(getSampleRate());
-            float gLoop = std::pow(10.0f, -3.0f * (Td / decayS));
-            // Bass Mult: subtle tilt - increase/decrease loop gain
-            gLoop *= std::pow(bassMultSmoothed_, 0.2f);
-
             y[k] = yk;
-            z[k] = gLoop * fdnLpY_[k];
+            z[k] = gLoopArr[k] * fdnLpY_[k];
             sumZ += z[k];
         }
 
