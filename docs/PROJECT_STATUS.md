@@ -424,6 +424,22 @@ Integration Layer (Ready for Deployment)
   - Add internal gain normalization and a light safety limiter; randomize LFO phases per line; parameter smoothing for Size/Decay/Damping.
   - Expose new params on UI with sensible ranges and formatters.
 
+### **August 13, 2025** — Reverb: Phase 2 (FDN Hall) Matrix + Smoothing + Normalization
+
+**Status**: 🟢 IN PROGRESS (core behaviors integrated)
+
+- **Implemented**
+  - Householder feedback mixing for FDN‑8 (energy‑preserving) with per‑loop RT60 gains and HF damping.
+  - Smoothed parameters for `size`, `decay_rt60_s`, `high_damping`, `bass_mult`, and `stereo_width` to avoid zippering.
+  - Size‑aware buffer management that resizes delay lines as Size changes; per‑block coefficient updates.
+  - LFO decorrelation per line (phase seeds + ±10% rate variations) for time variance.
+  - Wet normalization (RMS‑based with smoothing) plus gentle limiter to stabilize perceived loudness across Size/Decay.
+  - Hall UI (current page): Predelay, Size, Diffusion, Mod Rate (additional params to be exposed next).
+
+- **Next**
+  - Expose `decay_rt60_s`, `high_damping`, `bass_mult`, and `stereo_width` on the Hall UI (with formatters and smoothing).
+  - Final SR‑invariance review and minor CPU optimizations (avoid repeated exp/alloc inside the hot loop).
+
 ### **August 10, 2025** — MIDI Activity Indicator and External MIDI Hookup
 
 **Status**: 🟢 **COMPLETE**
