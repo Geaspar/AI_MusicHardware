@@ -455,6 +455,18 @@ Integration Layer (Ready for Deployment)
   - Page 1 (current): Predelay, Size, Diffusion, Mod Rate. Page 2: Decay, High Damping, Bass Mult, Stereo Width (and Mod Depth if needed).
   - Persist selected page per slot; update `configureSlotParams()` to render sliders based on the page selection; keep slider callbacks and ranges in sync with caching.
 
+### **August 15, 2025** — Effects: Page Dropdown Fix (FDN Hall Page 1/2)
+
+**Status**: 🟢 COMPLETE
+
+- **Problem**: Selecting “Page 2” on the Hall effect did not switch the parameter set, and earlier a crash could occur by dereferencing a moved `effectsScreen` when querying `fx_page_*` components.
+- **Fixes**:
+  - Read page selection via the active `effects` screen (`uiContext->getScreen("effects")`) rather than a stale local pointer.
+  - Default each `fx_page_*` dropdown to “Page 1” and wire a non-silent reset to Page 1 on type change so UI callbacks reconfigure sliders.
+  - Added explicit input handling and top-layer rendering for the page dropdown popups, matching other dropdowns (fx_type, preset, MIDI, LFO).
+- **Impact**: Users can open the per-slot Page dropdown and select “Page 2” to expose Decay/High Damping/Bass Mult/Stereo Width; switching types reliably resets to Page 1.
+- **Next**: Persist selected Page per slot in config; add value formatters (Hz/s/% labels) for reverb parameters; begin Plate core implementation (Phase 3 in `docs/reverb.md`).
+
 ### **August 10, 2025** — MIDI Activity Indicator and External MIDI Hookup
 
 **Status**: 🟢 **COMPLETE**

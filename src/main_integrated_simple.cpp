@@ -2848,8 +2848,10 @@ int main(int argc, char* argv[]) {
         } else if (type == "FDNReverb (Hall)") {
             // FDN Hall: switchable pages via fx_page_[s] dropdown
             int page = 0;
-            if (auto* p = dynamic_cast<DropdownMenu*>(effectsScreen->getChild("fx_page_" + std::to_string(s)))) {
-                page = p->getSelectedIndex();
+            if (auto* es = uiContext->getScreen("effects")) {
+                if (auto* p = dynamic_cast<DropdownMenu*>(es->getChild("fx_page_" + std::to_string(s)))) {
+                    page = p->getSelectedIndex();
+                }
             }
             if (page == 0) {
                 if (slotV1Label[s]) slotV1Label[s]->setText("Predelay (ms)");
@@ -3066,6 +3068,8 @@ int main(int argc, char* argv[]) {
         pageDd->addItem("Page 1");
         pageDd->addItem("Page 2");
         DropdownMenu* pageDdPtr = pageDd.get();
+        // Ensure default selection is Page 1 for consistent behavior
+        pageDd->selectItemSilently(0);
         effectsScreen->addChild(std::move(pageDd));
         
         // Callbacks
@@ -3094,9 +3098,12 @@ int main(int argc, char* argv[]) {
             // Configure parameter mappings for this slot/type
             configureSlotParams(s, item);
             // Reset to Page 1 on type change
-            if (auto* p = dynamic_cast<DropdownMenu*>(effectsScreen->getChild("fx_page_" + std::to_string(s)))) {
-                p->selectItemSilently(0);
-                slotPage[s] = 0;
+            if (auto* es = uiContext->getScreen("effects")) {
+                if (auto* p = dynamic_cast<DropdownMenu*>(es->getChild("fx_page_" + std::to_string(s)))) {
+                    // Use non-silent selection so UI shows the change and callback reconfigures params
+                    p->selectItem(0);
+                    slotPage[s] = 0;
+                }
             }
             // Mirror selection to main-screen quick FX dropdowns (first 3 slots)
             if (s < 3) {
@@ -3137,6 +3144,12 @@ int main(int argc, char* argv[]) {
             slotPage[s] = idx;
             // Reconfigure with same type to redraw param set
             configureSlotParams(s, slotSelectedType[s]);
+            // Force UI to reflect page by updating label placeholder
+            if (auto* es = uiContext->getScreen("effects")) {
+                if (auto* p = dynamic_cast<DropdownMenu*>(es->getChild("fx_page_" + std::to_string(s)))) {
+                    p->selectItemSilently(idx);
+                }
+            }
         });
 
         // Add to screen
@@ -3454,6 +3467,21 @@ int main(int argc, char* argv[]) {
                         }
                     }
 
+                    // Effects tab: per-slot page dropdowns (handle in reverse order)
+                    if (!dropdownHandled) {
+                        for (int i = fxSlotCount - 1; i >= 0; --i) {
+                            if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("fx_page_" + std::to_string(i)))) {
+                                if (dropdown->isDropdownOpen()) {
+                                    dropdownHandled = dropdown->handleInput(inputEvent);
+                                    if (inputEvent.type == InputEventType::TouchPress && !dropdownHandled) {
+                                        dropdownHandled = true;
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
                     // Main-screen quick FX dropdowns: handle open lists before other inputs
                     if (!dropdownHandled) {
                         for (int i = 2; i >= 0; --i) {
@@ -3697,6 +3725,14 @@ int main(int argc, char* argv[]) {
             // Effects tab: effect type dropdowns (multi-slot)
             for (int i = 0; i < fxSlotCount; ++i) {
                 if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("fx_type_" + std::to_string(i)))) {
+                    if (dropdown->isDropdownOpen()) {
+                        dropdown->renderDropdownList(sdlDisplayManager.get());
+                    }
+                }
+            }
+            // Effects tab: page dropdowns (multi-slot)
+            for (int i = 0; i < fxSlotCount; ++i) {
+                if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("fx_page_" + std::to_string(i)))) {
                     if (dropdown->isDropdownOpen()) {
                         dropdown->renderDropdownList(sdlDisplayManager.get());
                     }
