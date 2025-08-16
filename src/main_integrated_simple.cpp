@@ -2486,6 +2486,7 @@ int main(int argc, char* argv[]) {
     std::vector<std::string> slotSelectedType(fxSlotCount, "None");
     std::vector<float> slotMix(fxSlotCount, 0.5f);
     std::vector<bool> slotEnabled(fxSlotCount, true);
+    std::vector<int> slotPage(fxSlotCount, 0); // Effects Page per slot (0=Page 1, 1=Page 2)
 
     // Per-slot, per-type caches (persistence across type switches)
     // slotParamCache[slot][type][paramName] = value
@@ -2580,6 +2581,7 @@ int main(int argc, char* argv[]) {
         std::string type = "None";
         float mix = 0.5f;
         bool enabled = true;
+        int page = 0;
         std::unordered_map<std::string, float> params; // per current type
     };
     std::vector<LoadedSlot> loadedSlots;
@@ -2590,6 +2592,7 @@ int main(int argc, char* argv[]) {
                 if (s.contains("type")) ls.type = s["type"].get<std::string>();
                 if (s.contains("mix")) ls.mix = s["mix"].get<float>();
                 if (s.contains("enabled")) ls.enabled = s["enabled"].get<bool>();
+                if (s.contains("page")) ls.page = std::max(0, std::min(1, s["page"].get<int>()));
                 if (s.contains("params") && s["params"].is_object()) {
                     for (auto it = s["params"].begin(); it != s["params"].end(); ++it) {
                         ls.params[it.key()] = it.value().get<float>();
@@ -3073,8 +3076,6 @@ int main(int argc, char* argv[]) {
         effectsScreen->addChild(std::move(pageDd));
         
         // Callbacks
-        // Track page per slot
-        static std::vector<int> slotPage(fxSlotCount, 0);
 
         typeDd->setSelectionCallback([&, s](int index, const std::string& item){
             slotSelectedType[s] = item;
@@ -3166,6 +3167,7 @@ int main(int argc, char* argv[]) {
             slotSelectedType[s] = ls.type;
             slotMix[s] = ls.mix;
             slotEnabled[s] = ls.enabled;
+            slotPage[s] = std::max(0, std::min(1, ls.page));
             if (!ls.type.empty() && ls.type != "None" && !ls.params.empty()) {
                 slotParamCache[s][ls.type] = ls.params;
             }
@@ -3181,6 +3183,11 @@ int main(int argc, char* argv[]) {
                 idx = (found >= 0) ? found : 0;
             }
             slotTypeDd[s]->selectItem(idx);
+            // Apply persisted page selection and reconfigure
+            if (auto* p = dynamic_cast<DropdownMenu*>(effectsScreen->getChild("fx_page_" + std::to_string(s)))) {
+                p->selectItemSilently(slotPage[s]);
+                configureSlotParams(s, slotSelectedType[s]);
+            }
             // Restore mix and bypass UI
             slotMixSlider[s]->setValue(slotMix[s]);
             slotBypassBtn[s]->setText(slotEnabled[s] ? "ON" : "OFF");
@@ -3831,6 +3838,7 @@ int main(int argc, char* argv[]) {
             sj["type"] = slotSelectedType[s];
             sj["mix"] = slotMix[s];
             sj["enabled"] = slotEnabled[s];
+            sj["page"] = std::max(0, std::min(1, slotPage[s]));
             // Save params for current type if available
             if (slotParamCache[s].count(slotSelectedType[s])) {
                 nlohmann::json pj;
