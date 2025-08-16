@@ -2722,16 +2722,19 @@ int main(int argc, char* argv[]) {
             if (slotV1Label[s]) slotV1Label[s]->setText("Room Size");
             slotV1Slider[s]->setRange(0.0f, 1.0f);
             slotV1Slider[s]->setValue(fx->getParameter("roomSize"));
+            slotV1Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<"Room "<<std::fixed<<std::setprecision(0)<<(v*100.0f)<<"%"; return ss.str();});
             slotV1Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("roomSize", v); slotParamCache[s][type]["roomSize"] = v; } });
 
             if (slotV2Label[s]) slotV2Label[s]->setText("Damping");
             slotV2Slider[s]->setRange(0.0f, 1.0f);
             slotV2Slider[s]->setValue(fx->getParameter("damping"));
+            slotV2Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<"Damp "<<std::fixed<<std::setprecision(0)<<(v*100.0f)<<"%"; return ss.str();});
             slotV2Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("damping", v); slotParamCache[s][type]["damping"] = v; } });
 
             if (slotV3Label[s]) slotV3Label[s]->setText("Width");
             slotV3Slider[s]->setRange(0.0f, 1.0f);
             slotV3Slider[s]->setValue(fx->getParameter("width"));
+            slotV3Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<"Width "<<std::fixed<<std::setprecision(0)<<(v*100.0f)<<"%"; return ss.str();});
             slotV3Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("width", v); slotParamCache[s][type]["width"] = v; } });
 
             disableParam(slotV4Label[s], slotV4Slider[s]);
@@ -2739,11 +2742,13 @@ int main(int argc, char* argv[]) {
             if (slotV1Label[s]) slotV1Label[s]->setText("Time (s)");
             slotV1Slider[s]->setRange(0.01f, 1.0f);
             slotV1Slider[s]->setValue(fx->getParameter("delayTime"));
+            slotV1Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(2)<<v<<" s"; return ss.str();});
             slotV1Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("delayTime", v); slotParamCache[s][type]["delayTime"] = v; } });
 
             if (slotV2Label[s]) slotV2Label[s]->setText("Feedback");
             slotV2Slider[s]->setRange(0.0f, 0.95f);
             slotV2Slider[s]->setValue(fx->getParameter("feedback"));
+            slotV2Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<"FB "<<std::fixed<<std::setprecision(0)<<(v*100.0f)<<"%"; return ss.str();});
             slotV2Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("feedback", v); slotParamCache[s][type]["feedback"] = v; } });
 
             disableParam(slotV3Label[s], slotV3Slider[s]);
@@ -2752,16 +2757,19 @@ int main(int argc, char* argv[]) {
             if (slotV1Label[s]) slotV1Label[s]->setText("Drive");
             slotV1Slider[s]->setRange(0.0f, 10.0f);
             slotV1Slider[s]->setValue(fx->getParameter("drive"));
+            slotV1Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<"Drive "<<std::fixed<<std::setprecision(2)<<v; return ss.str();});
             slotV1Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("drive", v); slotParamCache[s][type]["drive"] = v; } });
 
             if (slotV2Label[s]) slotV2Label[s]->setText("Tone");
             slotV2Slider[s]->setRange(0.0f, 1.0f);
             slotV2Slider[s]->setValue(fx->getParameter("tone"));
+            slotV2Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<"Tone "<<std::fixed<<std::setprecision(0)<<(v*100.0f)<<"%"; return ss.str();});
             slotV2Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("tone", v); slotParamCache[s][type]["tone"] = v; } });
 
             if (slotV3Label[s]) slotV3Label[s]->setText("Level");
             slotV3Slider[s]->setRange(0.0f, 1.0f);
             slotV3Slider[s]->setValue(fx->getParameter("level"));
+            slotV3Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<"Level "<<std::fixed<<std::setprecision(0)<<(v*100.0f)<<"%"; return ss.str();});
             slotV3Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("level", v); slotParamCache[s][type]["level"] = v; } });
 
             disableParam(slotV4Label[s], slotV4Slider[s]);
@@ -2769,16 +2777,19 @@ int main(int argc, char* argv[]) {
             if (slotV1Label[s]) slotV1Label[s]->setText("Rate (Hz)");
             slotV1Slider[s]->setRange(0.05f, 5.0f);
             slotV1Slider[s]->setValue(fx->getParameter("rate"));
+            slotV1Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(2)<<v<<" Hz"; return ss.str();});
             slotV1Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("rate", v); slotParamCache[s][type]["rate"] = v; } });
 
             if (slotV2Label[s]) slotV2Label[s]->setText("Depth");
             slotV2Slider[s]->setRange(0.0f, 1.0f);
             slotV2Slider[s]->setValue(fx->getParameter("depth"));
+            slotV2Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<"Depth "<<std::fixed<<std::setprecision(0)<<(v*100.0f)<<"%"; return ss.str();});
             slotV2Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("depth", v); slotParamCache[s][type]["depth"] = v; } });
 
             if (slotV3Label[s]) slotV3Label[s]->setText("Feedback");
             slotV3Slider[s]->setRange(0.0f, 0.9f);
             slotV3Slider[s]->setValue(fx->getParameter("feedback"));
+            slotV3Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<"FB "<<std::fixed<<std::setprecision(0)<<(v*100.0f)<<"%"; return ss.str();});
             slotV3Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("feedback", v); slotParamCache[s][type]["feedback"] = v; } });
 
             disableParam(slotV4Label[s], slotV4Slider[s]);
@@ -2786,16 +2797,19 @@ int main(int argc, char* argv[]) {
             if (slotV1Label[s]) slotV1Label[s]->setText("Low (dB)");
             slotV1Slider[s]->setRange(-12.0f, 12.0f);
             slotV1Slider[s]->setValue(fx->getParameter("lowGain"));
+            slotV1Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(1)<<v<<" dB"; return ss.str();});
             slotV1Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("lowGain", v); slotParamCache[s][type]["lowGain"] = v; } });
 
             if (slotV2Label[s]) slotV2Label[s]->setText("Mid (dB)");
             slotV2Slider[s]->setRange(-12.0f, 12.0f);
             slotV2Slider[s]->setValue(fx->getParameter("midGain"));
+            slotV2Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(1)<<v<<" dB"; return ss.str();});
             slotV2Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("midGain", v); slotParamCache[s][type]["midGain"] = v; } });
 
             if (slotV3Label[s]) slotV3Label[s]->setText("High (dB)");
             slotV3Slider[s]->setRange(-12.0f, 12.0f);
             slotV3Slider[s]->setValue(fx->getParameter("highGain"));
+            slotV3Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(1)<<v<<" dB"; return ss.str();});
             slotV3Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("highGain", v); slotParamCache[s][type]["highGain"] = v; } });
 
             disableParam(slotV4Label[s], slotV4Slider[s]);
@@ -2803,11 +2817,13 @@ int main(int argc, char* argv[]) {
             if (slotV1Label[s]) slotV1Label[s]->setText("Cutoff (Hz)");
             slotV1Slider[s]->setRange(20.0f, 20000.0f);
             slotV1Slider[s]->setValue(fx->getParameter("frequency"));
+            slotV1Slider[s]->setValueFormatter([](float v){ std::stringstream ss; if (v >= 1000.0f) { ss<<std::fixed<<std::setprecision(2)<<(v/1000.0f)<<" kHz"; } else { ss<<std::fixed<<std::setprecision(0)<<v<<" Hz"; } return ss.str();});
             slotV1Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("frequency", v); slotParamCache[s][type]["frequency"] = v; } });
 
             if (slotV2Label[s]) slotV2Label[s]->setText("Resonance");
             slotV2Slider[s]->setRange(0.7f, 5.0f);
             slotV2Slider[s]->setValue(fx->getParameter("resonance"));
+            slotV2Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<"Q "<<std::fixed<<std::setprecision(2)<<v; return ss.str();});
             slotV2Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("resonance", v); slotParamCache[s][type]["resonance"] = v; } });
 
             disableParam(slotV3Label[s], slotV3Slider[s]);
@@ -2817,16 +2833,19 @@ int main(int argc, char* argv[]) {
             if (slotV1Label[s]) slotV1Label[s]->setText("Rate (Hz)");
             slotV1Slider[s]->setRange(0.1f, 5.0f);
             slotV1Slider[s]->setValue(fx->getParameter("rate"));
+            slotV1Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(2)<<v<<" Hz"; return ss.str();});
             slotV1Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("rate", v); slotParamCache[s][type]["rate"] = v; } });
 
             if (slotV2Label[s]) slotV2Label[s]->setText("Depth");
             slotV2Slider[s]->setRange(0.0f, 1.0f);
             slotV2Slider[s]->setValue(fx->getParameter("depth"));
+            slotV2Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<"Depth "<<std::fixed<<std::setprecision(0)<<(v*100.0f)<<"%"; return ss.str();});
             slotV2Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("depth", v); slotParamCache[s][type]["depth"] = v; } });
 
             if (slotV3Label[s]) slotV3Label[s]->setText("Spread");
             slotV3Slider[s]->setRange(0.0f, 1.0f);
             slotV3Slider[s]->setValue(fx->getParameter("spread"));
+            slotV3Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<"Spread "<<std::fixed<<std::setprecision(0)<<(v*100.0f)<<"%"; return ss.str();});
             slotV3Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("spread", v); slotParamCache[s][type]["spread"] = v; } });
 
             disableParam(slotV4Label[s], slotV4Slider[s]);
@@ -2860,21 +2879,25 @@ int main(int argc, char* argv[]) {
                 if (slotV1Label[s]) slotV1Label[s]->setText("Predelay (ms)");
                 slotV1Slider[s]->setRange(0.0f, 100.0f);
                 slotV1Slider[s]->setValue(fx->getParameter("predelay_ms"));
+                slotV1Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(0)<<v<<" ms"; return ss.str();});
                 slotV1Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("predelay_ms", v); slotParamCache[s][type]["predelay_ms"] = v; } });
 
                 if (slotV2Label[s]) slotV2Label[s]->setText("Size");
                 slotV2Slider[s]->setRange(0.5f, 2.0f);
                 slotV2Slider[s]->setValue(fx->getParameter("size"));
+                slotV2Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<"Size "<<std::fixed<<std::setprecision(2)<<v<<"x"; return ss.str();});
                 slotV2Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("size", v); slotParamCache[s][type]["size"] = v; } });
 
                 if (slotV3Label[s]) slotV3Label[s]->setText("Diffusion");
                 slotV3Slider[s]->setRange(0.0f, 1.0f);
                 slotV3Slider[s]->setValue(fx->getParameter("diffusion"));
+                slotV3Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<"Diff "<<std::fixed<<std::setprecision(0)<<(v*100.0f)<<"%"; return ss.str();});
                 slotV3Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("diffusion", v); slotParamCache[s][type]["diffusion"] = v; } });
 
                 if (slotV4Label[s]) slotV4Label[s]->setText("Mod Rate (Hz)");
                 slotV4Slider[s]->setRange(0.05f, 1.0f);
                 slotV4Slider[s]->setValue(fx->getParameter("mod_rate"));
+                slotV4Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(2)<<v<<" Hz"; return ss.str();});
                 slotV4Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("mod_rate", v); slotParamCache[s][type]["mod_rate"] = v; } });
                 return;
             }
@@ -2882,6 +2905,7 @@ int main(int argc, char* argv[]) {
             if (slotV1Label[s]) slotV1Label[s]->setText("Decay (s)");
             slotV1Slider[s]->setRange(0.2f, 20.0f);
             slotV1Slider[s]->setValue(fx->getParameter("decay_rt60_s"));
+            slotV1Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(2)<<v<<" s"; return ss.str();});
             slotV1Slider[s]->setValueChangeCallback([&, s, type](float v){
                 std::lock_guard<std::mutex> lock(audioMutex);
                 if (auto* f = getFxForSlot(s)) { f->setParameter("decay_rt60_s", v); slotParamCache[s][type]["decay_rt60_s"] = v; }
@@ -2890,6 +2914,7 @@ int main(int argc, char* argv[]) {
             if (slotV2Label[s]) slotV2Label[s]->setText("High Damp");
             slotV2Slider[s]->setRange(0.0f, 1.0f);
             slotV2Slider[s]->setValue(fx->getParameter("high_damping"));
+            slotV2Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<"HiDamp "<<std::fixed<<std::setprecision(0)<<(v*100.0f)<<"%"; return ss.str();});
             slotV2Slider[s]->setValueChangeCallback([&, s, type](float v){
                 std::lock_guard<std::mutex> lock(audioMutex);
                 if (auto* f = getFxForSlot(s)) { f->setParameter("high_damping", v); slotParamCache[s][type]["high_damping"] = v; }
@@ -2898,6 +2923,7 @@ int main(int argc, char* argv[]) {
             if (slotV3Label[s]) slotV3Label[s]->setText("Bass Mult");
             slotV3Slider[s]->setRange(0.5f, 2.0f);
             slotV3Slider[s]->setValue(fx->getParameter("bass_mult"));
+            slotV3Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<"Bass "<<std::fixed<<std::setprecision(2)<<v<<"x"; return ss.str();});
             slotV3Slider[s]->setValueChangeCallback([&, s, type](float v){
                 std::lock_guard<std::mutex> lock(audioMutex);
                 if (auto* f = getFxForSlot(s)) { f->setParameter("bass_mult", v); slotParamCache[s][type]["bass_mult"] = v; }
@@ -2906,6 +2932,7 @@ int main(int argc, char* argv[]) {
             if (slotV4Label[s]) slotV4Label[s]->setText("Width");
             slotV4Slider[s]->setRange(0.0f, 1.0f);
             slotV4Slider[s]->setValue(fx->getParameter("stereo_width"));
+            slotV4Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<"Width "<<std::fixed<<std::setprecision(0)<<(v*100.0f)<<"%"; return ss.str();});
             slotV4Slider[s]->setValueChangeCallback([&, s, type](float v){
                 std::lock_guard<std::mutex> lock(audioMutex);
                 if (auto* f = getFxForSlot(s)) { f->setParameter("stereo_width", v); slotParamCache[s][type]["stereo_width"] = v; }
@@ -2915,6 +2942,7 @@ int main(int argc, char* argv[]) {
             if (slotV1Label[s]) slotV1Label[s]->setText("Predelay (ms)");
             slotV1Slider[s]->setRange(0.0f, 100.0f);
             slotV1Slider[s]->setValue(fx->getParameter("predelay_ms"));
+            slotV1Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(0)<<v<<" ms"; return ss.str();});
             slotV1Slider[s]->setValueChangeCallback([&, s, type](float v){
                 std::lock_guard<std::mutex> lock(audioMutex);
                 if (auto* f = getFxForSlot(s)) { f->setParameter("predelay_ms", v); slotParamCache[s][type]["predelay_ms"] = v; }
@@ -2923,6 +2951,7 @@ int main(int argc, char* argv[]) {
             if (slotV2Label[s]) slotV2Label[s]->setText("Decay (s)");
             slotV2Slider[s]->setRange(0.2f, 20.0f);
             slotV2Slider[s]->setValue(fx->getParameter("decay_rt60_s"));
+            slotV2Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(2)<<v<<" s"; return ss.str();});
             slotV2Slider[s]->setValueChangeCallback([&, s, type](float v){
                 std::lock_guard<std::mutex> lock(audioMutex);
                 if (auto* f = getFxForSlot(s)) { f->setParameter("decay_rt60_s", v); slotParamCache[s][type]["decay_rt60_s"] = v; }
@@ -2931,6 +2960,7 @@ int main(int argc, char* argv[]) {
             if (slotV3Label[s]) slotV3Label[s]->setText("Diffusion");
             slotV3Slider[s]->setRange(0.0f, 1.0f);
             slotV3Slider[s]->setValue(fx->getParameter("diffusion"));
+            slotV3Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<"Diff "<<std::fixed<<std::setprecision(0)<<(v*100.0f)<<"%"; return ss.str();});
             slotV3Slider[s]->setValueChangeCallback([&, s, type](float v){
                 std::lock_guard<std::mutex> lock(audioMutex);
                 if (auto* f = getFxForSlot(s)) { f->setParameter("diffusion", v); slotParamCache[s][type]["diffusion"] = v; }
@@ -2939,6 +2969,7 @@ int main(int argc, char* argv[]) {
             if (slotV4Label[s]) slotV4Label[s]->setText("Mod Rate (Hz)");
             slotV4Slider[s]->setRange(0.05f, 1.0f);
             slotV4Slider[s]->setValue(fx->getParameter("mod_rate"));
+            slotV4Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(2)<<v<<" Hz"; return ss.str();});
             slotV4Slider[s]->setValueChangeCallback([&, s, type](float v){
                 std::lock_guard<std::mutex> lock(audioMutex);
                 if (auto* f = getFxForSlot(s)) { f->setParameter("mod_rate", v); slotParamCache[s][type]["mod_rate"] = v; }
