@@ -493,6 +493,21 @@ Integration Layer (Ready for Deployment)
   - Mapped Hall Page 2 and Plate Param 4 to “Output Trim (dB)” with dB formatter.
 - **Impact**: Easy level matching of reverbs; eliminates “very hot” output while preserving tail character.
 
+### **August 17, 2025** — FX Output Trim (BitCrusher, Chorus/Modulation, Saturation) + Shutdown Crash Hardening
+
+**Status**: 🟢 COMPLETE
+
+- **FX Output Trim**:
+  - Added `output_trim_db` parameter to BitCrusher, Chorus/Modulation, and Saturation.
+  - DSP: applies linear trim gain pre-final limiting to stabilize perceived level; safe clamps in setters.
+  - UI: mapped Param 4 to “Output Trim (dB)” with −12 to +6 dB range and dB value formatter for all three FX.
+  - Modulation: registered “BitCrusher Output Trim”, “Chorus/Mod Output Trim”, and “Saturation Output Trim” as destinations with smoothing.
+- **BitCrusher UI**: Exposed Bit Depth, SRR, Drive, and Output Trim; defaults set on creation.
+- **Crash Hardening**:
+  - Fixed potential `EXC_BAD_ACCESS` during shutdown by guarding `uiContext->getScreen(...)` lookups with null checks in the main loop and save path.
+  - Save now relies on cached modulation routing instead of querying UI during teardown.
+- **Build**: Clean build; integrated app runs with stable shutdown.
+
 ### **August 10, 2025** — MIDI Activity Indicator and External MIDI Hookup
 
 **Status**: 🟢 **COMPLETE**
