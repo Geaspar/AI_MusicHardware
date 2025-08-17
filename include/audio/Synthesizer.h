@@ -85,6 +85,8 @@ public:
     
     // Modulation system
     ModulationMatrix* getModulationMatrix() { return &modulationMatrix_; }
+    // Convenience: list destination names
+    std::vector<std::string> getModDestinationNames() const { return modulationMatrix_.listDestinationNames(); }
     
     // Connect modulation source to destination
     void connectModulation(const std::string& sourceName, const std::string& destName, float amount);

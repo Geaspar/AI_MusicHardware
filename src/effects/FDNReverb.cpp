@@ -178,8 +178,10 @@ void FDNReverb::process(float* buffer, int numFrames) {
         wetL *= (0.8f * wetNormGainSmoothed_);
         wetR *= (0.8f * wetNormGainSmoothed_);
         // Gentle safety limiter
-        wetL = std::tanh(wetL);
-        wetR = std::tanh(wetR);
+        // Apply output trim
+        const float trim = std::pow(10.0f, outputTrimDb_ / 20.0f);
+        wetL = std::tanh(wetL * trim);
+        wetR = std::tanh(wetR * trim);
 
         const float outL = dry * xinL + wet * wetL;
         const float outR = dry * xinR + wet * wetR;
@@ -191,11 +193,15 @@ void FDNReverb::process(float* buffer, int numFrames) {
 void FDNReverb::setParameter(const std::string& name, float value) {
     if (name == "mix") mix_ = clamp(value, 0.0f, 1.0f);
     parameters_[name] = value;
+    if (name == "output_trim_db") {
+        outputTrimDb_ = std::max(-24.0f, std::min(24.0f, value));
+    }
 }
 
 float FDNReverb::getParameter(const std::string& name) const {
     auto it = parameters_.find(name);
     if (it != parameters_.end()) return it->second;
+    if (name == "output_trim_db") return outputTrimDb_;
     return 0.0f;
 }
 

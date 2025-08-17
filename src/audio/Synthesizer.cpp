@@ -315,6 +315,38 @@ void Synthesizer::createModulationSources() {
         0.01f, 4.0f
     );
     
+    // Helper to add external FX parameter destinations (by effect name and parameter key)
+    auto addFxParamDest = [this](const std::string& destDisplay,
+                                 const std::string& effectName,
+                                 const std::string& paramKey,
+                                 float minVal,
+                                 float maxVal) {
+        auto setter = [this, effectName, paramKey, minVal, maxVal](float value) {
+            float clamped = std::clamp(value, minVal, maxVal);
+            if (!externalEffectProcessor_) return;
+            // Target the first matching effect in chain
+            for (size_t i = 0; i < externalEffectProcessor_->getNumEffects(); ++i) {
+                auto* fx = externalEffectProcessor_->getEffect(i);
+                if (fx && fx->getName() == effectName) {
+                    fx->setParameter(paramKey, clamped);
+                    break;
+                }
+            }
+        };
+        auto getter = [this, effectName, paramKey, minVal]() -> float {
+            if (!externalEffectProcessor_) return minVal;
+            for (size_t i = 0; i < externalEffectProcessor_->getNumEffects(); ++i) {
+                auto* fx = externalEffectProcessor_->getEffect(i);
+                if (fx && fx->getName() == effectName) {
+                    return fx->getParameter(paramKey);
+                }
+            }
+            return minVal;
+        };
+        modulationMatrix_.addDestination(std::make_unique<ModulationDestination>(
+            destDisplay, setter, getter, minVal, maxVal));
+    };
+
     // Add destinations to modulation matrix
     modulationMatrix_.addDestination(std::move(filterCutoffDest));
     modulationMatrix_.addDestination(std::move(filterResDest));
@@ -322,6 +354,95 @@ void Synthesizer::createModulationSources() {
     modulationMatrix_.addDestination(std::move(volumeDest));
     modulationMatrix_.addDestination(std::move(attackDest));
     modulationMatrix_.addDestination(std::move(releaseDest));
+
+    // Classic Reverb (if present in chain)
+    addFxParamDest("Reverb Room Size", "Reverb", "roomSize", 0.0f, 1.0f);
+    addFxParamDest("Reverb Damping",   "Reverb", "damping",  0.0f, 1.0f);
+    addFxParamDest("Reverb Width",     "Reverb", "width",    0.0f, 1.0f);
+    addFxParamDest("Reverb Wet",       "Reverb", "wetLevel", 0.0f, 1.0f);
+
+    // Delay
+    addFxParamDest("Delay Time",     "Delay", "delayTime", 0.01f, 1.0f);
+    addFxParamDest("Delay Feedback", "Delay", "feedback",  0.0f,  0.95f);
+    addFxParamDest("Delay Mix",      "Delay", "mix",       0.0f,  1.0f);
+
+    // LowPassFilter FX (not the global filter): target first LowPassFilter in chain
+    addFxParamDest("FX LPF Cutoff",    "LowPassFilter", "frequency", 20.0f, 20000.0f);
+    addFxParamDest("FX LPF Resonance", "LowPassFilter", "resonance", 0.7f,  5.0f);
+
+    // FDNReverb (Hall)
+    addFxParamDest("Hall Predelay",   "FDNReverb (Hall)", "predelay_ms", 0.0f, 100.0f);
+    addFxParamDest("Hall Size",       "FDNReverb (Hall)", "size",        0.5f, 2.0f);
+    addFxParamDest("Hall Diffusion",  "FDNReverb (Hall)", "diffusion",   0.0f, 1.0f);
+    addFxParamDest("Hall Mod Rate",   "FDNReverb (Hall)", "mod_rate",    0.05f, 1.0f);
+    addFxParamDest("Hall Decay",      "FDNReverb (Hall)", "decay_rt60_s",0.2f, 20.0f);
+    addFxParamDest("Hall High Damp",  "FDNReverb (Hall)", "high_damping",0.0f, 1.0f);
+    addFxParamDest("Hall Bass Mult",  "FDNReverb (Hall)", "bass_mult",   0.5f, 2.0f);
+    addFxParamDest("Hall Width",      "FDNReverb (Hall)", "stereo_width",0.0f, 1.0f);
+    addFxParamDest("Hall Output Trim","FDNReverb (Hall)", "output_trim_db", -12.0f, 6.0f);
+    addFxParamDest("Hall Mix",        "FDNReverb (Hall)", "mix", 0.0f, 1.0f);
+
+    // PlateReverb
+    addFxParamDest("Plate Predelay",   "PlateReverb", "predelay_ms",  0.0f, 100.0f);
+    addFxParamDest("Plate Decay",      "PlateReverb", "decay_rt60_s", 0.2f, 20.0f);
+    addFxParamDest("Plate Diffusion",  "PlateReverb", "diffusion",    0.0f, 1.0f);
+    addFxParamDest("Plate Mod Rate",   "PlateReverb", "mod_rate",     0.05f, 1.0f);
+    addFxParamDest("Plate Output Trim","PlateReverb", "output_trim_db", -12.0f, 6.0f);
+    addFxParamDest("Plate Mix",        "PlateReverb", "mix", 0.0f, 1.0f);
+
+    // Classic Reverb extras
+    addFxParamDest("Reverb Dry",      "Reverb", "dryLevel", 0.0f, 1.0f);
+
+    // Saturation
+    addFxParamDest("Saturation Drive", "Saturation", "drive", 1.0f, 20.0f);
+    addFxParamDest("Saturation Tone",  "Saturation", "tone",  0.0f, 1.0f);
+    addFxParamDest("Saturation Mix",   "Saturation", "mix",   0.0f, 1.0f);
+
+    // Distortion
+    addFxParamDest("Distortion Drive", "Distortion", "drive", 1.0f, 20.0f);
+    addFxParamDest("Distortion Tone",  "Distortion", "tone",  0.0f, 1.0f);
+    addFxParamDest("Distortion Level", "Distortion", "level", 0.0f, 1.0f);
+    addFxParamDest("Distortion Mix",   "Distortion", "mix",   0.0f, 1.0f);
+
+    // BitCrusher
+    addFxParamDest("BitCrusher BitDepth", "BitCrusher", "bitDepth", 1.0f, 16.0f);
+    addFxParamDest("BitCrusher SRR",      "BitCrusher", "sampleRateReduction", 0.01f, 1.0f);
+    addFxParamDest("BitCrusher Drive",    "BitCrusher", "drive", 1.0f, 10.0f);
+    addFxParamDest("BitCrusher Mix",      "BitCrusher", "mix", 0.0f, 1.0f);
+
+    // Compressor
+    addFxParamDest("Compressor Threshold", "Compressor", "threshold", -60.0f, 0.0f);
+    addFxParamDest("Compressor Ratio",     "Compressor", "ratio", 1.0f, 20.0f);
+    addFxParamDest("Compressor Attack",    "Compressor", "attack", 0.001f, 1.0f);
+    addFxParamDest("Compressor Release",   "Compressor", "release", 0.01f, 3.0f);
+    addFxParamDest("Compressor Makeup",    "Compressor", "makeup", 0.0f, 24.0f);
+    addFxParamDest("Compressor Knee",      "Compressor", "knee", 0.0f, 24.0f);
+
+    // Phaser
+    addFxParamDest("Phaser Rate",     "Phaser", "rate", 0.05f, 10.0f);
+    addFxParamDest("Phaser Depth",    "Phaser", "depth", 0.0f, 1.0f);
+    addFxParamDest("Phaser Feedback", "Phaser", "feedback", 0.0f, 0.9f);
+    addFxParamDest("Phaser Mix",      "Phaser", "mix", 0.0f, 1.0f);
+
+    // EQ
+    addFxParamDest("EQ Low Gain",  "EQ", "lowGain",  -24.0f, 24.0f);
+    addFxParamDest("EQ Mid Gain",  "EQ", "midGain",  -24.0f, 24.0f);
+    addFxParamDest("EQ High Gain", "EQ", "highGain", -24.0f, 24.0f);
+    addFxParamDest("EQ Low Freq",  "EQ", "lowFreq",  20.0f, 1000.0f);
+    addFxParamDest("EQ High Freq", "EQ", "highFreq", 1000.0f, 20000.0f);
+
+    // BassBoost
+    addFxParamDest("BassBoost Freq",  "BassBoost", "frequency", 20.0f, 500.0f);
+    addFxParamDest("BassBoost Gain",  "BassBoost", "gain",      0.0f, 24.0f);
+    addFxParamDest("BassBoost Width", "BassBoost", "width",     0.1f, 5.0f);
+    addFxParamDest("BassBoost Drive", "BassBoost", "drive",     1.0f, 3.0f);
+
+    // Modulation (Chorus/Flanger)
+    addFxParamDest("Chorus/Mod Rate",     "Modulation", "rate",     0.1f, 20.0f);
+    addFxParamDest("Chorus/Mod Depth",    "Modulation", "depth",    0.0f, 1.0f);
+    addFxParamDest("Chorus/Mod Feedback", "Modulation", "feedback", 0.0f, 0.7f);
+    addFxParamDest("Chorus/Mod Spread",   "Modulation", "spread",   0.0f, 1.0f);
+    addFxParamDest("Chorus/Mod Mix",      "Modulation", "mix",      0.0f, 1.0f);
 }
 
 void Synthesizer::setSampleRate(int sampleRate) {

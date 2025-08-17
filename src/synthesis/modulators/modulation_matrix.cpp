@@ -110,6 +110,15 @@ ModulationDestination* ModulationMatrix::getDestination(const std::string& name)
     return (it != destinationMap_.end()) ? it->second : nullptr;
 }
 
+std::vector<std::string> ModulationMatrix::listDestinationNames() const {
+    std::vector<std::string> names;
+    names.reserve(destinations_.size());
+    for (const auto& d : destinations_) {
+        if (d) names.push_back(d->getName());
+    }
+    return names;
+}
+
 void ModulationMatrix::connect(const std::string& sourceName,
                                const std::string& destinationName,
                                float amount) {

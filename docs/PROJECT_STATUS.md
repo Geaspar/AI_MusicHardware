@@ -467,6 +467,32 @@ Integration Layer (Ready for Deployment)
 - **Impact**: Users can open the per-slot Page dropdown and select “Page 2” to expose Decay/High Damping/Bass Mult/Stereo Width; switching types reliably resets to Page 1.
 - **Next**: Persist selected Page per slot in config; add value formatters (Hz/s/% labels) for reverb parameters; begin Plate core implementation (Phase 3 in `docs/reverb.md`).
 
+### **August 16, 2025** — Modulation: All FX Parameters as Destinations + UI Integration
+
+**Status**: 🟢 COMPLETE
+
+- **Goal**: Allow LFOs to modulate any FX parameter (Delay, Reverb, Hall, Plate, Filters, Distortion, Phaser, EQ, BitCrusher, Compressor, BassBoost, Modulation/Chorus).
+- **Engine**:
+  - Registered FX parameters as modulation destinations via a helper that targets the first matching effect instance in the external chain.
+  - Added destination listing API for UI: `ModulationMatrix::listDestinationNames()` and `Synthesizer::getModDestinationNames()`.
+  - Destinations include: Delay (time/feedback/mix), Reverb (room/damping/wet/dry/width), FDN Hall (predelay/size/diffusion/mod_rate/decay/high_damping/bass_mult/stereo_width/mix/output_trim_db), Plate (predelay/decay/diffusion/mod_rate/mix/output_trim_db), FX LowPassFilter (frequency/resonance), Saturation (drive/tone/mix), Distortion (drive/tone/level/mix), BitCrusher (bitDepth/sampleRateReduction/drive/mix), Compressor (threshold/ratio/attack/release/makeup/knee), Phaser (rate/depth/feedback/mix), EQ (low/mid/high gain; low/high freq), BassBoost (frequency/gain/width/drive), Modulation/Chorus (rate/depth/feedback/spread/mix).
+- **UI**:
+  - `MODULATION ROUTING` Destination dropdown now queries the engine at runtime and lists all available destinations (prepends key synth params for convenience).
+  - Existing source/amount behavior preserved; persistence of routing unchanged.
+- **Safety**: Each destination clamps values to safe ranges; reverb outputs already normalized/limited; feedback parameters capped.
+- **Impact**: Creative modulation across the full effects chain; destinations update automatically as new FX params are added.
+
+### **August 16, 2025** — Reverb Output Trim and “Hotness” Control
+
+**Status**: 🟢 COMPLETE
+
+- **FDNReverb (Hall) and PlateReverb**:
+  - Added `output_trim_db` parameter (−12 to +6 dB UI range, internal clamp ±24 dB) applied pre-limiter.
+  - Lowered perceived wet level via RMS normalization target and gentle post-scaling; retained tanh safety limiting.
+- **UI**:
+  - Mapped Hall Page 2 and Plate Param 4 to “Output Trim (dB)” with dB formatter.
+- **Impact**: Easy level matching of reverbs; eliminates “very hot” output while preserving tail character.
+
 ### **August 10, 2025** — MIDI Activity Indicator and External MIDI Hookup
 
 **Status**: 🟢 **COMPLETE**

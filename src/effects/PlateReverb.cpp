@@ -130,8 +130,9 @@ void PlateReverb::process(float* buffer, int numFrames) {
         const float targetGain = 0.35f / std::sqrt(std::max(wetRms_, 1e-6f));
         wetNormGainSmoothed_ = 0.99f * wetNormGainSmoothed_ + 0.01f * targetGain;
         if (wetNormGainSmoothed_ > 1.0f) wetNormGainSmoothed_ = 1.0f;
-        wetL = std::tanh(0.8f * wetL * wetNormGainSmoothed_);
-        wetR = std::tanh(0.8f * wetR * wetNormGainSmoothed_);
+        const float trim = std::pow(10.0f, outputTrimDb_ / 20.0f);
+        wetL = std::tanh(0.8f * wetL * wetNormGainSmoothed_ * trim);
+        wetR = std::tanh(0.8f * wetR * wetNormGainSmoothed_ * trim);
 
         buffer[2*n + 0] = dry * inL + wet * wetL;
         buffer[2*n + 1] = dry * inR + wet * wetR;
@@ -141,11 +142,15 @@ void PlateReverb::process(float* buffer, int numFrames) {
 void PlateReverb::setParameter(const std::string& name, float value) {
     if (name == "mix") mix_ = clamp(value, 0.0f, 1.0f);
     parameters_[name] = value;
+    if (name == "output_trim_db") {
+        outputTrimDb_ = std::max(-24.0f, std::min(24.0f, value));
+    }
 }
 
 float PlateReverb::getParameter(const std::string& name) const {
     auto it = parameters_.find(name);
     if (it != parameters_.end()) return it->second;
+    if (name == "output_trim_db") return outputTrimDb_;
     return 0.0f;
 }
 

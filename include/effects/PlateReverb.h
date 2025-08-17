@@ -56,6 +56,7 @@ private:
     // Wet normalization
     float wetRms_ = 0.0f;
     float wetNormGainSmoothed_ = 1.0f;
+    float outputTrimDb_ = 0.0f;
 
     void ensureTankCapacity();
     inline float readFrac(const std::vector<float>& buf, float index) const;

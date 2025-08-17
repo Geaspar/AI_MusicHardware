@@ -55,6 +55,8 @@ private:
     // Wet normalization
     float wetRms_ = 0.0f;
     float wetNormGainSmoothed_ = 1.0f;
+    // Output trim (dB)
+    float outputTrimDb_ = 0.0f;
 };
 
 } // namespace AIMusicHardware

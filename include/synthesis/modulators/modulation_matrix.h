@@ -118,6 +118,8 @@ public:
     // Destination management
     void addDestination(std::unique_ptr<ModulationDestination> destination);
     ModulationDestination* getDestination(const std::string& name);
+    // List destination names for UI population
+    std::vector<std::string> listDestinationNames() const;
     
     // Connection management
     void connect(const std::string& sourceName, 

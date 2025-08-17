@@ -1303,9 +1303,25 @@ int main(int argc, char* argv[]) {
         "None", "LFO 1", "LFO 2", "Envelope", "Velocity", "Aftertouch", "Mod Wheel"
     };
     
-    std::vector<std::string> modDestinations = {
-        "None", "Pitch", "Filter Cutoff", "Filter Res", "Volume", "Pan", "Attack", "Release"
-    };
+    // Build destinations from engine so all FX params are included
+    std::vector<std::string> modDestinations;
+    modDestinations.push_back("None");
+    {
+        auto dyn = synthesizer->getModDestinationNames();
+        // Keep Pitch/Volume/Attack/Release/Filter names first if present
+        auto prependIf = [&dyn, &modDestinations](const std::string& name){
+            auto it = std::find(dyn.begin(), dyn.end(), name);
+            if (it != dyn.end()) { modDestinations.push_back(name); dyn.erase(it); }
+        };
+        prependIf("Pitch");
+        prependIf("Filter Cutoff");
+        prependIf("Filter Res");
+        prependIf("Volume");
+        prependIf("Attack");
+        prependIf("Release");
+        // Append the rest (FX params, etc.)
+        modDestinations.insert(modDestinations.end(), dyn.begin(), dyn.end());
+    }
     
     // Store dropdown references to add them last (for proper z-order)
     std::vector<std::unique_ptr<DropdownMenu>> modSourceDropdowns;
@@ -1344,6 +1360,23 @@ int main(int argc, char* argv[]) {
         amountSlider->setColor(Color(200, 150, 255));
         amountSlider->setThumbColor(Color(220, 170, 255));
         Slider* amountSliderPtr = amountSlider.get();
+        // Update connection amount and re-connect if both ends set
+        amountSliderPtr->setValueChangeCallback([i, &modConnections, &synthesizer](float v){
+            modConnections[i].amount = v;
+            if (modConnections[i].sourceIndex > 0 && modConnections[i].destIndex > 0) {
+                std::string sourceName = (modConnections[i].source == "LFO 1") ? "LFO1" : (modConnections[i].source == "LFO 2") ? "LFO2" : "";
+                if (!sourceName.empty() && modConnections[i].destination != "None") {
+                    // Disconnect previous then connect with new amount
+                    synthesizer->disconnectModulation(sourceName, modConnections[i].destination);
+                    synthesizer->connectModulation(sourceName, modConnections[i].destination, modConnections[i].amount);
+                    if (modConnections[i].destination == "Pitch") {
+                        float semitones = modConnections[i].amount * 12.0f;
+                        if (sourceName == "LFO1") synthesizer->setGlobalPitchModulationAmount("lfo1", semitones);
+                        else if (sourceName == "LFO2") synthesizer->setGlobalPitchModulationAmount("lfo2", semitones);
+                    }
+                }
+            }
+        });
         modAmountSliders.push_back(amountSliderPtr);
         mainScreen->addChild(std::move(amountSlider));
         
@@ -2088,6 +2121,33 @@ int main(int argc, char* argv[]) {
     for (auto& dropdown : modDestDropdowns) {
         mainScreen->addChild(std::move(dropdown));
     }
+
+    // Apply persisted modulation routing if available
+    if (loadedConfig.contains("mod_routing") && loadedConfig["mod_routing"].is_array()) {
+        if (auto* ms = uiContext->getScreen("main")) {
+            int idxRow = 0;
+            for (const auto& mr : loadedConfig["mod_routing"]) {
+                if (idxRow >= modRowCount) break;
+                int srcIndex = (mr.contains("sourceIndex") ? mr["sourceIndex"].get<int>() : 0);
+                int dstIndex = (mr.contains("destIndex") ? mr["destIndex"].get<int>() : 0);
+                float amount = (mr.contains("amount") ? mr["amount"].get<float>() : 0.0f);
+                if (auto* src = dynamic_cast<DropdownMenu*>(ms->getChild("mod_source_" + std::to_string(idxRow)))) {
+                    src->selectItem(std::max(0, srcIndex));
+                }
+                if (auto* dst = dynamic_cast<DropdownMenu*>(ms->getChild("mod_dest_" + std::to_string(idxRow)))) {
+                    dst->selectItem(std::max(0, dstIndex));
+                }
+                if (auto* amt = dynamic_cast<Slider*>(ms->getChild("mod_amount_" + std::to_string(idxRow)))) {
+                    amt->setValue(amount);
+                }
+                // Track for save
+                modConnections[idxRow].sourceIndex = srcIndex;
+                modConnections[idxRow].destIndex = dstIndex;
+                modConnections[idxRow].amount = amount;
+                ++idxRow;
+            }
+        }
+    }
     
     // Add main-screen quick FX dropdowns last for z-order
     for (auto& dropdown : mainEffectDropdowns) {
@@ -2176,6 +2236,30 @@ int main(int argc, char* argv[]) {
                         if (auto* v2 = dynamic_cast<Slider*>(effectsScreen->getChild("fx_v2_" + std::to_string(s)))) v2->setValue(0.0f);
                         if (auto* v3 = dynamic_cast<Slider*>(effectsScreen->getChild("fx_v3_" + std::to_string(s)))) v3->setValue(0.0f);
                         if (auto* v4 = dynamic_cast<Slider*>(effectsScreen->getChild("fx_v4_" + std::to_string(s)))) v4->setValue(0.0f);
+                    }
+                }
+            }
+            // Reset Modulation routing: set all rows to None/None and amount 0, disconnect in synth
+            {
+                for (int i = 0; i < 3; ++i) {
+                    // Disconnect any existing connections for LFO1/LFO2 to known destinations
+                    std::vector<std::string> sources = {"LFO1", "LFO2"};
+                    std::vector<std::string> dests = {"Pitch", "Filter Cutoff", "Filter Res", "Volume", "Pan", "Attack", "Release"};
+                    for (const auto& sName : sources) {
+                        for (const auto& dName : dests) {
+                            synthesizer->disconnectModulation(sName, dName);
+                        }
+                    }
+                    if (auto* ms = uiCtx->getScreen("main")) {
+                        if (auto* src = dynamic_cast<DropdownMenu*>(ms->getChild("mod_source_" + std::to_string(i)))) {
+                            src->selectItemSilently(0);
+                        }
+                        if (auto* dst = dynamic_cast<DropdownMenu*>(ms->getChild("mod_dest_" + std::to_string(i)))) {
+                            dst->selectItemSilently(0);
+                        }
+                        if (auto* amt = dynamic_cast<Slider*>(ms->getChild("mod_amount_" + std::to_string(i)))) {
+                            amt->setValue(0.0f);
+                        }
                     }
                 }
             }
@@ -2552,7 +2636,7 @@ int main(int argc, char* argv[]) {
             fx->setParameter("mod_rate", 0.15f);
             fx->setParameter("mod_depth", 0.2f);
         } else if (type == "PlateReverb") {
-            fx->setParameter("mix", 0.25f);
+            fx->setParameter("mix", 0.20f);
         } else if (type == "Phaser") {
             fx->setParameter("rate", 0.5f);
             fx->setParameter("depth", 0.5f);
@@ -2929,13 +3013,13 @@ int main(int argc, char* argv[]) {
                 if (auto* f = getFxForSlot(s)) { f->setParameter("bass_mult", v); slotParamCache[s][type]["bass_mult"] = v; }
             });
 
-            if (slotV4Label[s]) slotV4Label[s]->setText("Width");
-            slotV4Slider[s]->setRange(0.0f, 1.0f);
-            slotV4Slider[s]->setValue(fx->getParameter("stereo_width"));
-            slotV4Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<"Width "<<std::fixed<<std::setprecision(0)<<(v*100.0f)<<"%"; return ss.str();});
+            if (slotV4Label[s]) slotV4Label[s]->setText("Output Trim (dB)");
+            slotV4Slider[s]->setRange(-12.0f, 6.0f);
+            slotV4Slider[s]->setValue(fx->getParameter("output_trim_db"));
+            slotV4Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(1)<<v<<" dB"; return ss.str();});
             slotV4Slider[s]->setValueChangeCallback([&, s, type](float v){
                 std::lock_guard<std::mutex> lock(audioMutex);
-                if (auto* f = getFxForSlot(s)) { f->setParameter("stereo_width", v); slotParamCache[s][type]["stereo_width"] = v; }
+                if (auto* f = getFxForSlot(s)) { f->setParameter("output_trim_db", v); slotParamCache[s][type]["output_trim_db"] = v; }
             });
         } else if (type == "PlateReverb") {
             // Keep Plate simple for now: Predelay/Decay/Diffusion/Mod Rate
@@ -2966,13 +3050,13 @@ int main(int argc, char* argv[]) {
                 if (auto* f = getFxForSlot(s)) { f->setParameter("diffusion", v); slotParamCache[s][type]["diffusion"] = v; }
             });
 
-            if (slotV4Label[s]) slotV4Label[s]->setText("Mod Rate (Hz)");
-            slotV4Slider[s]->setRange(0.05f, 1.0f);
-            slotV4Slider[s]->setValue(fx->getParameter("mod_rate"));
-            slotV4Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(2)<<v<<" Hz"; return ss.str();});
+            if (slotV4Label[s]) slotV4Label[s]->setText("Output Trim (dB)");
+            slotV4Slider[s]->setRange(-12.0f, 6.0f);
+            slotV4Slider[s]->setValue(fx->getParameter("output_trim_db"));
+            slotV4Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(1)<<v<<" dB"; return ss.str();});
             slotV4Slider[s]->setValueChangeCallback([&, s, type](float v){
                 std::lock_guard<std::mutex> lock(audioMutex);
-                if (auto* f = getFxForSlot(s)) { f->setParameter("mod_rate", v); slotParamCache[s][type]["mod_rate"] = v; }
+                if (auto* f = getFxForSlot(s)) { f->setParameter("output_trim_db", v); slotParamCache[s][type]["output_trim_db"] = v; }
             });
         } else {
             // Unknown: disable all
@@ -3881,6 +3965,18 @@ int main(int argc, char* argv[]) {
             slots.push_back(sj);
         }
         outCfg["effects"]["slots"] = slots;
+        // Modulation routing
+        {
+            nlohmann::json mods = nlohmann::json::array();
+            for (int i = 0; i < 3; ++i) {
+                nlohmann::json mj;
+                mj["sourceIndex"] = std::max(0, modConnections[i].sourceIndex);
+                mj["destIndex"] = std::max(0, modConnections[i].destIndex);
+                mj["amount"] = modConnections[i].amount;
+                mods.push_back(mj);
+            }
+            outCfg["mod_routing"] = mods;
+        }
         // Synth params
         nlohmann::json sj;
         sj["oscillator_type"] = synthesizer->getParameter("oscillator_type");
