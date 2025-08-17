@@ -381,6 +381,12 @@ void Synthesizer::createModulationSources() {
     modulationMatrix_.addDestination(std::move(volumeDest));
     modulationMatrix_.addDestination(std::move(attackDest));
     modulationMatrix_.addDestination(std::move(releaseDest));
+    // Enable gentle smoothing on synth parameter destinations
+    if (auto* d = modulationMatrix_.getDestination("Filter Cutoff")) d->setSmoothing(0.1f);
+    if (auto* d = modulationMatrix_.getDestination("Filter Res"))    d->setSmoothing(0.1f);
+    if (auto* d = modulationMatrix_.getDestination("Volume"))        d->setSmoothing(0.1f);
+    if (auto* d = modulationMatrix_.getDestination("Attack"))        d->setSmoothing(0.2f);
+    if (auto* d = modulationMatrix_.getDestination("Release"))       d->setSmoothing(0.2f);
 
     // Classic Reverb (if present in chain)
     addFxParamDest("Reverb Room Size", "Reverb", "roomSize", 0.0f, 1.0f);
@@ -392,6 +398,9 @@ void Synthesizer::createModulationSources() {
     addFxParamDest("Delay Time",     "Delay", "delayTime", 0.01f, 1.0f);
     addFxParamDest("Delay Feedback", "Delay", "feedback",  0.0f,  0.95f);
     addFxParamDest("Delay Mix",      "Delay", "mix",       0.0f,  1.0f);
+    if (auto* d = modulationMatrix_.getDestination("Delay Time"))     d->setSmoothing(0.1f);
+    if (auto* d = modulationMatrix_.getDestination("Delay Feedback")) d->setSmoothing(0.1f);
+    if (auto* d = modulationMatrix_.getDestination("Delay Mix"))      d->setSmoothing(0.1f);
 
     // LowPassFilter FX (not the global filter): target first LowPassFilter in chain
     addFxParamDest("FX LPF Cutoff",    "LowPassFilter", "frequency", 20.0f, 20000.0f);
@@ -408,6 +417,9 @@ void Synthesizer::createModulationSources() {
     addFxParamDest("Hall Width",      "FDNReverb (Hall)", "stereo_width",0.0f, 1.0f);
     addFxParamDest("Hall Output Trim","FDNReverb (Hall)", "output_trim_db", -12.0f, 6.0f);
     addFxParamDest("Hall Mix",        "FDNReverb (Hall)", "mix", 0.0f, 1.0f);
+    for (const char* name : {"Hall Predelay","Hall Size","Hall Diffusion","Hall Mod Rate","Hall Decay","Hall High Damp","Hall Bass Mult","Hall Width","Hall Output Trim","Hall Mix"}) {
+        if (auto* d = modulationMatrix_.getDestination(name)) d->setSmoothing(0.1f);
+    }
 
     // PlateReverb
     addFxParamDest("Plate Predelay",   "PlateReverb", "predelay_ms",  0.0f, 100.0f);
@@ -416,26 +428,41 @@ void Synthesizer::createModulationSources() {
     addFxParamDest("Plate Mod Rate",   "PlateReverb", "mod_rate",     0.05f, 1.0f);
     addFxParamDest("Plate Output Trim","PlateReverb", "output_trim_db", -12.0f, 6.0f);
     addFxParamDest("Plate Mix",        "PlateReverb", "mix", 0.0f, 1.0f);
+    for (const char* name : {"Plate Predelay","Plate Decay","Plate Diffusion","Plate Mod Rate","Plate Output Trim","Plate Mix"}) {
+        if (auto* d = modulationMatrix_.getDestination(name)) d->setSmoothing(0.1f);
+    }
 
     // Classic Reverb extras
     addFxParamDest("Reverb Dry",      "Reverb", "dryLevel", 0.0f, 1.0f);
+    for (const char* name : {"Reverb Room Size","Reverb Damping","Reverb Width","Reverb Wet","Reverb Dry"}) {
+        if (auto* d = modulationMatrix_.getDestination(name)) d->setSmoothing(0.1f);
+    }
 
     // Saturation
     addFxParamDest("Saturation Drive", "Saturation", "drive", 1.0f, 20.0f);
     addFxParamDest("Saturation Tone",  "Saturation", "tone",  0.0f, 1.0f);
     addFxParamDest("Saturation Mix",   "Saturation", "mix",   0.0f, 1.0f);
+    for (const char* name : {"Saturation Drive","Saturation Tone","Saturation Mix"}) {
+        if (auto* d = modulationMatrix_.getDestination(name)) d->setSmoothing(0.1f);
+    }
 
     // Distortion
     addFxParamDest("Distortion Drive", "Distortion", "drive", 1.0f, 20.0f);
     addFxParamDest("Distortion Tone",  "Distortion", "tone",  0.0f, 1.0f);
     addFxParamDest("Distortion Level", "Distortion", "level", 0.0f, 1.0f);
     addFxParamDest("Distortion Mix",   "Distortion", "mix",   0.0f, 1.0f);
+    for (const char* name : {"Distortion Drive","Distortion Tone","Distortion Level","Distortion Mix"}) {
+        if (auto* d = modulationMatrix_.getDestination(name)) d->setSmoothing(0.1f);
+    }
 
     // BitCrusher
     addFxParamDest("BitCrusher BitDepth", "BitCrusher", "bitDepth", 1.0f, 16.0f);
     addFxParamDest("BitCrusher SRR",      "BitCrusher", "sampleRateReduction", 0.01f, 1.0f);
     addFxParamDest("BitCrusher Drive",    "BitCrusher", "drive", 1.0f, 10.0f);
     addFxParamDest("BitCrusher Mix",      "BitCrusher", "mix", 0.0f, 1.0f);
+    for (const char* name : {"BitCrusher BitDepth","BitCrusher SRR","BitCrusher Drive","BitCrusher Mix"}) {
+        if (auto* d = modulationMatrix_.getDestination(name)) d->setSmoothing(0.15f);
+    }
 
     // Compressor
     addFxParamDest("Compressor Threshold", "Compressor", "threshold", -60.0f, 0.0f);
@@ -444,12 +471,18 @@ void Synthesizer::createModulationSources() {
     addFxParamDest("Compressor Release",   "Compressor", "release", 0.01f, 3.0f);
     addFxParamDest("Compressor Makeup",    "Compressor", "makeup", 0.0f, 24.0f);
     addFxParamDest("Compressor Knee",      "Compressor", "knee", 0.0f, 24.0f);
+    for (const char* name : {"Compressor Threshold","Compressor Ratio","Compressor Attack","Compressor Release","Compressor Makeup","Compressor Knee"}) {
+        if (auto* d = modulationMatrix_.getDestination(name)) d->setSmoothing(0.15f);
+    }
 
     // Phaser
     addFxParamDest("Phaser Rate",     "Phaser", "rate", 0.05f, 10.0f);
     addFxParamDest("Phaser Depth",    "Phaser", "depth", 0.0f, 1.0f);
     addFxParamDest("Phaser Feedback", "Phaser", "feedback", 0.0f, 0.9f);
     addFxParamDest("Phaser Mix",      "Phaser", "mix", 0.0f, 1.0f);
+    for (const char* name : {"Phaser Rate","Phaser Depth","Phaser Feedback","Phaser Mix"}) {
+        if (auto* d = modulationMatrix_.getDestination(name)) d->setSmoothing(0.12f);
+    }
 
     // EQ
     addFxParamDest("EQ Low Gain",  "EQ", "lowGain",  -24.0f, 24.0f);
@@ -457,12 +490,18 @@ void Synthesizer::createModulationSources() {
     addFxParamDest("EQ High Gain", "EQ", "highGain", -24.0f, 24.0f);
     addFxParamDest("EQ Low Freq",  "EQ", "lowFreq",  20.0f, 1000.0f);
     addFxParamDest("EQ High Freq", "EQ", "highFreq", 1000.0f, 20000.0f);
+    for (const char* name : {"EQ Low Gain","EQ Mid Gain","EQ High Gain","EQ Low Freq","EQ High Freq"}) {
+        if (auto* d = modulationMatrix_.getDestination(name)) d->setSmoothing(0.12f);
+    }
 
     // BassBoost
     addFxParamDest("BassBoost Freq",  "BassBoost", "frequency", 20.0f, 500.0f);
     addFxParamDest("BassBoost Gain",  "BassBoost", "gain",      0.0f, 24.0f);
     addFxParamDest("BassBoost Width", "BassBoost", "width",     0.1f, 5.0f);
     addFxParamDest("BassBoost Drive", "BassBoost", "drive",     1.0f, 3.0f);
+    for (const char* name : {"BassBoost Freq","BassBoost Gain","BassBoost Width","BassBoost Drive"}) {
+        if (auto* d = modulationMatrix_.getDestination(name)) d->setSmoothing(0.12f);
+    }
 
     // Modulation (Chorus/Flanger)
     addFxParamDest("Chorus/Mod Rate",     "Modulation", "rate",     0.1f, 20.0f);
@@ -470,6 +509,9 @@ void Synthesizer::createModulationSources() {
     addFxParamDest("Chorus/Mod Feedback", "Modulation", "feedback", 0.0f, 0.7f);
     addFxParamDest("Chorus/Mod Spread",   "Modulation", "spread",   0.0f, 1.0f);
     addFxParamDest("Chorus/Mod Mix",      "Modulation", "mix",      0.0f, 1.0f);
+    for (const char* name : {"Chorus/Mod Rate","Chorus/Mod Depth","Chorus/Mod Feedback","Chorus/Mod Spread","Chorus/Mod Mix"}) {
+        if (auto* d = modulationMatrix_.getDestination(name)) d->setSmoothing(0.12f);
+    }
 }
 
 void Synthesizer::setSampleRate(int sampleRate) {

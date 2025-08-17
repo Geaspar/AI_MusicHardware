@@ -62,10 +62,21 @@ public:
     void update();
     
     // Apply a specific value to the destination
-    void applyValue(float value) { setter_(value); }
+    void applyValue(float value) {
+        if (smoothingEnabled_) {
+            if (!initialized_) { lastValue_ = getter_(); initialized_ = true; }
+            lastValue_ = lastValue_ + smoothingAlpha_ * (value - lastValue_);
+            setter_(lastValue_);
+        } else {
+            setter_(value);
+        }
+    }
     
     // Get name for this destination
     const std::string& getName() const { return name_; }
+    
+    // Enable simple one-pole smoothing (0 < alpha <= 1)
+    void setSmoothing(float alpha) { smoothingEnabled_ = (alpha > 0.0f); smoothingAlpha_ = alpha; }
     
 private:
     std::string name_;
@@ -73,6 +84,11 @@ private:
     GetterFunc getter_;
     float minValue_;
     float maxValue_;
+    // Smoothing state
+    bool smoothingEnabled_ = false;
+    float smoothingAlpha_ = 0.0f;
+    float lastValue_ = 0.0f;
+    bool initialized_ = false;
 };
 
 /**
