@@ -2131,8 +2131,40 @@ int main(int argc, char* argv[]) {
             int idxRow = 0;
             for (const auto& mr : loadedConfig["mod_routing"]) {
                 if (idxRow >= modRowCount) break;
-                int srcIndex = (mr.contains("sourceIndex") ? mr["sourceIndex"].get<int>() : 0);
-                int dstIndex = (mr.contains("destIndex") ? mr["destIndex"].get<int>() : 0);
+                // Prefer name-based mapping; fall back to indices for backward compatibility
+                int srcIndex = 0;
+                int dstIndex = 0;
+                if (mr.contains("source") && mr["source"].is_string()) {
+                    std::string sName = mr["source"].get<std::string>();
+                    // Map to UI label
+                    if (auto* srcDd = dynamic_cast<DropdownMenu*>(ms->getChild("mod_source_" + std::to_string(idxRow)))) {
+                        // Try exact match first
+                        srcDd->selectItemSilently(sName);
+                        srcIndex = srcDd->getSelectedIndex();
+                        // Fallback mapping for internal names to UI labels
+                        if (srcIndex < 0) {
+                            if (sName == "LFO1") sName = "LFO 1";
+                            else if (sName == "LFO2") sName = "LFO 2";
+                            else if (sName == "ModWheel") sName = "Mod Wheel";
+                            else if (sName == "Aftertouch") sName = "Aftertouch";
+                            else if (sName == "Velocity") sName = "Velocity";
+                            else if (sName == "Envelope") sName = "Envelope";
+                            srcDd->selectItemSilently(sName);
+                            srcIndex = std::max(0, srcDd->getSelectedIndex());
+                        }
+                    }
+                } else {
+                    srcIndex = (mr.contains("sourceIndex") ? mr["sourceIndex"].get<int>() : 0);
+                }
+                if (mr.contains("destination") && mr["destination"].is_string()) {
+                    std::string dName = mr["destination"].get<std::string>();
+                    if (auto* dstDd = dynamic_cast<DropdownMenu*>(ms->getChild("mod_dest_" + std::to_string(idxRow)))) {
+                        dstDd->selectItemSilently(dName);
+                        dstIndex = std::max(0, dstDd->getSelectedIndex());
+                    }
+                } else {
+                    dstIndex = (mr.contains("destIndex") ? mr["destIndex"].get<int>() : 0);
+                }
                 float amount = (mr.contains("amount") ? mr["amount"].get<float>() : 0.0f);
                 if (auto* src = dynamic_cast<DropdownMenu*>(ms->getChild("mod_source_" + std::to_string(idxRow)))) {
                     src->selectItem(std::max(0, srcIndex));
@@ -2245,11 +2277,11 @@ int main(int argc, char* argv[]) {
             // Reset Modulation routing: set all rows to None/None and amount 0, disconnect in synth
             {
                 for (int i = 0; i < 3; ++i) {
-                    // Disconnect any existing connections for LFO1/LFO2 to known destinations
-                    std::vector<std::string> sources = {"LFO1", "LFO2"};
-                    std::vector<std::string> dests = {"Pitch", "Filter Cutoff", "Filter Res", "Volume", "Pan", "Attack", "Release"};
+                    // Disconnect existing connections by enumerating current destinations
+                    std::vector<std::string> sources = {"LFO1", "LFO2", "ModWheel", "Aftertouch", "Velocity", "Envelope"};
+                    auto allDests = synthesizer->getModDestinationNames();
                     for (const auto& sName : sources) {
-                        for (const auto& dName : dests) {
+                        for (const auto& dName : allDests) {
                             synthesizer->disconnectModulation(sName, dName);
                         }
                     }
@@ -3973,9 +4005,25 @@ int main(int argc, char* argv[]) {
             nlohmann::json mods = nlohmann::json::array();
             for (int i = 0; i < 3; ++i) {
                 nlohmann::json mj;
+                // Persist by names for robustness; also include indices for backward compatibility
+                std::string sourceText = "None";
+                std::string destText = "None";
+                if (auto* dropdown = dynamic_cast<DropdownMenu*>(mainScreen->getChild("mod_source_" + std::to_string(i)))) {
+                    sourceText = dropdown->getSelectedItem();
+                }
+                if (auto* dropdown = dynamic_cast<DropdownMenu*>(mainScreen->getChild("mod_dest_" + std::to_string(i)))) {
+                    destText = dropdown->getSelectedItem();
+                }
+                // Map UI label to internal source name where needed
+                std::string sourceInternal = sourceText;
+                if (sourceInternal == "LFO 1") sourceInternal = "LFO1";
+                else if (sourceInternal == "LFO 2") sourceInternal = "LFO2";
+                else if (sourceInternal == "Mod Wheel") sourceInternal = "ModWheel";
+                mj["source"] = sourceInternal;
+                mj["destination"] = destText;
+                mj["amount"] = modConnections[i].amount;
                 mj["sourceIndex"] = std::max(0, modConnections[i].sourceIndex);
                 mj["destIndex"] = std::max(0, modConnections[i].destIndex);
-                mj["amount"] = modConnections[i].amount;
                 mods.push_back(mj);
             }
             outCfg["mod_routing"] = mods;
