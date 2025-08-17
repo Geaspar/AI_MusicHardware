@@ -13,6 +13,9 @@ PlateReverb::PlateReverb(int sampleRate) : Effect(sampleRate), er_(sampleRate),
     parameters_["diffusion"] = 0.5f;
     parameters_["mod_rate"] = 0.15f;
     parameters_["mod_depth"] = 0.2f;
+    // Late tank tone defaults (ensure presence to avoid at() exceptions)
+    parameters_["high_damping"] = 0.3f;
+    parameters_["bass_mult"] = 1.0f;
 }
 
 PlateReverb::~PlateReverb() = default;
@@ -60,6 +63,7 @@ void PlateReverb::process(float* buffer, int numFrames) {
 
     const float decayS = std::max(0.2f, parameters_.at("decay_rt60_s"));
     const float highDamp = clamp(parameters_.at("high_damping"), 0.0f, 1.0f);
+    // Use stereo width from ER for now as overall width
     const float width = clamp(parameters_.at("er_width"), 0.0f, 1.0f);
     const float bassMult = std::max(0.5f, std::min(2.0f, parameters_.at("bass_mult")));
     const float sr = static_cast<float>(getSampleRate());
@@ -112,9 +116,11 @@ void PlateReverb::process(float* buffer, int numFrames) {
         wL_ = (wL_ + 1) % tankL_.size();
         wR_ = (wR_ + 1) % tankR_.size();
 
-        // Wet mix from tank outputs (post-normalization)
-        float wetL = lpYL_;
-        float wetR = lpYR_;
+        // Wet mix from tank outputs with simple mid/side balance for stereo
+        const float mid = 0.5f * (lpYL_ + lpYR_);
+        const float side = 0.5f * (lpYL_ - lpYR_);
+        float wetL = mid + width * side;
+        float wetR = mid - width * side;
 
         // Wet normalization similar to FDN (lower target for headroom)
         const float wetMono = 0.5f * (wetL + wetR);
