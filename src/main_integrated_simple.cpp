@@ -1410,6 +1410,9 @@ int main(int argc, char* argv[]) {
                 std::string sourceName = "";
                 if (item == "LFO 1") sourceName = "LFO1";
                 else if (item == "LFO 2") sourceName = "LFO2";
+                else if (item == "Mod Wheel") sourceName = "ModWheel";
+                else if (item == "Aftertouch") sourceName = "Aftertouch";
+                else if (item == "Velocity") sourceName = "Velocity";
                 
                 if (!sourceName.empty() && modConnections[i].destination != "None") {
                     // Apply safety limits for certain destinations

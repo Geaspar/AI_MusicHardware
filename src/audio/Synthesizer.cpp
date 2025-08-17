@@ -160,6 +160,21 @@ void Synthesizer::createModulationSources() {
     // Add to modulation matrix
     modulationMatrix_.addSource(std::move(lfo1));
     modulationMatrix_.addSource(std::move(lfo2));
+
+    // Create MIDI-driven continuous sources
+    class ValueSource : public ModulationSource {
+    public:
+        ValueSource(const std::string& name, bool bipolar, std::function<float()> getter)
+            : ModulationSource(name), getter_(std::move(getter)) { setBipolar(bipolar); }
+        float getValue() const override { return getter_(); }
+        void update() override {}
+    private:
+        std::function<float()> getter_;
+    };
+
+    modulationMatrix_.addSource(std::make_unique<ValueSource>("ModWheel", false, [this]{ return modWheelValue_; }));
+    modulationMatrix_.addSource(std::make_unique<ValueSource>("Aftertouch", false, [this]{ return aftertouchValue_; }));
+    modulationMatrix_.addSource(std::make_unique<ValueSource>("Velocity", false, [this]{ return velocityValue_; }));
     
     // Store base parameter values
     baseParameterValues_["filter_cutoff"] = 1.0f; // Start with filter wide open (20kHz)
@@ -469,6 +484,7 @@ void Synthesizer::setSampleRate(int sampleRate) {
 void Synthesizer::noteOn(int midiNote, float velocity, int channel) {
     if (voiceManager_) {
         voiceManager_->noteOn(midiNote, velocity, channel);
+        velocityValue_ = std::clamp(velocity, 0.0f, 1.0f);
         
         // Apply global pitch modulation amounts to the newly triggered voice
         for (int i = 0; i < voiceManager_->getMaxVoices(); ++i) {
@@ -538,6 +554,7 @@ void Synthesizer::setAftertouch(int note, float pressure, int channel) {
         std::cout << "Aftertouch for note " << note << " with pressure " << pressure 
                   << " on channel " << channel << std::endl;
     }
+    aftertouchValue_ = std::clamp(pressure, 0.0f, 1.0f);
 }
 
 void Synthesizer::setChannelPressure(float pressure, int channel) {
@@ -545,6 +562,7 @@ void Synthesizer::setChannelPressure(float pressure, int channel) {
         voiceManager_->setChannelPressure(pressure, channel);
         std::cout << "Channel pressure " << pressure << " for channel " << channel << std::endl;
     }
+    aftertouchValue_ = std::clamp(pressure, 0.0f, 1.0f);
 }
 
 void Synthesizer::resetAllControllers() {
@@ -1082,6 +1100,10 @@ void Synthesizer::setGlobalPitchModulationAmount(const std::string& source, floa
     }
     
     std::cout << "Set global pitch modulation for " << source << " to " << semitones << " semitones" << std::endl;
+}
+
+void Synthesizer::setModWheel(float value) {
+    modWheelValue_ = std::clamp(value, 0.0f, 1.0f);
 }
 
 void Synthesizer::setVoiceManagerType(VoiceManagerType type) {

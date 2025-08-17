@@ -226,6 +226,9 @@ void MidiManager::processControlChange(const MidiMessage& message, int samplePos
             if (listener_) {
                 listener_->modWheelChanged(channel, midiValueToParameter(value));
             }
+            if (synthesizer_) {
+                synthesizer_->setModWheel(midiValueToParameter(value));
+            }
             // Also update any mapped parameter
             updateMappedParameter(channel, controller, value);
             break;

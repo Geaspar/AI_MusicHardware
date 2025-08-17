@@ -100,6 +100,9 @@ public:
     // Global pitch modulation amounts (applied to all voices)
     void setGlobalPitchModulationAmount(const std::string& source, float semitones);
     
+    // MIDI-driven continuous sources
+    void setModWheel(float value); // 0.0 - 1.0
+    
     // Processor implementation
     void process(float* buffer, int numFrames) override;
     void reset() override;
@@ -158,6 +161,11 @@ private:
     VoiceManagerType voiceManagerType_ = VoiceManagerType::Standard;
     bool oversamplingEnabled_ = false;
     OversamplingProcessor::Factor oversamplingFactor_ = OversamplingProcessor::Factor::x1;
+
+    // Continuous values for MIDI-driven modulation sources
+    float modWheelValue_ = 0.0f;     // 0..1
+    float aftertouchValue_ = 0.0f;   // 0..1 (channel pressure or max poly AT)
+    float velocityValue_ = 0.0f;     // 0..1 (last note-on velocity)
 };
 
 } // namespace AIMusicHardware
