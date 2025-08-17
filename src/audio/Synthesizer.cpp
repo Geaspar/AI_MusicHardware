@@ -175,6 +175,18 @@ void Synthesizer::createModulationSources() {
     modulationMatrix_.addSource(std::make_unique<ValueSource>("ModWheel", false, [this]{ return modWheelValue_; }));
     modulationMatrix_.addSource(std::make_unique<ValueSource>("Aftertouch", false, [this]{ return aftertouchValue_; }));
     modulationMatrix_.addSource(std::make_unique<ValueSource>("Velocity", false, [this]{ return velocityValue_; }));
+    // Envelope source returns average of active voices' envelope value (fallback to base sustain if none)
+    modulationMatrix_.addSource(std::make_unique<ValueSource>("Envelope", false, [this]{
+        if (!voiceManager_) return baseParameterValues_.count("envelope_sustain") ? baseParameterValues_.at("envelope_sustain") : 0.0f;
+        float sum = 0.0f; int count = 0;
+        for (int i = 0; i < voiceManager_->getMaxVoices(); ++i) {
+            if (auto* v = voiceManager_->getVoice(i)) {
+                if (auto* env = v->getEnvelope(); env && v->isActive()) { sum += env->getCurrentValue(); ++count; }
+            }
+        }
+        if (count == 0) return baseParameterValues_.count("envelope_sustain") ? baseParameterValues_.at("envelope_sustain") : 0.0f;
+        return sum / static_cast<float>(count);
+    }));
     
     // Store base parameter values
     baseParameterValues_["filter_cutoff"] = 1.0f; // Start with filter wide open (20kHz)
