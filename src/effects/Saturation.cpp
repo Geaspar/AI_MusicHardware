@@ -32,6 +32,7 @@ void Saturation::setSampleRate(int sampleRate) {
 }
 
 void Saturation::process(float* buffer, int numFrames) {
+    const float trim = std::pow(10.0f, outputTrimDb_ / 20.0f);
     for (int i = 0; i < numFrames * 2; i += 2) {
         // Get input samples
         float inputL = buffer[i];
@@ -92,9 +93,9 @@ void Saturation::process(float* buffer, int numFrames) {
         // Mix dry and wet signals
         float outL = inputL * (1.0f - mix_) + toneL * mix_;
         float outR = inputR * (1.0f - mix_) + toneR * mix_;
-        // Soft limiting to tame peaks before final clamp
-        outL = std::tanh(outL * 1.2f) * 0.9f;
-        outR = std::tanh(outR * 1.2f) * 0.9f;
+        // Soft limiting to tame peaks before final clamp, then apply output trim
+        outL = std::tanh(outL * 1.2f) * 0.9f * trim;
+        outR = std::tanh(outR * 1.2f) * 0.9f * trim;
         // Safety clamp to prevent hard clipping from blowing up the engine
         buffer[i]     = std::clamp(outL, -0.98f, 0.98f);
         buffer[i + 1] = std::clamp(outR, -0.98f, 0.98f);
@@ -194,6 +195,9 @@ void Saturation::setParameter(const std::string& name, float value) {
     else if (name == "mix") {
         mix_ = clamp(value, 0.0f, 1.0f);
     }
+    else if (name == "output_trim_db") {
+        outputTrimDb_ = clamp(value, -24.0f, 24.0f);
+    }
     else if (name == "type") {
         int typeInt = static_cast<int>(value);
         if (typeInt >= 0 && typeInt <= 3) {
@@ -211,6 +215,9 @@ float Saturation::getParameter(const std::string& name) const {
     }
     else if (name == "mix") {
         return mix_;
+    }
+    else if (name == "output_trim_db") {
+        return outputTrimDb_;
     }
     else if (name == "type") {
         return static_cast<float>(type_);

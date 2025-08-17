@@ -3016,9 +3016,16 @@ int main(int argc, char* argv[]) {
             slotV3Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<"Spread "<<std::fixed<<std::setprecision(0)<<(v*100.0f)<<"%"; return ss.str();});
             slotV3Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("spread", v); slotParamCache[s][type]["spread"] = v; } });
 
-            disableParam(slotV4Label[s], slotV4Slider[s]);
+            if (slotV4Label[s]) slotV4Label[s]->setText("Output Trim (dB)");
+            slotV4Slider[s]->setRange(-12.0f, 6.0f);
+            slotV4Slider[s]->setValue(fx->getParameter("output_trim_db"));
+            slotV4Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(1)<<v<<" dB"; return ss.str();});
+            slotV4Slider[s]->setValueChangeCallback([&, s, type](float v){
+                std::lock_guard<std::mutex> lock(audioMutex);
+                if (auto* f = getFxForSlot(s)) { f->setParameter("output_trim_db", v); slotParamCache[s][type]["output_trim_db"] = v; }
+            });
         } else if (type == "Saturation") {
-            // Saturation: Drive, Tone, Mix (Param 4 disabled)
+            // Saturation: Drive, Tone, Mix, Output Trim
             if (slotV1Label[s]) slotV1Label[s]->setText("Drive");
             slotV1Slider[s]->setRange(1.0f, 20.0f);
             slotV1Slider[s]->setValue(fx->getParameter("drive"));
@@ -3034,7 +3041,14 @@ int main(int argc, char* argv[]) {
             slotV3Slider[s]->setValue(fx->getParameter("mix"));
             slotV3Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("mix", v); slotParamCache[s][type]["mix"] = v; } });
 
-            disableParam(slotV4Label[s], slotV4Slider[s]);
+            if (slotV4Label[s]) slotV4Label[s]->setText("Output Trim (dB)");
+            slotV4Slider[s]->setRange(-12.0f, 6.0f);
+            slotV4Slider[s]->setValue(fx->getParameter("output_trim_db"));
+            slotV4Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(1)<<v<<" dB"; return ss.str();});
+            slotV4Slider[s]->setValueChangeCallback([&, s, type](float v){
+                std::lock_guard<std::mutex> lock(audioMutex);
+                if (auto* f = getFxForSlot(s)) { f->setParameter("output_trim_db", v); slotParamCache[s][type]["output_trim_db"] = v; }
+            });
         } else if (type == "FDNReverb (Hall)") {
             // FDN Hall: switchable pages via fx_page_[s] dropdown
             int page = 0;

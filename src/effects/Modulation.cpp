@@ -59,6 +59,7 @@ std::string Modulation::getName() const {
 }
 
 void Modulation::process(float* buffer, int numFrames) {
+    const float trim = std::pow(10.0f, outputTrimDb_ / 20.0f);
     for (int i = 0; i < numFrames * 2; i += 2) {
         // Get input samples
         float inputL = buffer[i];
@@ -155,8 +156,10 @@ void Modulation::process(float* buffer, int numFrames) {
         // Mix original and delayed signals using mix_
         float dry = 1.0f - mix_;
         float wet = mix_;
-        buffer[i] = dry * inputL + wet * delayedL;
-        buffer[i + 1] = dry * inputR + wet * delayedR;
+        float outL = dry * inputL + wet * delayedL;
+        float outR = dry * inputR + wet * delayedR;
+        buffer[i]     = std::tanh(outL * trim);
+        buffer[i + 1] = std::tanh(outR * trim);
     }
 }
 
@@ -177,6 +180,9 @@ void Modulation::setParameter(const std::string& name, float value) {
     }
     else if (name == "mix") {
         mix_ = clamp(value, 0.0f, 1.0f);
+    }
+    else if (name == "output_trim_db") {
+        outputTrimDb_ = clamp(value, -24.0f, 24.0f);
     }
     else if (name == "waveType") {
         int typeInt = static_cast<int>(value);
@@ -201,6 +207,9 @@ float Modulation::getParameter(const std::string& name) const {
     }
     else if (name == "mix") {
         return mix_;
+    }
+    else if (name == "output_trim_db") {
+        return outputTrimDb_;
     }
     else if (name == "waveType") {
         return static_cast<float>(waveType_);

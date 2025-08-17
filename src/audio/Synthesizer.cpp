@@ -439,10 +439,11 @@ void Synthesizer::createModulationSources() {
     }
 
     // Saturation
-    addFxParamDest("Saturation Drive", "Saturation", "drive", 1.0f, 20.0f);
-    addFxParamDest("Saturation Tone",  "Saturation", "tone",  0.0f, 1.0f);
-    addFxParamDest("Saturation Mix",   "Saturation", "mix",   0.0f, 1.0f);
-    for (const char* name : {"Saturation Drive","Saturation Tone","Saturation Mix"}) {
+    addFxParamDest("Saturation Drive",      "Saturation", "drive", 1.0f, 20.0f);
+    addFxParamDest("Saturation Tone",       "Saturation", "tone",  0.0f, 1.0f);
+    addFxParamDest("Saturation Mix",        "Saturation", "mix",   0.0f, 1.0f);
+    addFxParamDest("Saturation Output Trim", "Saturation", "output_trim_db", -12.0f, 6.0f);
+    for (const char* name : {"Saturation Drive","Saturation Tone","Saturation Mix","Saturation Output Trim"}) {
         if (auto* d = modulationMatrix_.getDestination(name)) d->setSmoothing(0.1f);
     }
 
@@ -510,7 +511,8 @@ void Synthesizer::createModulationSources() {
     addFxParamDest("Chorus/Mod Feedback", "Modulation", "feedback", 0.0f, 0.7f);
     addFxParamDest("Chorus/Mod Spread",   "Modulation", "spread",   0.0f, 1.0f);
     addFxParamDest("Chorus/Mod Mix",      "Modulation", "mix",      0.0f, 1.0f);
-    for (const char* name : {"Chorus/Mod Rate","Chorus/Mod Depth","Chorus/Mod Feedback","Chorus/Mod Spread","Chorus/Mod Mix"}) {
+    addFxParamDest("Chorus/Mod Output Trim", "Modulation", "output_trim_db", -12.0f, 6.0f);
+    for (const char* name : {"Chorus/Mod Rate","Chorus/Mod Depth","Chorus/Mod Feedback","Chorus/Mod Spread","Chorus/Mod Mix","Chorus/Mod Output Trim"}) {
         if (auto* d = modulationMatrix_.getDestination(name)) d->setSmoothing(0.12f);
     }
 }

@@ -35,6 +35,7 @@ private:
     float drive_;      // Drive amount
     float tone_;       // Tone control (0-1)
     float mix_;        // Wet/dry mix
+    float outputTrimDb_ = 0.0f; // Output trim in dB
     Type type_;        // Saturation type
     
     // Tone control filter coefficients (high shelf)

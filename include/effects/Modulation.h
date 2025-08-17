@@ -34,6 +34,7 @@ private:
     float feedback_;   // Feedback amount
     float spread_;     // Stereo spread
     float mix_ = 0.5f; // Wet/dry mix (0=dry,1=wet)
+    float outputTrimDb_ = 0.0f; // Output trim in dB
     WaveType waveType_; // Type of modulation wave
     
     float phase_;      // Current LFO phase (0-1)
