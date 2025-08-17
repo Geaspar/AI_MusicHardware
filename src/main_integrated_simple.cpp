@@ -5,6 +5,7 @@
 #include <mutex>
 #include <atomic>
 #include <iomanip>
+#include "../include/synthesis/modulators/modulation_matrix.h"
 #include <sstream>
 #include <cmath>
 #include <unordered_map>
@@ -1319,6 +1320,12 @@ int main(int argc, char* argv[]) {
         prependIf("Volume");
         prependIf("Attack");
         prependIf("Release");
+        // Append per-slot generic targets (assumes 6 slots)
+        for (int s = 1; s <= 6; ++s) {
+            for (int p = 1; p <= 4; ++p) {
+                std::stringstream ss; ss << "Slot " << s << " — Param " << p; modDestinations.push_back(ss.str());
+            }
+        }
         // Append the rest (FX params, etc.)
         modDestinations.insert(modDestinations.end(), dyn.begin(), dyn.end());
     }
