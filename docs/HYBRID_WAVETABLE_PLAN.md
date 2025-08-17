@@ -271,6 +271,10 @@ Crossfade:
 - Start with 2048 default; expose Eco/High once stable
 - Add debug overlay to iterate on cache quantization and thresholds
 
+Deterministic & safety modes:
+- Deterministic test mode (single worker thread, fixed scheduling) for reproducible tests
+- Safe mode toggle: force Legacy fallback if worker overload detected or cache hit rate < threshold
+
 
 ## 18) Timeline (rough)
 
@@ -281,13 +285,37 @@ Crossfade:
 - Week 5: Polish, telemetry, edge-case hardening, docs
 
 
-## 19) Risks & mitigations
+## 19) Downsides, risks & mitigations
 
-- CPU spikes from IFFT bursts → throttle enqueues; backpressure; adaptive FFT size
-- Phase click on swap → minimum one-cycle crossfade; verify zero DC; normalize RMS
-- Thrashing cache on fast LFO → quantization + hysteresis; per-voice micro-cache
-- Memory growth → LRU cap + pooled buffers per size
-- Complex spectral ops CPU → compute in control thread, not audio thread; cache op results when possible
+1) Increased complexity (more code paths: spectral ops, cache, worker, swaps)
+   - Mitigations: strict module boundaries; unit + integration tests per module; debug overlay; feature flag to disable Hybrid.
+
+2) CPU spikes/backpressure (bursts of IFFT jobs)
+   - Mitigations: control‑rate throttling; job coalescing/cancellation; enqueue hysteresis; adaptive FFT size and quality; hard job budget per block; fallback to Legacy until backlog clears.
+
+3) Latency to “lock in” sound (cache miss while modulating)
+   - Mitigations: per‑voice micro‑cache; pre‑warm common keys on noteOn; quantize/hysteresis on morph/pitch; optional prefetch next band.
+
+4) Memory footprint (many cached variants)
+   - Mitigations: global LRU caps; pooled buffers per FFT size; telemetry to tune limits; optional on‑disk cache between runs.
+
+5) Potential artifacts (clicks/comb/DC)
+   - Mitigations: one‑cycle equal‑power crossfades; DC removal; RMS normalization; optional minimum‑phase preprocessing/phase alignment at import.
+
+6) Determinism & debugging difficulties (async pipeline)
+   - Mitigations: deterministic test mode; worker tracing; on‑screen metrics; feature flag to force Legacy.
+
+7) Portability/licensing of FFT backends
+   - Mitigations: kissfft default; vDSP on macOS via abstraction; avoid GPL‑licensed FFT; unit tests for each backend.
+
+8) UI/UX “stepiness” from quantization/hysteresis
+   - Mitigations: expose step size per control; smooth UI display while quantizing engine updates; document trade‑offs in Settings.
+
+9) Patch consistency vs legacy tables (timbre differences)
+   - Mitigations: per‑patch render mode; migration helper that renders and stores baked tables; A/B compare in UI.
+
+10) Build size/startup time (import to spectral)
+   - Mitigations: async precompute; on‑disk spectral cache serialization; progress indicator in UI.
 
 
 ## 20) Minimal API sketch
