@@ -116,10 +116,10 @@ void PlateReverb::process(float* buffer, int numFrames) {
         float wetL = lpYL_;
         float wetR = lpYR_;
 
-        // Wet normalization similar to FDN
+        // Wet normalization similar to FDN (lower target for headroom)
         const float wetMono = 0.5f * (wetL + wetR);
         wetRms_ = 0.995f * wetRms_ + 0.005f * (wetMono * wetMono);
-        const float targetGain = 0.7f / std::sqrt(std::max(wetRms_, 1e-6f));
+        const float targetGain = 0.45f / std::sqrt(std::max(wetRms_, 1e-6f));
         wetNormGainSmoothed_ = 0.99f * wetNormGainSmoothed_ + 0.01f * targetGain;
         wetL = std::tanh(wetL * wetNormGainSmoothed_);
         wetR = std::tanh(wetR * wetNormGainSmoothed_);
