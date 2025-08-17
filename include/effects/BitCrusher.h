@@ -19,6 +19,7 @@ private:
     float sampleRateReduction_;  // Sample rate reduction factor (0-1)
     float mix_;                  // Wet/dry mix (0-1)
     float drive_;                // Input drive (0-1)
+     float outputTrimDb_ = 0.0f;  // Output trim in dB (-24..+24 typical)
     
     int holdCounter_;            // Counter for sample rate reduction
     float holdL_;                // Last sampled value (left)

@@ -456,11 +456,12 @@ void Synthesizer::createModulationSources() {
     }
 
     // BitCrusher
-    addFxParamDest("BitCrusher BitDepth", "BitCrusher", "bitDepth", 1.0f, 16.0f);
-    addFxParamDest("BitCrusher SRR",      "BitCrusher", "sampleRateReduction", 0.01f, 1.0f);
-    addFxParamDest("BitCrusher Drive",    "BitCrusher", "drive", 1.0f, 10.0f);
-    addFxParamDest("BitCrusher Mix",      "BitCrusher", "mix", 0.0f, 1.0f);
-    for (const char* name : {"BitCrusher BitDepth","BitCrusher SRR","BitCrusher Drive","BitCrusher Mix"}) {
+    addFxParamDest("BitCrusher BitDepth",    "BitCrusher", "bitDepth", 1.0f, 16.0f);
+    addFxParamDest("BitCrusher SRR",         "BitCrusher", "sampleRateReduction", 0.01f, 1.0f);
+    addFxParamDest("BitCrusher Drive",       "BitCrusher", "drive", 1.0f, 10.0f);
+    addFxParamDest("BitCrusher Output Trim", "BitCrusher", "output_trim_db", -12.0f, 6.0f);
+    addFxParamDest("BitCrusher Mix",         "BitCrusher", "mix", 0.0f, 1.0f);
+    for (const char* name : {"BitCrusher BitDepth","BitCrusher SRR","BitCrusher Drive","BitCrusher Output Trim","BitCrusher Mix"}) {
         if (auto* d = modulationMatrix_.getDestination(name)) d->setSmoothing(0.15f);
     }
 

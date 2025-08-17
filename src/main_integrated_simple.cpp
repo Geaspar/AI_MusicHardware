@@ -2679,6 +2679,11 @@ int main(int argc, char* argv[]) {
             fx->setParameter("mod_depth", 0.2f);
         } else if (type == "PlateReverb") {
             fx->setParameter("mix", 0.20f);
+        } else if (type == "BitCrusher") {
+            fx->setParameter("bitDepth", 8.0f);
+            fx->setParameter("sampleRateReduction", 0.5f);
+            fx->setParameter("drive", 1.5f);
+            fx->setParameter("mix", 0.5f);
         } else if (type == "Phaser") {
             fx->setParameter("rate", 0.5f);
             fx->setParameter("depth", 0.5f);
@@ -2899,6 +2904,43 @@ int main(int argc, char* argv[]) {
             slotV3Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("level", v); slotParamCache[s][type]["level"] = v; } });
 
             disableParam(slotV4Label[s], slotV4Slider[s]);
+        } else if (type == "BitCrusher") {
+            // BitCrusher: Bit Depth, Sample Rate Reduction, Drive, Output Trim
+            if (slotV1Label[s]) slotV1Label[s]->setText("Bit Depth");
+            slotV1Slider[s]->setRange(1.0f, 16.0f);
+            slotV1Slider[s]->setValue(fx->getParameter("bitDepth"));
+            slotV1Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(0)<<v; return ss.str();});
+            slotV1Slider[s]->setValueChangeCallback([&, s, type](float v){
+                std::lock_guard<std::mutex> lock(audioMutex);
+                if (auto* f = getFxForSlot(s)) { f->setParameter("bitDepth", v); slotParamCache[s][type]["bitDepth"] = v; }
+            });
+
+            if (slotV2Label[s]) slotV2Label[s]->setText("SRR");
+            slotV2Slider[s]->setRange(0.01f, 1.0f);
+            slotV2Slider[s]->setValue(fx->getParameter("sampleRateReduction"));
+            slotV2Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(0)<<(v*100.0f)<<"%"; return ss.str();});
+            slotV2Slider[s]->setValueChangeCallback([&, s, type](float v){
+                std::lock_guard<std::mutex> lock(audioMutex);
+                if (auto* f = getFxForSlot(s)) { f->setParameter("sampleRateReduction", v); slotParamCache[s][type]["sampleRateReduction"] = v; }
+            });
+
+            if (slotV3Label[s]) slotV3Label[s]->setText("Drive");
+            slotV3Slider[s]->setRange(1.0f, 10.0f);
+            slotV3Slider[s]->setValue(fx->getParameter("drive"));
+            slotV3Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(2)<<v; return ss.str();});
+            slotV3Slider[s]->setValueChangeCallback([&, s, type](float v){
+                std::lock_guard<std::mutex> lock(audioMutex);
+                if (auto* f = getFxForSlot(s)) { f->setParameter("drive", v); slotParamCache[s][type]["drive"] = v; }
+            });
+
+            if (slotV4Label[s]) slotV4Label[s]->setText("Output Trim (dB)");
+            slotV4Slider[s]->setRange(-12.0f, 6.0f);
+            slotV4Slider[s]->setValue(fx->getParameter("output_trim_db"));
+            slotV4Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(1)<<v<<" dB"; return ss.str();});
+            slotV4Slider[s]->setValueChangeCallback([&, s, type](float v){
+                std::lock_guard<std::mutex> lock(audioMutex);
+                if (auto* f = getFxForSlot(s)) { f->setParameter("output_trim_db", v); slotParamCache[s][type]["output_trim_db"] = v; }
+            });
         } else if (type == "Phaser") {
             if (slotV1Label[s]) slotV1Label[s]->setText("Rate (Hz)");
             slotV1Slider[s]->setRange(0.05f, 5.0f);
@@ -3577,7 +3619,7 @@ int main(int argc, char* argv[]) {
                 
                 // Check if any dropdown is open and handle it first
                 bool dropdownHandled = false;
-                Screen* activeScreen = uiContext->getScreen(uiContext->getActiveScreenId());
+                Screen* activeScreen = uiContext ? uiContext->getScreen(uiContext->getActiveScreenId()) : nullptr;
                 if (activeScreen) {
                     // Check all dropdowns in reverse order (last added = top-most)
                     // LFO selector dropdown
@@ -3736,13 +3778,13 @@ int main(int argc, char* argv[]) {
         }
         if (midiActivityTimer > 0.0f) {
             midiActivityTimer -= deltaTime;
-            if (auto* activeScreen = uiContext->getScreen("main")) {
+            if (uiContext) if (auto* activeScreen = uiContext->getScreen("main")) {
                 if (auto* light = dynamic_cast<Button*>(activeScreen->getChild("midi_activity_light"))) {
                     light->setBackgroundColor(Color(0, 200, 80));
                 }
             }
         } else {
-            if (auto* activeScreen = uiContext->getScreen("main")) {
+            if (uiContext) if (auto* activeScreen = uiContext->getScreen("main")) {
                 if (auto* light = dynamic_cast<Button*>(activeScreen->getChild("midi_activity_light"))) {
                     light->setBackgroundColor(Color(40, 60, 40));
                 }
@@ -3841,7 +3883,10 @@ int main(int argc, char* argv[]) {
         
         // Let UIContext render, but don't let it swap buffers
         // First, save the current render state
-        Screen* activeScreen = uiContext->getScreen(uiContext->getActiveScreenId());
+        Screen* activeScreen = nullptr;
+        if (uiContext) {
+            activeScreen = uiContext->getScreen(uiContext->getActiveScreenId());
+        }
         if (activeScreen) {
             sdlDisplayManager->clear(activeScreen->getBackgroundColor());
             activeScreen->render(sdlDisplayManager.get());
@@ -3984,7 +4029,7 @@ int main(int argc, char* argv[]) {
         hardwareInterface->shutdown();
     }
     
-    // Save user configuration (MIDI + Effects + Synth)
+        // Save user configuration (MIDI + Effects + Synth)
     try {
         nlohmann::json outCfg;
         outCfg["midi"]["deviceName"] = persistedMidiDeviceName;
@@ -4012,16 +4057,9 @@ int main(int argc, char* argv[]) {
             nlohmann::json mods = nlohmann::json::array();
             for (int i = 0; i < 3; ++i) {
                 nlohmann::json mj;
-                // Persist by names for robustness; also include indices for backward compatibility
-                std::string sourceText = "None";
-                std::string destText = "None";
-                if (auto* dropdown = dynamic_cast<DropdownMenu*>(mainScreen->getChild("mod_source_" + std::to_string(i)))) {
-                    sourceText = dropdown->getSelectedItem();
-                }
-                if (auto* dropdown = dynamic_cast<DropdownMenu*>(mainScreen->getChild("mod_dest_" + std::to_string(i)))) {
-                    destText = dropdown->getSelectedItem();
-                }
-                // Map UI label to internal source name where needed
+                // Persist using cached connection data (avoid touching UI during shutdown)
+                std::string sourceText = modConnections[i].source.empty() ? "None" : modConnections[i].source;
+                std::string destText = modConnections[i].destination.empty() ? "None" : modConnections[i].destination;
                 std::string sourceInternal = sourceText;
                 if (sourceInternal == "LFO 1") sourceInternal = "LFO1";
                 else if (sourceInternal == "LFO 2") sourceInternal = "LFO2";
@@ -4037,21 +4075,23 @@ int main(int argc, char* argv[]) {
         }
         // Synth params
         nlohmann::json sj;
-        sj["oscillator_type"] = synthesizer->getParameter("oscillator_type");
+        if (synthesizer) sj["oscillator_type"] = synthesizer->getParameter("oscillator_type");
         // Always read from synthesizer (UI may be shut down here)
-        sj["filter_cutoff"] = synthesizer->getParameter("filter_cutoff");
-        sj["filter_resonance"] = synthesizer->getParameter("filter_resonance");
-        sj["master_volume"] = synthesizer->getParameter("master_volume");
-        sj["envelope_attack"] = synthesizer->getParameter("envelope_attack");
-        sj["envelope_decay"] = synthesizer->getParameter("envelope_decay");
-        sj["envelope_sustain"] = synthesizer->getParameter("envelope_sustain");
-        sj["envelope_release"] = synthesizer->getParameter("envelope_release");
-        sj["lfo1_rate"] = synthesizer->getParameter("lfo1_rate");
-        sj["lfo1_depth"] = synthesizer->getParameter("lfo1_depth");
-        sj["lfo1_shape"] = synthesizer->getParameter("lfo1_shape");
-        sj["lfo2_rate"] = synthesizer->getParameter("lfo2_rate");
-        sj["lfo2_depth"] = synthesizer->getParameter("lfo2_depth");
-        sj["lfo2_shape"] = synthesizer->getParameter("lfo2_shape");
+        if (synthesizer) {
+            sj["filter_cutoff"] = synthesizer->getParameter("filter_cutoff");
+            sj["filter_resonance"] = synthesizer->getParameter("filter_resonance");
+            sj["master_volume"] = synthesizer->getParameter("master_volume");
+            sj["envelope_attack"] = synthesizer->getParameter("envelope_attack");
+            sj["envelope_decay"] = synthesizer->getParameter("envelope_decay");
+            sj["envelope_sustain"] = synthesizer->getParameter("envelope_sustain");
+            sj["envelope_release"] = synthesizer->getParameter("envelope_release");
+            sj["lfo1_rate"] = synthesizer->getParameter("lfo1_rate");
+            sj["lfo1_depth"] = synthesizer->getParameter("lfo1_depth");
+            sj["lfo1_shape"] = synthesizer->getParameter("lfo1_shape");
+            sj["lfo2_rate"] = synthesizer->getParameter("lfo2_rate");
+            sj["lfo2_depth"] = synthesizer->getParameter("lfo2_depth");
+            sj["lfo2_shape"] = synthesizer->getParameter("lfo2_shape");
+        }
         outCfg["synth"] = sj;
         std::ofstream out(userConfigPath);
         out << outCfg.dump(2);

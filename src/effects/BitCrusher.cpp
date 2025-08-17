@@ -28,6 +28,7 @@ void BitCrusher::process(float* buffer, int numFrames) {
     float numLevels = std::pow(2.0f, bitDepth_);
     float quantizationStep = 2.0f / numLevels;
     
+    const float trim = std::pow(10.0f, outputTrimDb_ / 20.0f);
     for (int i = 0; i < numFrames * 2; i += 2) {
         // Get input samples
         float inputL = buffer[i];
@@ -55,8 +56,10 @@ void BitCrusher::process(float* buffer, int numFrames) {
         float quantizedR = std::floor(holdR_ / quantizationStep + 0.5f) * quantizationStep;
         
         // Mix dry and wet signals
-        buffer[i] = inputL * (1.0f - mix_) + quantizedL * mix_;
-        buffer[i + 1] = inputR * (1.0f - mix_) + quantizedR * mix_;
+        float outL = inputL * (1.0f - mix_) + quantizedL * mix_;
+        float outR = inputR * (1.0f - mix_) + quantizedR * mix_;
+        buffer[i]     = std::tanh(outL * trim);
+        buffer[i + 1] = std::tanh(outR * trim);
     }
 }
 
@@ -73,6 +76,9 @@ void BitCrusher::setParameter(const std::string& name, float value) {
     else if (name == "drive") {
         drive_ = clamp(value, 1.0f, 10.0f);
     }
+    else if (name == "output_trim_db") {
+        outputTrimDb_ = clamp(value, -24.0f, 24.0f);
+    }
 }
 
 float BitCrusher::getParameter(const std::string& name) const {
@@ -87,6 +93,9 @@ float BitCrusher::getParameter(const std::string& name) const {
     }
     else if (name == "drive") {
         return drive_;
+    }
+    else if (name == "output_trim_db") {
+        return outputTrimDb_;
     }
     return 0.0f;
 }
