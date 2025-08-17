@@ -111,7 +111,7 @@ void FDNReverb::process(float* buffer, int numFrames) {
         const float Td = baseDelaySamplesArr[k] / static_cast<float>(getSampleRate());
         float gLoop = std::pow(10.0f, -3.0f * (Td / decayS));
         gLoop *= std::pow(bassMultSmoothed_, 0.2f);
-        gLoopArr[k] = gLoop;
+        gLoopArr[k] = gLoop * 0.95f; // safety reduction to avoid resonant build-up
         const float fc = 2000.0f + highDampSmoothed_ * (12000.0f - 2000.0f);
         aLpArr[k] = std::exp(-(2.0f * 3.14159265358979323846f * fc) / static_cast<float>(getSampleRate()));
         const float lfoRate = std::max(0.05f, parameters_.at("mod_rate")) * fdnLfoRateMul_[k];
@@ -169,13 +169,14 @@ void FDNReverb::process(float* buffer, int numFrames) {
         const float side = (sumEven - sumOdd) / static_cast<float>(kNumDelays_);
         float wetL = mid + widthSmoothed_ * side;
         float wetR = mid - widthSmoothed_ * side;
-        // Wet normalization (simple RMS-based gain target ~0.45 for headroom)
+        // Wet normalization (simple RMS-based gain target ~0.35 for headroom)
         const float wetMono = 0.5f * (wetL + wetR);
         wetRms_ = 0.995f * wetRms_ + 0.005f * (wetMono * wetMono);
-        const float targetGain = 0.45f / std::sqrt(std::max(wetRms_, 1e-6f));
+        const float targetGain = 0.35f / std::sqrt(std::max(wetRms_, 1e-6f));
         wetNormGainSmoothed_ = 0.99f * wetNormGainSmoothed_ + 0.01f * targetGain;
-        wetL *= wetNormGainSmoothed_;
-        wetR *= wetNormGainSmoothed_;
+        if (wetNormGainSmoothed_ > 1.0f) wetNormGainSmoothed_ = 1.0f;
+        wetL *= (0.8f * wetNormGainSmoothed_);
+        wetR *= (0.8f * wetNormGainSmoothed_);
         // Gentle safety limiter
         wetL = std::tanh(wetL);
         wetR = std::tanh(wetR);
