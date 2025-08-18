@@ -13,8 +13,7 @@ RealtimeWavetableVoiceV2::RealtimeWavetableVoiceV2(std::shared_ptr<SpectralWavet
 
 void RealtimeWavetableVoiceV2::process(float* outputBuffer, int numSamples) {
     if (getState() == State::Inactive || table_ == nullptr) {
-        // write silence
-        std::fill(outputBuffer, outputBuffer + numSamples * 2, 0.0f);
+        // Inactive or not ready: do not modify buffer (let others accumulate)
         return;
     }
 
@@ -54,7 +53,7 @@ void RealtimeWavetableVoiceV2::process(float* outputBuffer, int numSamples) {
     const float* pen = pending_ ? pending_->samples.data() : nullptr;
     size_t N = pending_ ? pending_->samples.size() : (current_ ? current_->samples.size() : 0);
     if (!cur && !pen) {
-        std::fill(outputBuffer, outputBuffer + numSamples * 2, 0.0f);
+        // Nothing to render this block; leave buffer untouched
         return;
     }
 
@@ -90,9 +89,9 @@ void RealtimeWavetableVoiceV2::process(float* outputBuffer, int numSamples) {
         // Apply amplitude envelope and velocity
         float env = envelope_ ? envelope_->generateValue() : 1.0f;
         s *= env * velocity_;
-        // mono to stereo
-        outputBuffer[2*i]   = s;
-        outputBuffer[2*i+1] = s;
+        // mono to stereo (accumulate into shared output buffer)
+        outputBuffer[2*i]   += s;
+        outputBuffer[2*i+1] += s;
         phase_ += phaseInc;
         if (phase_ >= 1.0) phase_ -= 1.0;
     }
