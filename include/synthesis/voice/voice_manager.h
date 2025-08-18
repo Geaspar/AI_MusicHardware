@@ -63,6 +63,7 @@ public:
         spectralCache_ = std::move(cache);
         spectralWorkerPtr_ = workerPtr; // non-owning
     }
+    void setHybridMinPhase(bool enabled) { hybridMinPhase_ = enabled; }
 
     void setHybridSpectralTable(std::shared_ptr<SpectralTable> table) { spectralTableShared_ = std::move(table); }
     void applyHybridMorph(float morph01);
@@ -98,6 +99,7 @@ protected:
     std::unique_ptr<SpectralRenderWorker>* spectralWorkerPtr_ = nullptr; // non-owning pointer to worker unique_ptr
     std::unique_ptr<SpectralTable> defaultSpectralTable_;
     std::shared_ptr<SpectralTable> spectralTableShared_;
+    bool hybridMinPhase_ = false;
 
 private:
     std::unordered_map<int, Voice*> activeNotes_; // Maps MIDI note to active voice

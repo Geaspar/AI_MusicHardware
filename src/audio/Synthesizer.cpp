@@ -597,6 +597,7 @@ void Synthesizer::setHybridWavetableEnabled(bool enabled) {
     }
     if (voiceManager_) {
         voiceManager_->enableHybridWavetable(enabled);
+        voiceManager_->setHybridMinPhase(hybridTimbreMinPhase_);
         // Update spectral table from current wavetable when enabling Hybrid
         if (enabled && currentWavetable_) {
             auto spec = spectralFromWavetable(*currentWavetable_, getSampleRate());

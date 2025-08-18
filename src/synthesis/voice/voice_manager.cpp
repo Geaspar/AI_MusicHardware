@@ -492,6 +492,7 @@ std::unique_ptr<Voice> VoiceManager::createVoice() {
         // Provide spectral table: prefer shared (from synth), else fallback default sine
         if (spectralTableShared_) v2->setSpectralTable(spectralTableShared_.get());
         else v2->setSpectralTable(defaultSpectralTable_.get());
+        v2->setMinPhaseEnabled(hybridMinPhase_);
         return v2;
     } else {
         auto voice = std::make_unique<Voice>(sampleRate_);

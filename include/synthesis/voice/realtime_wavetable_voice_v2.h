@@ -16,6 +16,7 @@ public:
     void setSpectralTable(const SpectralTable* table) { table_ = table; }
     void setSpectralOps(const SpectralOps& ops) { ops_ = ops; }
     void setMorph01(float t) { morph01_ = t; }
+    void setMinPhaseEnabled(bool enabled) { minPhase_ = enabled; }
 
     void process(float* outputBuffer, int numSamples) override;
 
@@ -23,6 +24,7 @@ private:
     const SpectralTable* table_ = nullptr;
     SpectralOps ops_{};
     float morph01_ = 0.0f;
+    bool minPhase_ = false;
 
     std::shared_ptr<SpectralWavetableCache> cache_;
     std::unique_ptr<SpectralRenderWorker>& worker_;

@@ -3589,7 +3589,14 @@ int main(int argc, char* argv[]) {
     auto timbreTogglePtr = timbreToggle.get();
     timbreToggle->setClickCallback([&](void){
         bool next = !synthesizer->isHybridTimbreMinPhase();
-        synthesizer->setHybridTimbreMinPhase(next);
+        {
+            std::lock_guard<std::mutex> lock(audioMutex);
+            synthesizer->setHybridTimbreMinPhase(next);
+            // Propagate to voice manager so new voices pick it up immediately
+            if (auto* vm = synthesizer->getVoiceManager()) {
+                vm->setHybridMinPhase(next);
+            }
+        }
         timbreTogglePtr->setText(next ? "Timbre: Min-Phase" : "Timbre: Linear");
     });
     settingsScreen->addChild(std::move(timbreToggle));

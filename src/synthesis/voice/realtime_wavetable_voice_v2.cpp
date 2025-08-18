@@ -34,11 +34,10 @@ void RealtimeWavetableVoiceV2::process(float* outputBuffer, int numSamples) {
     key.fftSizeCode = 1; // 2048
     key.quality = 0; key.sampleRateQ = static_cast<uint16_t>(getSampleRate() / 100);
 
-    // Use global min-phase setting via Voice's synthesizer? We don't have direct access here; default false.
-    SpectralJobSpec spec{ table_, morph01_, ops_, 2048, getSampleRate(), false };
+    SpectralJobSpec spec{ table_, morph01_, ops_, 2048, getSampleRate(), minPhase_ };
     if (!current_) current_ = worker_.get()->requestRender(key, spec);
     // Prewarm neighbors to avoid stalls under fast morph
-    worker_.get()->prewarmHints(table_, morph01_, ops_, 2048, getSampleRate(), false);
+    worker_.get()->prewarmHints(table_, morph01_, ops_, 2048, getSampleRate(), minPhase_);
     if (!pending_) {
         // Try to get fresh buffer; in real impl we'd compare hash/generation
         pending_ = worker_.get()->requestRender(key, spec);
