@@ -5,6 +5,8 @@
 
 namespace AIMusicHardware {
 
+class Wavetable; // fwd decl
+
 // Build a spectral frame after morph and ops; applies Nyquist mask
 SpectralFrame buildSpectralFrame(const SpectralTable& table,
                                  float morph01,
@@ -18,5 +20,8 @@ WavetableBuffer renderTimeDomain(const SpectralFrame& spectral,
 
 // Utility: remove DC and normalize to target RMS (in place)
 void removeDcAndNormalize(std::vector<float>& samples, float targetRms);
+
+// Convert a time-domain Wavetable into a SpectralTable (one spectral frame per wave frame)
+std::shared_ptr<SpectralTable> spectralFromWavetable(const Wavetable& wt, int sampleRate);
 
 } // namespace AIMusicHardware

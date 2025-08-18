@@ -1,5 +1,6 @@
 #include "../../../include/synthesis/voice/voice_manager.h"
 #include "../../../include/synthesis/wavetable/wavetable.h"
+#include "../../../include/synthesis/voice/realtime_wavetable_voice_v2.h"
 #include "../../../include/synthesis/modulators/envelope.h"
 #include <algorithm>
 #include <cmath>
@@ -31,6 +32,19 @@ VoiceManager::VoiceManager(int sampleRate, int maxVoices)
     
     // Initialize default channel state for channel 0
     channelStates_[0] = ChannelState{};
+
+    // Prepare a simple default SpectralTable for Hybrid V2 fallback
+    defaultSpectralTable_ = std::make_unique<SpectralTable>();
+    SpectralFrame frame;
+    frame.fftSize = 2048;
+    frame.sampleRate = sampleRate_;
+    frame.bins.resize(static_cast<size_t>(frame.fftSize / 2 + 1));
+    if (frame.bins.size() > 1) {
+        frame.bins[1].magnitude = 1.0f; // sine fundamental
+        frame.bins[1].phase = 0.0f;
+    }
+    frame.normalizationRms = 0.2f;
+    defaultSpectralTable_->frames.push_back(frame);
 }
 
 VoiceManager::~VoiceManager() {
@@ -229,6 +243,30 @@ void VoiceManager::setWavetable(std::shared_ptr<Wavetable> wavetable) {
     }
 }
 
+void VoiceManager::rebuildVoices() {
+    // Stop and clear any active notes to avoid stale pointers
+    for (auto& pair : activeNotes_) {
+        if (pair.second) {
+            pair.second->noteOff();
+        }
+    }
+    activeNotes_.clear();
+    // Clear sustained notes per channel
+    for (auto& kv : channelStates_) {
+        kv.second.sustainedNotes.clear();
+    }
+    
+    // Recreate voices respecting current flags/services, keep count the same
+    int count = static_cast<int>(voices_.size());
+    voices_.clear();
+    voices_.reserve(count);
+    for (int i = 0; i < count; ++i) {
+        auto v = createVoice();
+        if (currentWavetable_) v->setWavetable(currentWavetable_);
+        voices_.push_back(std::move(v));
+    }
+}
+
 Voice* VoiceManager::findVoiceToSteal() {
     switch (stealMode_) {
         case StealMode::Oldest: {
@@ -301,6 +339,16 @@ Voice* VoiceManager::findVoiceToSteal() {
         
         default:
             return !voices_.empty() ? voices_[0].get() : nullptr;
+    }
+}
+
+void VoiceManager::applyHybridMorph(float morph01) {
+    if (!hybridEnabled_) return;
+    // COARSE: set morph on any V2 voice we have (later we propagate per-voice)
+    for (auto& v : voices_) {
+        if (auto* v2 = dynamic_cast<RealtimeWavetableVoiceV2*>(v.get())) {
+            v2->setMorph01(std::clamp(morph01, 0.0f, 1.0f));
+        }
     }
 }
 
@@ -439,11 +487,19 @@ void VoiceManager::resetAllControllers() {
 }
 
 std::unique_ptr<Voice> VoiceManager::createVoice() {
-    auto voice = std::make_unique<Voice>(sampleRate_);
-    if (currentWavetable_) {
-        voice->setWavetable(currentWavetable_);
+    if (hybridEnabled_ && spectralCache_ && spectralWorkerPtr_ && *spectralWorkerPtr_) {
+        auto v2 = std::make_unique<RealtimeWavetableVoiceV2>(spectralCache_, *spectralWorkerPtr_, sampleRate_);
+        // Provide spectral table: prefer shared (from synth), else fallback default sine
+        if (spectralTableShared_) v2->setSpectralTable(spectralTableShared_.get());
+        else v2->setSpectralTable(defaultSpectralTable_.get());
+        return v2;
+    } else {
+        auto voice = std::make_unique<Voice>(sampleRate_);
+        if (currentWavetable_) {
+            voice->setWavetable(currentWavetable_);
+        }
+        return voice;
     }
-    return voice;
 }
 
 } // namespace AIMusicHardware

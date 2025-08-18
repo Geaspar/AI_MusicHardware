@@ -189,6 +189,7 @@ set(SYNTHESIS_SOURCES
     src/synthesis/wavetable/wavetable.cpp
     src/synthesis/wavetable/oscillator_stack.cpp
     src/synthesis/wavetable/band_limited_wavetable.cpp
+    src/synthesis/wavetable/hybrid_wavetable_ops.cpp
     src/synthesis/oscillators/band_limited_oscillator.cpp
     src/synthesis/modulators/envelope.cpp
     src/synthesis/modulators/modulation_matrix.cpp
@@ -196,6 +197,7 @@ set(SYNTHESIS_SOURCES
     src/synthesis/modulators/LFOModulationSource.cpp
     src/synthesis/voice/voice.cpp
     src/synthesis/voice/voice_manager.cpp
+    src/synthesis/voice/realtime_wavetable_voice_v2.cpp
     src/synthesis/voice/MpeVoice.cpp
     src/synthesis/voice/MpeAwareVoiceManager.cpp
     src/synthesis/voice/stacked_voice.cpp

@@ -508,6 +508,32 @@ Integration Layer (Ready for Deployment)
   - Save now relies on cached modulation routing instead of querying UI during teardown.
 - **Build**: Clean build; integrated app runs with stable shutdown.
 
+
+### **August 18, 2025** — Hybrid Wavetable: Modulation Parity, Timbre Polish, and Next Steps
+
+**Status**: 🟢 IMPROVED (functional; polish planned)
+
+- **What we fixed/added**
+  - **LFO→Pitch modulation (Hybrid)**: `RealtimeWavetableVoiceV2` now uses the modulated `frequency_` for phase increment; per-block LFO values are pushed to all voices. Vibrato is clearly audible and responsive.
+  - **Envelope/states (Hybrid)**: Applied amplitude envelope in the voice process; corrected state transitions to eliminate stuck notes and premature cut‑offs.
+  - **Timbre quality**: Before FFT, added DC removal and peak alignment, yielding more convincing Saw/Square/Triangle tones (less sine‑like).
+  - **Safe engine toggling**: Wrapped Hybrid toggle with the shared audio mutex and rebuilt voices safely. Switching back to Legacy restores the previously selected waveform.
+  - **Mod sources parity**: Registered Mod Wheel, Aftertouch, Velocity, and Envelope as `ValueSource`s; “Wavetable Position” destination now modulates Legacy frame position and Hybrid morph.
+  - **Zippering control**: Enabled one‑pole smoothing on key synth/FX destinations to reduce stepping under modulation.
+
+- **Known differences**
+  - Hybrid timbre/motion may feel slightly different from Legacy under deep modulation due to spectral morphing. This is expected and will be user‑tunable.
+
+- **Next steps**
+  - **Settings toggle + persistence**: Promote the Hybrid toggle to a Settings control, persist it, and reflect status in `engine_status` on the Settings screen.
+  - **Async render worker (minimal)**: Add a single‑thread spectral render worker with job coalescing and small prewarm (current morph ± one step) to keep Hybrid responsive during fast morph/pitch sweeps.
+  - **Timbre mode**: Optional per‑frame minimum‑phase conversion. Expose a “Timbre mode: Linear / Min‑Phase” switch in Settings.
+  - **Stats & UX**: Show basic cache/worker stats (hits/misses, in‑flight jobs); add a simple Morph modulation demo preset to validate parity across engines.
+  - **Polish**: Fine‑tune smoothing constants for FX and synth destinations; continue SR‑invariance and CPU micro‑optimizations.
+
+**Impact**: Hybrid engine is now playable with reliable modulation and improved tone. Users can A/B Hybrid vs Legacy and expect consistent behavior with minor timbral differences.
+
+
 ### **August 10, 2025** — MIDI Activity Indicator and External MIDI Hookup
 
 **Status**: 🟢 **COMPLETE**

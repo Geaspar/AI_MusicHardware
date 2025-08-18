@@ -112,14 +112,19 @@ Synthesizer::Synthesizer(int sampleRate)
     : Processor(sampleRate),
       currentOscType_(OscillatorType::Sine) {
       
-    // Create VoiceManager
-    setVoiceManagerType(VoiceManagerType::RealTime);
+    // Create VoiceManager (use Standard so we can switch between Legacy and Hybrid V2 dynamically)
+    setVoiceManagerType(VoiceManagerType::Standard);
     
     // Create default wavetable
     createDefaultWavetable();
     
     // Create modulation sources
     createModulationSources();
+
+    // Hybrid wavetable scaffolding (disabled by default)
+    spectralCache_ = std::make_shared<SpectralWavetableCache>(256);
+    spectralWorker_ = std::make_unique<SpectralRenderWorker>(spectralCache_);
+    hybridWavetableEnabled_ = false; // gate usage from settings later
 }
 
 Synthesizer::~Synthesizer() {
@@ -136,7 +141,20 @@ void Synthesizer::createDefaultWavetable() {
 
 bool Synthesizer::initialize() {
     try {
-        // Nothing to do here now, constructor handles initialization
+        // Wire spectral services to voice manager but keep hybrid disabled
+        if (voiceManager_) {
+            voiceManager_->setSampleRate(getSampleRate());
+            voiceManager_->setWavetable(currentWavetable_);
+            voiceManager_->setPitchBendRange(2.0f);
+            voiceManager_->setStealMode(VoiceManager::StealMode::Oldest);
+            voiceManager_->setSpectralServices(spectralCache_, &spectralWorker_);
+            // Provide spectral table converted from current legacy wavetable for Hybrid
+            if (currentWavetable_) {
+                auto spec = spectralFromWavetable(*currentWavetable_, getSampleRate());
+                voiceManager_->setHybridSpectralTable(spec);
+            }
+            voiceManager_->enableHybridWavetable(false);
+        }
         return true;
     } catch (const std::exception& e) {
         // Handle any exceptions during initialization
@@ -381,6 +399,30 @@ void Synthesizer::createModulationSources() {
     modulationMatrix_.addDestination(std::move(volumeDest));
     modulationMatrix_.addDestination(std::move(attackDest));
     modulationMatrix_.addDestination(std::move(releaseDest));
+
+    // Wavetable Position destination (legacy + hybrid morph)
+    modulationMatrix_.addDestination(std::make_unique<ModulationDestination>(
+        "Wavetable Position",
+        [this](float value) {
+            float pos = std::clamp(value, 0.0f, 1.0f);
+            // Legacy: set oscillator frame position on all voices
+            if (voiceManager_) {
+                for (int i = 0; i < voiceManager_->getMaxVoices(); ++i) {
+                    if (auto* voice = voiceManager_->getVoice(i)) {
+                        if (auto* osc = voice->getOscillator()) osc->setFramePosition(pos);
+                    }
+                }
+                // Hybrid: set morph pos as well
+                voiceManager_->applyHybridMorph(pos);
+            }
+        },
+        [this]() {
+            // Approximate by mapping currentOscType_ to frame position
+            return oscTypeToFramePosition(currentOscType_);
+        },
+        0.0f, 1.0f
+    ));
+    if (auto* d = modulationMatrix_.getDestination("Wavetable Position")) d->setSmoothing(0.12f);
     // Enable gentle smoothing on synth parameter destinations
     if (auto* d = modulationMatrix_.getDestination("Filter Cutoff")) d->setSmoothing(0.1f);
     if (auto* d = modulationMatrix_.getDestination("Filter Res"))    d->setSmoothing(0.1f);
@@ -535,6 +577,43 @@ void Synthesizer::setSampleRate(int sampleRate) {
     
     if (auto lfo2 = dynamic_cast<LfoSource*>(modulationMatrix_.getSource("LFO2"))) {
         lfo2->setSampleRate(sampleRate);
+    }
+}
+
+void Synthesizer::setHybridWavetableEnabled(bool enabled) {
+    hybridWavetableEnabled_ = enabled;
+    // Ensure we are using the Standard VoiceManager which supports Hybrid V2 gating
+    if (voiceManagerType_ != VoiceManagerType::Standard) {
+        setVoiceManagerType(VoiceManagerType::Standard);
+        // Re-wire services after manager swap
+        if (voiceManager_) {
+            voiceManager_->setSampleRate(getSampleRate());
+            voiceManager_->setWavetable(currentWavetable_);
+            voiceManager_->setPitchBendRange(2.0f);
+            voiceManager_->setStealMode(VoiceManager::StealMode::Oldest);
+            voiceManager_->setSpectralServices(spectralCache_, &spectralWorker_);
+        }
+    }
+    if (voiceManager_) {
+        voiceManager_->enableHybridWavetable(enabled);
+        // Update spectral table from current wavetable when enabling Hybrid
+        if (enabled && currentWavetable_) {
+            auto spec = spectralFromWavetable(*currentWavetable_, getSampleRate());
+            voiceManager_->setHybridSpectralTable(spec);
+        }
+        voiceManager_->rebuildVoices();
+        voiceManager_->setWavetable(currentWavetable_);
+        // Re-apply current oscillator waveform selection to legacy oscillator when returning to legacy
+        if (!enabled) {
+            float framePos = oscTypeToFramePosition(currentOscType_);
+            for (int i = 0; i < voiceManager_->getMaxVoices(); ++i) {
+                if (auto* voice = voiceManager_->getVoice(i)) {
+                    if (auto* osc = voice->getOscillator()) {
+                        osc->setFramePosition(framePos);
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -963,6 +1042,11 @@ void Synthesizer::setOscillatorType(OscillatorType type) {
                     }
                 }
             }
+            // If hybrid enabled, also set morph position (approx map framePos->morph)
+            if (hybridWavetableEnabled_) {
+                // Our basic waves are 5 frames at 0.0, 0.25, 0.5, 0.75, 1.0, so morph ~= framePos
+                voiceManager_->applyHybridMorph(framePos);
+            }
         }
     }
 
@@ -1027,6 +1111,30 @@ void Synthesizer::process(float* buffer, int numFrames) {
         // Update modulation matrix once per block (every 64 samples)
         // This gives smooth modulation without causing crashes
         modulationMatrix_.update();
+
+        // Ensure per-block LFO-driven pitch modulation reaches all voices (legacy and hybrid)
+        if (voiceManager_) {
+            if (auto* lfo1 = dynamic_cast<LfoSource*>(modulationMatrix_.getSource("LFO1"))) {
+                float lfo1Val = lfo1->getValue(); // expected in [-1,1]
+                for (int i = 0; i < voiceManager_->getMaxVoices(); ++i) {
+                    if (auto* voice = voiceManager_->getVoice(i)) {
+                        if (voice->isActive()) {
+                            voice->setPitchModulationValue("lfo1", lfo1Val);
+                        }
+                    }
+                }
+            }
+            if (auto* lfo2 = dynamic_cast<LfoSource*>(modulationMatrix_.getSource("LFO2"))) {
+                float lfo2Val = lfo2->getValue();
+                for (int i = 0; i < voiceManager_->getMaxVoices(); ++i) {
+                    if (auto* voice = voiceManager_->getVoice(i)) {
+                        if (voice->isActive()) {
+                            voice->setPitchModulationValue("lfo2", lfo2Val);
+                        }
+                    }
+                }
+            }
+        }
         
         // Process voices for this block
         if (voiceManager_) {

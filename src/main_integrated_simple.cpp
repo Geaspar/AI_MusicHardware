@@ -3543,6 +3543,13 @@ int main(int argc, char* argv[]) {
     aliasingInfo->setSize(400, 20);
     aliasingInfo->setTextColor(Color(150, 255, 150));
     settingsScreen->addChild(std::move(aliasingInfo));
+
+    // Engine status label (shows current engine mode)
+    auto engineStatus = std::make_unique<Label>("engine_status", "Engine: Legacy/Realtime WT");
+    engineStatus->setPosition(70, 370);
+    engineStatus->setSize(400, 20);
+    engineStatus->setTextColor(Color(180, 200, 255));
+    settingsScreen->addChild(std::move(engineStatus));
     
     uiContext->addScreen(std::move(settingsScreen));
     
@@ -3628,6 +3635,23 @@ int main(int argc, char* argv[]) {
             } else if (sdlEvent.type == SDL_KEYDOWN && sdlEvent.key.keysym.sym == SDLK_ESCAPE) {
                 std::cout << "Got ESC key" << std::endl;
                 running = false;
+            } else if (sdlEvent.type == SDL_KEYDOWN && (sdlEvent.key.keysym.mod & KMOD_SHIFT) && sdlEvent.key.keysym.sym == SDLK_h) {
+                // Hidden toggle: Shift+H enables/disables hybrid wavetable engine
+                static bool hybridEnabled = false;
+                hybridEnabled = !hybridEnabled;
+                {
+                    // Protect audio graph while rebuilding voices to avoid race with audio callback
+                    std::lock_guard<std::mutex> lock(audioMutex);
+                    synthesizer->setHybridWavetableEnabled(hybridEnabled);
+                }
+                std::cout << (hybridEnabled ? "Hybrid Wavetable: ON" : "Hybrid Wavetable: OFF") << std::endl;
+                // Update settings screen label if visible (read back from synth to reflect actual state)
+                if (auto* settings = uiContext->getScreen("settings")) {
+                    if (auto* lbl = dynamic_cast<Label*>(settings->getChild("engine_status"))) {
+                        bool actual = synthesizer->isHybridWavetableEnabled();
+                        lbl->setText(actual ? "Engine: Hybrid (Spectral)" : "Engine: Legacy/Realtime WT");
+                    }
+                }
             } else {
                 InputEvent inputEvent = translateSDLEvent(sdlEvent);
                 

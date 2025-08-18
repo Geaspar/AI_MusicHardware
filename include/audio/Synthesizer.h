@@ -14,6 +14,9 @@
 #include "../synthesis/modulators/envelope.h"
 #include "../synthesis/modulators/modulation_matrix.h"
 #include "../synthesis/voice/band_limited_voice.h"
+#include "../synthesis/wavetable/hybrid_wavetable.h"
+#include "../synthesis/wavetable/hybrid_wavetable_ops.h"
+#include "../synthesis/wavetable/hybrid_wavetable_cache.h"
 
 namespace AIMusicHardware {
 
@@ -108,6 +111,10 @@ public:
     void reset() override;
     void setSampleRate(int sampleRate) override;
     std::string getName() const override { return "Synthesizer"; }
+
+    // Temporary: runtime toggle for hybrid wavetable (for testing)
+    void setHybridWavetableEnabled(bool enabled);
+    bool isHybridWavetableEnabled() const { return hybridWavetableEnabled_; }
     
     // Add LFO/Envelope modulation sources
     void createModulationSources();
@@ -161,6 +168,11 @@ private:
     VoiceManagerType voiceManagerType_ = VoiceManagerType::Standard;
     bool oversamplingEnabled_ = false;
     OversamplingProcessor::Factor oversamplingFactor_ = OversamplingProcessor::Factor::x1;
+
+    // Hybrid spectral wavetable (Phase 1 scaffolding)
+    std::shared_ptr<SpectralWavetableCache> spectralCache_;
+    std::unique_ptr<SpectralRenderWorker> spectralWorker_;
+    bool hybridWavetableEnabled_ = false; // gate usage
 
     // Continuous values for MIDI-driven modulation sources
     float modWheelValue_ = 0.0f;     // 0..1

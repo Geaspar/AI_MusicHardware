@@ -1,5 +1,6 @@
 #include "synthesis/wavetable/hybrid_wavetable_ops.h"
 #include "audio/FourierTransform.h"
+#include "synthesis/wavetable/wavetable.h"
 #include <algorithm>
 #include <numeric>
 #include <complex>
@@ -155,6 +156,58 @@ WavetableBuffer renderTimeDomain(const SpectralFrame& spectral, int sampleRate) 
     // Compute and store RMS
     double acc = 0.0; for (float v : out.samples) acc += v*v; out.rms = static_cast<float>(std::sqrt(acc / out.samples.size()));
 
+    return out;
+}
+
+std::shared_ptr<SpectralTable> spectralFromWavetable(const Wavetable& wt, int sampleRate) {
+    auto out = std::make_shared<SpectralTable>();
+    const int frames = wt.getNumFrames();
+    const int N = std::max(1024, wt.getFrameSize());
+    out->defaultFftSize = N;
+    out->frames.reserve(frames);
+    for (int f = 0; f < frames; ++f) {
+        WaveFrame* wf = const_cast<Wavetable&>(wt).getFrame(f);
+        if (!wf) continue;
+        // Prepare complex spectrum by forward FFT of time-domain frame
+        std::vector<float> td(N, 0.0f);
+        const int srcN = wf->getSize();
+        const float* src = wf->getData();
+        const int copyN = std::min(N, srcN);
+        for (int i = 0; i < copyN; ++i) td[i] = src[i];
+        // DC removal
+        {
+            double sum = 0.0; for (int i = 0; i < copyN; ++i) sum += td[i];
+            float mean = static_cast<float>(sum / std::max(1, copyN));
+            for (int i = 0; i < copyN; ++i) td[i] -= mean;
+        }
+        // Peak alignment (rotate so max |sample| is at index 0)
+        {
+            int peakIdx = 0; float peakVal = 0.0f;
+            for (int i = 0; i < copyN; ++i) { float a = std::fabs(td[i]); if (a > peakVal) { peakVal = a; peakIdx = i; } }
+            if (peakIdx != 0) {
+                std::vector<float> rotated(N, 0.0f);
+                for (int i = 0; i < N; ++i) rotated[i] = td[(i + peakIdx) % N];
+                td.swap(rotated);
+            }
+        }
+        // Pack into complex buffer
+        std::vector<std::complex<float>> time(N, {0.0f, 0.0f});
+        for (int i = 0; i < N; ++i) time[i] = {td[i], 0.0f};
+        FourierTransform ft;
+        ft.performFFT(time);
+        SpectralFrame sf;
+        sf.fftSize = N;
+        sf.sampleRate = sampleRate;
+        sf.bins.resize(static_cast<size_t>(N/2 + 1));
+        // Extract magnitude/phase for positive frequencies
+        for (int k = 0; k <= N/2; ++k) {
+            const auto& c = time[k];
+            sf.bins[k].magnitude = std::abs(c) / static_cast<float>(N); // normalize
+            sf.bins[k].phase = std::arg(c);
+        }
+        sf.normalizationRms = 0.2f;
+        out->frames.push_back(std::move(sf));
+    }
     return out;
 }
 
