@@ -27,7 +27,9 @@ void RealtimeWavetableVoiceV2::process(float* outputBuffer, int numSamples) {
     CacheKey key{};
     key.tableIdHash = 0xABCDEF; // placeholder until we wire real IDs
     key.morphQ = quantizeMorph01(morph01_);
-    key.pitchBand = quantizePitchBand(static_cast<float>(getMidiNote())); // rough; refine later using Hz
+    // Approximate pitch band using current frequency in semitones relative to A4
+    float semis = 12.0f * std::log2(std::max(1e-3f, frequency_) / 440.0f) + 69.0f;
+    key.pitchBand = quantizePitchBand(semis);
     key.opsHash16 = quantizeOpsHash(ops_);
     key.fftSizeCode = 1; // 2048
     key.quality = 0; key.sampleRateQ = static_cast<uint16_t>(getSampleRate() / 100);
