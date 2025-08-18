@@ -392,8 +392,12 @@ int main(int argc, char* argv[]) {
     }
 
     std::string persistedMidiDeviceName;
+    bool persistedHybridEnabled = false;
     if (loadedConfig.contains("midi") && loadedConfig["midi"].contains("deviceName")) {
         persistedMidiDeviceName = loadedConfig["midi"]["deviceName"].get<std::string>();
+    }
+    if (loadedConfig.contains("engine") && loadedConfig["engine"].contains("hybrid_enabled")) {
+        try { persistedHybridEnabled = loadedConfig["engine"]["hybrid_enabled"].get<bool>(); } catch (...) {}
     }
 
     // Initialize external MIDI input - but don't open any device yet
@@ -3550,6 +3554,28 @@ int main(int argc, char* argv[]) {
     engineStatus->setSize(400, 20);
     engineStatus->setTextColor(Color(180, 200, 255));
     settingsScreen->addChild(std::move(engineStatus));
+
+    // Hybrid engine toggle (persistent)
+    auto hybridToggle = std::make_unique<Button>("hybrid_toggle", "Engine: Legacy (click to switch)");
+    hybridToggle->setPosition(70, 400);
+    hybridToggle->setSize(260, 30);
+    hybridToggle->setBackgroundColor(Color(60, 80, 110));
+    auto hybridTogglePtr = hybridToggle.get();
+    hybridToggle->setClickCallback([&](void){
+        static bool hybridEnabled = synthesizer->isHybridWavetableEnabled();
+        hybridEnabled = !hybridEnabled;
+        {
+            std::lock_guard<std::mutex> lock(audioMutex);
+            synthesizer->setHybridWavetableEnabled(hybridEnabled);
+        }
+        if (auto* settings = uiContext->getScreen("settings")) {
+            if (auto* lbl = dynamic_cast<Label*>(settings->getChild("engine_status"))) {
+                lbl->setText(hybridEnabled ? "Engine: Hybrid (Spectral)" : "Engine: Legacy/Realtime WT");
+            }
+        }
+        hybridTogglePtr->setText(hybridEnabled ? "Engine: Hybrid (click to switch)" : "Engine: Legacy (click to switch)");
+    });
+    settingsScreen->addChild(std::move(hybridToggle));
     
     uiContext->addScreen(std::move(settingsScreen));
     
@@ -3612,6 +3638,20 @@ int main(int argc, char* argv[]) {
     // Deferred apply: if synth settings were loaded, re-apply once after UI has fully initialized
     bool needsDeferredSynthApply = loadedConfig.contains("synth") && loadedConfig["synth"].is_object();
     nlohmann::json deferredSynthConfig = needsDeferredSynthApply ? loadedConfig["synth"] : nlohmann::json{};
+
+    // Apply persisted Hybrid toggle after UI creation
+    {
+        std::lock_guard<std::mutex> lock(audioMutex);
+        synthesizer->setHybridWavetableEnabled(persistedHybridEnabled);
+    }
+    if (auto* settings = uiContext->getScreen("settings")) {
+        if (auto* lbl = dynamic_cast<Label*>(settings->getChild("engine_status"))) {
+            lbl->setText(persistedHybridEnabled ? "Engine: Hybrid (Spectral)" : "Engine: Legacy/Realtime WT");
+        }
+        if (auto* btn = dynamic_cast<Button*>(settings->getChild("hybrid_toggle"))) {
+            btn->setText(persistedHybridEnabled ? "Engine: Hybrid (click to switch)" : "Engine: Legacy (click to switch)");
+        }
+    }
 
     // Main loop
     bool running = true;
@@ -4062,7 +4102,7 @@ int main(int argc, char* argv[]) {
     sdlDisplayManager.reset();
     
     // 6. Stop hardware interface
-    std::cout << "Stopping hardware interface..." << std::endl;
+            std::cout << "Stopping hardware interface..." << std::endl;
     if (hardwareInterface) {
         hardwareInterface->shutdown();
     }
@@ -4111,6 +4151,9 @@ int main(int argc, char* argv[]) {
             }
             outCfg["mod_routing"] = mods;
         }
+        // Engine settings
+        outCfg["engine"]["hybrid_enabled"] = synthesizer && synthesizer->isHybridWavetableEnabled();
+
         // Synth params
         nlohmann::json sj;
         if (synthesizer) sj["oscillator_type"] = synthesizer->getParameter("oscillator_type");
