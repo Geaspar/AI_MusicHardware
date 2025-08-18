@@ -3,11 +3,15 @@
 #include "synthesis/wavetable/hybrid_wavetable.h"
 #include "synthesis/wavetable/hybrid_wavetable_ops.h"
 #include <unordered_map>
+#include <unordered_set>
 #include <list>
 #include <memory>
 #include <mutex>
 #include <atomic>
 #include <optional>
+#include <thread>
+#include <condition_variable>
+#include <deque>
 
 namespace AIMusicHardware {
 
@@ -95,13 +99,22 @@ public:
     explicit SpectralRenderWorker(std::shared_ptr<SpectralWavetableCache> cache)
         : cache_(std::move(cache)) {}
 
-    void setAsyncEnabled(bool enabled) { asyncEnabled_ = enabled; }
+    ~SpectralRenderWorker() { stop(); }
+
+    void setAsyncEnabled(bool enabled) {
+        if (enabled) start(); else stop();
+        asyncEnabled_.store(enabled, std::memory_order_release);
+    }
 
     // Enqueue or synchronously render; returns cached or newly rendered buffer
     std::shared_ptr<WavetableBuffer> requestRender(const CacheKey& key, const SpectralJobSpec& spec) {
         const uint64_t h = hash(key);
         if (auto cached = cache_->get(h)) return cached;
-        // Synchronous render (stub) — async path will push to a queue in future
+        if (asyncEnabled_.load(std::memory_order_acquire)) {
+            enqueueRender(h, key, spec);
+            return nullptr; // will be ready soon
+        }
+        // Fallback synchronous render
         if (!spec.table || spec.table->frames.empty()) return nullptr;
         SpectralFrame sf = buildSpectralFrame(*spec.table, spec.morph01, spec.ops, spec.fftSize, spec.sampleRate);
         auto buf = std::make_shared<WavetableBuffer>(renderTimeDomain(sf, spec.sampleRate));
@@ -110,9 +123,96 @@ public:
         return buf;
     }
 
+    // Hint the worker to pre-render the current and neighboring morph steps
+    void prewarmHints(const SpectralTable* table,
+                      float morph01,
+                      const SpectralOps& ops,
+                      int fftSize,
+                      int sampleRate) {
+        if (!table) return;
+        CacheKey k{};
+        // Use pointer as table ID if string ID is not set
+        k.tableIdHash = reinterpret_cast<uint64_t>(table);
+        k.pitchBand = 0; // neutral for now
+        k.opsHash16 = quantizeOpsHash(ops);
+        k.fftSizeCode = fftSizeToCode(fftSize);
+        k.quality = 0; k.sampleRateQ = static_cast<uint16_t>(sampleRate / 100);
+        auto q = static_cast<int>(quantizeMorph01(morph01));
+        int neighbors[3] = { q, std::max(0, q - 1), std::min(127, q + 1) };
+        for (int qi : neighbors) {
+            CacheKey kk = k; kk.morphQ = static_cast<uint16_t>(qi);
+            SpectralJobSpec spec{ table, morph01, ops, fftSize, sampleRate };
+            enqueueRender(hash(kk), kk, spec);
+        }
+    }
+
 private:
+    struct Job { uint64_t keyHash; CacheKey key; SpectralJobSpec spec; };
+
+    void start() {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (running_) return;
+        running_ = true;
+        workerThread_ = std::thread([this]{ this->runLoop(); });
+    }
+
+    void stop() {
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            if (!running_) return;
+            running_ = false;
+        }
+        cv_.notify_all();
+        if (workerThread_.joinable()) workerThread_.join();
+        std::lock_guard<std::mutex> lock2(mutex_);
+        queue_.clear();
+        inFlight_.clear();
+    }
+
+    void enqueueRender(uint64_t h, const CacheKey& key, const SpectralJobSpec& spec) {
+        if (!asyncEnabled_.load(std::memory_order_acquire)) return;
+        if (cache_->get(h)) return; // already cached
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (!running_) return;
+        if (inFlight_.count(h)) return; // coalesce
+        inFlight_.insert(h);
+        queue_.push_back(Job{h, key, spec});
+        cv_.notify_one();
+    }
+
+    void runLoop() {
+        while (true) {
+            Job job;
+            {
+                std::unique_lock<std::mutex> lock(mutex_);
+                cv_.wait(lock, [&]{ return !running_ || !queue_.empty(); });
+                if (!running_ && queue_.empty()) break;
+                job = queue_.front();
+                queue_.pop_front();
+            }
+            // Render outside lock
+            if (!cache_->get(job.keyHash) && job.spec.table && !job.spec.table->frames.empty()) {
+                SpectralFrame sf = buildSpectralFrame(*job.spec.table, job.spec.morph01, job.spec.ops, job.spec.fftSize, job.spec.sampleRate);
+                auto buf = std::make_shared<WavetableBuffer>(renderTimeDomain(sf, job.spec.sampleRate));
+                buf->keyHash = job.keyHash;
+                cache_->put(job.keyHash, buf);
+            }
+            // Mark complete
+            {
+                std::lock_guard<std::mutex> lock(mutex_);
+                inFlight_.erase(job.keyHash);
+            }
+        }
+    }
+
     std::shared_ptr<SpectralWavetableCache> cache_;
     std::atomic<bool> asyncEnabled_{false};
+    std::thread workerThread_;
+    std::mutex mutex_;
+    std::condition_variable cv_;
+    bool running_ = false;
+    std::deque<Job> queue_;
+    std::unordered_set<uint64_t> inFlight_;
 };
 
 } // namespace AIMusicHardware

@@ -124,6 +124,7 @@ Synthesizer::Synthesizer(int sampleRate)
     // Hybrid wavetable scaffolding (disabled by default)
     spectralCache_ = std::make_shared<SpectralWavetableCache>(256);
     spectralWorker_ = std::make_unique<SpectralRenderWorker>(spectralCache_);
+    spectralWorker_->setAsyncEnabled(true); // enable minimal async worker
     hybridWavetableEnabled_ = false; // gate usage from settings later
 }
 

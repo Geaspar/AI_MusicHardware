@@ -34,6 +34,8 @@ void RealtimeWavetableVoiceV2::process(float* outputBuffer, int numSamples) {
 
     SpectralJobSpec spec{ table_, morph01_, ops_, 2048, getSampleRate() };
     if (!current_) current_ = worker_.get()->requestRender(key, spec);
+    // Prewarm neighbors to avoid stalls under fast morph
+    worker_.get()->prewarmHints(table_, morph01_, ops_, 2048, getSampleRate());
     if (!pending_) {
         // Try to get fresh buffer; in real impl we'd compare hash/generation
         pending_ = worker_.get()->requestRender(key, spec);
