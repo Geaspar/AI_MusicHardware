@@ -534,6 +534,23 @@ Integration Layer (Ready for Deployment)
 **Impact**: Hybrid engine is now playable with reliable modulation and improved tone. Users can A/B Hybrid vs Legacy and expect consistent behavior with minor timbral differences.
 
 
+### **August 18, 2025** — Preset System Research + Plan, ADSR Recall Fixes
+
+**Status**: 🟢 ADDED (research + initial fixes); 🔜 NEXT (implementation)
+
+- **What we added**
+  - Created `docs/presets_system.md` summarizing best-in-class preset systems (with Vital insights), hardware-synth considerations, and an implementation plan with gap analysis and phases (A–F). This defines the canonical `.preset` schema, banks, assets, macros, stable IDs, RT-safe loading, and hardware storage strategy.
+  - Fixed ADSR recall: presets now map legacy keys (`env_attack` etc.) to `envelope_*`; legacy `filter_cutoff` in Hz converts to normalized 0–1; UI sliders and `EnvelopeVisualizer` sync after load.
+  - Quick Save writes ADSR via `getAllParameters()`; preset load updates synth and UI consistently.
+
+- **What’s next (Preset System Phase A)**
+  - Add `schema_version`, `uuid`, and timestamps to `.preset`.
+  - Persist engine toggles: `engine.hybrid_enabled`, `engine.timbre_min_phase`.
+  - Introduce stable destination IDs for modulation and migrate loader (keep name fallback).
+  - Add preset-level `output_trim_db` and ramp sensitive params on load (10–20 ms).
+
+- **Doc**: See Preset System design: `docs/presets_system.md`.
+
 ### **August 10, 2025** — MIDI Activity Indicator and External MIDI Hookup
 
 **Status**: 🟢 **COMPLETE**
