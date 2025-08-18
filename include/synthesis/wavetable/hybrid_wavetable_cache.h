@@ -106,6 +106,10 @@ public:
         asyncEnabled_.store(enabled, std::memory_order_release);
     }
 
+    bool isAsyncEnabled() const { return asyncEnabled_.load(std::memory_order_acquire); }
+    size_t queueSize() const { std::lock_guard<std::mutex> lock(mutex_); return queue_.size(); }
+    size_t inFlightCount() const { std::lock_guard<std::mutex> lock(mutex_); return inFlight_.size(); }
+
     // Enqueue or synchronously render; returns cached or newly rendered buffer
     std::shared_ptr<WavetableBuffer> requestRender(const CacheKey& key, const SpectralJobSpec& spec) {
         const uint64_t h = hash(key);
@@ -208,7 +212,7 @@ private:
     std::shared_ptr<SpectralWavetableCache> cache_;
     std::atomic<bool> asyncEnabled_{false};
     std::thread workerThread_;
-    std::mutex mutex_;
+    mutable std::mutex mutex_;
     std::condition_variable cv_;
     bool running_ = false;
     std::deque<Job> queue_;

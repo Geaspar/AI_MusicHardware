@@ -399,6 +399,10 @@ int main(int argc, char* argv[]) {
     if (loadedConfig.contains("engine") && loadedConfig["engine"].contains("hybrid_enabled")) {
         try { persistedHybridEnabled = loadedConfig["engine"]["hybrid_enabled"].get<bool>(); } catch (...) {}
     }
+    bool persistedMinPhase = false;
+    if (loadedConfig.contains("engine") && loadedConfig["engine"].contains("timbre_min_phase")) {
+        try { persistedMinPhase = loadedConfig["engine"]["timbre_min_phase"].get<bool>(); } catch (...) {}
+    }
 
     // Initialize external MIDI input - but don't open any device yet
     std::cout << "\n=== Initializing External MIDI Controller Support ===" << std::endl;
@@ -3576,6 +3580,26 @@ int main(int argc, char* argv[]) {
         hybridTogglePtr->setText(hybridEnabled ? "Engine: Hybrid (click to switch)" : "Engine: Legacy (click to switch)");
     });
     settingsScreen->addChild(std::move(hybridToggle));
+
+    // Timbre mode toggle (Linear / Min-Phase) — persisted
+    auto timbreToggle = std::make_unique<Button>("timbre_mode_toggle", "Timbre: Linear");
+    timbreToggle->setPosition(340, 400);
+    timbreToggle->setSize(180, 30);
+    timbreToggle->setBackgroundColor(Color(60, 80, 110));
+    auto timbreTogglePtr = timbreToggle.get();
+    timbreToggle->setClickCallback([&](void){
+        bool next = !synthesizer->isHybridTimbreMinPhase();
+        synthesizer->setHybridTimbreMinPhase(next);
+        timbreTogglePtr->setText(next ? "Timbre: Min-Phase" : "Timbre: Linear");
+    });
+    settingsScreen->addChild(std::move(timbreToggle));
+
+    // Hybrid worker/cache stats label
+    auto hybridStats = std::make_unique<Label>("hybrid_stats", "Hybrid: cache 0/0, Q 0, in-flight 0");
+    hybridStats->setPosition(70, 440);
+    hybridStats->setSize(500, 20);
+    hybridStats->setTextColor(Color(160, 200, 200));
+    settingsScreen->addChild(std::move(hybridStats));
     
     uiContext->addScreen(std::move(settingsScreen));
     
@@ -3650,6 +3674,10 @@ int main(int argc, char* argv[]) {
         }
         if (auto* btn = dynamic_cast<Button*>(settings->getChild("hybrid_toggle"))) {
             btn->setText(persistedHybridEnabled ? "Engine: Hybrid (click to switch)" : "Engine: Legacy (click to switch)");
+        }
+        if (auto* tbtn = dynamic_cast<Button*>(settings->getChild("timbre_mode_toggle"))) {
+            synthesizer->setHybridTimbreMinPhase(persistedMinPhase);
+            tbtn->setText(persistedMinPhase ? "Timbre: Min-Phase" : "Timbre: Linear");
         }
     }
 
@@ -3880,6 +3908,19 @@ int main(int argc, char* argv[]) {
             perfText << "CPU: " << std::fixed << std::setprecision(1) 
                     << cpuUsage << "% | FPS: " 
                     << static_cast<int>(fps) << " | Audio: OK";
+
+            // Update hybrid stats label on Settings
+            if (uiContext) if (auto* settings = uiContext->getScreen("settings")) {
+                if (auto* statLbl = dynamic_cast<Label*>(settings->getChild("hybrid_stats"))) {
+                    uint64_t h = synthesizer ? synthesizer->hybridCacheHits() : 0;
+                    uint64_t m = synthesizer ? synthesizer->hybridCacheMisses() : 0;
+                    size_t q = synthesizer ? synthesizer->hybridQueueSize() : 0;
+                    size_t f = synthesizer ? synthesizer->hybridInFlight() : 0;
+                    std::stringstream s;
+                    s << "Hybrid: cache " << h << "/" << (h + m) << ", Q " << q << ", in-flight " << f;
+                    statLbl->setText(s.str());
+                }
+            }
             
             frameCount = 0;
             lastPerfUpdate = currentTime;
@@ -4153,6 +4194,7 @@ int main(int argc, char* argv[]) {
         }
         // Engine settings
         outCfg["engine"]["hybrid_enabled"] = synthesizer && synthesizer->isHybridWavetableEnabled();
+        outCfg["engine"]["timbre_min_phase"] = synthesizer && synthesizer->isHybridTimbreMinPhase();
 
         // Synth params
         nlohmann::json sj;

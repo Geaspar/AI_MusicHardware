@@ -115,6 +115,14 @@ public:
     // Temporary: runtime toggle for hybrid wavetable (for testing)
     void setHybridWavetableEnabled(bool enabled);
     bool isHybridWavetableEnabled() const { return hybridWavetableEnabled_; }
+    // Settings: timbre mode (0=Linear, 1=MinPhase tentative)
+    void setHybridTimbreMinPhase(bool minPhase) { hybridTimbreMinPhase_ = minPhase; }
+    bool isHybridTimbreMinPhase() const { return hybridTimbreMinPhase_; }
+    // Telemetry helpers
+    uint64_t hybridCacheHits() const { return spectralCache_ ? spectralCache_->hits() : 0; }
+    uint64_t hybridCacheMisses() const { return spectralCache_ ? spectralCache_->misses() : 0; }
+    size_t hybridQueueSize() const { return spectralWorker_ ? spectralWorker_->queueSize() : 0; }
+    size_t hybridInFlight() const { return spectralWorker_ ? spectralWorker_->inFlightCount() : 0; }
     
     // Add LFO/Envelope modulation sources
     void createModulationSources();
@@ -173,6 +181,7 @@ private:
     std::shared_ptr<SpectralWavetableCache> spectralCache_;
     std::unique_ptr<SpectralRenderWorker> spectralWorker_;
     bool hybridWavetableEnabled_ = false; // gate usage
+    bool hybridTimbreMinPhase_ = false;   // UI setting (future DSP)
 
     // Continuous values for MIDI-driven modulation sources
     float modWheelValue_ = 0.0f;     // 0..1
