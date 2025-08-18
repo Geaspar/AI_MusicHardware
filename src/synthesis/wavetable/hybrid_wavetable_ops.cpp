@@ -138,8 +138,8 @@ WavetableBuffer renderTimeDomain(const SpectralFrame& spectral, int sampleRate, 
     if (!minPhase) {
         for (size_t i = 0; i <= half; ++i) {
             float mag = (i < spectral.bins.size()) ? spectral.bins[i].magnitude : 0.0f;
-            // Contrast boost for A/B: force zero phase in Linear mode
-            std::complex<float> c = std::polar(mag, 0.0f);
+            float ph = (i < spectral.bins.size()) ? spectral.bins[i].phase : 0.0f;
+            std::complex<float> c = std::polar(mag, ph);
             bins[i] = c;
             if (i != 0 && i != half) bins[spectral.fftSize - i] = std::conj(c); // mirror
         }
