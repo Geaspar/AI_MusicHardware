@@ -2056,6 +2056,8 @@ int main(int argc, char* argv[]) {
     for (const auto& preset : allPresets) {
         presetDropdown->addPreset(preset.name, preset.category, preset.filePath);
     }
+    // Add a simple Hybrid morph demo preset entry (virtual)
+    presetDropdown->addPreset("Hybrid Morph Demo (LFO1+ModWheel)", "Demo", "__virtual__/hybrid_morph_demo");
     
     std::cout << "Added " << allPresets.size() << " presets to dropdown" << std::endl;
     
@@ -2073,7 +2075,24 @@ int main(int argc, char* argv[]) {
         auto selectedPreset = presetDropdownPtr->getSelectedPreset();
         if (!selectedPreset.fullPath.empty()) {
             std::cout << "Loading preset: " << selectedPreset.name << " from " << selectedPreset.fullPath << std::endl;
-            
+            if (selectedPreset.fullPath == "__virtual__/hybrid_morph_demo") {
+                // Programmatically set up a simple demo: Saw, moderate env, LFO1->Wavetable Position, ModWheel->Wavetable Position
+                std::lock_guard<std::mutex> lock(audioMutex);
+                synthesizer->setParameter("oscillator_type", 1.0f); // Saw
+                synthesizer->setParameter("envelope_attack", 0.01f);
+                synthesizer->setParameter("envelope_decay", 0.25f);
+                synthesizer->setParameter("envelope_sustain", 0.6f);
+                synthesizer->setParameter("envelope_release", 0.3f);
+                // Disconnect any existing routes, then connect
+                if (auto* mm = synthesizer->getModulationMatrix()) {
+                    mm->disconnect("LFO1", "Wavetable Position");
+                    mm->disconnect("ModWheel", "Wavetable Position");
+                    mm->connect("LFO1", "Wavetable Position", 0.35f);
+                    mm->connect("ModWheel", "Wavetable Position", 0.5f);
+                }
+                std::cout << "Loaded virtual demo preset: Hybrid Morph Demo" << std::endl;
+                return;
+            }
             // Load the preset file and apply parameters to synthesizer
             if (presetManager->loadPreset(selectedPreset.fullPath)) {
                 std::cout << "Successfully loaded preset: " << selectedPreset.name << std::endl;
@@ -2113,9 +2132,8 @@ int main(int argc, char* argv[]) {
     savePresetButton->setSize(60, 30);
     savePresetButton->setBackgroundColor(Color(60, 60, 100));
     savePresetButton->setTextColor(Color(255, 255, 255));
-    savePresetButton->setClickCallback([]() {
-        std::cout << "Save preset functionality not yet implemented" << std::endl;
-    });
+    // Defer binding the real save callback until after effects UI state is initialized
+    Button* savePresetButtonPtr = savePresetButton.get();
     
     mainScreen->addChild(std::move(presetDropdown));
     mainScreen->addChild(std::move(loadPresetButton));
@@ -3566,18 +3584,19 @@ int main(int argc, char* argv[]) {
     hybridToggle->setBackgroundColor(Color(60, 80, 110));
     auto hybridTogglePtr = hybridToggle.get();
     hybridToggle->setClickCallback([&](void){
-        static bool hybridEnabled = synthesizer->isHybridWavetableEnabled();
-        hybridEnabled = !hybridEnabled;
+        bool target = !synthesizer->isHybridWavetableEnabled();
         {
             std::lock_guard<std::mutex> lock(audioMutex);
-            synthesizer->setHybridWavetableEnabled(hybridEnabled);
+            synthesizer->setHybridWavetableEnabled(target);
         }
+        // Read back actual state after change
+        bool actual = synthesizer->isHybridWavetableEnabled();
         if (auto* settings = uiContext->getScreen("settings")) {
             if (auto* lbl = dynamic_cast<Label*>(settings->getChild("engine_status"))) {
-                lbl->setText(hybridEnabled ? "Engine: Hybrid (Spectral)" : "Engine: Legacy/Realtime WT");
+                lbl->setText(actual ? "Engine: Hybrid (Spectral)" : "Engine: Legacy/Realtime WT");
             }
         }
-        hybridTogglePtr->setText(hybridEnabled ? "Engine: Hybrid (click to switch)" : "Engine: Legacy (click to switch)");
+        hybridTogglePtr->setText(actual ? "Engine: Hybrid (click to switch)" : "Engine: Legacy (click to switch)");
     });
     settingsScreen->addChild(std::move(hybridToggle));
 
@@ -3607,9 +3626,422 @@ int main(int argc, char* argv[]) {
     hybridStats->setSize(500, 20);
     hybridStats->setTextColor(Color(160, 200, 200));
     settingsScreen->addChild(std::move(hybridStats));
+
+    // Hybrid cache capacity slider
+    auto cacheLabel = std::make_unique<Label>("hybrid_cache_label", "Cache Capacity: 256");
+    cacheLabel->setPosition(70, 470);
+    cacheLabel->setSize(260, 20);
+    cacheLabel->setTextColor(Color(180, 180, 180));
+    settingsScreen->addChild(std::move(cacheLabel));
+
+    auto cacheSlider = std::make_unique<Slider>("hybrid_cache_capacity");
+    cacheSlider->setPosition(70, 500);
+    cacheSlider->setSize(320, 24);
+    cacheSlider->setRange(64.0f, 1024.0f);
+    cacheSlider->setOrientation(Slider::Orientation::Horizontal);
+    // Hide inline value to avoid duplication/overlap with the label
+    cacheSlider->setShowValue(false);
+    auto cacheSliderPtr = cacheSlider.get();
+    cacheSlider->setValueChangeCallback([&](float v){
+        int cap = std::max(64, static_cast<int>(v));
+        if (synthesizer) {
+            if (auto cache = synthesizer->getSpectralCache()) {
+                cache->setCapacity(static_cast<size_t>(cap));
+            }
+        }
+        if (auto* settings = uiContext->getScreen("settings")) {
+            if (auto* lbl = dynamic_cast<Label*>(settings->getChild("hybrid_cache_label"))) {
+                lbl->setText(std::string("Cache Capacity: ") + std::to_string(cap));
+            }
+        }
+    });
+    settingsScreen->addChild(std::move(cacheSlider));
+
+    // Prewarm breadth sliders
+    auto prewarmMorphLabel = std::make_unique<Label>("prewarm_morph_label", "Prewarm Morph Frames (±)");
+    prewarmMorphLabel->setPosition(70, 540);
+    prewarmMorphLabel->setSize(320, 20);
+    prewarmMorphLabel->setTextColor(Color(180, 180, 180));
+    settingsScreen->addChild(std::move(prewarmMorphLabel));
+
+    auto prewarmMorph = std::make_unique<Slider>("prewarm_morph");
+    prewarmMorph->setPosition(70, 570);
+    prewarmMorph->setSize(180, 24);
+    prewarmMorph->setRange(0.0f, 4.0f);
+    prewarmMorph->setOrientation(Slider::Orientation::Horizontal);
+    prewarmMorph->setValueFormatter([](float v){ std::stringstream ss; ss<<"M ±"<<static_cast<int>(v); return ss.str();});
+    auto prewarmPitchLabel = std::make_unique<Label>("prewarm_pitch_label", "Prewarm Pitch Bands (±)");
+    prewarmPitchLabel->setPosition(70, 630);
+    prewarmPitchLabel->setSize(320, 20);
+    prewarmPitchLabel->setTextColor(Color(180, 180, 180));
+    settingsScreen->addChild(std::move(prewarmPitchLabel));
+
+    auto prewarmPitch = std::make_unique<Slider>("prewarm_pitch");
+    prewarmPitch->setPosition(70, 660);
+    prewarmPitch->setSize(180, 24);
+    prewarmPitch->setRange(0.0f, 4.0f);
+    prewarmPitch->setOrientation(Slider::Orientation::Horizontal);
+    prewarmPitch->setValueFormatter([](float v){ std::stringstream ss; ss<<"P ±"<<static_cast<int>(v); return ss.str();});
+    auto prewarmMorphPtr = prewarmMorph.get();
+    auto prewarmPitchPtr = prewarmPitch.get();
+    auto applyPrewarm = [&](){
+        int m = static_cast<int>(prewarmMorphPtr->getValue());
+        int p = static_cast<int>(prewarmPitchPtr->getValue());
+        if (synthesizer && synthesizer->getSpectralWorker()) {
+            synthesizer->getSpectralWorker()->setPrewarmBreadth(m, p);
+        }
+        if (auto* settings = uiContext->getScreen("settings")) {
+            if (auto* mlbl = dynamic_cast<Label*>(settings->getChild("prewarm_morph_label"))) {
+                std::stringstream ss; ss<<"Prewarm Morph Frames (±"<<m<<")"; mlbl->setText(ss.str());
+            }
+            if (auto* plbl = dynamic_cast<Label*>(settings->getChild("prewarm_pitch_label"))) {
+                std::stringstream ss; ss<<"Prewarm Pitch Bands (±"<<p<<")"; plbl->setText(ss.str());
+            }
+        }
+    };
+    prewarmMorph->setValueChangeCallback([&](float){ applyPrewarm(); });
+    prewarmPitch->setValueChangeCallback([&](float){ applyPrewarm(); });
+    settingsScreen->addChild(std::move(prewarmMorph));
+    settingsScreen->addChild(std::move(prewarmPitch));
+
+    // Reset stats button
+    auto resetStatsBtn = std::make_unique<Button>("reset_hybrid_stats", "Reset Stats");
+    resetStatsBtn->setPosition(70, 740);
+    resetStatsBtn->setSize(140, 28);
+    resetStatsBtn->setBackgroundColor(Color(80, 60, 60));
+    resetStatsBtn->setClickCallback([&](){
+        if (synthesizer && synthesizer->getSpectralCache()) {
+            synthesizer->getSpectralCache()->resetStats();
+        }
+    });
+    settingsScreen->addChild(std::move(resetStatsBtn));
+
+    // Explanations to the right of controls
+    auto cacheExplain = std::make_unique<Label>("hybrid_cache_explain", "Caches rendered wave cycles; higher = more memory, fewer misses.");
+    cacheExplain->setPosition(410, 500);
+    cacheExplain->setSize(520, 20);
+    cacheExplain->setTextColor(Color(150, 180, 180));
+    settingsScreen->addChild(std::move(cacheExplain));
+
+    // Preset Output Trim (dB)
+    auto trimLabel = std::make_unique<Label>("preset_trim_label", "Preset Output Trim (dB)");
+    trimLabel->setPosition(50, 560);
+    trimLabel->setSize(200, 20);
+    trimLabel->setTextColor(Color(200, 200, 200));
+    settingsScreen->addChild(std::move(trimLabel));
+
+    auto trimSlider = std::make_unique<Slider>("preset_output_trim_db");
+    trimSlider->setPosition(50, 590);
+    trimSlider->setSize(300, 20);
+    trimSlider->setOrientation(Slider::Orientation::Horizontal);
+    trimSlider->setRange(-12.0f, 6.0f);
+    trimSlider->setValue(synthesizer->getParameter("preset_output_trim_db"));
+    trimSlider->setValueFormatter([](float v){ char buf[32]; std::snprintf(buf, sizeof(buf), "%+.1f dB", v); return std::string(buf); });
+    trimSlider->setValueChangeCallback([&](float v){ synthesizer->setParameter("preset_output_trim_db", v); });
+    settingsScreen->addChild(std::move(trimSlider));
+
+    auto morphExplain = std::make_unique<Label>("prewarm_morph_explain", "Prepares neighboring morph frames to reduce stalls during morph modulation.");
+    morphExplain->setPosition(260, 570);
+    morphExplain->setSize(600, 20);
+    morphExplain->setTextColor(Color(150, 180, 180));
+    settingsScreen->addChild(std::move(morphExplain));
+
+    auto pitchExplain = std::make_unique<Label>("prewarm_pitch_explain", "Prepares adjacent pitch bands for fast pitch bends/LFO; smooths Hybrid under rapid changes.");
+    pitchExplain->setPosition(260, 690);
+    pitchExplain->setSize(600, 20);
+    pitchExplain->setTextColor(Color(150, 180, 180));
+    settingsScreen->addChild(std::move(pitchExplain));
     
     uiContext->addScreen(std::move(settingsScreen));
     
+    // Bind Save preset callback now that effects UI state is available
+    if (auto* btn = dynamic_cast<Button*>(uiContext->getScreen("main")->getChild("save_preset"))) {
+        btn->setClickCallback([&, presetDropdownPtr]() {
+            try {
+                using clock = std::chrono::system_clock;
+                auto now = clock::now();
+                auto t = clock::to_time_t(now);
+                std::tm tm{};
+#ifdef _WIN32
+                localtime_s(&tm, &t);
+#else
+                localtime_r(&t, &tm);
+#endif
+                char buf[32];
+                std::snprintf(buf, sizeof(buf), "%04d-%02d-%02d_%02d-%02d-%02d",
+                            tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+                            tm.tm_hour, tm.tm_min, tm.tm_sec);
+                std::string name = std::string("Quick Save ") + buf;
+                std::string author = "";
+                std::string category = "User";
+                std::string description = "Quick-saved from UI";
+                std::string dir = PresetManager::getUserPresetsDirectory();
+                std::string path = dir + "/" + name + ".preset";
+
+                nlohmann::json presetJson;
+                // Metadata with schema, uuid, and timestamps
+                presetJson["schema_version"] = "1.0.0";
+                // Generate a simple UUID v4-like string
+                auto genHex = [](int n){
+                    static const char* kHex = "0123456789abcdef";
+                    std::string s; s.reserve(n);
+                    std::random_device rd; std::mt19937 rng(rd()); std::uniform_int_distribution<int> d(0,15);
+                    for (int i=0;i<n;++i) s.push_back(kHex[d(rng)]);
+                    return s;
+                };
+                std::string uuid = genHex(8) + std::string("-") + genHex(4) + std::string("-") + genHex(4) + std::string("-") + genHex(4) + std::string("-") + genHex(12);
+                presetJson["metadata"] = {{"name",name},{"author",author},{"category",category},{"description",description},{"version","1.0.0"},{"uuid",uuid}};
+                presetJson["metadata"]["created_at"] = static_cast<int64_t>(t);
+                presetJson["metadata"]["modified_at"] = static_cast<int64_t>(t);
+                // Synth params
+                {
+                    nlohmann::json params;
+                    auto allParams = synthesizer->getAllParameters();
+                    for (const auto& kv : allParams) params[kv.first] = kv.second;
+                    // Ensure preset-level trim exists
+                    if (!params.contains("preset_output_trim_db")) {
+                        params["preset_output_trim_db"] = synthesizer->getParameter("preset_output_trim_db");
+                    }
+                    presetJson["parameters"] = params;
+                }
+                // Effects
+                {
+                    nlohmann::json slots = nlohmann::json::array();
+                    for (int s = 0; s < fxSlotCount; ++s) {
+                        nlohmann::json sj;
+                        sj["type"] = slotSelectedType[s];
+                        sj["mix"] = slotMix[s];
+                        sj["enabled"] = slotEnabled[s];
+                        sj["page"] = std::max(0, std::min(1, slotPage[s]));
+                        if (slotParamCache[s].count(slotSelectedType[s])) {
+                            nlohmann::json pj;
+                            for (const auto& kv : slotParamCache[s][slotSelectedType[s]]) pj[kv.first] = kv.second;
+                            sj["params"] = pj;
+                        }
+                        slots.push_back(sj);
+                    }
+                    presetJson["effects"]["slots"] = slots;
+                }
+                // Mod routing (include forward-compatible stable IDs)
+                {
+                    nlohmann::json mods = nlohmann::json::array();
+                    auto normalizeId = [](std::string s){
+                        std::string out; out.reserve(s.size());
+                        for (char c : s) {
+                            char lc = (char)std::tolower((unsigned char)c);
+                            out.push_back(std::isalnum((unsigned char)lc) ? lc : '_');
+                        }
+                        // collapse consecutive underscores
+                        std::string out2; out2.reserve(out.size());
+                        bool prevUnderscore = false;
+                        for (char c : out) {
+                            if (c=='_') { if (!prevUnderscore) { out2.push_back(c); prevUnderscore = true; } }
+                            else { out2.push_back(c); prevUnderscore=false; }
+                        }
+                        return out2;
+                    };
+                    for (size_t i = 0; i < modConnections.size(); ++i) {
+                        if (modConnections[i].source.empty() || modConnections[i].destination.empty()) continue;
+                        nlohmann::json mj;
+                        std::string src = modConnections[i].source;
+                        if (src == "LFO 1") src = "LFO1"; else if (src == "LFO 2") src = "LFO2"; else if (src == "Mod Wheel") src = "ModWheel";
+                        mj["source"] = src;                                 // canonical source name
+                        mj["source_id"] = normalizeId(src);                // normalized source id
+                        const std::string& dstDisplay = modConnections[i].destination;
+                        mj["destination"] = dstDisplay;                    // display name
+                        mj["dest_id"] = normalizeId(dstDisplay);           // normalized destination id
+                        mj["amount"] = modConnections[i].amount;
+                        mods.push_back(mj);
+                    }
+                    presetJson["mod_routing"] = mods;
+                }
+                std::ofstream out(path);
+                if (out.is_open()) { out << presetJson.dump(2); out.close(); std::cout << "Saved preset to: " << path << std::endl; }
+                if (auto* dropdown = dynamic_cast<PresetDropdown*>(uiContext->getScreen("main")->getChild("preset_dropdown"))) {
+                    dropdown->addPreset(name, category, path);
+                }
+            } catch (...) { std::cerr << "Exception while saving preset" << std::endl; }
+        });
+    }
+
+    // Re-bind Load preset to support .preset (synth + effects + modulation)
+    if (auto* loadBtn = dynamic_cast<Button*>(uiContext->getScreen("main")->getChild("load_preset"))) {
+        loadBtn->setClickCallback([&, presetDropdownPtr, waveSliderPtr, cutoffSliderPtr, resSliderPtr, volumeSliderPtr]() {
+            auto* mainScreenPtr = uiContext->getScreen("main");
+            auto* dropdown = dynamic_cast<PresetDropdown*>(mainScreenPtr->getChild("preset_dropdown"));
+            if (!dropdown) return;
+            auto selectedPreset = dropdown->getSelectedPreset();
+            if (selectedPreset.fullPath.empty()) return;
+            std::cout << "Loading preset: " << selectedPreset.name << " from " << selectedPreset.fullPath << std::endl;
+            // Case-insensitive .preset extension check
+            auto pathLower = selectedPreset.fullPath;
+            std::transform(pathLower.begin(), pathLower.end(), pathLower.begin(), [](unsigned char c){ return std::tolower(c); });
+            if (pathLower.size() >= 7 && pathLower.rfind(".preset") == pathLower.size() - 7) {
+                // Load custom preset JSON
+                try {
+                    nlohmann::json j;
+                    std::ifstream in(selectedPreset.fullPath);
+                    if (!in.is_open()) { std::cerr << "Failed to open preset file" << std::endl; return; }
+                    in >> j; in.close();
+                    // Parameters
+                    if (j.contains("parameters") && j["parameters"].is_object()) {
+                        std::map<std::string,float> pm;
+                        for (auto it = j["parameters"].begin(); it != j["parameters"].end(); ++it) {
+                            pm[it.key()] = it.value().get<float>();
+                        }
+                        synthesizer->setAllParameters(pm);
+                        // Handle preset-level output trim explicitly (optional)
+                        if (pm.count("preset_output_trim_db")) {
+                            synthesizer->setParameter("preset_output_trim_db", pm["preset_output_trim_db"]);
+                        }
+                        // Engine toggles (if present)
+                        if (pm.count("engine.hybrid_enabled")) {
+                            synthesizer->setParameter("engine.hybrid_enabled", pm["engine.hybrid_enabled"]);
+                        }
+                        if (pm.count("engine.timbre_min_phase")) {
+                            synthesizer->setParameter("engine.timbre_min_phase", pm["engine.timbre_min_phase"]);
+                        }
+                    } else if (j.contains("synth") && j["synth"].is_object()) {
+                        // Backward-compat: load from "synth" object
+                        std::map<std::string,float> pm;
+                        for (auto it = j["synth"].begin(); it != j["synth"].end(); ++it) {
+                            if (it.value().is_number()) pm[it.key()] = it.value().get<float>();
+                        }
+                        synthesizer->setAllParameters(pm);
+                    }
+                    // Update top-level UI sliders for core synth params + envelope
+                    if (waveSliderPtr) waveSliderPtr->setValue(synthesizer->getParameter("oscillator_type"));
+                    if (cutoffSliderPtr) cutoffSliderPtr->setValue(synthesizer->getParameter("filter_cutoff"));
+                    if (resSliderPtr) resSliderPtr->setValue(synthesizer->getParameter("filter_resonance"));
+                    if (volumeSliderPtr) volumeSliderPtr->setValue(synthesizer->getParameter("master_volume"));
+                    if (attackSliderPtr) attackSliderPtr->setValue(synthesizer->getParameter("envelope_attack"));
+                    if (decaySliderPtr) decaySliderPtr->setValue(synthesizer->getParameter("envelope_decay"));
+                    if (sustainSliderPtr) sustainSliderPtr->setValue(synthesizer->getParameter("envelope_sustain"));
+                    if (releaseSliderPtr) releaseSliderPtr->setValue(synthesizer->getParameter("envelope_release"));
+                    if (envelopePtr) envelopePtr->setADSR(
+                        synthesizer->getParameter("envelope_attack"),
+                        synthesizer->getParameter("envelope_decay"),
+                        synthesizer->getParameter("envelope_sustain"),
+                        synthesizer->getParameter("envelope_release")
+                    );
+                    // Start a brief ramp to avoid clicks as parameters settle
+                    synthesizer->startPresetApplyRamp(0.02f);
+                    std::cout << "Loaded synth params: cutoff=" << synthesizer->getParameter("filter_cutoff")
+                              << ", res=" << synthesizer->getParameter("filter_resonance")
+                              << ", vol=" << synthesizer->getParameter("master_volume") << std::endl;
+                    // Effects slots
+                    if (j.contains("effects") && j["effects"].contains("slots") && j["effects"]["slots"].is_array()) {
+                        int idx = 0;
+                        for (const auto& s : j["effects"]["slots"]) {
+                            if (idx >= fxSlotCount) break;
+                            if (s.contains("type")) slotSelectedType[idx] = s["type"].get<std::string>();
+                            if (s.contains("mix")) slotMix[idx] = s["mix"].get<float>();
+                            if (s.contains("enabled")) slotEnabled[idx] = s["enabled"].get<bool>();
+                            if (s.contains("page")) slotPage[idx] = std::max(0, std::min(1, s["page"].get<int>()));
+                            slotParamCache[idx][slotSelectedType[idx]].clear();
+                            if (s.contains("params") && s["params"].is_object()) {
+                                for (auto it = s["params"].begin(); it != s["params"].end(); ++it) {
+                                    slotParamCache[idx][slotSelectedType[idx]][it.key()] = it.value().get<float>();
+                                }
+                            }
+                            ++idx;
+                        }
+                        // Update UI widgets for slots
+                        for (int s = 0; s < fxSlotCount; ++s) {
+                            if (slotTypeDd[s]) slotTypeDd[s]->selectItemSilently(slotSelectedType[s]);
+                            if (slotMixSlider[s]) slotMixSlider[s]->setValue(slotMix[s]);
+                            if (slotBypassBtn[s]) {
+                                slotBypassBtn[s]->setText(slotEnabled[s] ? "ON" : "OFF");
+                                slotBypassBtn[s]->setBackgroundColor(slotEnabled[s] ? Color(50,100,50) : Color(100,50,50));
+                            }
+                            if (auto* p = dynamic_cast<DropdownMenu*>(uiContext->getScreen("effects")->getChild("fx_page_" + std::to_string(s)))) p->selectItemSilently(std::max(0, std::min(1, slotPage[s])));
+                            // Reconfigure parameter sliders for this slot based on page
+                            configureSlotParams(s, slotSelectedType[s]);
+                        }
+                        // Rebuild chain
+                        rebuildEffectsChain();
+                        std::cout << "Rebuilt FX chain after preset load; global filter cutoff now="
+                                  << synthesizer->getParameter("filter_cutoff") << std::endl;
+                    }
+                    // Modulation routing
+                    if (j.contains("mod_routing") && j["mod_routing"].is_array()) {
+                        // Build destination ID map from current engine destinations
+                        auto normalizeId = [](std::string s){
+                            std::string out; out.reserve(s.size());
+                            for (char c : s) { char lc = (char)std::tolower((unsigned char)c); out.push_back(std::isalnum((unsigned char)lc) ? lc : '_'); }
+                            // collapse consecutive underscores
+                            std::string out2; out2.reserve(out.size());
+                            bool prevUnderscore = false; for (char c : out) { if (c=='_') { if (!prevUnderscore) { out2.push_back(c); prevUnderscore = true; } } else { out2.push_back(c); prevUnderscore=false; } }
+                            return out2;
+                        };
+                        std::unordered_map<std::string,std::string> idToName;
+                        {
+                            auto names = synthesizer->getModDestinationNames();
+                            for (const auto& n : names) { idToName[normalizeId(n)] = n; }
+                        }
+                        // Update UI model and engine
+                        for (size_t i = 0; i < modConnections.size(); ++i) {
+                            if (i >= j["mod_routing"].size()) break;
+                            const auto& mr = j["mod_routing"][i];
+                            std::string src = mr.value("source_id", mr.value("source", ""));
+                            std::string dstDisplay = mr.value("destination", "");
+                            std::string dstId = mr.contains("dest_id") ? mr["dest_id"].get<std::string>() : dstDisplay;
+                            float amt = mr.value("amount", 0.0f);
+                            // Resolve destination by ID first
+                            std::string resolvedDest = dstDisplay;
+                            auto it = idToName.find(normalizeId(dstId));
+                            if (it != idToName.end()) resolvedDest = it->second;
+                            // Update model
+                            modConnections[i].source = (src == "LFO1" ? "LFO 1" : (src == "LFO2" ? "LFO 2" : (src == "ModWheel" ? "Mod Wheel" : src)));
+                            modConnections[i].destination = resolvedDest;
+                            modConnections[i].amount = amt;
+                            // Apply to engine
+                            synthesizer->disconnectModulation(src, resolvedDest);
+                            synthesizer->connectModulation(src, resolvedDest, amt);
+                            // Reflect in UI controls
+                            if (i < modSourceDropdowns.size() && modSourceDropdowns[i]) {
+                                modSourceDropdowns[i]->selectItemSilently(modConnections[i].source);
+                            }
+                            if (i < modDestDropdowns.size() && modDestDropdowns[i]) {
+                                modDestDropdowns[i]->selectItemSilently(modConnections[i].destination);
+                            }
+                            if (i < modAmountSliders.size() && modAmountSliders[i]) {
+                                modAmountSliders[i]->setValue(modConnections[i].amount);
+                            }
+                        }
+                    }
+                    std::cout << "Preset loaded (.preset): " << selectedPreset.name << std::endl;
+                } catch (const std::exception& e) {
+                    std::cerr << "Error loading .preset: " << e.what() << std::endl;
+                }
+                return; // handled
+            }
+            // Fallback: older preset format
+            if (presetManager->loadPreset(selectedPreset.fullPath)) {
+                std::cout << "Successfully loaded preset: " << selectedPreset.name << std::endl;
+                // Update top-level UI sliders for core synth params + envelope
+                if (waveSliderPtr) waveSliderPtr->setValue(synthesizer->getParameter("oscillator_type"));
+                if (cutoffSliderPtr) cutoffSliderPtr->setValue(synthesizer->getParameter("filter_cutoff"));
+                if (resSliderPtr) resSliderPtr->setValue(synthesizer->getParameter("filter_resonance"));
+                if (volumeSliderPtr) volumeSliderPtr->setValue(synthesizer->getParameter("master_volume"));
+                if (attackSliderPtr) attackSliderPtr->setValue(synthesizer->getParameter("envelope_attack"));
+                if (decaySliderPtr) decaySliderPtr->setValue(synthesizer->getParameter("envelope_decay"));
+                if (sustainSliderPtr) sustainSliderPtr->setValue(synthesizer->getParameter("envelope_sustain"));
+                if (releaseSliderPtr) releaseSliderPtr->setValue(synthesizer->getParameter("envelope_release"));
+                if (envelopePtr) envelopePtr->setADSR(
+                    synthesizer->getParameter("envelope_attack"),
+                    synthesizer->getParameter("envelope_decay"),
+                    synthesizer->getParameter("envelope_sustain"),
+                    synthesizer->getParameter("envelope_release")
+                );
+                // Start a brief ramp on legacy format too
+                synthesizer->startPresetApplyRamp(0.02f);
+            } else {
+                std::cerr << "Failed to load preset: " << selectedPreset.name << std::endl;
+            }
+        });
+    }
+
     // Set up MIDI handling
     midiInput->setCallback(midiHandler.get());
     

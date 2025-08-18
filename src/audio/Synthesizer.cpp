@@ -125,6 +125,7 @@ Synthesizer::Synthesizer(int sampleRate)
     spectralCache_ = std::make_shared<SpectralWavetableCache>(256);
     spectralWorker_ = std::make_unique<SpectralRenderWorker>(spectralCache_);
     spectralWorker_->setAsyncEnabled(true); // enable minimal async worker
+    spectralWorker_->setPrewarmBreadth(1, 1); // default ±1 morph, ±1 pitch band
     hybridWavetableEnabled_ = false; // gate usage from settings later
 }
 
@@ -211,6 +212,7 @@ void Synthesizer::createModulationSources() {
     baseParameterValues_["filter_cutoff"] = 1.0f; // Start with filter wide open (20kHz)
     baseParameterValues_["filter_resonance"] = 0.1f; // Low resonance by default
     baseParameterValues_["master_volume"] = 0.7f;
+    baseParameterValues_["preset_output_trim_db"] = 0.0f;
     baseParameterValues_["pitch"] = 0.0f;
     baseParameterValues_["envelope_attack"] = 0.01f;
     baseParameterValues_["envelope_decay"] = 0.1f;
@@ -469,11 +471,12 @@ void Synthesizer::createModulationSources() {
     addFxParamDest("Plate Decay",      "PlateReverb", "decay_rt60_s", 0.2f, 20.0f);
     addFxParamDest("Plate Diffusion",  "PlateReverb", "diffusion",    0.0f, 1.0f);
     addFxParamDest("Plate Mod Rate",   "PlateReverb", "mod_rate",     0.05f, 1.0f);
-    addFxParamDest("Plate Output Trim","PlateReverb", "output_trim_db", -12.0f, 6.0f);
-    addFxParamDest("Plate Mix",        "PlateReverb", "mix", 0.0f, 1.0f);
+    addFxParamDest("Plate Output Trim", "PlateReverb", "output_trim_db", -12.0f, 6.0f);
+    addFxParamDest("Plate Mix",         "PlateReverb", "mix", 0.0f, 1.0f);
     for (const char* name : {"Plate Predelay","Plate Decay","Plate Diffusion","Plate Mod Rate","Plate Output Trim","Plate Mix"}) {
-        if (auto* d = modulationMatrix_.getDestination(name)) d->setSmoothing(0.1f);
+        if (auto* d = modulationMatrix_.getDestination(name)) d->setSmoothing(0.12f);
     }
+    
 
     // Classic Reverb extras
     addFxParamDest("Reverb Dry",      "Reverb", "dryLevel", 0.0f, 1.0f);
@@ -583,6 +586,7 @@ void Synthesizer::setSampleRate(int sampleRate) {
 
 void Synthesizer::setHybridWavetableEnabled(bool enabled) {
     hybridWavetableEnabled_ = enabled;
+    std::cout << "[Synthesizer] setHybridWavetableEnabled(" << (enabled ? "ON" : "OFF") << ")" << std::endl;
     // Ensure we are using the Standard VoiceManager which supports Hybrid V2 gating
     if (voiceManagerType_ != VoiceManagerType::Standard) {
         setVoiceManagerType(VoiceManagerType::Standard);
@@ -609,6 +613,7 @@ void Synthesizer::setHybridWavetableEnabled(bool enabled) {
         if (enabled) {
             float framePos = oscTypeToFramePosition(currentOscType_);
             voiceManager_->applyHybridMorph(framePos);
+            std::cout << "[Synthesizer] Hybrid enabled; applied morph position " << framePos << std::endl;
         }
         // Re-apply current oscillator waveform selection to legacy oscillator when returning to legacy
         if (!enabled) {
@@ -620,6 +625,7 @@ void Synthesizer::setHybridWavetableEnabled(bool enabled) {
                     }
                 }
             }
+            std::cout << "[Synthesizer] Hybrid disabled; reapplied legacy frame position " << framePos << std::endl;
         }
     }
 }
@@ -800,6 +806,17 @@ void Synthesizer::setParameter(const std::string& paramId, float value) {
         baseParameterValues_["master_volume"] = value;
         std::cout << "Setting master volume to " << value << std::endl;
     }
+    else if (paramId == "preset_output_trim_db") {
+        // dB target; smoothing applied in process()
+        baseParameterValues_["preset_output_trim_db"] = value;
+        presetTrimTargetDb_ = value;
+    }
+    else if (paramId == "engine.hybrid_enabled") {
+        setHybridWavetableEnabled(value >= 0.5f);
+    }
+    else if (paramId == "engine.timbre_min_phase") {
+        setHybridTimbreMinPhase(value >= 0.5f);
+    }
     else if (paramId == "envelope_attack") {
         // Update base parameter value
         baseParameterValues_["envelope_attack"] = value;
@@ -930,6 +947,15 @@ float Synthesizer::getParameter(const std::string& paramId) const {
         // Return stored master volume value
         return baseParameterValues_.count("master_volume") ? baseParameterValues_.at("master_volume") : 0.7f;
     }
+    else if (paramId == "preset_output_trim_db") {
+        return baseParameterValues_.count("preset_output_trim_db") ? baseParameterValues_.at("preset_output_trim_db") : 0.0f;
+    }
+    else if (paramId == "engine.hybrid_enabled") {
+        return hybridWavetableEnabled_ ? 1.0f : 0.0f;
+    }
+    else if (paramId == "engine.timbre_min_phase") {
+        return hybridTimbreMinPhase_ ? 1.0f : 0.0f;
+    }
     else if (paramId == "envelope_attack") {
         return baseParameterValues_.count("envelope_attack") ? baseParameterValues_.at("envelope_attack") : 0.01f;
     }
@@ -980,17 +1006,27 @@ std::map<std::string, float> Synthesizer::getAllParameters() const {
     parameters["oscillator_type"] = static_cast<float>(currentOscType_);
     parameters["oscillator_frame"] = oscTypeToFramePosition(currentOscType_);
     parameters["voice_count"] = static_cast<float>(getVoiceCount());
-    parameters["master_volume"] = 0.7f; // Default value for now
-
-    // Future parameters to add when implemented:
-    parameters["filter_cutoff"] = 1.0f;
-    parameters["filter_resonance"] = 0.5f;
-
-    // LFO Parameters
-    parameters["lfo1_rate"] = 1.0f;
-    parameters["lfo1_shape"] = 0.0f; // Sine
-    parameters["lfo2_rate"] = 0.5f;
-    parameters["lfo2_shape"] = 0.0f; // Sine
+    // Pull real base values when available
+    auto getBase = [&](const char* key, float fallback) -> float {
+        auto it = baseParameterValues_.find(key);
+        return (it != baseParameterValues_.end()) ? it->second : fallback;
+    };
+    parameters["master_volume"] = getBase("master_volume", getParameter("master_volume"));
+    parameters["filter_cutoff"] = getBase("filter_cutoff", getParameter("filter_cutoff"));
+    parameters["filter_resonance"] = getBase("filter_resonance", getParameter("filter_resonance"));
+    parameters["preset_output_trim_db"] = getBase("preset_output_trim_db", 0.0f);
+    parameters["engine.hybrid_enabled"] = isHybridWavetableEnabled() ? 1.0f : 0.0f;
+    parameters["engine.timbre_min_phase"] = isHybridTimbreMinPhase() ? 1.0f : 0.0f;
+    // Envelope ADSR
+    parameters["envelope_attack"]  = getBase("envelope_attack",  getParameter("envelope_attack"));
+    parameters["envelope_decay"]   = getBase("envelope_decay",   getParameter("envelope_decay"));
+    parameters["envelope_sustain"] = getBase("envelope_sustain", getParameter("envelope_sustain"));
+    parameters["envelope_release"] = getBase("envelope_release", getParameter("envelope_release"));
+    // LFO Parameters (use current engine values)
+    parameters["lfo1_rate"] = getParameter("lfo1_rate");
+    parameters["lfo1_shape"] = getParameter("lfo1_shape");
+    parameters["lfo2_rate"] = getParameter("lfo2_rate");
+    parameters["lfo2_shape"] = getParameter("lfo2_shape");
 
     // Add modulation connections when implemented
 
@@ -1155,23 +1191,33 @@ void Synthesizer::process(float* buffer, int numFrames) {
     // Process effects chain on the complete buffer
     effectChain_.process(buffer, numFrames);
     
-    // Final limiter to prevent clipping
-    const float linearVolume = baseParameterValues_.count("master_volume") ? baseParameterValues_.at("master_volume") : 0.7f;
-    
-    // Convert linear slider value to logarithmic gain
-    // Use a more musical taper: -40dB to +6dB range for more usable volume
-    float masterVolume;
-    if (linearVolume <= 0.0f) {
-        masterVolume = 0.0f;  // -inf dB
-    } else {
-        // Map 0-1 to -40dB to +6dB range (more headroom)
-        float dbValue = -40.0f + (linearVolume * 46.0f);
-        masterVolume = std::pow(10.0f, dbValue / 20.0f);
+    // Apply preset-level output trim (smoothed)
+    {
+        float targetLinear = std::pow(10.0f, (presetTrimTargetDb_) / 20.0f);
+        // one-pole smoothing once per call
+        presetTrimLinear_ = presetTrimLinear_ + presetTrimSmoothingAlpha_ * (targetLinear - presetTrimLinear_);
+        for (int i = 0; i < numFrames * 2; ++i) {
+            buffer[i] *= presetTrimLinear_;
+        }
     }
-    
+
+    // Final limiter to prevent clipping and apply master volume (smoothed)
+    const float linearVolume = baseParameterValues_.count("master_volume") ? baseParameterValues_.at("master_volume") : 0.7f;
+    float targetDb = (linearVolume <= 0.0f) ? -120.0f : (-40.0f + (linearVolume * 46.0f));
+    float targetLinear = (targetDb <= -100.0f) ? 0.0f : std::pow(10.0f, targetDb / 20.0f);
+    masterVolumeSmoothed_ = masterVolumeSmoothed_ + masterVolumeSmoothingAlpha_ * (targetLinear - masterVolumeSmoothed_);
     for (int i = 0; i < numFrames * 2; ++i) {
-        buffer[i] *= masterVolume;
-        buffer[i] = std::clamp(buffer[i], -1.0f, 1.0f);
+        float sample = buffer[i] * masterVolumeSmoothed_;
+        // Apply a brief cosine ramp after preset apply to avoid clicks
+        if (paramApplyRampRemainingSamples_ > 0 && paramApplyRampTotalSamples_ > 0) {
+            float t = 1.0f - (static_cast<float>(paramApplyRampRemainingSamples_) / static_cast<float>(paramApplyRampTotalSamples_));
+            float ramp = 0.5f * (1.0f - std::cos(3.14159265359f * t)); // 0..1
+            sample *= ramp;
+        }
+        buffer[i] = std::clamp(sample, -1.0f, 1.0f);
+    }
+    if (paramApplyRampRemainingSamples_ > 0) {
+        paramApplyRampRemainingSamples_ = std::max(0, paramApplyRampRemainingSamples_ - numFrames);
     }
 }
 

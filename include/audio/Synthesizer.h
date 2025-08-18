@@ -111,6 +111,12 @@ public:
     void reset() override;
     void setSampleRate(int sampleRate) override;
     std::string getName() const override { return "Synthesizer"; }
+    // Begin a short pop-free ramp after preset apply
+    void startPresetApplyRamp(float seconds) {
+        int n = std::max(0, static_cast<int>(seconds * static_cast<float>(getSampleRate())));
+        paramApplyRampTotalSamples_ = n;
+        paramApplyRampRemainingSamples_ = n;
+    }
 
     // Temporary: runtime toggle for hybrid wavetable (for testing)
     void setHybridWavetableEnabled(bool enabled);
@@ -123,6 +129,10 @@ public:
     uint64_t hybridCacheMisses() const { return spectralCache_ ? spectralCache_->misses() : 0; }
     size_t hybridQueueSize() const { return spectralWorker_ ? spectralWorker_->queueSize() : 0; }
     size_t hybridInFlight() const { return spectralWorker_ ? spectralWorker_->inFlightCount() : 0; }
+    bool hybridMinPhase() const { return hybridTimbreMinPhase_; }
+    // Expose spectral services for Settings controls
+    std::shared_ptr<SpectralWavetableCache> getSpectralCache() { return spectralCache_; }
+    SpectralRenderWorker* getSpectralWorker() { return spectralWorker_.get(); }
     
     // Add LFO/Envelope modulation sources
     void createModulationSources();
@@ -187,6 +197,19 @@ private:
     float modWheelValue_ = 0.0f;     // 0..1
     float aftertouchValue_ = 0.0f;   // 0..1 (channel pressure or max poly AT)
     float velocityValue_ = 0.0f;     // 0..1 (last note-on velocity)
+
+    // Preset-level output trim smoothing
+    float presetTrimTargetDb_ = 0.0f;       // desired trim in dB
+    float presetTrimLinear_ = 1.0f;         // smoothed linear gain applied pre-master
+    float presetTrimSmoothingAlpha_ = 0.1f; // per-call smoothing factor (0..1)
+
+    // Master volume smoothing (pop-free loads)
+    float masterVolumeSmoothed_ = 1.0f;     // linear gain smoothed each call
+    float masterVolumeSmoothingAlpha_ = 0.12f;
+
+    // Short ramp after preset apply to avoid clicks
+    int paramApplyRampRemainingSamples_ = 0;
+    int paramApplyRampTotalSamples_ = 0;
 };
 
 } // namespace AIMusicHardware
