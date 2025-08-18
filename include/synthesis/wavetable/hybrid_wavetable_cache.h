@@ -91,6 +91,7 @@ struct SpectralJobSpec {
     SpectralOps ops{};
     int fftSize = 2048;
     int sampleRate = 44100;
+    bool minPhase = false;
 };
 
 // Minimal worker facade (synchronous stub by default). Async impl will be added later.
@@ -121,7 +122,7 @@ public:
         // Fallback synchronous render
         if (!spec.table || spec.table->frames.empty()) return nullptr;
         SpectralFrame sf = buildSpectralFrame(*spec.table, spec.morph01, spec.ops, spec.fftSize, spec.sampleRate);
-        auto buf = std::make_shared<WavetableBuffer>(renderTimeDomain(sf, spec.sampleRate, false));
+        auto buf = std::make_shared<WavetableBuffer>(renderTimeDomain(sf, spec.sampleRate, spec.minPhase));
         buf->keyHash = h;
         cache_->put(h, buf);
         return buf;
@@ -132,7 +133,8 @@ public:
                       float morph01,
                       const SpectralOps& ops,
                       int fftSize,
-                      int sampleRate) {
+                      int sampleRate,
+                      bool minPhase) {
         if (!table) return;
         CacheKey k{};
         // Use pointer as table ID if string ID is not set
@@ -145,7 +147,7 @@ public:
         int neighbors[3] = { q, std::max(0, q - 1), std::min(127, q + 1) };
         for (int qi : neighbors) {
             CacheKey kk = k; kk.morphQ = static_cast<uint16_t>(qi);
-            SpectralJobSpec spec{ table, morph01, ops, fftSize, sampleRate };
+            SpectralJobSpec spec{ table, morph01, ops, fftSize, sampleRate, minPhase };
             enqueueRender(hash(kk), kk, spec);
         }
     }
