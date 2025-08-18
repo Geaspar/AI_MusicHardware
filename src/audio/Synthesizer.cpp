@@ -605,6 +605,11 @@ void Synthesizer::setHybridWavetableEnabled(bool enabled) {
         }
         voiceManager_->rebuildVoices();
         voiceManager_->setWavetable(currentWavetable_);
+        // Apply current waveform selection to Hybrid morph position
+        if (enabled) {
+            float framePos = oscTypeToFramePosition(currentOscType_);
+            voiceManager_->applyHybridMorph(framePos);
+        }
         // Re-apply current oscillator waveform selection to legacy oscillator when returning to legacy
         if (!enabled) {
             float framePos = oscTypeToFramePosition(currentOscType_);

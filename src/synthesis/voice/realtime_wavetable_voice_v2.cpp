@@ -25,7 +25,8 @@ void RealtimeWavetableVoiceV2::process(float* outputBuffer, int numSamples) {
 
     // Control-rate request (once per block): compute cache key
     CacheKey key{};
-    key.tableIdHash = 0xABCDEF; // placeholder until we wire real IDs
+    // Use table address as a stable per-session ID if no explicit ID is provided
+    key.tableIdHash = reinterpret_cast<uint64_t>(table_);
     key.morphQ = quantizeMorph01(morph01_);
     // Approximate pitch band using current frequency in semitones relative to A4
     float semis = 12.0f * std::log2(std::max(1e-3f, frequency_) / 440.0f) + 69.0f;
