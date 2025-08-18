@@ -127,7 +127,7 @@ void removeDcAndNormalize(std::vector<float>& samples, float targetRms) {
     for (auto& v : samples) v = std::clamp(v * g, -1.0f, 1.0f);
 }
 
-WavetableBuffer renderTimeDomain(const SpectralFrame& spectral, int sampleRate) {
+WavetableBuffer renderTimeDomain(const SpectralFrame& spectral, int sampleRate, bool minPhase) {
     WavetableBuffer out;
     out.fftSize = spectral.fftSize;
     out.samples.resize(static_cast<size_t>(spectral.fftSize));
@@ -135,17 +135,47 @@ WavetableBuffer renderTimeDomain(const SpectralFrame& spectral, int sampleRate) 
     // Build complex vector for IFFT from magnitude/phase (Hermitian symmetry implied)
     std::vector<std::complex<float>> bins(static_cast<size_t>(spectral.fftSize));
     size_t half = static_cast<size_t>(spectral.fftSize / 2);
-    for (size_t i = 0; i <= half; ++i) {
-        float mag = (i < spectral.bins.size()) ? spectral.bins[i].magnitude : 0.0f;
-        float ph = (i < spectral.bins.size()) ? spectral.bins[i].phase : 0.0f;
-        std::complex<float> c = std::polar(mag, ph);
-        bins[i] = c;
-        if (i != 0 && i != half) bins[spectral.fftSize - i] = std::conj(c); // mirror
+    if (!minPhase) {
+        for (size_t i = 0; i <= half; ++i) {
+            float mag = (i < spectral.bins.size()) ? spectral.bins[i].magnitude : 0.0f;
+            float ph = (i < spectral.bins.size()) ? spectral.bins[i].phase : 0.0f;
+            std::complex<float> c = std::polar(mag, ph);
+            bins[i] = c;
+            if (i != 0 && i != half) bins[spectral.fftSize - i] = std::conj(c); // mirror
+        }
+    } else {
+        // Minimum-phase reconstruction via real-cepstrum method on magnitudes
+        // 1) Build log magnitude spectrum (symmetric)
+        std::vector<std::complex<float>> logSpec(static_cast<size_t>(spectral.fftSize), {0.0f, 0.0f});
+        for (size_t i = 0; i <= half; ++i) {
+            float mag = (i < spectral.bins.size()) ? std::max(1e-12f, spectral.bins[i].magnitude) : 1e-12f;
+            float ln = std::log(mag);
+            logSpec[i] = {ln, 0.0f};
+            if (i != 0 && i != half) logSpec[spectral.fftSize - i] = {ln, 0.0f};
+        }
+        // 2) IFFT to real cepstrum
+        FourierTransform ft;
+        ft.performIFFT(logSpec);
+        // 3) Keep causal half, double it (except DC), zero anti-causal (min-phase cepstrum)
+        for (size_t n = 1; n < half; ++n) {
+            logSpec[n] = {2.0f * logSpec[n].real(), 0.0f};
+            logSpec[spectral.fftSize - n] = {0.0f, 0.0f};
+        }
+        // 4) FFT back to complex log spectrum
+        ft.performFFT(logSpec);
+        // 5) Exponentiate to get complex spectrum and enforce Hermitian symmetry
+        for (size_t i = 0; i <= half; ++i) {
+            float realPart = logSpec[i].real();
+            float imagPart = logSpec[i].imag();
+            std::complex<float> H = std::exp(std::complex<float>(realPart, imagPart));
+            bins[i] = H;
+            if (i != 0 && i != half) bins[spectral.fftSize - i] = std::conj(H);
+        }
     }
 
     // IFFT
-    FourierTransform ft;
-    ft.performIFFT(bins);
+    FourierTransform ft2;
+    ft2.performIFFT(bins);
 
     // Copy real part to samples
     for (size_t n = 0; n < bins.size(); ++n) out.samples[n] = bins[n].real();

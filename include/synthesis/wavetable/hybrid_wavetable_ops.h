@@ -15,8 +15,10 @@ SpectralFrame buildSpectralFrame(const SpectralTable& table,
                                  int sampleRate);
 
 // Render a time-domain buffer from a spectral frame (IFFT + DC removal + RMS norm)
+// If minPhase is true, reconstruct minimum-phase spectrum from magnitudes before IFFT
 WavetableBuffer renderTimeDomain(const SpectralFrame& spectral,
-                                 int sampleRate);
+                                 int sampleRate,
+                                 bool minPhase);
 
 // Utility: remove DC and normalize to target RMS (in place)
 void removeDcAndNormalize(std::vector<float>& samples, float targetRms);

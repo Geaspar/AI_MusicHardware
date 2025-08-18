@@ -121,7 +121,7 @@ public:
         // Fallback synchronous render
         if (!spec.table || spec.table->frames.empty()) return nullptr;
         SpectralFrame sf = buildSpectralFrame(*spec.table, spec.morph01, spec.ops, spec.fftSize, spec.sampleRate);
-        auto buf = std::make_shared<WavetableBuffer>(renderTimeDomain(sf, spec.sampleRate));
+        auto buf = std::make_shared<WavetableBuffer>(renderTimeDomain(sf, spec.sampleRate, false));
         buf->keyHash = h;
         cache_->put(h, buf);
         return buf;
@@ -197,7 +197,7 @@ private:
             // Render outside lock
             if (!cache_->get(job.keyHash) && job.spec.table && !job.spec.table->frames.empty()) {
                 SpectralFrame sf = buildSpectralFrame(*job.spec.table, job.spec.morph01, job.spec.ops, job.spec.fftSize, job.spec.sampleRate);
-                auto buf = std::make_shared<WavetableBuffer>(renderTimeDomain(sf, job.spec.sampleRate));
+                auto buf = std::make_shared<WavetableBuffer>(renderTimeDomain(sf, job.spec.sampleRate, false));
                 buf->keyHash = job.keyHash;
                 cache_->put(job.keyHash, buf);
             }
