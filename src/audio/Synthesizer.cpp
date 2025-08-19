@@ -470,13 +470,16 @@ void Synthesizer::createModulationSources() {
     }
 
     // PlateReverb
-    addFxParamDest("Plate Predelay",   "PlateReverb", "predelay_ms",  0.0f, 100.0f);
-    addFxParamDest("Plate Decay",      "PlateReverb", "decay_rt60_s", 0.2f, 20.0f);
-    addFxParamDest("Plate Diffusion",  "PlateReverb", "diffusion",    0.0f, 1.0f);
-    addFxParamDest("Plate Mod Rate",   "PlateReverb", "mod_rate",     0.05f, 1.0f);
-    addFxParamDest("Plate Output Trim", "PlateReverb", "output_trim_db", -12.0f, 6.0f);
-    addFxParamDest("Plate Mix",         "PlateReverb", "mix", 0.0f, 1.0f);
-    for (const char* name : {"Plate Predelay","Plate Decay","Plate Diffusion","Plate Mod Rate","Plate Output Trim","Plate Mix"}) {
+    addFxParamDest("Plate Predelay",     "PlateReverb", "predelay_ms",    0.0f, 100.0f);
+    addFxParamDest("Plate Decay",        "PlateReverb", "decay_rt60_s",   0.2f, 20.0f);
+    addFxParamDest("Plate Diffusion",    "PlateReverb", "diffusion",      0.0f, 1.0f);
+    addFxParamDest("Plate Mod Rate",     "PlateReverb", "mod_rate",       0.05f, 1.0f);
+    addFxParamDest("Plate Mod Depth",    "PlateReverb", "mod_depth",      0.0f, 0.25f);
+    addFxParamDest("Plate High Damp",    "PlateReverb", "high_damping",   0.0f, 1.0f);
+    addFxParamDest("Plate Width",        "PlateReverb", "stereo_width",   0.0f, 1.0f);
+    addFxParamDest("Plate Output Trim",  "PlateReverb", "output_trim_db", -12.0f, 6.0f);
+    addFxParamDest("Plate Mix",          "PlateReverb", "mix",            0.0f, 1.0f);
+    for (const char* name : {"Plate Predelay","Plate Decay","Plate Diffusion","Plate Mod Rate","Plate Mod Depth","Plate High Damp","Plate Width","Plate Output Trim","Plate Mix"}) {
         if (auto* d = modulationMatrix_.getDestination(name)) d->setSmoothing(0.12f);
     }
     
