@@ -870,6 +870,10 @@ void Slider::setValue(float value) {
     }
 }
 
+void Slider::setValueSilently(float value) {
+    value_ = std::clamp(value, minValue_, maxValue_);
+}
+
 float Slider::getValue() const {
     return value_;
 }

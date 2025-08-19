@@ -62,6 +62,7 @@ public:
     // Telemetry
     uint64_t hits() const { return hits_.load(); }
     uint64_t misses() const { return misses_.load(); }
+    void resetStats() { hits_.store(0); misses_.store(0); }
 
 private:
     struct Node {
@@ -110,6 +111,10 @@ public:
     bool isAsyncEnabled() const { return asyncEnabled_.load(std::memory_order_acquire); }
     size_t queueSize() const { std::lock_guard<std::mutex> lock(mutex_); return queue_.size(); }
     size_t inFlightCount() const { std::lock_guard<std::mutex> lock(mutex_); return inFlight_.size(); }
+    void setPrewarmBreadth(int morphSteps, int pitchBands) {
+        prewarmMorphSteps_ = std::max(0, morphSteps);
+        prewarmPitchBands_ = std::max(0, pitchBands);
+    }
 
     // Enqueue or synchronously render; returns cached or newly rendered buffer
     std::shared_ptr<WavetableBuffer> requestRender(const CacheKey& key, const SpectralJobSpec& spec) {
@@ -134,7 +139,8 @@ public:
                       const SpectralOps& ops,
                       int fftSize,
                       int sampleRate,
-                      bool minPhase) {
+                      bool minPhase,
+                      uint16_t pitchBandCenter = 0) {
         if (!table) return;
         CacheKey k{};
         // Use pointer as table ID if string ID is not set
@@ -144,11 +150,16 @@ public:
         k.fftSizeCode = fftSizeToCode(fftSize);
         k.quality = 0; k.sampleRateQ = static_cast<uint16_t>(sampleRate / 100);
         auto q = static_cast<int>(quantizeMorph01(morph01));
-        int neighbors[3] = { q, std::max(0, q - 1), std::min(127, q + 1) };
-        for (int qi : neighbors) {
-            CacheKey kk = k; kk.morphQ = static_cast<uint16_t>(qi);
-            SpectralJobSpec spec{ table, morph01, ops, fftSize, sampleRate, minPhase };
-            enqueueRender(hash(kk), kk, spec);
+        int qStart = std::max(0, q - prewarmMorphSteps_);
+        int qEnd = std::min(127, q + prewarmMorphSteps_);
+        for (int qi = qStart; qi <= qEnd; ++qi) {
+            uint16_t pbStart = static_cast<uint16_t>(pitchBandCenter > prewarmPitchBands_ ? pitchBandCenter - prewarmPitchBands_ : 0);
+            uint16_t pbEnd = static_cast<uint16_t>(std::min<int>(2047, pitchBandCenter + prewarmPitchBands_));
+            for (uint16_t pb = pbStart; pb <= pbEnd; ++pb) {
+                CacheKey kk = k; kk.morphQ = static_cast<uint16_t>(qi); kk.pitchBand = pb;
+                SpectralJobSpec spec{ table, morph01, ops, fftSize, sampleRate, minPhase };
+                enqueueRender(hash(kk), kk, spec);
+            }
         }
     }
 
@@ -219,6 +230,8 @@ private:
     bool running_ = false;
     std::deque<Job> queue_;
     std::unordered_set<uint64_t> inFlight_;
+    int prewarmMorphSteps_ = 1;
+    int prewarmPitchBands_ = 1;
 };
 
 } // namespace AIMusicHardware

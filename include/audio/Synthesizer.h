@@ -210,6 +210,11 @@ private:
     // Short ramp after preset apply to avoid clicks
     int paramApplyRampRemainingSamples_ = 0;
     int paramApplyRampTotalSamples_ = 0;
+
+    // Smoothed base filter cutoff (normalized 0..1) to avoid jumps on preset load
+    float cutoffTargetNorm_ = 1.0f;
+    float cutoffSmoothedNorm_ = 1.0f;
+    float cutoffSmoothingAlpha_ = 0.25f; // per-call smoothing factor
 };
 
 } // namespace AIMusicHardware

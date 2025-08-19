@@ -36,6 +36,12 @@ private:
     int crossfadeTotalSamples_ = 0;
 
     double phase_ = 0.0;
+
+    // Control-rate smoothing and throttling
+    float smoothedMorph01_ = 0.0f;
+    float morphSmoothingAlpha_ = 0.25f; // 0..1, higher = faster
+    uint64_t lastKeyHash_ = 0;
+    bool haveLastKey_ = false;
 };
 
 } // namespace AIMusicHardware

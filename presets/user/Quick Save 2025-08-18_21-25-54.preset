@@ -1,0 +1,109 @@
+{
+  "effects": {
+    "slots": [
+      {
+        "enabled": true,
+        "mix": 0.29999998211860657,
+        "page": 0,
+        "params": {
+          "bass_mult": 1.100000023841858,
+          "decay_rt60_s": 6.909999847412109,
+          "high_damping": 0.3499999940395355,
+          "output_trim_db": -4.159999847412109
+        },
+        "type": "FDNReverb (Hall)"
+      },
+      {
+        "enabled": true,
+        "mix": 0.28999999165534973,
+        "page": 1,
+        "params": {
+          "drive": 8.34999942779541,
+          "mix": 0.3999999761581421,
+          "output_trim_db": -7.349999904632568,
+          "tone": 0.3199999928474426
+        },
+        "type": "Saturation"
+      },
+      {
+        "enabled": true,
+        "mix": 0.5,
+        "page": 0,
+        "type": "None"
+      },
+      {
+        "enabled": true,
+        "mix": 0.5,
+        "page": 0,
+        "type": "None"
+      },
+      {
+        "enabled": true,
+        "mix": 0.5,
+        "page": 0,
+        "type": "None"
+      },
+      {
+        "enabled": true,
+        "mix": 0.5,
+        "page": 0,
+        "type": "None"
+      }
+    ]
+  },
+  "metadata": {
+    "author": "",
+    "category": "User",
+    "created_at": 1755548754,
+    "description": "Quick-saved from UI",
+    "modified_at": 1755548754,
+    "name": "Quick Save 2025-08-18_21-25-54",
+    "uuid": "9262485e-e580-1572-d4ae-993dd8cf9cd7",
+    "version": "1.0.0"
+  },
+  "mod_routing": [
+    {
+      "amount": 0.32999998331069946,
+      "dest_id": "pitch",
+      "destination": "Pitch",
+      "source": "LFO1",
+      "source_id": "lfo1"
+    },
+    {
+      "amount": 0.3799999952316284,
+      "dest_id": "filter_cutoff",
+      "destination": "Filter Cutoff",
+      "source": "LFO2",
+      "source_id": "lfo2"
+    },
+    {
+      "amount": 0.0,
+      "dest_id": "none",
+      "destination": "None",
+      "source": "None",
+      "source_id": "none"
+    }
+  ],
+  "parameters": {
+    "engine.hybrid_enabled": 1.0,
+    "engine.timbre_min_phase": 1.0,
+    "envelope_attack": 0.190476194024086,
+    "envelope_decay": 0.30000001192092896,
+    "envelope_release": 0.6666666865348816,
+    "envelope_sustain": 0.5,
+    "filter_cutoff": 0.883420467376709,
+    "filter_resonance": 0.3569892346858978,
+    "lfo1_depth": 0.1899999976158142,
+    "lfo1_rate": 3.8299999237060547,
+    "lfo1_shape": 0.0,
+    "lfo2_depth": 0.7099999785423279,
+    "lfo2_rate": 13.529999732971191,
+    "lfo2_shape": 3.0,
+    "master_volume": 0.7099999785423279,
+    "oscillator_frame": 0.5,
+    "oscillator_type": 1.0,
+    "preset_output_trim_db": 0.0,
+    "voice_count": 16.0
+  },
+  "schema_version": "1.0.0"
+}

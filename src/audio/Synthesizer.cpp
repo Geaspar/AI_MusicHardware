@@ -92,6 +92,9 @@ public:
     void setShape(WaveShape shape) {
         shape_ = shape;
     }
+
+    float getFrequency() const { return frequency_; }
+    int getShapeIndex() const { return static_cast<int>(shape_); }
     
     void setSampleRate(int sampleRate) {
         sampleRate_ = sampleRate;
@@ -751,6 +754,7 @@ void Synthesizer::setParameter(const std::string& paramId, float value) {
     else if (paramId == "filter_cutoff") {
         // Store the base parameter value
         baseParameterValues_["filter_cutoff"] = value;
+        cutoffTargetNorm_ = value;
         
         // Apply directly to the filter if no modulation is active
         // The modulation matrix will handle this when modulation is active
@@ -908,6 +912,9 @@ void Synthesizer::setParameter(const std::string& paramId, float value) {
                         lfo->setFrequency(value);
                         std::cout << "Set " << upperLfoName << " frequency to " << value << " Hz" << std::endl;
                     }
+                    else if (paramName == "depth") {
+                        baseParameterValues_[upperLfoName == "LFO1" ? "lfo1_depth" : "lfo2_depth"] = value;
+                    }
                     else if (paramName == "shape") {
                         // Convert 0-4 float value to LFO shape
                         int shapeIndex = static_cast<int>(value);
@@ -980,15 +987,21 @@ float Synthesizer::getParameter(const std::string& paramId) const {
             std::string lfoName = paramId.substr(0, underscorePos); // "lfo1", "lfo2", etc.
             std::string paramName = paramId.substr(underscorePos + 1); // "rate", "shape", etc.
 
-            if (auto* source = modulationMatrix_.getSource(lfoName)) {
+            // Convert to uppercase for lookup (sources are named LFO1/LFO2)
+            std::string upperLfoName;
+            for (char c : lfoName) upperLfoName += std::toupper(c);
+            if (auto* source = modulationMatrix_.getSource(upperLfoName)) {
                 if (auto* lfo = dynamic_cast<LfoSource*>(source)) {
                     if (paramName == "rate") {
-                        // LFO frequency is private, we would need a getter
-                        return 1.0f; // Default value
+                        return lfo->getFrequency();
                     }
                     else if (paramName == "shape") {
-                        // LFO shape is private, we would need a getter
-                        return 0.0f; // Default value (sine)
+                        return static_cast<float>(lfo->getShapeIndex());
+                    }
+                    else if (paramName == "depth") {
+                        return baseParameterValues_.count(upperLfoName == "LFO1" ? "lfo1_depth" : "lfo2_depth")
+                            ? baseParameterValues_.at(upperLfoName == "LFO1" ? "lfo1_depth" : "lfo2_depth")
+                            : 0.0f;
                     }
                 }
             }
@@ -1024,8 +1037,10 @@ std::map<std::string, float> Synthesizer::getAllParameters() const {
     parameters["envelope_release"] = getBase("envelope_release", getParameter("envelope_release"));
     // LFO Parameters (use current engine values)
     parameters["lfo1_rate"] = getParameter("lfo1_rate");
+    parameters["lfo1_depth"] = getParameter("lfo1_depth");
     parameters["lfo1_shape"] = getParameter("lfo1_shape");
     parameters["lfo2_rate"] = getParameter("lfo2_rate");
+    parameters["lfo2_depth"] = getParameter("lfo2_depth");
     parameters["lfo2_shape"] = getParameter("lfo2_shape");
 
     // Add modulation connections when implemented
@@ -1218,6 +1233,13 @@ void Synthesizer::process(float* buffer, int numFrames) {
     }
     if (paramApplyRampRemainingSamples_ > 0) {
         paramApplyRampRemainingSamples_ = std::max(0, paramApplyRampRemainingSamples_ - numFrames);
+    }
+
+    // Smooth base filter cutoff target over time to avoid zippering on preset load
+    // Note: This only updates the stored base value; the modulation destination continues to map to the active filter
+    if (baseParameterValues_.count("filter_cutoff")) {
+        cutoffSmoothedNorm_ = cutoffSmoothedNorm_ + cutoffSmoothingAlpha_ * (cutoffTargetNorm_ - cutoffSmoothedNorm_);
+        baseParameterValues_["filter_cutoff"] = cutoffSmoothedNorm_;
     }
 }
 

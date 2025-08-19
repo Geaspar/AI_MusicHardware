@@ -1,0 +1,90 @@
+{
+  "effects": {
+    "slots": [
+      {
+        "enabled": true,
+        "mix": 0.5,
+        "page": 0,
+        "params": {
+          "depth": 0.5600000023841858,
+          "output_trim_db": -3.5799999237060547,
+          "rate": 3.0199999809265137,
+          "spread": 0.5299999713897705
+        },
+        "type": "Chorus"
+      },
+      {
+        "enabled": true,
+        "mix": 0.5,
+        "page": 1,
+        "params": {
+          "mod_rate": 0.5999999642372131,
+          "output_trim_db": -7.059999942779541,
+          "predelay_ms": 53.22999954223633,
+          "size": 1.2699999809265137
+        },
+        "type": "FDNReverb (Hall)"
+      },
+      {
+        "enabled": true,
+        "mix": 0.5,
+        "page": 0,
+        "type": "None"
+      },
+      {
+        "enabled": true,
+        "mix": 0.5,
+        "page": 0,
+        "type": "None"
+      },
+      {
+        "enabled": true,
+        "mix": 0.5,
+        "page": 0,
+        "type": "None"
+      },
+      {
+        "enabled": true,
+        "mix": 0.5,
+        "page": 0,
+        "type": "None"
+      }
+    ]
+  },
+  "metadata": {
+    "author": "",
+    "category": "User",
+    "description": "Quick-saved from UI",
+    "name": "Quick Save 2025-08-18_15-34-29",
+    "version": "1.0.0"
+  },
+  "mod_routing": [
+    {
+      "amount": 0.04999999701976776,
+      "destination": "Pitch",
+      "source": "LFO1"
+    },
+    {
+      "amount": 0.0,
+      "destination": "None",
+      "source": "None"
+    },
+    {
+      "amount": 0.0,
+      "destination": "None",
+      "source": "None"
+    }
+  ],
+  "parameters": {
+    "filter_cutoff": 0.699999988079071,
+    "filter_resonance": 0.6399999856948853,
+    "lfo1_rate": 0.0,
+    "lfo1_shape": 0.0,
+    "lfo2_rate": 0.0,
+    "lfo2_shape": 0.0,
+    "master_volume": 0.75,
+    "oscillator_frame": 0.75,
+    "oscillator_type": 3.0,
+    "voice_count": 16.0
+  }
+}

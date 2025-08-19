@@ -1,0 +1,78 @@
+{
+  "effects": {
+    "slots": [
+      {
+        "enabled": true,
+        "mix": 0.5,
+        "page": 0,
+        "type": "Chorus"
+      },
+      {
+        "enabled": true,
+        "mix": 0.5,
+        "page": 0,
+        "type": "None"
+      },
+      {
+        "enabled": true,
+        "mix": 0.5,
+        "page": 0,
+        "type": "None"
+      },
+      {
+        "enabled": true,
+        "mix": 0.5,
+        "page": 0,
+        "type": "None"
+      },
+      {
+        "enabled": true,
+        "mix": 0.5,
+        "page": 0,
+        "type": "None"
+      },
+      {
+        "enabled": true,
+        "mix": 0.5,
+        "page": 0,
+        "type": "None"
+      }
+    ]
+  },
+  "metadata": {
+    "author": "",
+    "category": "User",
+    "description": "Quick-saved from UI",
+    "name": "Quick Save 2025-08-18_14-22-49",
+    "version": "1.0.0"
+  },
+  "mod_routing": [
+    {
+      "amount": 0.17000000178813934,
+      "destination": "Pitch",
+      "source": "LFO1"
+    },
+    {
+      "amount": 0.0,
+      "destination": "None",
+      "source": "None"
+    },
+    {
+      "amount": 0.0,
+      "destination": "None",
+      "source": "None"
+    }
+  ],
+  "parameters": {
+    "filter_cutoff": 1.0,
+    "filter_resonance": 0.5,
+    "lfo1_rate": 1.0,
+    "lfo1_shape": 0.0,
+    "lfo2_rate": 0.5,
+    "lfo2_shape": 0.0,
+    "master_volume": 0.699999988079071,
+    "oscillator_frame": 0.25,
+    "oscillator_type": 2.0,
+    "voice_count": 16.0
+  }
+}

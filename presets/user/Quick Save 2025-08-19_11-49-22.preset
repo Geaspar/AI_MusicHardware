@@ -1,0 +1,113 @@
+{
+  "effects": {
+    "slots": [
+      {
+        "enabled": true,
+        "mix": 0.3999999761581421,
+        "page": 0,
+        "params": {
+          "decay_rt60_s": 9.139999389648438,
+          "diffusion": 0.4399999976158142,
+          "output_trim_db": -4.449999809265137,
+          "predelay_ms": 45.15999984741211
+        },
+        "type": "PlateReverb"
+      },
+      {
+        "enabled": true,
+        "mix": 0.3999999761581421,
+        "page": 0,
+        "params": {
+          "bass_mult": 1.4399999380111694,
+          "decay_rt60_s": 13.289999961853027,
+          "diffusion": 0.6599999666213989,
+          "high_damping": 0.6499999761581421,
+          "mod_rate": 0.6899999976158142,
+          "output_trim_db": -1.2599999904632568,
+          "predelay_ms": 75.80999755859375,
+          "size": 1.5399999618530273
+        },
+        "type": "FDNReverb (Hall)"
+      },
+      {
+        "enabled": true,
+        "mix": 0.28999999165534973,
+        "page": 0,
+        "type": "None"
+      },
+      {
+        "enabled": true,
+        "mix": 0.5,
+        "page": 0,
+        "type": "None"
+      },
+      {
+        "enabled": true,
+        "mix": 0.5,
+        "page": 0,
+        "type": "None"
+      },
+      {
+        "enabled": true,
+        "mix": 0.5,
+        "page": 0,
+        "type": "None"
+      }
+    ]
+  },
+  "metadata": {
+    "author": "",
+    "category": "User",
+    "created_at": 1755600562,
+    "description": "Quick-saved from UI",
+    "modified_at": 1755600562,
+    "name": "Quick Save 2025-08-19_11-49-22",
+    "uuid": "2c2ec7b4-79e5-7524-8b32-7bc02c2f430e",
+    "version": "1.0.0"
+  },
+  "mod_routing": [
+    {
+      "amount": 0.0,
+      "dest_id": "none",
+      "destination": "None",
+      "source": "None",
+      "source_id": "none"
+    },
+    {
+      "amount": 0.0,
+      "dest_id": "none",
+      "destination": "None",
+      "source": "None",
+      "source_id": "none"
+    },
+    {
+      "amount": 0.0,
+      "dest_id": "none",
+      "destination": "None",
+      "source": "None",
+      "source_id": "none"
+    }
+  ],
+  "parameters": {
+    "engine.hybrid_enabled": 1.0,
+    "engine.timbre_min_phase": 1.0,
+    "envelope_attack": 1.462400197982788,
+    "envelope_decay": 0.30000001192092896,
+    "envelope_release": 0.6666666865348816,
+    "envelope_sustain": 0.5,
+    "filter_cutoff": 0.6975240707397461,
+    "filter_resonance": 0.21362003684043884,
+    "lfo1_depth": 0.85999995470047,
+    "lfo1_rate": 15.269999504089355,
+    "lfo1_shape": 3.0,
+    "lfo2_depth": 0.4599999785423279,
+    "lfo2_rate": 7.809999942779541,
+    "lfo2_shape": 1.0,
+    "master_volume": 0.6699999570846558,
+    "oscillator_frame": 0.5,
+    "oscillator_type": 1.0,
+    "preset_output_trim_db": 0.0,
+    "voice_count": 16.0
+  },
+  "schema_version": "1.0.0"
+}

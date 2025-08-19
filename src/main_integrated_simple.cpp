@@ -616,8 +616,19 @@ int main(int argc, char* argv[]) {
     effectsNavButton->setSize(80, 30);
     effectsNavButton->setBackgroundColor(Color(80, 80, 120));
     effectsNavButton->setTextColor(Color(255, 255, 255));
-    effectsNavButton->setClickCallback([&uiContext]() {
+    effectsNavButton->setClickCallback([&]() {
         uiContext->setActiveScreen("effects");
+        // When entering the effects screen, refresh labels using current page/type
+        if (auto* es = uiContext->getScreen("effects")) {
+            for (int s = 0; s < 6; ++s) {
+                int pageIdx = 0;
+                if (auto* p = dynamic_cast<DropdownMenu*>(es->getChild(std::string("fx_page_") + std::to_string(s)))) {
+                    pageIdx = p->getSelectedIndex();
+                }
+                std::cout << "[FXUI] on-activate slot " << s << " type='" << slotSelectedType[s] << "' page=" << pageIdx << std::endl;
+                configureSlotParams(s, slotSelectedType[s]);
+            }
+        }
     });
     mainScreen->addChild(std::move(effectsNavButton));
     
@@ -872,12 +883,14 @@ int main(int argc, char* argv[]) {
     
     // Create LFO selector dropdown (will be added later for z-order)
     std::unique_ptr<DropdownMenu> lfoSelectorDropdown;
+    DropdownMenu* lfoSelectorDropdownPtr = nullptr;
     lfoSelectorDropdown = std::make_unique<DropdownMenu>("lfo_selector", "LFO 1");
     lfoSelectorDropdown->setPosition(980, 220);
     lfoSelectorDropdown->setSize(100, 25);
     lfoSelectorDropdown->addItem("LFO 1");
     lfoSelectorDropdown->addItem("LFO 2");
     lfoSelectorDropdown->selectItem(0); // Start with LFO 1
+    lfoSelectorDropdownPtr = lfoSelectorDropdown.get();
     
     // Create shared LFO sliders (will display current selected LFO)
     auto lfoRateSlider = std::make_unique<Slider>("lfo_rate", "Rate", 900, 250, 40, 80);
@@ -2017,25 +2030,46 @@ int main(int argc, char* argv[]) {
         synthesizer->setParameter("lfo2_rate", l2r);
         synthesizer->setParameter("lfo2_depth", l2d);
         synthesizer->setParameter("lfo2_shape", l2s);
-        // Update shared sliders by toggling LFO selector if available
+        // Update state + engine, then update sliders by toggling LFO selector silently
         if (lfoRateSliderPtr && lfoDepthSliderPtr && lfoShapeSliderPtr) {
-            // Set LFO 1
-            if (lfoSelectorDropdown) {
-                lfoSelectorDropdown->selectItem(0);
-            }
-            lfoRateSliderPtr->setValue(l1r);
-            lfoDepthSliderPtr->setValue(l1d);
-            lfoShapeSliderPtr->setValue(l1s);
-            // Set LFO 2
-            if (lfoSelectorDropdown) {
-                lfoSelectorDropdown->selectItem(1);
-            }
-            lfoRateSliderPtr->setValue(l2r);
-            lfoDepthSliderPtr->setValue(l2d);
-            lfoShapeSliderPtr->setValue(l2s);
-            // Return to LFO 1
-            if (lfoSelectorDropdown) {
-                lfoSelectorDropdown->selectItem(0);
+            if (lfoSelectorDropdownPtr) {
+                int prev = std::max(0, lfoSelectorDropdownPtr->getSelectedIndex());
+                // Apply LFO1
+                lfoSelectorDropdownPtr->selectItemSilently(0);
+                lfo1State.rate = l1r; lfo1State.depth = l1d; lfo1State.shape = l1s;
+                synthesizer->setParameter("lfo1_rate", l1r);
+                synthesizer->setParameter("lfo1_depth", l1d);
+                synthesizer->setParameter("lfo1_shape", l1s);
+                std::cout << "[PresetLoad] Applied LFO1: rate=" << l1r << ", depth=" << l1d << ", shape=" << l1s << std::endl;
+                lfoRateSliderPtr->setValueSilently(l1r);
+                lfoDepthSliderPtr->setValueSilently(l1d);
+                lfoShapeSliderPtr->setValueSilently(l1s);
+                // Apply LFO2
+                lfoSelectorDropdownPtr->selectItemSilently(1);
+                lfo2State.rate = l2r; lfo2State.depth = l2d; lfo2State.shape = l2s;
+                synthesizer->setParameter("lfo2_rate", l2r);
+                synthesizer->setParameter("lfo2_depth", l2d);
+                synthesizer->setParameter("lfo2_shape", l2s);
+                std::cout << "[PresetLoad] Applied LFO2: rate=" << l2r << ", depth=" << l2d << ", shape=" << l2s << std::endl;
+                lfoRateSliderPtr->setValueSilently(l2r);
+                lfoDepthSliderPtr->setValueSilently(l2d);
+                lfoShapeSliderPtr->setValueSilently(l2s);
+                lfoSelectorDropdownPtr->selectItemSilently(prev); // Restore prior selection
+                // Finally, refresh the visible set (current selection)
+                if (prev == 0) {
+                    lfoRateSliderPtr->setValue(l1r);
+                    lfoDepthSliderPtr->setValue(l1d);
+                    lfoShapeSliderPtr->setValue(l1s);
+                } else {
+                    lfoRateSliderPtr->setValue(l2r);
+                    lfoDepthSliderPtr->setValue(l2d);
+                    lfoShapeSliderPtr->setValue(l2s);
+                }
+            } else {
+                // No selector found; just show LFO1 values
+                lfoRateSliderPtr->setValue(l1r);
+                lfoDepthSliderPtr->setValue(l1d);
+                lfoShapeSliderPtr->setValue(l1s);
             }
         }
     }
@@ -2045,6 +2079,12 @@ int main(int argc, char* argv[]) {
     presetSection->setPosition(850, 720);  // Near bottom of 800px window
     presetSection->setTextColor(Color(150, 255, 150)); // Bright light green
     mainScreen->addChild(std::move(presetSection));
+    // Debug label for preset load resolution (temporary)
+    auto presetDebug = std::make_unique<Label>("preset_debug", "");
+    presetDebug->setPosition(850, 780);
+    presetDebug->setSize(400, 16);
+    presetDebug->setTextColor(Color(160, 160, 160));
+    mainScreen->addChild(std::move(presetDebug));
     
     // Create preset dropdown menu
     auto presetDropdown = std::make_unique<PresetDropdown>("preset_dropdown");
@@ -2837,6 +2877,7 @@ int main(int argc, char* argv[]) {
 
     // Helper to configure parameter sliders per slot and type
     auto configureSlotParams = [&](int s, const std::string& type){
+        std::cout << "[FXUI] configure slot " << s << " type='" << type << "'" << std::endl;
         // Utility to disable a param slot
         auto disableParam = [&](Label* l, Slider* sl){
             if (l) l->setText("N/A");
@@ -2876,6 +2917,7 @@ int main(int argc, char* argv[]) {
 
         // Mapping per type
         if (type == "Reverb") {
+            std::cout << "[FXUI] slot " << s << " page=N/A (Reverb single page)" << std::endl;
             if (slotV1Label[s]) slotV1Label[s]->setText("Room Size");
             slotV1Slider[s]->setRange(0.0f, 1.0f);
             slotV1Slider[s]->setValue(fx->getParameter("roomSize"));
@@ -2896,6 +2938,7 @@ int main(int argc, char* argv[]) {
 
             disableParam(slotV4Label[s], slotV4Slider[s]);
         } else if (type == "Delay") {
+            std::cout << "[FXUI] slot " << s << " page=N/A (Delay single page)" << std::endl;
             if (slotV1Label[s]) slotV1Label[s]->setText("Time (s)");
             slotV1Slider[s]->setRange(0.01f, 1.0f);
             slotV1Slider[s]->setValue(fx->getParameter("delayTime"));
@@ -2911,6 +2954,7 @@ int main(int argc, char* argv[]) {
             disableParam(slotV3Label[s], slotV3Slider[s]);
             disableParam(slotV4Label[s], slotV4Slider[s]);
         } else if (type == "Distortion") {
+            std::cout << "[FXUI] slot " << s << " page=N/A (Distortion single page)" << std::endl;
             if (slotV1Label[s]) slotV1Label[s]->setText("Drive");
             slotV1Slider[s]->setRange(0.0f, 10.0f);
             slotV1Slider[s]->setValue(fx->getParameter("drive"));
@@ -2931,6 +2975,7 @@ int main(int argc, char* argv[]) {
 
             disableParam(slotV4Label[s], slotV4Slider[s]);
         } else if (type == "BitCrusher") {
+            std::cout << "[FXUI] slot " << s << " page=N/A (BitCrusher single page)" << std::endl;
             // BitCrusher: Bit Depth, Sample Rate Reduction, Drive, Output Trim
             if (slotV1Label[s]) slotV1Label[s]->setText("Bit Depth");
             slotV1Slider[s]->setRange(1.0f, 16.0f);
@@ -2968,6 +3013,7 @@ int main(int argc, char* argv[]) {
                 if (auto* f = getFxForSlot(s)) { f->setParameter("output_trim_db", v); slotParamCache[s][type]["output_trim_db"] = v; }
             });
         } else if (type == "Phaser") {
+            std::cout << "[FXUI] slot " << s << " page=N/A (Phaser single page)" << std::endl;
             if (slotV1Label[s]) slotV1Label[s]->setText("Rate (Hz)");
             slotV1Slider[s]->setRange(0.05f, 5.0f);
             slotV1Slider[s]->setValue(fx->getParameter("rate"));
@@ -2988,6 +3034,7 @@ int main(int argc, char* argv[]) {
 
             disableParam(slotV4Label[s], slotV4Slider[s]);
         } else if (type == "EQ") {
+            std::cout << "[FXUI] slot " << s << " page=N/A (EQ single page)" << std::endl;
             if (slotV1Label[s]) slotV1Label[s]->setText("Low (dB)");
             slotV1Slider[s]->setRange(-12.0f, 12.0f);
             slotV1Slider[s]->setValue(fx->getParameter("lowGain"));
@@ -3008,6 +3055,7 @@ int main(int argc, char* argv[]) {
 
             disableParam(slotV4Label[s], slotV4Slider[s]);
         } else if (type == "LowPassFilter") {
+            std::cout << "[FXUI] slot " << s << " page=N/A (LPF single page)" << std::endl;
             if (slotV1Label[s]) slotV1Label[s]->setText("Cutoff (Hz)");
             slotV1Slider[s]->setRange(20.0f, 20000.0f);
             slotV1Slider[s]->setValue(fx->getParameter("frequency"));
@@ -3023,6 +3071,7 @@ int main(int argc, char* argv[]) {
             disableParam(slotV3Label[s], slotV3Slider[s]);
             disableParam(slotV4Label[s], slotV4Slider[s]);
         } else if (type == "Chorus") {
+            std::cout << "[FXUI] slot " << s << " page=N/A (Chorus single page)" << std::endl;
             // Chorus (Modulation) parameter mapping
             if (slotV1Label[s]) slotV1Label[s]->setText("Rate (Hz)");
             slotV1Slider[s]->setRange(0.1f, 5.0f);
@@ -3083,6 +3132,7 @@ int main(int argc, char* argv[]) {
                     page = p->getSelectedIndex();
                 }
             }
+            std::cout << "[FXUI] slot " << s << " page=" << page << " (FDN)" << std::endl;
             if (page == 0) {
                 if (slotV1Label[s]) slotV1Label[s]->setText("Predelay (ms)");
                 slotV1Slider[s]->setRange(0.0f, 100.0f);
@@ -3146,6 +3196,7 @@ int main(int argc, char* argv[]) {
                 if (auto* f = getFxForSlot(s)) { f->setParameter("output_trim_db", v); slotParamCache[s][type]["output_trim_db"] = v; }
             });
         } else if (type == "PlateReverb") {
+            std::cout << "[FXUI] slot " << s << " page=N/A (Plate single page)" << std::endl;
             // Keep Plate simple for now: Predelay/Decay/Diffusion/Mod Rate
             if (slotV1Label[s]) slotV1Label[s]->setText("Predelay (ms)");
             slotV1Slider[s]->setRange(0.0f, 100.0f);
@@ -3849,8 +3900,63 @@ int main(int argc, char* argv[]) {
                         mj["source_id"] = normalizeId(src);                // normalized source id
                         const std::string& dstDisplay = modConnections[i].destination;
                         mj["destination"] = dstDisplay;                    // display name
-                        mj["dest_id"] = normalizeId(dstDisplay);           // normalized destination id
+                        // Build a structured dest_id for FX: fxs{slot}_{effectKey}_{paramKey}; synth: synth_{paramKey}
+                        auto effectKeyFromType = [&](const std::string& fxType){
+                            if (fxType == "FDNReverb (Hall)") return std::string("fdnreverbhall");
+                            if (fxType == "PlateReverb") return std::string("plateverb");
+                            if (fxType == "LowPassFilter") return std::string("lowpassfilter");
+                            if (fxType == "Modulation") return std::string("modulation");
+                            return normalizeId(fxType);
+                        };
+                        auto paramKeyFromDisplay = [&](std::string disp){
+                            // drop effect prefix word(s)
+                            auto pos = disp.find(' ');
+                            if (pos != std::string::npos) disp = disp.substr(pos + 1);
+                            // special handling for prefixes with slash
+                            if (disp.rfind("LPF ", 0) == 0) disp = disp.substr(4);
+                            // normalize
+                            auto key = normalizeId(disp);
+                            // common remaps
+                            if (key == "mod_rate") key = "mod_rate";
+                            if (key == "output_trim_db" || key == "output_trim__db") key = "output_trim_db";
+                            if (key == "predelay" || key == "predelay_ms") key = "predelay";
+                            if (key == "high_damp" || key == "high_damping") key = "high_damping";
+                            return key;
+                        };
+                        std::string destId = normalizeId(dstDisplay);
                         mj["amount"] = modConnections[i].amount;
+                        // Optional: include per-slot effect qualifier when determinable
+                        auto inferEffect = [&](const std::string& disp)->std::string{
+                            if (disp.rfind("Hall ", 0) == 0) return "FDNReverb (Hall)";
+                            if (disp.rfind("Plate ", 0) == 0) return "PlateReverb";
+                            if (disp.rfind("Delay ", 0) == 0) return "Delay";
+                            if (disp.rfind("Reverb ", 0) == 0) return "Reverb";
+                            if (disp.rfind("FX LPF", 0) == 0) return "LowPassFilter";
+                            if (disp.rfind("Saturation ", 0) == 0) return "Saturation";
+                            if (disp.rfind("Distortion ", 0) == 0) return "Distortion";
+                            if (disp.rfind("Phaser ", 0) == 0) return "Phaser";
+                            if (disp.rfind("EQ ", 0) == 0) return "EQ";
+                            if (disp.rfind("BitCrusher ", 0) == 0) return "BitCrusher";
+                            if (disp.rfind("Compressor ", 0) == 0) return "Compressor";
+                            if (disp.rfind("BassBoost ", 0) == 0) return "BassBoost";
+                            if (disp.rfind("Chorus/Mod ", 0) == 0) return "Modulation";
+                            return std::string();
+                        };
+                        std::string fxType = inferEffect(dstDisplay);
+                        if (!fxType.empty()) {
+                            int foundSlot = -1;
+                            for (int s = 0; s < fxSlotCount; ++s) {
+                                if (slotSelectedType[s] == fxType) { foundSlot = s; break; }
+                            }
+                            if (foundSlot >= 0) {
+                                mj["fx_slot"] = foundSlot + 1; // 1-based for readability
+                                mj["effect"] = fxType;
+                                std::string effectKey = effectKeyFromType(fxType);
+                                std::string paramKey = paramKeyFromDisplay(dstDisplay);
+                                destId = std::string("fxs") + std::to_string(foundSlot + 1) + "_" + effectKey + "_" + paramKey;
+                            }
+                        }
+                        mj["dest_id"] = destId;
                         mods.push_back(mj);
                     }
                     presetJson["mod_routing"] = mods;
@@ -3866,7 +3972,9 @@ int main(int argc, char* argv[]) {
 
     // Re-bind Load preset to support .preset (synth + effects + modulation)
     if (auto* loadBtn = dynamic_cast<Button*>(uiContext->getScreen("main")->getChild("load_preset"))) {
-        loadBtn->setClickCallback([&, presetDropdownPtr, waveSliderPtr, cutoffSliderPtr, resSliderPtr, volumeSliderPtr]() {
+        loadBtn->setClickCallback([&, presetDropdownPtr, waveSliderPtr, cutoffSliderPtr, resSliderPtr, volumeSliderPtr,
+                                   lfoRateSliderPtr, lfoDepthSliderPtr, lfoShapeSliderPtr,
+                                   quickFxDd]() mutable {
             auto* mainScreenPtr = uiContext->getScreen("main");
             auto* dropdown = dynamic_cast<PresetDropdown*>(mainScreenPtr->getChild("preset_dropdown"));
             if (!dropdown) return;
@@ -3883,13 +3991,18 @@ int main(int argc, char* argv[]) {
                     std::ifstream in(selectedPreset.fullPath);
                     if (!in.is_open()) { std::cerr << "Failed to open preset file" << std::endl; return; }
                     in >> j; in.close();
-                    // Parameters
+                        // Parameters
                     if (j.contains("parameters") && j["parameters"].is_object()) {
                         std::map<std::string,float> pm;
                         for (auto it = j["parameters"].begin(); it != j["parameters"].end(); ++it) {
                             pm[it.key()] = it.value().get<float>();
                         }
-                        synthesizer->setAllParameters(pm);
+                            // Apply non-LFO first in batch
+                            std::map<std::string,float> nonLfo;
+                            for (const auto& kv : pm) {
+                                if (kv.first.rfind("lfo", 0) != 0) nonLfo[kv.first] = kv.second;
+                            }
+                            synthesizer->setAllParameters(nonLfo);
                         // Handle preset-level output trim explicitly (optional)
                         if (pm.count("preset_output_trim_db")) {
                             synthesizer->setParameter("preset_output_trim_db", pm["preset_output_trim_db"]);
@@ -3900,6 +4013,63 @@ int main(int argc, char* argv[]) {
                         }
                         if (pm.count("engine.timbre_min_phase")) {
                             synthesizer->setParameter("engine.timbre_min_phase", pm["engine.timbre_min_phase"]);
+                        }
+                            // Extract LFOs from preset (fallback to current engine only if not present)
+                            bool hasL1r = pm.count("lfo1_rate"), hasL1d = pm.count("lfo1_depth"), hasL1s = pm.count("lfo1_shape");
+                            bool hasL2r = pm.count("lfo2_rate"), hasL2d = pm.count("lfo2_depth"), hasL2s = pm.count("lfo2_shape");
+                            float l1r = hasL1r ? pm["lfo1_rate"]  : synthesizer->getParameter("lfo1_rate");
+                            float l1d = hasL1d ? pm["lfo1_depth"] : synthesizer->getParameter("lfo1_depth");
+                            float l1s = hasL1s ? pm["lfo1_shape"] : synthesizer->getParameter("lfo1_shape");
+                            float l2r = hasL2r ? pm["lfo2_rate"]  : synthesizer->getParameter("lfo2_rate");
+                            float l2d = hasL2d ? pm["lfo2_depth"] : synthesizer->getParameter("lfo2_depth");
+                            float l2s = hasL2s ? pm["lfo2_shape"] : synthesizer->getParameter("lfo2_shape");
+                            // Apply LFOs explicitly to the engine
+                            synthesizer->setParameter("lfo1_rate", l1r);
+                            synthesizer->setParameter("lfo1_depth", l1d);
+                            synthesizer->setParameter("lfo1_shape", l1s);
+                            synthesizer->setParameter("lfo2_rate", l2r);
+                            synthesizer->setParameter("lfo2_depth", l2d);
+                            synthesizer->setParameter("lfo2_shape", l2s);
+                        // Update states and engine, then shared sliders by temporarily switching the selector silently
+                        if (lfoRateSliderPtr && lfoDepthSliderPtr && lfoShapeSliderPtr) {
+                            if (lfoSelectorDropdownPtr) {
+                                int prev = std::max(0, lfoSelectorDropdownPtr->getSelectedIndex());
+                                // Apply LFO1
+                                lfoSelectorDropdownPtr->selectItemSilently(0);
+                                lfo1State.rate = l1r; lfo1State.depth = l1d; lfo1State.shape = l1s;
+                                synthesizer->setParameter("lfo1_rate", l1r);
+                                synthesizer->setParameter("lfo1_depth", l1d);
+                                synthesizer->setParameter("lfo1_shape", l1s);
+                                std::cout << "[PresetLoad] Applied LFO1: rate=" << l1r << ", depth=" << l1d << ", shape=" << l1s << std::endl;
+                                lfoRateSliderPtr->setValueSilently(l1r);
+                                lfoDepthSliderPtr->setValueSilently(l1d);
+                                lfoShapeSliderPtr->setValueSilently(l1s);
+                                // Apply LFO2
+                                lfoSelectorDropdownPtr->selectItemSilently(1);
+                                lfo2State.rate = l2r; lfo2State.depth = l2d; lfo2State.shape = l2s;
+                                synthesizer->setParameter("lfo2_rate", l2r);
+                                synthesizer->setParameter("lfo2_depth", l2d);
+                                synthesizer->setParameter("lfo2_shape", l2s);
+                                std::cout << "[PresetLoad] Applied LFO2: rate=" << l2r << ", depth=" << l2d << ", shape=" << l2s << std::endl;
+                                lfoRateSliderPtr->setValueSilently(l2r);
+                                lfoDepthSliderPtr->setValueSilently(l2d);
+                                lfoShapeSliderPtr->setValueSilently(l2s);
+                                lfoSelectorDropdownPtr->selectItemSilently(prev); // Restore prior selection
+                                if (prev == 0) {
+                                    lfoRateSliderPtr->setValue(l1r);
+                                    lfoDepthSliderPtr->setValue(l1d);
+                                    lfoShapeSliderPtr->setValue(l1s);
+                                } else {
+                                    lfoRateSliderPtr->setValue(l2r);
+                                    lfoDepthSliderPtr->setValue(l2d);
+                                    lfoShapeSliderPtr->setValue(l2s);
+                                }
+                            } else {
+                                // No selector found; just show LFO1 values
+                                lfoRateSliderPtr->setValue(l1r);
+                                lfoDepthSliderPtr->setValue(l1d);
+                                lfoShapeSliderPtr->setValue(l1s);
+                            }
                         }
                     } else if (j.contains("synth") && j["synth"].is_object()) {
                         // Backward-compat: load from "synth" object
@@ -3954,9 +4124,24 @@ int main(int argc, char* argv[]) {
                                 slotBypassBtn[s]->setText(slotEnabled[s] ? "ON" : "OFF");
                                 slotBypassBtn[s]->setBackgroundColor(slotEnabled[s] ? Color(50,100,50) : Color(100,50,50));
                             }
-                            if (auto* p = dynamic_cast<DropdownMenu*>(uiContext->getScreen("effects")->getChild("fx_page_" + std::to_string(s)))) p->selectItemSilently(std::max(0, std::min(1, slotPage[s])));
+                            // Apply saved page and force callback to refresh labels
+                            if (auto* p = dynamic_cast<DropdownMenu*>(uiContext->getScreen("effects")->getChild("fx_page_" + std::to_string(s)))) {
+                                int pageIdx = std::max(0, std::min(1, slotPage[s]));
+                                p->selectItemSilently(pageIdx);
+                                // Fire selection callback to update parameter labels immediately
+                                p->selectItem(pageIdx);
+                                // Force a no-op toggle to ensure label text/values bind even if index stayed the same
+                                int other = pageIdx == 0 ? 1 : 0;
+                                std::cout << "[FXUI] slot " << s << " force-toggle page " << pageIdx << "->" << other << "->" << pageIdx << std::endl;
+                                p->selectItem(other);
+                                p->selectItem(pageIdx);
+                            }
                             // Reconfigure parameter sliders for this slot based on page
                             configureSlotParams(s, slotSelectedType[s]);
+                            // Mirror to main quick FX dropdowns for first three slots
+                            if (s < static_cast<int>(quickFxDd.size()) && quickFxDd[s]) {
+                                quickFxDd[s]->selectItemSilently(slotSelectedType[s]);
+                            }
                         }
                         // Rebuild chain
                         rebuildEffectsChain();
@@ -3979,6 +4164,23 @@ int main(int argc, char* argv[]) {
                             auto names = synthesizer->getModDestinationNames();
                             for (const auto& n : names) { idToName[normalizeId(n)] = n; }
                         }
+                        // Build a slot→effect map from current UI slot selection to help disambiguate
+                        auto remapFxDisplayToType = [&](const std::string& disp)->std::string{
+                            if (disp.rfind("Hall ", 0) == 0) return "FDNReverb (Hall)";
+                            if (disp.rfind("Plate ", 0) == 0) return "PlateReverb";
+                            if (disp.rfind("Delay ", 0) == 0) return "Delay";
+                            if (disp.rfind("Reverb ", 0) == 0) return "Reverb";
+                            if (disp.rfind("FX LPF", 0) == 0) return "LowPassFilter";
+                            if (disp.rfind("Saturation ", 0) == 0) return "Saturation";
+                            if (disp.rfind("Distortion ", 0) == 0) return "Distortion";
+                            if (disp.rfind("Phaser ", 0) == 0) return "Phaser";
+                            if (disp.rfind("EQ ", 0) == 0) return "EQ";
+                            if (disp.rfind("BitCrusher ", 0) == 0) return "BitCrusher";
+                            if (disp.rfind("Compressor ", 0) == 0) return "Compressor";
+                            if (disp.rfind("BassBoost ", 0) == 0) return "BassBoost";
+                            if (disp.rfind("Chorus/Mod ", 0) == 0) return "Modulation";
+                            return std::string();
+                        };
                         // Update UI model and engine
                         for (size_t i = 0; i < modConnections.size(); ++i) {
                             if (i >= j["mod_routing"].size()) break;
@@ -3986,27 +4188,133 @@ int main(int argc, char* argv[]) {
                             std::string src = mr.value("source_id", mr.value("source", ""));
                             std::string dstDisplay = mr.value("destination", "");
                             std::string dstId = mr.contains("dest_id") ? mr["dest_id"].get<std::string>() : dstDisplay;
+                            int fxSlot1Based = mr.value("fx_slot", 0);
+                            std::string fxType = mr.value("effect", remapFxDisplayToType(dstDisplay));
                             float amt = mr.value("amount", 0.0f);
-                            // Resolve destination by ID first
+                            // Resolve destination by ID first; if structured fxs{slot}_{effect}_{param}, try param-only match first
                             std::string resolvedDest = dstDisplay;
-                            auto it = idToName.find(normalizeId(dstId));
-                            if (it != idToName.end()) resolvedDest = it->second;
-                            // Update model
-                            modConnections[i].source = (src == "LFO1" ? "LFO 1" : (src == "LFO2" ? "LFO 2" : (src == "ModWheel" ? "Mod Wheel" : src)));
+                            std::string normId = normalizeId(dstId);
+                            auto it = idToName.find(normId);
+                            if (it != idToName.end()) {
+                                resolvedDest = it->second;
+                            } else {
+                                // Try to extract trailing param key from structured id
+                                auto lastUnderscore = normId.rfind('_');
+                                if (lastUnderscore != std::string::npos && lastUnderscore + 1 < normId.size()) {
+                                    std::string paramKey = normId.substr(lastUnderscore + 1);
+                                    auto pit = idToName.find(paramKey);
+                                    if (pit != idToName.end()) resolvedDest = pit->second;
+                                }
+                            }
+                            // If an fx_slot qualifier exists and there are multiple similar dests, prefer the one matching the slot's effect type
+                            if (fxSlot1Based > 0 && fxSlot1Based <= fxSlotCount && !fxType.empty()) {
+                                int slotIdx = fxSlot1Based - 1;
+                                if (slotSelectedType[slotIdx] == fxType) {
+                                    // Keep resolvedDest as-is (we don't have per-slot destination variants yet), but we could prioritize later
+                                }
+                            }
+                            // Helper to canonicalize source for display
+                            auto toDisplaySource = [](std::string s)->std::string{
+                                std::string lower; lower.reserve(s.size());
+                                for (char c : s) lower.push_back(std::tolower(static_cast<unsigned char>(c)));
+                                if (lower == "lfo1" || lower == "lfo 1") return "LFO 1";
+                                if (lower == "lfo2" || lower == "lfo 2") return "LFO 2";
+                                if (lower == "modwheel" || lower == "mod wheel") return "Mod Wheel";
+                                if (lower == "aftertouch") return "Aftertouch";
+                                if (lower == "velocity") return "Velocity";
+                                if (lower == "envelope" || lower == "env") return "Envelope";
+                                if (lower == "none" || lower.empty() || lower == "noen") return "None";
+                                return s;
+                            };
+                            // Update model (display names)
+                            modConnections[i].source = toDisplaySource(src);
                             modConnections[i].destination = resolvedDest;
                             modConnections[i].amount = amt;
-                            // Apply to engine
-                            synthesizer->disconnectModulation(src, resolvedDest);
-                            synthesizer->connectModulation(src, resolvedDest, amt);
-                            // Reflect in UI controls
+                            // Map source to engine-internal source name (case/format)
+                            auto toEngineSource = [](std::string s)->std::string{
+                                std::string lower; lower.reserve(s.size());
+                                for (char c : s) lower.push_back(std::tolower(static_cast<unsigned char>(c)));
+                                if (lower == "lfo1" || lower == "lfo 1") return "LFO1";
+                                if (lower == "lfo2" || lower == "lfo 2") return "LFO2";
+                                if (lower == "modwheel" || lower == "mod wheel") return "ModWheel";
+                                if (lower == "aftertouch") return "Aftertouch";
+                                if (lower == "velocity") return "Velocity";
+                                if (lower == "envelope" || lower == "env") return "Envelope";
+                                if (lower == "none" || lower.empty() || lower == "noen") return "None";
+                                return s;
+                            };
+                            std::string engineSrc = toEngineSource(src);
+                            // Apply to engine (skip when None)
+                            if (engineSrc != "None") {
+                                synthesizer->disconnectModulation(engineSrc, resolvedDest);
+                                synthesizer->connectModulation(engineSrc, resolvedDest, amt);
+                            }
+                            // Debug: show resolution mapping briefly
+                            if (auto* screen = uiContext->getScreen("main")) {
+                                if (auto* dbg = dynamic_cast<Label*>(screen->getChild("preset_debug"))) {
+                                    std::stringstream ss;
+                                    ss << "Mod " << (i+1) << ": " << toDisplaySource(src) << " -> " << resolvedDest << " (" << dstId << ")";
+                                    dbg->setText(ss.str());
+                                }
+                            }
+                            // Reflect in UI controls + debug to verify indices/text
                             if (i < modSourceDropdowns.size() && modSourceDropdowns[i]) {
-                                modSourceDropdowns[i]->selectItemSilently(modConnections[i].source);
+                                // Canonicalize source name then select deterministically
+                                std::string sName = modConnections[i].source;
+                                if (sName == "LFO1" || sName == "lfo1" || sName == "LFO 1" || sName == "lfo 1") sName = "LFO 1";
+                                else if (sName == "LFO2" || sName == "lfo2" || sName == "LFO 2" || sName == "lfo 2") sName = "LFO 2";
+                                else if (sName == "ModWheel" || sName == "modwheel" || sName == "mod wheel") sName = "Mod Wheel";
+                                else if (sName == "Envelope" || sName == "envelope" || sName == "env") sName = "Envelope";
+                                else if (sName == "Velocity" || sName == "velocity") sName = "Velocity";
+                                else if (sName == "Aftertouch" || sName == "aftertouch") sName = "Aftertouch";
+                                else if (sName == "None" || sName == "none") sName = "None";
+                                modSourceDropdowns[i]->selectItemSilently(sName);
+                                int sidx = modSourceDropdowns[i]->getSelectedIndex();
+                                // Final safety: if non-None and still unknown, set to 1 to enable gating
+                                modConnections[i].sourceIndex = (sidx >= 0) ? sidx : ((sName == "None") ? 0 : 1);
+                                std::cout << "[PresetLoad] Row " << i << " set source '" << modConnections[i].source
+                                          << "' (index=" << modConnections[i].sourceIndex << ")" << std::endl;
+                            } else if (auto* srcDd = dynamic_cast<DropdownMenu*>(uiContext->getScreen("main")->getChild("mod_source_" + std::to_string(i)))) {
+                                std::string sName = modConnections[i].source;
+                                if (sName == "LFO1" || sName == "lfo1" || sName == "LFO 1" || sName == "lfo 1") sName = "LFO 1";
+                                else if (sName == "LFO2" || sName == "lfo2" || sName == "LFO 2" || sName == "lfo 2") sName = "LFO 2";
+                                else if (sName == "ModWheel" || sName == "modwheel" || sName == "mod wheel") sName = "Mod Wheel";
+                                else if (sName == "Envelope" || sName == "envelope" || sName == "env") sName = "Envelope";
+                                else if (sName == "Velocity" || sName == "velocity") sName = "Velocity";
+                                else if (sName == "Aftertouch" || sName == "aftertouch") sName = "Aftertouch";
+                                else if (sName == "None" || sName == "none") sName = "None";
+                                srcDd->selectItemSilently(sName);
+                                int sidx = srcDd->getSelectedIndex();
+                                modConnections[i].sourceIndex = (sidx >= 0) ? sidx : ((sName == "None") ? 0 : 1);
+                                std::cout << "[PresetLoad] Row " << i << " fallback src set to '" << modConnections[i].source
+                                          << "' (index=" << modConnections[i].sourceIndex << ")" << std::endl;
                             }
                             if (i < modDestDropdowns.size() && modDestDropdowns[i]) {
                                 modDestDropdowns[i]->selectItemSilently(modConnections[i].destination);
+                                int didx = modDestDropdowns[i]->getSelectedIndex();
+                                if (didx < 0 && modConnections[i].destination != "None") {
+                                    // Try resolved, human-readable destination as a fallback
+                                    modDestDropdowns[i]->selectItemSilently(resolvedDest);
+                                    didx = modDestDropdowns[i]->getSelectedIndex();
+                                }
+                                // Final safety: ensure non-zero when destination is not "None" to enable gating
+                                modConnections[i].destIndex = (didx >= 0) ? didx : (modConnections[i].destination == "None" ? 0 : 1);
+                                std::cout << "[PresetLoad] Row " << i << " set dest '" << modConnections[i].destination
+                                          << "' (index=" << modConnections[i].destIndex << ")" << std::endl;
+                            } else if (auto* dstDd = dynamic_cast<DropdownMenu*>(uiContext->getScreen("main")->getChild("mod_dest_" + std::to_string(i)))) {
+                                dstDd->selectItemSilently(modConnections[i].destination);
+                                int didx = dstDd->getSelectedIndex();
+                                if (didx < 0 && modConnections[i].destination != "None") {
+                                    dstDd->selectItemSilently(resolvedDest);
+                                    didx = dstDd->getSelectedIndex();
+                                }
+                                modConnections[i].destIndex = (didx >= 0) ? didx : (modConnections[i].destination == "None" ? 0 : 1);
+                                std::cout << "[PresetLoad] Row " << i << " fallback dest set to '" << modConnections[i].destination
+                                          << "' (index=" << modConnections[i].destIndex << ")" << std::endl;
                             }
                             if (i < modAmountSliders.size() && modAmountSliders[i]) {
                                 modAmountSliders[i]->setValue(modConnections[i].amount);
+                                std::cout << "[PresetLoad] Row " << i << " set amount=" << modConnections[i].amount << std::endl;
                             }
                         }
                     }

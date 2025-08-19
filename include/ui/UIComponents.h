@@ -189,6 +189,7 @@ public:
     
     // Value management
     void setValue(float value);
+    void setValueSilently(float value);
     float getValue() const;
     void setRange(float min, float max);
     void setStep(float step);

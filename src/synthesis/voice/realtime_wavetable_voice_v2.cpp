@@ -23,22 +23,41 @@ void RealtimeWavetableVoiceV2::process(float* outputBuffer, int numSamples) {
     // base class helper computes frequency_ from smoothed pitch
     updateOscillatorFrequency();
 
+    // Smooth morph to reduce render churn
+    smoothedMorph01_ = smoothedMorph01_ + morphSmoothingAlpha_ * (morph01_ - smoothedMorph01_);
     // Control-rate request (once per block): compute cache key
     CacheKey key{};
-    // Use table address as a stable per-session ID if no explicit ID is provided
-    key.tableIdHash = reinterpret_cast<uint64_t>(table_);
-    key.morphQ = quantizeMorph01(morph01_);
-    // Approximate pitch band using current frequency in semitones relative to A4
-    float semis = 12.0f * std::log2(std::max(1e-3f, frequency_) / 440.0f) + 69.0f;
-    key.pitchBand = quantizePitchBand(semis);
+    // Prefer stable table ID when available; fallback to pointer address
+    uint64_t idHash = 0;
+    if (table_) {
+        if (!table_->id.empty()) {
+            idHash = static_cast<uint64_t>(std::hash<std::string>{}(table_->id));
+        } else {
+            idHash = reinterpret_cast<uint64_t>(table_);
+        }
+    }
+    key.tableIdHash = idHash;
+    key.morphQ = quantizeMorph01(smoothedMorph01_);
+    // Use Hz→Nyquist band quantization for better cache locality
+    float nyquist = 0.5f * static_cast<float>(getSampleRate());
+    float clampedHz = std::clamp(frequency_, 1.0f, nyquist - 1.0f);
+    float nyqFrac = clampedHz / nyquist; // 0..1
+    uint16_t band = static_cast<uint16_t>(std::lround(nyqFrac * 2047.0f));
+    band = std::max<uint16_t>(0, std::min<uint16_t>(2047, band));
+    key.pitchBand = band;
     key.opsHash16 = quantizeOpsHash(ops_);
     key.fftSizeCode = 1; // 2048
     key.quality = 0; key.sampleRateQ = static_cast<uint16_t>(getSampleRate() / 100);
 
-    SpectralJobSpec spec{ table_, morph01_, ops_, 2048, getSampleRate(), minPhase_ };
-    if (!current_) current_ = worker_.get()->requestRender(key, spec);
-    // Prewarm neighbors to avoid stalls under fast morph
-    worker_.get()->prewarmHints(table_, morph01_, ops_, 2048, getSampleRate(), minPhase_);
+    SpectralJobSpec spec{ table_, smoothedMorph01_, ops_, 2048, getSampleRate(), minPhase_ };
+    // Avoid spamming identical requests
+    if (!current_ || !haveLastKey_ || lastKeyHash_ != hash(key)) {
+        current_ = worker_.get()->requestRender(key, spec);
+        lastKeyHash_ = hash(key);
+        haveLastKey_ = true;
+    }
+    // Prewarm morph and pitch neighbors to avoid stalls under fast modulation
+    worker_.get()->prewarmHints(table_, smoothedMorph01_, ops_, 2048, getSampleRate(), minPhase_, band);
     if (!pending_) {
         // Try to get fresh buffer; in real impl we'd compare hash/generation
         pending_ = worker_.get()->requestRender(key, spec);

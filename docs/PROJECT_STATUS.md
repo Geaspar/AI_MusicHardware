@@ -253,6 +253,73 @@ Integration Layer (Ready for Deployment)
 
 ## 📅 Recent Updates
 
+### **August 18, 2025** — Preset Recall Stabilization (UI + Engine) and Next Steps
+
+Status: 🟡 Improved; pending final UX fixes
+
+- What we implemented to make presets recall correctly
+  - Modulation dropdown recall
+    - Fixed destination index handling: use dropdown `getSelectedIndex()` (not hardcoded) with fallbacks; ensure non-"None" selections get a non-zero index so routing is live.
+    - Added robust source name canonicalization for engine connections (e.g., "lfo1"/"LFO 1" → `LFO1`, "mod wheel" → `ModWheel`), and display canonicalization for UI labels (e.g., "noen" → "None").
+    - Added fallback by ID when stored pointers are missing: lookup `mod_source_i`/`mod_dest_i` on the active `main` screen and set them; log `[PresetLoad] Row i fallback src/dest ...`.
+    - Safety net: if a non-"None" selection still produces `< 0`/`0`, attempt to resolve by text and force-select; otherwise default to `1` to pass gating.
+  - LFO sliders recall (Main page)
+    - Engine parity: `LfoSource` now exposes `getFrequency()` and `getShapeIndex()`; `Synthesizer::getParameter` returns real `lfoX_rate/shape` and persisted `lfoX_depth` from `baseParameterValues_`.
+    - `Synthesizer::setParameter` persists `lfoX_depth`; `getAllParameters()` includes `lfo1_depth`, `lfo2_depth` for saving.
+    - UI crash fix: replaced `getChild("lfo_selector")` access during load with the stable `lfoSelectorDropdownPtr` (raw pointer captured at creation) and null guards.
+    - Introduced `Slider::setValueSilently` to update UI without firing callbacks; during preset load we apply engine values for both LFOs first, then silently update both slider groups so recall works regardless of currently selected LFO.
+    - Added precise `[PresetLoad]` logs confirming applied LFO1/2 rate/depth/shape.
+  - Effects page sliders/labels recall
+    - After parsing effect slots from preset, we call `configureSlotParams(slot, type)` immediately to construct/enable vertical sliders.
+    - Added temporary "force-toggle" of the page dropdown to trigger label callbacks; added `[FXUI]` logs around configuration and page updates to trace label state.
+    - Note: labels still sometimes require a manual page reselect; see “Steps left”.
+  - Stability and compile fixes
+    - Resolved `EXC_BAD_ACCESS` by avoiding `getChild` before screens are attached; replaced with stable pointers and null checks.
+    - Fixed lambda capture errors by removing redundant `&` when using `[&]`, and by ensuring late-defined locals (`slotSelectedType`, `configureSlotParams`) are captured by reference with a broad `[&]` where needed.
+  - Quality-of-life + safety
+    - Added preset-load logs for modulation amounts `[PresetLoad] Row i set amount=...`.
+    - Smoothed base `filter_cutoff` on engine side to reduce zippering on load; kept modulation destinations intact.
+
+- Known remaining issue
+  - Effects page vertical slider name labels don’t always appear immediately after loading a preset; they show up after manually reselecting the page. See “Steps left” below.
+
+- Steps left
+
+  - **Effects labels — make them set explicitly (no toggle hacks)**
+    - Extract a `updateFxSlotLabels(slotIndex, pageIndex)` helper used by both the dropdown callback and preset-load path.
+    - After `configureSlotParams(slotIndex, type)`, call `updateFxSlotLabels(slotIndex, pageIndex)` directly (use current `fx_page_s->getSelectedIndex()` with fallback 0).
+    - Guard against accidental resets: skip `configureSlotParams` calls with `type == "None"` after the real type is applied.
+
+  - **Add pinpoint logs for labels**
+    - Log each label assignment in `updateFxSlotLabels`: `[FXUI] slot X page Y label{1..4}='...'`.
+    - Right after preset load per slot, log a one-line summary: `[FXUI] slot X ready: type=..., page=..., labels=[..., ..., ..., ...]`.
+
+  - **Ensure render/visibility refresh**
+    - After labels update, trigger a UI refresh on the effects screen (whatever the framework uses: invalidate/layout/requestRender).
+
+  - **Remove the page “force-toggle”**
+    - Delete the temporary selectItem bounce; rely on `updateFxSlotLabels` instead.
+
+  - **Order of operations on preset load (per FX slot)**
+    1) Set slot type.
+    2) Set page index silently.
+    3) `configureSlotParams(slot, type)` (build sliders).
+    4) `updateFxSlotLabels(slot, page)`.
+    5) Request render.
+
+  - **LFO sliders — ensure both sets populate regardless of selection**
+    - Keep: set both `lfo1/2` engine params, then update both slider groups with `setValueSilently`.
+    - Call a `syncVisibleLfoSliders(currentLFO)` once at the end to refresh the visible set.
+    - Log: `[PresetLoad] LFO1 rate/depth/shape applied: r=..., d=..., s=...` and same for LFO2.
+
+  - **Mod matrix safety net**
+    - If a saved source/dest text resolves to a non-“None” but selected index is `< 0` or `0`, scan items to find the exact match and select it; log the correction.
+
+  - **Quick verification pass**
+    - Load a preset with non-None effects: confirm labels appear immediately with the new logs.
+    - Switch pages and back: labels persist, no extra rebuilds.
+    - Load a second preset: no flicker; labels correct without interaction.
+
 ### **August 12, 2025** — Filter Cutoff Persistence & Real-Time Control
 
 **Status**: 🟢 COMPLETE

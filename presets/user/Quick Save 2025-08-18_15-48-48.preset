@@ -1,0 +1,88 @@
+{
+  "effects": {
+    "slots": [
+      {
+        "enabled": true,
+        "mix": 0.5,
+        "page": 0,
+        "params": null,
+        "type": "None"
+      },
+      {
+        "enabled": true,
+        "mix": 0.5,
+        "page": 0,
+        "params": null,
+        "type": "None"
+      },
+      {
+        "enabled": true,
+        "mix": 0.5,
+        "page": 0,
+        "params": null,
+        "type": "None"
+      },
+      {
+        "enabled": true,
+        "mix": 0.5,
+        "page": 0,
+        "params": null,
+        "type": "None"
+      },
+      {
+        "enabled": true,
+        "mix": 0.5,
+        "page": 0,
+        "params": null,
+        "type": "None"
+      },
+      {
+        "enabled": true,
+        "mix": 0.5,
+        "page": 0,
+        "params": null,
+        "type": "None"
+      }
+    ]
+  },
+  "metadata": {
+    "author": "",
+    "category": "User",
+    "description": "Quick-saved from UI",
+    "name": "Quick Save 2025-08-18_15-48-48",
+    "version": "1.0.0"
+  },
+  "mod_routing": [
+    {
+      "amount": 0.0,
+      "destination": "Pitch",
+      "source": "LFO1"
+    },
+    {
+      "amount": 0.0,
+      "destination": "None",
+      "source": "None"
+    },
+    {
+      "amount": 0.0,
+      "destination": "None",
+      "source": "None"
+    }
+  ],
+  "parameters": {
+    "envelope_attack": 0.019999999552965164,
+    "envelope_decay": 0.10000000149011612,
+    "envelope_release": 0.5,
+    "envelope_sustain": 0.699999988079071,
+    "filter_cutoff": 1.0,
+    "filter_resonance": 0.10000000149011612,
+    "lfo1_rate": 0.0,
+    "lfo1_shape": 0.0,
+    "lfo2_rate": 0.0,
+    "lfo2_shape": 0.0,
+    "master_volume": 0.75,
+    "oscillator_frame": 0.0,
+    "oscillator_type": 0.0,
+    "voice_count": 16.0
+  }
+}

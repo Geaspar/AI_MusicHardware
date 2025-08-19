@@ -191,6 +191,7 @@ WavetableBuffer renderTimeDomain(const SpectralFrame& spectral, int sampleRate, 
 
 std::shared_ptr<SpectralTable> spectralFromWavetable(const Wavetable& wt, int sampleRate) {
     auto out = std::make_shared<SpectralTable>();
+    out->id = "legacy_wavetable"; // basic stable id for cache keys
     const int frames = wt.getNumFrames();
     const int N = std::max(1024, wt.getFrameSize());
     out->defaultFftSize = N;

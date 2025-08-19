@@ -1,0 +1,95 @@
+{
+  "effects": {
+    "slots": [
+      {
+        "enabled": true,
+        "mix": 0.5,
+        "page": 0,
+        "type": "PlateReverb"
+      },
+      {
+        "enabled": true,
+        "mix": 0.5,
+        "page": 0,
+        "type": "Phaser"
+      },
+      {
+        "enabled": true,
+        "mix": 0.5,
+        "page": 0,
+        "type": "None"
+      },
+      {
+        "enabled": true,
+        "mix": 0.5,
+        "page": 0,
+        "type": "None"
+      },
+      {
+        "enabled": true,
+        "mix": 0.5,
+        "page": 0,
+        "type": "None"
+      },
+      {
+        "enabled": true,
+        "mix": 0.5,
+        "page": 0,
+        "type": "None"
+      }
+    ]
+  },
+  "metadata": {
+    "author": "",
+    "category": "User",
+    "created_at": 1755530794,
+    "description": "Quick-saved from UI",
+    "modified_at": 1755530794,
+    "name": "Quick Save 2025-08-18_16-26-34",
+    "uuid": "624f50fa-ba2f-93b0-10c0-5c3c3e07bc42",
+    "version": "1.0.0"
+  },
+  "mod_routing": [
+    {
+      "amount": 0.26999998092651367,
+      "dest_id": "pitch",
+      "destination": "Pitch",
+      "source": "LFO1",
+      "source_id": "lfo1"
+    },
+    {
+      "amount": 0.0,
+      "dest_id": "none",
+      "destination": "None",
+      "source": "None",
+      "source_id": "none"
+    },
+    {
+      "amount": 0.0,
+      "dest_id": "none",
+      "destination": "None",
+      "source": "None",
+      "source_id": "none"
+    }
+  ],
+  "parameters": {
+    "engine.hybrid_enabled": 1.0,
+    "engine.timbre_min_phase": 1.0,
+    "envelope_attack": 0.4000000059604645,
+    "envelope_decay": 0.10000000149011612,
+    "envelope_release": 2.914285659790039,
+    "envelope_sustain": 0.699999988079071,
+    "filter_cutoff": 0.550000011920929,
+    "filter_resonance": 0.5699999928474426,
+    "lfo1_rate": 0.0,
+    "lfo1_shape": 0.0,
+    "lfo2_rate": 0.0,
+    "lfo2_shape": 0.0,
+    "master_volume": 0.75,
+    "oscillator_frame": 0.0,
+    "oscillator_type": 0.0,
+    "preset_output_trim_db": 0.0,
+    "voice_count": 16.0
+  },
+  "schema_version": "1.0.0"
+}
