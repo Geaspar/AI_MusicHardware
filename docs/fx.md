@@ -69,6 +69,92 @@ This doc surveys notable reverb architectures and adjacent creative FX relevant 
 - Spectral Tilt & Bloom (in reverb loop)
   - Single control shapes decay tone without multi-band splits; maps to HF damping and LF shelf interaction.
 
+## Best-in-class approaches and how we improve (by effect)
+
+- Reverb (Room/Hall/Plate/Spring)
+  - Best-in-class: Valhalla, FabFilter Pro-R (ER shaping, decay control), Lexicon heritage algorithms; Vital leverages simple diffusion + plates for character.
+  - Our edge: FDN with per-band shaping (SFDN idea), motion-mapped parameters, constant-power mix, SR-invariant modulation depths, calibrated normalization.
+
+- Delay (Mono/Stereo/Ping‑Pong)
+  - Best-in-class: SoundToys EchoBoy (tone/character modes), FabFilter Timeless (mod matrix); Vital uses clean synced delays with feedback filters.
+  - Our edge: per-tap diffusion and micro‑mod, constant‑power crossfeed for ping‑pong, ducking sidechain from input, and safe feedback clamps.
+
+- Chorus/Ensemble
+  - Best: TAL‑Chorus‑LX (Juno style), Valhalla UberMod variants; Vital: multiple delay voices with phase offsets.
+  - Our edge: multi‑voice with decorrelated LFOs, slight random step jitter, tone filter per voice, stereo‑aware spread with constant‑power panning.
+
+- Flanger
+  - Best: Through‑zero flanging (TZF) with delay sign flip; BBD emulations add character.
+  - Our edge: TZF mode plus gentle nonlinearity and DC guard, optional diffusion for thicker sweeps.
+
+- Phaser
+  - Best: Multi‑stage allpass with matched poles/zeros; envelope and LFO modulation; Vital includes a clean phaser.
+  - Our edge: 8–12 stages with anti‑zipper smoothing, stereo phase offset, optional feedback soft‑limit, musical notch spacing presets.
+
+- Tremolo (AM)
+  - Best: Soft‑shaped LFOs, stereo phase offsets, bias controls.
+  - Our edge: dual‑LFO crossfade for rhythmic patterns, envelope follower to bias depth, constant‑power amplitude mapping.
+
+- Vibrato (PM)
+  - Best: High‑quality fractional delay; anti‑alias LFO shapes.
+  - Our edge: SR‑invariant depth in samples, noise‑shaped LFO for analog drift flavor.
+
+- Ring Modulator
+  - Best: Clean carrier, optional DC/high‑pass post stage.
+  - Our edge: stereo carriers with slight decorrelation, pitch‑tracked option, foldback protection.
+
+- Frequency Shifter
+  - Best: Quadrature Hilbert transform approach; barber‑pole illusions.
+  - Our edge: psychoacoustic helpers (mix law, anti‑chirp smoothing), M/S routing for creative width.
+
+- Saturation/Tape
+  - Best: Soft‑clip curves, hysteresis, frequency‑dependent drive; Vital includes nonlinear drive in some FX.
+  - Our edge: tone‑compensated drive, oversampling on hot modes, output trim with RMS normalization window.
+
+- Overdrive/Distortion/Waveshaper
+  - Best: Curated transfer functions (Tanh/Asym/Hard/Diode), pre/post EQ; stageable.
+  - Our edge: dynamic bias for touch sensitivity, tilt EQ auto‑comp, transient‑aware stage chaining.
+
+- Bitcrusher/SRR
+  - Best: Fractional bit‑depth with noise shaping, sample‑rate decimation with interpolation options; Vital’s BitCrusher is straightforward.
+  - Our edge: adaptive dither/noise‑shape mix, post‑drive and trim, stereo decorrelation to reduce grittiness.
+
+- Compressor
+  - Best: Feed‑forward/feedback variants, sidechain filter, soft knee; look‑ahead for limiting.
+  - Our edge: program‑dependent release (two‑pole), auto gain with RMS target, simple GR meter for UI.
+
+- Limiter
+  - Best: Look‑ahead brickwall, ISP protection.
+  - Our edge: low‑latency mode with soft‑clip pre‑stage, musical release to reduce pumping.
+
+- Transient Shaper
+  - Best: dual‑envelope attack/sustain detection with frequency weighting.
+  - Our edge: tilt‑weighted detection, sidechain HP/LP, stereo‑linked or dual‑mono modes.
+
+- EQ (Parametric/Tilt)
+  - Best: RBJ biquads, proportional‑Q, linear‑phase options.
+  - Our edge: proportional‑Q parametrics with musical ranges, macro tilt for fast shaping.
+
+- Filters (LP/HP/BP/Notch/Formant)
+  - Best: ZDF ladders and state‑variable filters with drive; Vital’s filters are musical and varied.
+  - Our edge: ZDF SVF with morphing modes, formant sets, drive and key‑track built‑in.
+
+- Auto‑Wah/Envelope Filter
+  - Best: Envelope follower mapped to resonant LP/BP with bias and attack/release.
+  - Our edge: follower with adaptive time constants, sidechain input, and optional LFO blend.
+
+- Stereo Imager/Width (M/S)
+  - Best: Mid/Side split with safe mono compatibility and linear‑phase options.
+  - Our edge: constant‑power width, bass‑safe narrowing, transient‑aware widening.
+
+- Granular/Freeze/Shimmer
+  - Best: Grain engines (Clouds/Portal), shimmer via pitch‑shifting feedback paths.
+  - Our edge: low‑CPU shimmer via octave‑tap into FDN tail; freeze with diffusion maintenance to avoid static loops.
+
+References to our code and Vital
+- Our current implementation: see `src/effects/*` (Modulation/Chorus, BitCrusher, Phaser, Distortion, Saturation, Reverb classes), and UI wiring in `src/main_integrated_simple.cpp`.
+- Vital approach: Vital uses high‑quality filters, diffusion, and modulation; for effect‑specific inspiration, reference Vital’s open components (e.g., SVF filters, phaser, chorus) and adapt patterns (per‑block smoothing, modulation routing, CPU budgeting). Where applicable, we mirrored constant‑power mix, SR‑invariance, and parameter smoothing.
+
 ## Implementation guidelines for our stack
 - RT-safety: precompute per-block constants; avoid allocations in process; clamp ranges; denormal guards.
 - Smoothing: fast (10–30 ms) for mix/diffusion; medium (100–250 ms) for size/decay; slow (250–750 ms) for damping/width/tilt.
