@@ -628,6 +628,7 @@ Status: 🟡 Improved; pending final UX fixes
   - Add preset-level `output_trim_db` and ramp sensitive params on load (10–20 ms).
 
 - **Doc**: See Preset System design: `docs/presets_system.md`.
+  - Effects docs moved to `docs/Effects/` (fx.md, reverb.md, diffusion_shaper.md, etc.).
 
 ### **August 10, 2025** — MIDI Activity Indicator and External MIDI Hookup
 
