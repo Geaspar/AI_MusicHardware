@@ -78,6 +78,7 @@ void PlateReverb::process(float* buffer, int numFrames) {
     const float modDepth = std::max(0.0f, parameters_.at("mod_depth")) * 0.01f;
     const float twoPiOverSr = (2.0f * 3.14159265358979323846f) / sr;
 
+    const float trim = std::pow(10.0f, outputTrimDb_ / 20.0f);
     for (int n = 0; n < numFrames; ++n) {
         float inL = buffer[2*n + 0];
         float inR = buffer[2*n + 1];
@@ -133,12 +134,14 @@ void PlateReverb::process(float* buffer, int numFrames) {
         const float targetGain = 0.35f / std::sqrt(std::max(wetRms_, 1e-6f));
         wetNormGainSmoothed_ = 0.99f * wetNormGainSmoothed_ + 0.01f * targetGain;
         if (wetNormGainSmoothed_ > 1.0f) wetNormGainSmoothed_ = 1.0f;
-        const float trim = std::pow(10.0f, outputTrimDb_ / 20.0f);
         wetL = std::tanh(0.8f * wetL * wetNormGainSmoothed_ * trim);
         wetR = std::tanh(0.8f * wetR * wetNormGainSmoothed_ * trim);
 
-        buffer[2*n + 0] = dry * inL + wet * wetL;
-        buffer[2*n + 1] = dry * inR + wet * wetR;
+        // Constant-power wet/dry mix
+        const float cpWet = std::sin(1.57079632679f * wet);
+        const float cpDry = std::cos(1.57079632679f * wet);
+        buffer[2*n + 0] = cpDry * inL + cpWet * wetL;
+        buffer[2*n + 1] = cpDry * inR + cpWet * wetR;
     }
 }
 

@@ -122,6 +122,13 @@ void FDNReverb::process(float* buffer, int numFrames) {
     }
 
     const float twoOverN = 2.0f / static_cast<float>(kNumDelays_);
+    // Hoist output trim to linear once per block
+    const float trim = std::pow(10.0f, outputTrimDb_ / 20.0f);
+    // Cache current LP coeff per line once per block
+    for (int k = 0; k < kNumDelays_; ++k) {
+        fdnLpA_[k] = aLpArr[k];
+    }
+
     for (int n = 0; n < numFrames; ++n) {
         float xinL = buffer[2*n + 0];
         float xinR = buffer[2*n + 1];
@@ -144,7 +151,6 @@ void FDNReverb::process(float* buffer, int numFrames) {
             const float yk = readFrac(buf, readIndex);
 
             // HF damping (one-pole LP)
-            fdnLpA_[k] = aLpArr[k];
             fdnLpY_[k] = fdnLpA_[k] * fdnLpY_[k] + (1.0f - fdnLpA_[k]) * yk;
 
             y[k] = yk;
@@ -181,12 +187,14 @@ void FDNReverb::process(float* buffer, int numFrames) {
         wetR *= (0.8f * wetNormGainSmoothed_);
         // Gentle safety limiter
         // Apply output trim
-        const float trim = std::pow(10.0f, outputTrimDb_ / 20.0f);
         wetL = std::tanh(wetL * trim);
         wetR = std::tanh(wetR * trim);
 
-        const float outL = dry * xinL + wet * wetL;
-        const float outR = dry * xinR + wet * wetR;
+        // Constant-power wet/dry mix
+        const float cpWet = std::sin(1.57079632679f * wet);
+        const float cpDry = std::cos(1.57079632679f * wet);
+        const float outL = cpDry * xinL + cpWet * wetL;
+        const float outR = cpDry * xinR + cpWet * wetR;
         buffer[2*n + 0] = outL;
         buffer[2*n + 1] = outR;
     }
