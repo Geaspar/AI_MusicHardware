@@ -373,6 +373,65 @@ phase += rate * (TWO_PI / sr) * blockSize; // block‑rate update
 
 ---
 
+## Detailed To‑Do — FDN Hall and Plate (Aug 2025)
+
+This section captures the concrete remaining work for the two new reverbs based on the current implementation state in the app.
+
+### Hall (FDNReverb)
+
+- Engine polish
+  - [ ] Verify Householder matrix placement vs per‑loop filters/gains (post‑filter, energy preserving) and clamp any pathological gains.
+  - [ ] Confirm SR invariance end‑to‑end: recompute loop LP coeffs, delay lengths, and size‑scaled buffers on `setSampleRate()`.
+  - [ ] Recheck RT60 mapping against measured decay curve; clamp `decay_rt60_s ≥ 0.2 s`, smooth 100–250 ms.
+  - [ ] Tighten modulation: depth 0–0.25% of delay; per‑line rate decorrelated ±10%; ensure fractional read uses at least 1st/3rd‑order interpolation.
+  - [ ] Wet normalization constants: target RMS window and smoothing; keep limiter gentle and inaudible at nominal settings.
+  - [ ] Denormals: add FTZ guards or tiny DC bias in inner loops.
+  - [ ] Micro‑optimizations: hoist expensive math out of hot path; precompute feedback scalars and LP coeffs per block.
+
+- UI/UX
+  - [ ] Expose missing params on Effects Page 2: `decay_rt60_s`, `high_damping`, `bass_mult`, `stereo_width` (with formatters: s, Hz‑like for damping label, × for bass, 0–100% for width).
+  - [ ] Ensure Output Trim (dB) remains on Param 4 when applicable; confirm dB formatter and range (−12..+6 dB UI).
+  - [ ] Implement explicit `updateFxSlotLabels(slot,page)` so labels appear immediately after preset load (remove page toggle hack).
+  - [ ] Add value tooltips/labels consistent with other FX.
+
+- Presets & modulation
+  - [ ] Include all Hall params in save/load; migrate legacy names if any.
+  - [ ] Register destinations for modulation: `Hall Predelay`, `Hall Size`, `Hall Diffusion`, `Hall Mod Rate`, `Hall Decay`, `Hall High Damp`, `Hall Bass Mult`, `Hall Width`, `Hall Output Trim`.
+  - [ ] Acceptance test: LFO on `Hall Width` and `Hall Decay` sounds stable, no zippering.
+
+- Verification
+  - [ ] Generate impulse response and EDR; verify smooth, exponential decay with no metallic flutter.
+  - [ ] CPU profiling under high polyphony; confirm no allocations in process.
+
+### Plate (PlateReverb)
+
+- Engine completion
+  - [ ] Implement Dattorro‑style topology: input allpasses (tuned gains/delays), figure‑8 feedback tank with cross mixes.
+  - [ ] Add per‑loop HF damping and overall tone shaping (simple LP/tilt); map to `tone_high` or similar.
+  - [ ] Implement modulation in tank delays (low depth, slow rates) with fractional delay interpolation.
+  - [ ] RT60 mapping for plate decay; clamp and smooth.
+  - [ ] Output trim and gentle limiter; optional light saturation guard.
+  - [ ] Sample‑rate invariance for all delay/filters.
+
+- UI/UX
+  - [ ] Expose parameters across Pages: `predelay_ms`, `diffusion`, `mod_rate`, `mod_depth`, `decay_rt60_s`, `tone_high`, `size` (if used), `stereo_width` (optional), `output_trim_db`.
+  - [ ] Add proper formatters (ms, Hz/%, dB) and ranges; defaults in `createEffectWithDefaults()`.
+  - [ ] Ensure labels initialize via `updateFxSlotLabels` after preset load.
+
+- Presets & modulation
+  - [ ] Save/load all Plate params; add modulation destinations: `Plate Predelay`, `Plate Diffusion`, `Plate Mod Rate`, `Plate Decay`, `Plate Output Trim` (and tone/size if exposed).
+  - [ ] Acceptance test: Plate characteristic bright, dense tail; modulation remains subtle and musical.
+
+- Performance & stability
+  - [ ] Denormal and CPU guards; block‑rate updates; no per‑sample heavy math.
+  - [ ] Stress test with long decays; ensure limiter prevents hot output.
+
+### Cross‑cutting
+
+- [ ] Effects screen label refresh: replace page force‑toggle with explicit label update + requestRender.
+- [ ] Unit/integration tests: basic IR export for both verbs; preset round‑trip (save→load) retains parameter values and UI labels.
+- [ ] Documentation: keep this to‑do list in sync; mark items complete with dates.
+
 ## References (expanded)
 - M. R. Schroeder (1962): Natural Sounding Artificial Reverberation
 - J. A. Moorer (1979): About this reverberation business
