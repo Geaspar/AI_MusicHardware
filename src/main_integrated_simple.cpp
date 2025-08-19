@@ -3242,6 +3242,87 @@ int main(int argc, char* argv[]) {
         }
     };
 
+    // Helper: explicitly set the four vertical parameter labels for a slot based on type/page
+    auto updateFxSlotLabels = [&](int s){
+        int page = 0;
+        if (auto* es = uiContext->getScreen("effects")) {
+            if (auto* p = dynamic_cast<DropdownMenu*>(es->getChild("fx_page_" + std::to_string(s)))) {
+                page = std::max(0, p->getSelectedIndex());
+            }
+        }
+        const std::string type = slotSelectedType[s];
+        auto setLbl = [&](Label* l, const char* txt){ if (l) l->setText(txt); };
+        if (type == "FDNReverb (Hall)") {
+            if (page == 0) {
+                setLbl(slotV1Label[s], "Predelay (ms)");
+                setLbl(slotV2Label[s], "Size");
+                setLbl(slotV3Label[s], "Diffusion");
+                setLbl(slotV4Label[s], "Mod Rate (Hz)");
+            } else {
+                setLbl(slotV1Label[s], "Decay (s)");
+                setLbl(slotV2Label[s], "High Damp");
+                setLbl(slotV3Label[s], "Bass Mult");
+                setLbl(slotV4Label[s], "Output Trim (dB)");
+            }
+        } else if (type == "PlateReverb") {
+            // Single page mapping currently
+            setLbl(slotV1Label[s], "Predelay (ms)");
+            setLbl(slotV2Label[s], "Decay (s)");
+            setLbl(slotV3Label[s], "Diffusion");
+            setLbl(slotV4Label[s], "Output Trim (dB)");
+        } else if (type == "Reverb") {
+            setLbl(slotV1Label[s], "Room Size");
+            setLbl(slotV2Label[s], "Damping");
+            setLbl(slotV3Label[s], "Width");
+            setLbl(slotV4Label[s], "N/A");
+        } else if (type == "Delay") {
+            setLbl(slotV1Label[s], "Time (s)");
+            setLbl(slotV2Label[s], "Feedback");
+            setLbl(slotV3Label[s], "N/A");
+            setLbl(slotV4Label[s], "N/A");
+        } else if (type == "BitCrusher") {
+            setLbl(slotV1Label[s], "Bit Depth");
+            setLbl(slotV2Label[s], "SRR");
+            setLbl(slotV3Label[s], "Drive");
+            setLbl(slotV4Label[s], "Output Trim (dB)");
+        } else if (type == "Phaser") {
+            setLbl(slotV1Label[s], "Rate (Hz)");
+            setLbl(slotV2Label[s], "Depth");
+            setLbl(slotV3Label[s], "Feedback");
+            setLbl(slotV4Label[s], "N/A");
+        } else if (type == "EQ") {
+            setLbl(slotV1Label[s], "Low (dB)");
+            setLbl(slotV2Label[s], "Mid (dB)");
+            setLbl(slotV3Label[s], "High (dB)");
+            setLbl(slotV4Label[s], "N/A");
+        } else if (type == "LowPassFilter") {
+            setLbl(slotV1Label[s], "Cutoff (Hz)");
+            setLbl(slotV2Label[s], "Resonance");
+            setLbl(slotV3Label[s], "N/A");
+            setLbl(slotV4Label[s], "N/A");
+        } else if (type == "Chorus") {
+            setLbl(slotV1Label[s], "Rate (Hz)");
+            setLbl(slotV2Label[s], "Depth");
+            setLbl(slotV3Label[s], "Spread");
+            setLbl(slotV4Label[s], "Output Trim (dB)");
+        } else if (type == "Saturation") {
+            setLbl(slotV1Label[s], "Drive");
+            setLbl(slotV2Label[s], "Tone");
+            setLbl(slotV3Label[s], "Mix");
+            setLbl(slotV4Label[s], "Output Trim (dB)");
+        } else {
+            setLbl(slotV1Label[s], "N/A");
+            setLbl(slotV2Label[s], "N/A");
+            setLbl(slotV3Label[s], "N/A");
+            setLbl(slotV4Label[s], "N/A");
+        }
+        // Diagnostics for verification
+        auto lbl = [&](Label* l){ return l ? l->getText() : std::string("<null>"); };
+        std::cout << "[FXUI] slot " << s << " page " << page << " labels=['"
+                  << lbl(slotV1Label[s]) << "','" << lbl(slotV2Label[s]) << "','"
+                  << lbl(slotV3Label[s]) << "','" << lbl(slotV4Label[s]) << "']" << std::endl;
+    };
+
     // Build per-slot rows
     for (int s = 0; s < fxSlotCount; ++s) {
         int y = rowStartY + s * rowHeight;
@@ -3388,6 +3469,7 @@ int main(int argc, char* argv[]) {
             slotBypassBtn[s]->setBackgroundColor(uiEnabled ? Color(50,100,50) : Color(100,50,50));
             // Configure parameter mappings for this slot/type
             configureSlotParams(s, item);
+            updateFxSlotLabels(s);
             // Reset to Page 1 on type change
             if (auto* es = uiContext->getScreen("effects")) {
                 if (auto* p = dynamic_cast<DropdownMenu*>(es->getChild("fx_page_" + std::to_string(s)))) {
@@ -3435,6 +3517,7 @@ int main(int argc, char* argv[]) {
             slotPage[s] = idx;
             // Reconfigure with same type to redraw param set
             configureSlotParams(s, slotSelectedType[s]);
+            updateFxSlotLabels(s);
             // Force UI to reflect page by updating label placeholder
             if (auto* es = uiContext->getScreen("effects")) {
                 if (auto* p = dynamic_cast<DropdownMenu*>(es->getChild("fx_page_" + std::to_string(s)))) {
@@ -3477,6 +3560,7 @@ int main(int argc, char* argv[]) {
             if (auto* p = dynamic_cast<DropdownMenu*>(effectsScreen->getChild("fx_page_" + std::to_string(s)))) {
                 p->selectItemSilently(slotPage[s]);
                 configureSlotParams(s, slotSelectedType[s]);
+                updateFxSlotLabels(s);
             }
             // Restore mix and bypass UI
             slotMixSlider[s]->setValue(slotMix[s]);
@@ -3485,6 +3569,7 @@ int main(int argc, char* argv[]) {
         } else {
             // Initialize controls disabled for None, with N/A labels
             configureSlotParams(s, slotSelectedType[s]);
+            updateFxSlotLabels(s);
             bool enableControlsInit = (slotSelectedType[s] != std::string("None"));
             slotMixSlider[s]->setEnabled(enableControlsInit);
             slotBypassBtn[s]->setEnabled(enableControlsInit);
