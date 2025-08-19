@@ -80,7 +80,7 @@ void FDNReverb::process(float* buffer, int numFrames) {
         buffer[i + 1] = r;
     }
 
-    // Phase 2: simple FDN-8 scaffold (no matrix yet): sum diffused input into a bank of delays
+    // Phase 2: FDN-8 late tail with Householder mixing
     // Smooth key parameters
     const float sizeTarget = std::clamp(parameters_.at("size"), 0.5f, 2.0f);
     const float decayTarget = std::max(0.2f, parameters_.at("decay_rt60_s"));
@@ -105,7 +105,9 @@ void FDNReverb::process(float* buffer, int numFrames) {
     float gLoopArr[kNumDelays_];
     float aLpArr[kNumDelays_];
     float lfoOmegaArr[kNumDelays_];
+    float depthSamplesArr[kNumDelays_];
     const float twoPiOverSr = (2.0f * 3.14159265358979323846f) / static_cast<float>(getSampleRate());
+    const float modDepthPct = std::max(0.0f, parameters_.at("mod_depth")) * 0.01f; // percent → fraction
     for (int k = 0; k < kNumDelays_; ++k) {
         baseDelaySamplesArr[k] = (fdnBaseDelayMs_[k] * sizeSmoothed_) * (static_cast<float>(getSampleRate())/1000.0f);
         const float Td = baseDelaySamplesArr[k] / static_cast<float>(getSampleRate());
@@ -116,8 +118,10 @@ void FDNReverb::process(float* buffer, int numFrames) {
         aLpArr[k] = std::exp(-(2.0f * 3.14159265358979323846f * fc) / static_cast<float>(getSampleRate()));
         const float lfoRate = std::max(0.05f, parameters_.at("mod_rate")) * fdnLfoRateMul_[k];
         lfoOmegaArr[k] = twoPiOverSr * lfoRate;
+        depthSamplesArr[k] = baseDelaySamplesArr[k] * modDepthPct;
     }
 
+    const float twoOverN = 2.0f / static_cast<float>(kNumDelays_);
     for (int n = 0; n < numFrames; ++n) {
         float xinL = buffer[2*n + 0];
         float xinR = buffer[2*n + 1];
@@ -132,10 +136,9 @@ void FDNReverb::process(float* buffer, int numFrames) {
             const size_t w = fdnWriteIndex_[k];
 
             const float baseDelaySamples = baseDelaySamplesArr[k];
-            const float lfoDepth = std::max(0.0f, parameters_.at("mod_depth")) * 0.01f; // percent
             fdnLfoPhase_[k] += lfoOmegaArr[k];
             if (fdnLfoPhase_[k] > 2.0f * 3.14159265358979323846f) fdnLfoPhase_[k] -= 2.0f * 3.14159265358979323846f;
-            const float modSamples = baseDelaySamples * lfoDepth * std::sin(fdnLfoPhase_[k]);
+            const float modSamples = depthSamplesArr[k] * std::sin(fdnLfoPhase_[k]);
             float readIndex = static_cast<float>(w) - (baseDelaySamples + modSamples);
             while (readIndex < 0.0f) readIndex += static_cast<float>(buf.size());
             const float yk = readFrac(buf, readIndex);
@@ -150,7 +153,6 @@ void FDNReverb::process(float* buffer, int numFrames) {
         }
 
         // Householder feedback mixing: A = I - 2*u*u^T, u_i=1/sqrt(N)
-        const float twoOverN = 2.0f / static_cast<float>(kNumDelays_);
         for (int k = 0; k < kNumDelays_; ++k) {
             auto& buf = fdnBuffer_[k];
             size_t w = fdnWriteIndex_[k];
@@ -169,11 +171,11 @@ void FDNReverb::process(float* buffer, int numFrames) {
         const float side = (sumEven - sumOdd) / static_cast<float>(kNumDelays_);
         float wetL = mid + widthSmoothed_ * side;
         float wetR = mid - widthSmoothed_ * side;
-        // Wet normalization (simple RMS-based gain target ~0.35 for headroom)
+        // Wet normalization (simple RMS-based gain target ~0.32 for headroom)
         const float wetMono = 0.5f * (wetL + wetR);
-        wetRms_ = 0.995f * wetRms_ + 0.005f * (wetMono * wetMono);
-        const float targetGain = 0.35f / std::sqrt(std::max(wetRms_, 1e-6f));
-        wetNormGainSmoothed_ = 0.99f * wetNormGainSmoothed_ + 0.01f * targetGain;
+        wetRms_ = 0.997f * wetRms_ + 0.003f * (wetMono * wetMono);
+        const float targetGain = 0.32f / std::sqrt(std::max(wetRms_, 1e-6f));
+        wetNormGainSmoothed_ = 0.995f * wetNormGainSmoothed_ + 0.005f * targetGain;
         if (wetNormGainSmoothed_ > 1.0f) wetNormGainSmoothed_ = 1.0f;
         wetL *= (0.8f * wetNormGainSmoothed_);
         wetR *= (0.8f * wetNormGainSmoothed_);
