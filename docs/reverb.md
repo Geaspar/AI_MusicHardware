@@ -380,13 +380,14 @@ This section captures the concrete remaining work for the two new reverbs based 
 ### Hall (FDNReverb)
 
 - Engine polish
-  - [ ] Verify Householder matrix placement vs per‑loop filters/gains (post‑filter, energy preserving) and clamp any pathological gains.
+  - [x] Verify Householder matrix placement vs per‑loop filters/gains (post‑filter, energy preserving) and clamp any pathological gains.
   - [ ] Confirm SR invariance end‑to‑end: recompute loop LP coeffs, delay lengths, and size‑scaled buffers on `setSampleRate()`.
   - [ ] Recheck RT60 mapping against measured decay curve; clamp `decay_rt60_s ≥ 0.2 s`, smooth 100–250 ms.
-  - [ ] Tighten modulation: depth 0–0.25% of delay; per‑line rate decorrelated ±10%; ensure fractional read uses at least 1st/3rd‑order interpolation.
-  - [ ] Wet normalization constants: target RMS window and smoothing; keep limiter gentle and inaudible at nominal settings.
-  - [ ] Denormals: add FTZ guards or tiny DC bias in inner loops.
-  - [ ] Micro‑optimizations: hoist expensive math out of hot path; precompute feedback scalars and LP coeffs per block.
+  - [x] Tighten modulation: depth 0–0.25% of delay; per‑line rate decorrelated ±10%; ensure fractional read uses at least 1st/3rd‑order interpolation.
+  - [x] Wet normalization constants: target RMS window and smoothing; keep limiter gentle and inaudible at nominal settings.
+  - [x] Denormals: add FTZ guards or tiny DC bias in inner loops.
+  - [x] Micro‑optimizations: hoist expensive math out of hot path; precompute feedback scalars and LP coeffs per block.
+  - [x] Constant‑power wet/dry mix for perceptually stable blending.
 
 - UI/UX
   - [ ] Expose missing params on Effects Page 2: `decay_rt60_s`, `high_damping`, `bass_mult`, `stereo_width` (with formatters: s, Hz‑like for damping label, × for bass, 0–100% for width).
@@ -406,20 +407,20 @@ This section captures the concrete remaining work for the two new reverbs based 
 ### Plate (PlateReverb)
 
 - Engine completion
-  - [ ] Implement Dattorro‑style topology: input allpasses (tuned gains/delays), figure‑8 feedback tank with cross mixes.
-  - [ ] Add per‑loop HF damping and overall tone shaping (simple LP/tilt); map to `tone_high` or similar.
-  - [ ] Implement modulation in tank delays (low depth, slow rates) with fractional delay interpolation.
-  - [ ] RT60 mapping for plate decay; clamp and smooth.
-  - [ ] Output trim and gentle limiter; optional light saturation guard.
-  - [ ] Sample‑rate invariance for all delay/filters.
+  - [x] Implement Dattorro‑inspired topology: input allpasses (tuned gains/delays), two‑tank cross feedback with width control.
+  - [x] Add HF damping in tank; initial tone via `high_damping`/`bass_mult` (tilt).
+  - [x] Implement modulation in tank delays (low depth, slow rates) with fractional delay interpolation.
+  - [x] RT60 mapping for plate decay; clamp and smooth.
+  - [x] Output trim and gentle limiter; constant‑power wet/dry mix.
+  - [ ] Sample‑rate invariance for all delay/filters (final audit).
 
 - UI/UX
-  - [ ] Expose parameters across Pages: `predelay_ms`, `diffusion`, `mod_rate`, `mod_depth`, `decay_rt60_s`, `tone_high`, `size` (if used), `stereo_width` (optional), `output_trim_db`.
-  - [ ] Add proper formatters (ms, Hz/%, dB) and ranges; defaults in `createEffectWithDefaults()`.
-  - [ ] Ensure labels initialize via `updateFxSlotLabels` after preset load.
+  - [x] Expose parameters across Pages: Page 1 → `predelay_ms`, `diffusion`, `mod_rate`, `mod_depth`; Page 2 → `decay_rt60_s`, `high_damping`, `size`, `output_trim_db`.
+  - [x] Add proper formatters (ms, Hz/%, dB) and ranges.
+  - [x] Ensure labels initialize via `updateFxSlotLabels` after preset load.
 
 - Presets & modulation
-  - [ ] Save/load all Plate params; add modulation destinations: `Plate Predelay`, `Plate Diffusion`, `Plate Mod Rate`, `Plate Decay`, `Plate Output Trim` (and tone/size if exposed).
+  - [x] Save/load Plate params (engine backed); modulation destinations exposed: `Plate Predelay/Diffusion/Mod Rate/Mod Depth/Decay/High Damp/Width(Output Trim)/Mix`.
   - [ ] Acceptance test: Plate characteristic bright, dense tail; modulation remains subtle and musical.
 
 - Performance & stability
@@ -431,6 +432,19 @@ This section captures the concrete remaining work for the two new reverbs based 
 - [ ] Effects screen label refresh: replace page force‑toggle with explicit label update + requestRender.
 - [ ] Unit/integration tests: basic IR export for both verbs; preset round‑trip (save→load) retains parameter values and UI labels.
 - [ ] Documentation: keep this to‑do list in sync; mark items complete with dates.
+
+---
+
+### Aug 19, 2025 — Reverb implementation notes
+
+- Hall (FDN)
+  - Implemented Householder late tail with per‑loop HF damping, RT60‑based loop gains, per‑line LFO modulation, and smoothed parameters. Added constant‑power wet/dry mixing and micro‑optimizations (trim hoist, LP coeff cache). Normalization smoothed for more headroom.
+
+- Plate
+  - Added two‑page UI exposing core design controls. Engine now supports `size` scaling of base delays, HF damping, cross‑feedback with width, modulation, and constant‑power wet/dry. Stereo width remains internal; can be re‑exposed later if desired.
+
+- Next
+  - SR‑invariance audit and CPU micro‑opts pass; objective IR/EDR tests; finalize parameter ranges after listening tests.
 
 ## References (expanded)
 - M. R. Schroeder (1962): Natural Sounding Artificial Reverberation

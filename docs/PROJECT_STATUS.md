@@ -253,7 +253,7 @@ Integration Layer (Ready for Deployment)
 
 ## 📅 Recent Updates
 
-### **August 18, 2025** — Preset Recall Stabilization (UI + Engine) and Next Steps
+### **August 18–19, 2025** — Preset Recall Stabilization (UI + Engine) and Reverb Implementation
 
 Status: 🟡 Improved; pending final UX fixes
 
@@ -319,6 +319,17 @@ Status: 🟡 Improved; pending final UX fixes
     - Load a preset with non-None effects: confirm labels appear immediately with the new logs.
     - Switch pages and back: labels persist, no extra rebuilds.
     - Load a second preset: no flicker; labels correct without interaction.
+
+#### Reverb progress (Aug 19)
+
+- Hall (FDN)
+  - Implemented late tail with Householder mixing, per-loop HF damping, RT60 gain mapping, per-line modulation, and constant‑power wet/dry. Normalization smoothed for headroom; micro‑opts (trim hoist, LP coeff cache) reduce CPU.
+
+- Plate
+  - Two‑page UI: Page 1 (Predelay/Diffusion/Mod Rate/Mod Depth), Page 2 (Decay/High Damp/Size/Output Trim). Engine supports `size` scaling and constant‑power wet/dry. Dedicated `stereo_width` kept internal for now.
+
+- Mod Matrix
+  - Exposed Plate params as destinations (Predelay, Diffusion, Mod Rate, Mod Depth, Decay, High Damp, Width, Output Trim, Mix) with smoothing.
 
 ### **August 12, 2025** — Filter Cutoff Persistence & Real-Time Control
 
