@@ -3242,7 +3242,7 @@ int main(int argc, char* argv[]) {
                 });
                 return;
             }
-            // Page 2: Decay, High Damping (tone), Stereo Width, Output Trim
+            // Page 2: Decay, High Damping (tone), Size, Output Trim
             if (slotV1Label[s]) slotV1Label[s]->setText("Decay (s)");
             slotV1Slider[s]->setRange(0.2f, 20.0f);
             slotV1Slider[s]->setValue(fx->getParameter("decay_rt60_s"));
@@ -3261,13 +3261,13 @@ int main(int argc, char* argv[]) {
                 if (auto* f = getFxForSlot(s)) { f->setParameter("high_damping", v); slotParamCache[s][type]["high_damping"] = v; }
             });
 
-            if (slotV3Label[s]) slotV3Label[s]->setText("Stereo Width");
-            slotV3Slider[s]->setRange(0.0f, 1.0f);
-            slotV3Slider[s]->setValue(fx->getParameter("stereo_width"));
-            slotV3Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<"Width "<<std::fixed<<std::setprecision(0)<<(v*100.0f)<<"%"; return ss.str();});
+            if (slotV3Label[s]) slotV3Label[s]->setText("Size");
+            slotV3Slider[s]->setRange(0.5f, 2.0f);
+            slotV3Slider[s]->setValue(fx->getParameter("size"));
+            slotV3Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<"Size "<<std::fixed<<std::setprecision(2)<<v<<"x"; return ss.str();});
             slotV3Slider[s]->setValueChangeCallback([&, s, type](float v){
                 std::lock_guard<std::mutex> lock(audioMutex);
-                if (auto* f = getFxForSlot(s)) { f->setParameter("stereo_width", v); slotParamCache[s][type]["stereo_width"] = v; }
+                if (auto* f = getFxForSlot(s)) { f->setParameter("size", v); slotParamCache[s][type]["size"] = v; }
             });
 
             if (slotV4Label[s]) slotV4Label[s]->setText("Output Trim (dB)");
@@ -3311,11 +3311,17 @@ int main(int argc, char* argv[]) {
                 setLbl(slotV4Label[s], "Output Trim (dB)");
             }
         } else if (type == "PlateReverb") {
-            // Single page mapping currently
-            setLbl(slotV1Label[s], "Predelay (ms)");
-            setLbl(slotV2Label[s], "Decay (s)");
-            setLbl(slotV3Label[s], "Diffusion");
-            setLbl(slotV4Label[s], "Output Trim (dB)");
+            if (page == 0) {
+                setLbl(slotV1Label[s], "Predelay (ms)");
+                setLbl(slotV2Label[s], "Diffusion");
+                setLbl(slotV3Label[s], "Mod Rate (Hz)");
+                setLbl(slotV4Label[s], "Mod Depth (%)");
+            } else {
+                setLbl(slotV1Label[s], "Decay (s)");
+                setLbl(slotV2Label[s], "High Damp");
+                setLbl(slotV3Label[s], "Size");
+                setLbl(slotV4Label[s], "Output Trim (dB)");
+            }
         } else if (type == "Reverb") {
             setLbl(slotV1Label[s], "Room Size");
             setLbl(slotV2Label[s], "Damping");
