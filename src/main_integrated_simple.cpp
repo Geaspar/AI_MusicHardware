@@ -3278,6 +3278,7 @@ int main(int argc, char* argv[]) {
                 std::lock_guard<std::mutex> lock(audioMutex);
                 if (auto* f = getFxForSlot(s)) { f->setParameter("output_trim_db", v); slotParamCache[s][type]["output_trim_db"] = v; }
             });
+            // Consider adding Size on Plate: mapped to Mix knob row if needed later
         } else {
             // Unknown: disable all
             disableParam(slotV1Label[s], slotV1Slider[s]);

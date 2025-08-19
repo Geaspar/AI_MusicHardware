@@ -17,6 +17,7 @@ PlateReverb::PlateReverb(int sampleRate) : Effect(sampleRate), er_(sampleRate),
     parameters_["high_damping"] = 0.3f;
     parameters_["bass_mult"] = 1.0f;
     parameters_["stereo_width"] = 1.0f;
+    parameters_["size"] = 1.0f;
 }
 
 PlateReverb::~PlateReverb() = default;
@@ -70,8 +71,9 @@ void PlateReverb::process(float* buffer, int numFrames) {
     const float sr = static_cast<float>(getSampleRate());
     const float fc = 2000.0f + highDamp * (12000.0f - 2000.0f);
     const float aLp = std::exp(-(2.0f * 3.14159265358979323846f * fc) / sr);
-    const float baseL = 0.0253f * sr; // ~25.3 ms
-    const float baseR = 0.0311f * sr; // ~31.1 ms
+    const float size = clamp(parameters_.at("size"), 0.5f, 2.0f);
+    const float baseL = 0.0253f * sr * size; // ~25.3 ms * size
+    const float baseR = 0.0311f * sr * size; // ~31.1 ms * size
     const float modRate2 = std::max(0.05f, parameters_.at("mod_rate"));
     const float modDepth = std::max(0.0f, parameters_.at("mod_depth")) * 0.01f;
     const float twoPiOverSr = (2.0f * 3.14159265358979323846f) / sr;
