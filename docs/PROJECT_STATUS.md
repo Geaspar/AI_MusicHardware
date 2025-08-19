@@ -331,6 +331,50 @@ Status: 🟡 Improved; pending final UX fixes
 - Mod Matrix
   - Exposed Plate params as destinations (Predelay, Diffusion, Mod Rate, Mod Depth, Decay, High Damp, Width, Output Trim, Mix) with smoothing.
 
+### **August 19–20, 2025** — Effects Design Library & IoT Sensor FX
+
+Status: 🟢 ADDED (design docs) / 🔜 NEXT (implementation)
+
+- Effects docs were organized under `docs/Effects/` and expanded significantly:
+  - Time/Modulation/Filters
+    - `ping_pong_delay.md` — Tempo‑synced stereo delay with modulation, ducking, smear
+    - `tremolo.md` — Pecheneg‑style tremolo (parity target + enhancements)
+    - `vibrato.md` — SR‑invariant modulated‑delay vibrato (Clean/Tape/BBD)
+    - `ring_modulator.md` — AM/RM with stereo, sync, tracking, MS routing
+    - `frequency_shifter.md` — Hilbert‑based linear Hz shifter (Up/Down/Stereo/MS)
+  - Dynamics/Tone
+    - `compressor_1176.md` — 1176‑style FET compressor (ratios + All‑Buttons)
+    - `limiter.md` — True‑peak brickwall with look‑ahead and soft‑clip
+    - `transient_shaper.md` — Dual‑envelope attack/sustain sculptor
+    - `tape.md` — Tape color (drive/bias/head bump/wow/flutter, OS)
+    - `kick_ducker.md` — Tempo‑aware sidechain ducking/pumper with look‑ahead
+  - Distortion/Waveshaping
+    - `wavefolder.md` — West‑Coast/Buchla‑style folding (symmetry/bias/stages, OS)
+  - EQ/Tone Shaping
+    - `neve_1073.md` — Preamp color + stepped 3‑band EQ with HPF
+    - `pultec_eq.md` — EQP‑1A style LF Boost/Atten interaction + HS Boost/Atten
+  - Filters
+    - `ms20_filter.md` — Serial HP→LP with nonlinear feedback (scream)
+    - `moog_ladder_filter.md` — ZDF 4‑pole ladder with self‑osc and taps
+    - `oberheim_sem_filter.md` — 12 dB SVF with LP/Notch/HP morph & BP tap
+    - `auto_wah.md` — Envelope/LFO‑driven resonant SVF (LP/BP/HP)
+    - `envelope_follower.md` — Peak/RMS/Absolute detector + shaping (source/effect)
+  - Imaging/Spatial/Granular
+    - `basssafe_imager.md` — Stereo width with bass mono fold‑down; stereoize
+    - `granular.md` — Real‑time grain processor (size/density/pitch/position/spray/freeze)
+  - Reverb family & extensions
+    - `prismverb_sfdn.md` — PrismVerb spectral FDN (per‑band RT60, cross‑coupling)
+    - `orbitverb_motion_mapped_reverb.md` — OrbitVerb motion‑mapped reverb (lanes/scenes)
+    - `texture_tail_engine.md` — Velvet/micro‑grain tail layer with ducking
+    - `er_designer_geometry_seeds.md` — Geometry‑seeded ER generator
+  - IoT Sensor Integration
+    - `sensor_matrix.md` — Sensor Matrix (IoT sensor → modulation hub)
+    - `fx.md` expanded with IoT‑driven FX ideas (Sensor Matrix, EnvSense Tilt, MotionFormant, ProxiSpace Imager, BioRhythm Trem/Delay, GeoVerb)
+
+- Next steps
+  - Prioritize implementation sequence (low‑lift/high‑impact first): Sensor Matrix → Diffusion Shaper → Ping‑Pong Delay → Wavefolder → Imager.
+  - Hook Sensor Matrix lanes into modulation matrix and provide example presets demonstrating motion‑controlled FX.
+
 ### **August 12, 2025** — Filter Cutoff Persistence & Real-Time Control
 
 **Status**: 🟢 COMPLETE
