@@ -140,11 +140,35 @@ void PlateReverb::process(float* buffer, int numFrames) {
 }
 
 void PlateReverb::setParameter(const std::string& name, float value) {
-    if (name == "mix") mix_ = clamp(value, 0.0f, 1.0f);
-    parameters_[name] = value;
+    if (name == "mix") {
+        mix_ = clamp(value, 0.0f, 1.0f);
+        parameters_[name] = mix_;
+        return;
+    }
+    if (name == "mod_depth") {
+        float vd = std::max(0.0f, std::min(0.25f, value));
+        parameters_[name] = vd;
+        return;
+    }
+    if (name == "decay_rt60_s") {
+        parameters_[name] = std::max(0.2f, value);
+        return;
+    }
+    if (name == "high_damping") {
+        parameters_[name] = std::max(0.0f, std::min(1.0f, value));
+        return;
+    }
+    if (name == "bass_mult") {
+        parameters_[name] = std::max(0.5f, std::min(2.0f, value));
+        return;
+    }
     if (name == "output_trim_db") {
         outputTrimDb_ = std::max(-24.0f, std::min(24.0f, value));
+        parameters_[name] = outputTrimDb_;
+        return;
     }
+    // Generic set for other parameters (predelay_ms, diffusion, mod_rate, er_* )
+    parameters_[name] = value;
 }
 
 float PlateReverb::getParameter(const std::string& name) const {
