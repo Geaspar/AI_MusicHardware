@@ -107,7 +107,8 @@ void FDNReverb::process(float* buffer, int numFrames) {
     float lfoOmegaArr[kNumDelays_];
     float depthSamplesArr[kNumDelays_];
     const float twoPiOverSr = (2.0f * 3.14159265358979323846f) / static_cast<float>(getSampleRate());
-    const float modDepthPct = std::max(0.0f, parameters_.at("mod_depth")) * 0.01f; // percent → fraction
+    // Convert UI percent to fraction for FDN modulation depth
+    const float modDepthFrac = std::max(0.0f, parameters_.at("mod_depth")) * 0.01f;
     for (int k = 0; k < kNumDelays_; ++k) {
         baseDelaySamplesArr[k] = (fdnBaseDelayMs_[k] * sizeSmoothed_) * (static_cast<float>(getSampleRate())/1000.0f);
         const float Td = baseDelaySamplesArr[k] / static_cast<float>(getSampleRate());
@@ -118,7 +119,7 @@ void FDNReverb::process(float* buffer, int numFrames) {
         aLpArr[k] = std::exp(-(2.0f * 3.14159265358979323846f * fc) / static_cast<float>(getSampleRate()));
         const float lfoRate = std::max(0.05f, parameters_.at("mod_rate")) * fdnLfoRateMul_[k];
         lfoOmegaArr[k] = twoPiOverSr * lfoRate;
-        depthSamplesArr[k] = baseDelaySamplesArr[k] * modDepthPct;
+        depthSamplesArr[k] = baseDelaySamplesArr[k] * modDepthFrac;
     }
 
     const float twoOverN = 2.0f / static_cast<float>(kNumDelays_);

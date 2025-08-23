@@ -618,17 +618,7 @@ int main(int argc, char* argv[]) {
     effectsNavButton->setTextColor(Color(255, 255, 255));
     effectsNavButton->setClickCallback([&]() {
         uiContext->setActiveScreen("effects");
-        // When entering the effects screen, refresh labels using current page/type
-        if (auto* es = uiContext->getScreen("effects")) {
-            for (int s = 0; s < 6; ++s) {
-                int pageIdx = 0;
-                if (auto* p = dynamic_cast<DropdownMenu*>(es->getChild(std::string("fx_page_") + std::to_string(s)))) {
-                    pageIdx = p->getSelectedIndex();
-                }
-                std::cout << "[FXUI] on-activate slot " << s << " type='" << slotSelectedType[s] << "' page=" << pageIdx << std::endl;
-                configureSlotParams(s, slotSelectedType[s]);
-            }
-        }
+        // Deferred: advanced FX UI refresh (labels/pages) — removed due to undefined symbols in this commit
     });
     mainScreen->addChild(std::move(effectsNavButton));
     
