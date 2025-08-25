@@ -10,6 +10,7 @@
 #include <cmath>
 #include <unordered_map>
 #include <vector>
+#include <array>
 #include <fstream>
 #include <cstdlib>
 #include <filesystem>
@@ -43,6 +44,8 @@
 #include "../include/ui/presets/PresetManager.h"
 #include "../include/ui/presets/PresetDatabase.h"
 #include "../include/midi/MidiCCLearning.h"
+// Sensor Matrix
+#include "../include/iot/SensorMatrix.h"
 
 // Effects
 #include "../include/effects/Filter.h"
@@ -126,6 +129,54 @@ public:
         SDL_Rect rect = { x, y, width, height };
         SDL_SetRenderDrawColor(renderer_, color.r, color.g, color.b, color.a);
         SDL_RenderFillRect(renderer_, &rect);
+    }
+
+    // Basic circle outline using midpoint algorithm
+    void drawCircle(int x0, int y0, int radius, const Color& color) override {
+        if (!renderer_) return;
+        SDL_SetRenderDrawColor(renderer_, color.r, color.g, color.b, color.a);
+        int f = 1 - radius;
+        int ddF_x = 0;
+        int ddF_y = -2 * radius;
+        int x = 0;
+        int y = radius;
+        auto plot = [&](int px, int py){ SDL_RenderDrawPoint(renderer_, px, py); };
+        plot(x0, y0 + radius);
+        plot(x0, y0 - radius);
+        plot(x0 + radius, y0);
+        plot(x0 - radius, y0);
+        while (x < y) {
+            if (f >= 0) { y--; ddF_y += 2; f += ddF_y; }
+            x++; ddF_x += 2; f += ddF_x + 1;
+            plot(x0 + x, y0 + y); plot(x0 - x, y0 + y);
+            plot(x0 + x, y0 - y); plot(x0 - x, y0 - y);
+            plot(x0 + y, y0 + x); plot(x0 - y, y0 + x);
+            plot(x0 + y, y0 - x); plot(x0 - y, y0 - x);
+        }
+    }
+
+    // Filled circle by drawing horizontal spans between symmetric points
+    void fillCircle(int x0, int y0, int radius, const Color& color) override {
+        if (!renderer_) return;
+        SDL_SetRenderDrawColor(renderer_, color.r, color.g, color.b, color.a);
+        int f = 1 - radius;
+        int ddF_x = 0;
+        int ddF_y = -2 * radius;
+        int x = 0;
+        int y = radius;
+        auto hline = [&](int cx, int cy, int len){
+            SDL_RenderDrawLine(renderer_, cx - len, cy, cx + len, cy);
+        };
+        // Center line
+        hline(x0, y0, radius);
+        while (x < y) {
+            if (f >= 0) { y--; ddF_y += 2; f += ddF_y; }
+            x++; ddF_x += 2; f += ddF_x + 1;
+            hline(x0, y0 + y, x);
+            hline(x0, y0 - y, x);
+            hline(x0, y0 + x, y);
+            hline(x0, y0 - x, y);
+        }
     }
     
     void drawText(int x, int y, const std::string& text, Font* font, const Color& color) override {
@@ -356,6 +407,8 @@ int main(int argc, char* argv[]) {
     // MIDI activity indicator state
     std::atomic<bool> midiActivityPulse{false};
     float midiActivityTimer = 0.0f; // seconds to keep the light on after a message
+    // Create Sensor Matrix (8 lanes)
+    auto sensorMatrix = std::make_shared<SensorMatrix>(8);
     
     // Persistence config
     auto getUserConfigPath = []() -> std::string {
@@ -673,6 +726,19 @@ int main(int argc, char* argv[]) {
         uiContext->setActiveScreen("sequencer");
     });
     mainScreen->addChild(std::move(sequencerNavButton));
+    
+    // Removed duplicate nav text label; button text is sufficient
+    
+    // Sensors button
+    auto sensorsNavButton = std::make_unique<Button>("sensors_nav_btn", "Sensors");
+    sensorsNavButton->setPosition(630, 5);
+    sensorsNavButton->setSize(80, 30);
+    sensorsNavButton->setBackgroundColor(Color(80, 80, 120));
+    sensorsNavButton->setTextColor(Color(255, 255, 255));
+    sensorsNavButton->setClickCallback([&uiContext]() {
+        uiContext->setActiveScreen("sensors");
+    });
+    mainScreen->addChild(std::move(sensorsNavButton));
     
     // Removed duplicate nav text label; button text is sufficient
     
@@ -2451,6 +2517,15 @@ int main(int argc, char* argv[]) {
         seqButton->setClickCallback([uiContext]() { uiContext->setActiveScreen("sequencer"); });
         screen->addChild(std::move(seqButton));
         
+        // Sensors button
+        auto sensorsBtn = std::make_unique<Button>("nav_sensors", "Sensors");
+        sensorsBtn->setPosition(630, 5);
+        sensorsBtn->setSize(80, 30);
+        sensorsBtn->setBackgroundColor(currentScreen == "sensors" ? Color(100, 100, 140) : Color(80, 80, 120));
+        sensorsBtn->setTextColor(Color(255, 255, 255));
+        sensorsBtn->setClickCallback([uiContext]() { uiContext->setActiveScreen("sensors"); });
+        screen->addChild(std::move(sensorsBtn));
+
         // Remove duplicate label; button caption suffices
     };
     
@@ -2476,33 +2551,23 @@ int main(int argc, char* argv[]) {
     
     auto playStopButtonPtr = playStopButton.get();
     
-    // Create label for play/stop button first
-    auto playStopLabel = std::make_unique<Label>("play_stop_label", "Play");
-    playStopLabel->setPosition(65, 120);
-    playStopLabel->setSize(50, 20);
-    playStopLabel->setTextColor(Color(255, 255, 255));
-    auto playStopLabelPtr = playStopLabel.get();
-    
-    // Set callback with both button and label pointers
-    playStopButton->setClickCallback([&sequencer, playStopButtonPtr, playStopLabelPtr, isPlaying]() {
+    // Set callback to toggle play/stop
+    playStopButton->setClickCallback([&sequencer, playStopButtonPtr, isPlaying]() {
         if (*isPlaying) {
             sequencer->stop();
             playStopButtonPtr->setText("Play");
-            playStopLabelPtr->setText("Play");
             playStopButtonPtr->setBackgroundColor(Color(50, 120, 50));
             *isPlaying = false;
             std::cout << "Sequencer stopped" << std::endl;
         } else {
             sequencer->start();
             playStopButtonPtr->setText("Stop");
-            playStopLabelPtr->setText("Stop");
             playStopButtonPtr->setBackgroundColor(Color(120, 50, 50));
             *isPlaying = true;
             std::cout << "Sequencer started" << std::endl;
         }
     });
     sequencerScreen->addChild(std::move(playStopButton));
-    sequencerScreen->addChild(std::move(playStopLabel));
     
     // Reset button
     auto resetButton = std::make_unique<Button>("reset_btn", "Reset");
@@ -2516,12 +2581,6 @@ int main(int argc, char* argv[]) {
     });
     sequencerScreen->addChild(std::move(resetButton));
     
-    // Add label for reset button
-    auto resetLabel = std::make_unique<Label>("reset_label", "Reset");
-    resetLabel->setPosition(155, 120);
-    resetLabel->setSize(50, 20);
-    resetLabel->setTextColor(Color(255, 255, 255));
-    sequencerScreen->addChild(std::move(resetLabel));
     
     // Tempo control
     auto tempoLabel = std::make_unique<Label>("tempo_label", "BPM");
@@ -2549,29 +2608,19 @@ int main(int argc, char* argv[]) {
     bool* isLooping = new bool(true);
     auto loopButtonPtr = loopButton.get();
     
-    // Create label for loop button
-    auto loopLabel = std::make_unique<Label>("loop_label", "Loop: ON");
-    loopLabel->setPosition(368, 120);
-    loopLabel->setSize(65, 20);
-    loopLabel->setTextColor(Color(255, 255, 255));
-    auto loopLabelPtr = loopLabel.get();
-    
-    loopButton->setClickCallback([&sequencer, loopButtonPtr, loopLabelPtr, isLooping]() {
+    loopButton->setClickCallback([&sequencer, loopButtonPtr, isLooping]() {
         *isLooping = !*isLooping;
         sequencer->setLooping(*isLooping);
         if (*isLooping) {
             loopButtonPtr->setText("Loop: ON");
-            loopLabelPtr->setText("Loop: ON");
             loopButtonPtr->setBackgroundColor(Color(50, 100, 50));
         } else {
             loopButtonPtr->setText("Loop: OFF");
-            loopLabelPtr->setText("Loop: OFF");
             loopButtonPtr->setBackgroundColor(Color(100, 50, 50));
         }
         std::cout << "Looping: " << (*isLooping ? "ON" : "OFF") << std::endl;
     });
     sequencerScreen->addChild(std::move(loopButton));
-    sequencerScreen->addChild(std::move(loopLabel));
     
     // Pattern info section
     auto patternSection = std::make_unique<Label>("pattern_section", "PATTERN");
@@ -2635,12 +2684,6 @@ int main(int argc, char* argv[]) {
     });
     sequencerScreen->addChild(std::move(addTestPatternButton));
     
-    // Add label for test pattern button
-    auto testPatternLabel = std::make_unique<Label>("test_pattern_label", "Add Test Pattern");
-    testPatternLabel->setPosition(65, 410);
-    testPatternLabel->setSize(120, 20);
-    testPatternLabel->setTextColor(Color(255, 255, 255));
-    sequencerScreen->addChild(std::move(testPatternLabel));
     
     // Add sequencer screen to context
     uiContext->addScreen(std::move(sequencerScreen));
@@ -2659,8 +2702,16 @@ int main(int argc, char* argv[]) {
     effectsTitle->setTextColor(Color(255, 255, 100));
     effectsScreen->addChild(std::move(effectsTitle));
 
+    // Step 1: Add a shared effects visualizer panel (placeholder)
+    auto effectsViz = std::make_unique<EffectsVisualizerPanel>("effects_visualizer");
+    // Place panel at the bottom of the Effects screen
+    effectsViz->setPosition(50, 600);
+    effectsViz->setSize(1180, 180);
+    auto effectsVizPtr = effectsViz.get();
+    effectsScreen->addChild(std::move(effectsViz));
+
     // Multi-slot Effects UI (per-slot Type, Bypass, Mix + 4 vertical sliders)
-    const int fxSlotCount = 6;
+    const int fxSlotCount = 5;
     const int rowStartY = 150;   // shifted up by 10px for tighter placement
     const int rowHeight = 100;   // adjusted to fit within 800px height
 
@@ -2689,6 +2740,17 @@ int main(int argc, char* argv[]) {
     std::vector<Label*>        slotV2Label(fxSlotCount, nullptr);
     std::vector<Label*>        slotV3Label(fxSlotCount, nullptr);
     std::vector<Label*>        slotV4Label(fxSlotCount, nullptr);
+    // Per-slot sync for time-based modulation (Tremolo/RingMod): UI + state persisted via slotParamCache special keys
+    std::vector<Button*>       slotSyncBtn(fxSlotCount, nullptr);
+    std::vector<bool>          slotSyncEnabled(fxSlotCount, false);
+    std::vector<int>           slotDivIndex(fxSlotCount, 3); // default 1/4 note (index will map below)
+
+    // Division tables (relative to quarter note = 1 beat)
+    const std::vector<std::pair<std::string, float>> divTable = {
+        {"1/1", 4.0f}, {"1/2", 2.0f}, {"1/4", 1.0f}, {"1/8", 0.5f}, {"1/8T", 1.0f/3.0f}, {"1/16", 0.25f}
+    };
+    auto divName = [&](int idx){ idx = std::max(0, std::min(idx, (int)divTable.size()-1)); return divTable[idx].first; };
+    auto divBeats = [&](int idx){ idx = std::max(0, std::min(idx, (int)divTable.size()-1)); return divTable[idx].second; };
 
     auto setEffectMix = [&](Effect* fx, const std::string& type, float mixVal) {
         if (!fx) return;
@@ -2713,6 +2775,11 @@ int main(int argc, char* argv[]) {
             fx->setParameter("delayTime", 0.35f);
             fx->setParameter("feedback", 0.35f);
             fx->setParameter("mix", 0.35f);
+        } else if (type == "PingPongDelay") {
+            fx->setParameter("mix", 0.35f);
+            fx->setParameter("time_ms", 450.0f);
+            fx->setParameter("feedback", 0.35f);
+            fx->setParameter("width", 0.8f);
         } else if (type == "Distortion") {
             fx->setParameter("drive", 5.0f);
             fx->setParameter("level", 0.5f);
@@ -2735,6 +2802,22 @@ int main(int argc, char* argv[]) {
             fx->setParameter("mod_depth", 0.2f);
         } else if (type == "PlateReverb") {
             fx->setParameter("mix", 0.20f);
+        } else if (type == "Tremolo") {
+            fx->setParameter("rate", 2.0f);
+            fx->setParameter("depth", 0.5f);
+            fx->setParameter("shape", 0.0f);
+            fx->setParameter("mix", 1.0f);
+        } else if (type == "Wavefolder") {
+            fx->setParameter("drive", 1.5f);
+            fx->setParameter("asym", 0.0f);
+            fx->setParameter("bias", 0.0f);
+            fx->setParameter("mix", 0.4f);
+            fx->setParameter("output_trim_db", -6.0f);
+        } else if (type == "RingModulator") {
+            fx->setParameter("freq_hz", 30.0f);
+            fx->setParameter("depth", 1.0f);
+            fx->setParameter("stereo_phase_deg", 90.0f);
+            fx->setParameter("mix", 0.5f);
         } else if (type == "BitCrusher") {
             fx->setParameter("bitDepth", 8.0f);
             fx->setParameter("sampleRateReduction", 0.5f);
@@ -2929,11 +3012,34 @@ int main(int argc, char* argv[]) {
             disableParam(slotV4Label[s], slotV4Slider[s]);
         } else if (type == "Delay") {
             std::cout << "[FXUI] slot " << s << " page=N/A (Delay single page)" << std::endl;
-            if (slotV1Label[s]) slotV1Label[s]->setText("Time (s)");
-            slotV1Slider[s]->setRange(0.01f, 1.0f);
-            slotV1Slider[s]->setValue(fx->getParameter("delayTime"));
-            slotV1Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(2)<<v<<" s"; return ss.str();});
-            slotV1Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("delayTime", v); slotParamCache[s][type]["delayTime"] = v; } });
+            if (slotSyncEnabled[s]) {
+                // Synced delay time (in beats)
+                slotV1Slider[s]->setRange(0.0f, (float)divTable.size()-1);
+                slotV1Slider[s]->setStep(1.0f);
+                slotV1Slider[s]->setValue((float)slotDivIndex[s]);
+                slotV1Slider[s]->setValueFormatter([&](float v){ int i=(int)std::round(v); return std::string(divName(i)); });
+                slotV1Slider[s]->setValueChangeCallback([&, s, type](float v){
+                    std::lock_guard<std::mutex> lock(audioMutex);
+                    slotDivIndex[s] = (int)std::round(v);
+                    slotParamCache[s][type]["_divIndex"] = (float)slotDivIndex[s];
+                    if (auto* f = getFxForSlot(s)) {
+                        float bpm = sequencer ? (float)sequencer->getTempo() : 120.0f;
+                        float beatHz = bpm / 60.0f;
+                        float time_s = std::max(0.002f, divBeats(slotDivIndex[s]) / std::max(0.001f, beatHz));
+                        f->setParameter("delayTime", time_s);
+                    }
+                });
+                if (slotV1Label[s]) slotV1Label[s]->setText("Time (Sync)");
+                if (slotSyncBtn[s]) slotSyncBtn[s]->setText("Sync");
+            } else {
+                if (slotV1Label[s]) slotV1Label[s]->setText("Time (s)");
+                slotV1Slider[s]->setRange(0.002f, 1.0f); // allow very short delays for chorusing
+                slotV1Slider[s]->setStep(0.0f);
+                slotV1Slider[s]->setValue(fx->getParameter("delayTime"));
+                slotV1Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(2)<<v<<" s"; return ss.str();});
+                slotV1Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("delayTime", v); slotParamCache[s][type]["delayTime"] = v; } });
+                if (slotSyncBtn[s]) slotSyncBtn[s]->setText("Free");
+            }
 
             if (slotV2Label[s]) slotV2Label[s]->setText("Feedback");
             slotV2Slider[s]->setRange(0.0f, 0.95f);
@@ -2943,6 +3049,53 @@ int main(int argc, char* argv[]) {
 
             disableParam(slotV3Label[s], slotV3Slider[s]);
             disableParam(slotV4Label[s], slotV4Slider[s]);
+        } else if (type == "PingPongDelay") {
+            std::cout << "[FXUI] slot " << s << " page=N/A (PingPongDelay single page)" << std::endl;
+            if (slotSyncEnabled[s]) {
+                slotV1Slider[s]->setRange(0.0f, (float)divTable.size()-1);
+                slotV1Slider[s]->setStep(1.0f);
+                slotV1Slider[s]->setValue((float)slotDivIndex[s]);
+                slotV1Slider[s]->setValueFormatter([&](float v){ int i=(int)std::round(v); return std::string(divName(i)); });
+                slotV1Slider[s]->setValueChangeCallback([&, s, type](float v){
+                    std::lock_guard<std::mutex> lock(audioMutex);
+                    slotDivIndex[s] = (int)std::round(v);
+                    slotParamCache[s][type]["_divIndex"] = (float)slotDivIndex[s];
+                    if (auto* f = getFxForSlot(s)) {
+                        float bpm = sequencer ? (float)sequencer->getTempo() : 120.0f;
+                        float beatHz = bpm / 60.0f;
+                        float time_s = std::max(0.002f, divBeats(slotDivIndex[s]) / std::max(0.001f, beatHz));
+                        f->setParameter("time_ms", time_s * 1000.0f);
+                    }
+                });
+                if (slotV1Label[s]) slotV1Label[s]->setText("Time (Sync)");
+                if (slotSyncBtn[s]) slotSyncBtn[s]->setText("Sync");
+            } else {
+                if (slotV1Label[s]) slotV1Label[s]->setText("Time (ms)");
+                slotV1Slider[s]->setRange(10.0f, 2000.0f);
+                slotV1Slider[s]->setStep(0.0f);
+                slotV1Slider[s]->setValue(fx->getParameter("time_ms"));
+                slotV1Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(0)<<v<<" ms"; return ss.str();});
+                slotV1Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("time_ms", v); slotParamCache[s][type]["time_ms"] = v; } });
+                if (slotSyncBtn[s]) slotSyncBtn[s]->setText("Free");
+            }
+
+            if (slotV2Label[s]) slotV2Label[s]->setText("Feedback");
+            slotV2Slider[s]->setRange(0.0f, 0.95f);
+            slotV2Slider[s]->setValue(fx->getParameter("feedback"));
+            slotV2Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<"FB "<<std::fixed<<std::setprecision(0)<<(v*100.0f)<<"%"; return ss.str();});
+            slotV2Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("feedback", v); slotParamCache[s][type]["feedback"] = v; } });
+
+            if (slotV3Label[s]) slotV3Label[s]->setText("HP Freq (Hz)");
+            slotV3Slider[s]->setRange(20.0f, 2000.0f);
+            slotV3Slider[s]->setValue(fx->getParameter("hp_freq"));
+            slotV3Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(0)<<v<<" Hz"; return ss.str();});
+            slotV3Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("hp_freq", v); slotParamCache[s][type]["hp_freq"] = v; } });
+
+            if (slotV4Label[s]) slotV4Label[s]->setText("LP Freq (Hz)");
+            slotV4Slider[s]->setRange(1000.0f, 20000.0f);
+            slotV4Slider[s]->setValue(fx->getParameter("lp_freq"));
+            slotV4Slider[s]->setValueFormatter([](float v){ std::stringstream ss; if (v >= 1000.0f) { ss<<std::fixed<<std::setprecision(1)<<(v/1000.0f)<<" kHz"; } else { ss<<std::fixed<<std::setprecision(0)<<v<<" Hz"; } return ss.str();});
+            slotV4Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("lp_freq", v); slotParamCache[s][type]["lp_freq"] = v; } });
         } else if (type == "Distortion") {
             std::cout << "[FXUI] slot " << s << " page=N/A (Distortion single page)" << std::endl;
             if (slotV1Label[s]) slotV1Label[s]->setText("Drive");
@@ -3021,6 +3174,131 @@ int main(int argc, char* argv[]) {
             slotV3Slider[s]->setValue(fx->getParameter("feedback"));
             slotV3Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<"FB "<<std::fixed<<std::setprecision(0)<<(v*100.0f)<<"%"; return ss.str();});
             slotV3Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("feedback", v); slotParamCache[s][type]["feedback"] = v; } });
+
+            disableParam(slotV4Label[s], slotV4Slider[s]);
+        } else if (type == "Tremolo") {
+            std::cout << "[FXUI] slot " << s << " page=N/A (Tremolo single page)" << std::endl;
+            if (slotV1Label[s]) slotV1Label[s]->setText("Rate (Hz)");
+            if (slotSyncEnabled[s]) {
+                // Synced: slider selects division index
+                slotV1Slider[s]->setRange(0.0f, (float)divTable.size()-1);
+                slotV1Slider[s]->setStep(1.0f);
+                slotV1Slider[s]->setValue((float)slotDivIndex[s]);
+                slotV1Slider[s]->setValueFormatter([&](float v){ int i=(int)std::round(v); return std::string(divName(i)); });
+                slotV1Slider[s]->setValueChangeCallback([&, s, type](float v){
+                    std::lock_guard<std::mutex> lock(audioMutex);
+                    slotDivIndex[s] = (int)std::round(v);
+                    slotParamCache[s][type]["_divIndex"] = (float)slotDivIndex[s];
+                    if (auto* f = getFxForSlot(s)) {
+                        float bpm = sequencer ? (float)sequencer->getTempo() : 120.0f;
+                        float beatHz = bpm / 60.0f;
+                        float rateHz = std::max(0.1f, beatHz / std::max(0.001f, divBeats(slotDivIndex[s])));
+                        f->setParameter("rate", rateHz);
+                    }
+                });
+                if (slotV1Label[s]) slotV1Label[s]->setText("Rate (Sync)");
+                if (slotSyncBtn[s]) slotSyncBtn[s]->setText("Sync");
+            } else {
+                slotV1Slider[s]->setRange(0.10f, 15.0f);
+                slotV1Slider[s]->setStep(0.0f);
+                slotV1Slider[s]->setValue(fx->getParameter("rate"));
+                slotV1Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(2)<<v<<" Hz"; return ss.str();});
+                slotV1Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("rate", v); slotParamCache[s][type]["rate"] = v; } });
+                if (slotV1Label[s]) slotV1Label[s]->setText("Rate (Hz)");
+                if (slotSyncBtn[s]) slotSyncBtn[s]->setText("Free");
+            }
+
+            if (slotV2Label[s]) slotV2Label[s]->setText("Depth");
+            slotV2Slider[s]->setRange(0.0f, 1.0f);
+            slotV2Slider[s]->setValue(fx->getParameter("depth"));
+            slotV2Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<"Depth "<<std::fixed<<std::setprecision(0)<<(v*100.0f)<<"%"; return ss.str();});
+            slotV2Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("depth", v); slotParamCache[s][type]["depth"] = v; } });
+
+            if (slotV3Label[s]) slotV3Label[s]->setText("Shape/Mode");
+            slotV3Slider[s]->setRange(0.0f, 3.0f);
+            slotV3Slider[s]->setStep(1.0f);
+            slotV3Slider[s]->setValue(fx->getParameter("shape"));
+            slotV3Slider[s]->setValueFormatter([](float v){ int i = static_cast<int>(v+0.5f); const char* n = (i==0?"Sine":(i==1?"Tri":(i==2?"Square":"Pan"))); std::stringstream ss; ss<<n; return ss.str();});
+            slotV3Slider[s]->setValueChangeCallback([&, s, type](float v){
+                std::lock_guard<std::mutex> lock(audioMutex);
+                int iv = static_cast<int>(v + 0.5f);
+                if (auto* f = getFxForSlot(s)) { f->setParameter("shape", static_cast<float>(iv)); slotParamCache[s][type]["shape"] = static_cast<float>(iv); }
+            });
+
+            if (slotV4Label[s]) slotV4Label[s]->setText("Phase (deg)");
+            slotV4Slider[s]->setRange(0.0f, 180.0f);
+            slotV4Slider[s]->setValue(fx->getParameter("stereo_phase_deg"));
+            slotV4Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(0)<<v<<"°"; return ss.str();});
+            slotV4Slider[s]->setValueChangeCallback([&, s, type](float v){
+                std::lock_guard<std::mutex> lock(audioMutex);
+                if (auto* f = getFxForSlot(s)) { f->setParameter("stereo_phase_deg", v); slotParamCache[s][type]["stereo_phase_deg"] = v; }
+            });
+        } else if (type == "Wavefolder") {
+            std::cout << "[FXUI] slot " << s << " page=N/A (Wavefolder single page)" << std::endl;
+            if (slotV1Label[s]) slotV1Label[s]->setText("Drive");
+            slotV1Slider[s]->setRange(0.1f, 20.0f);
+            slotV1Slider[s]->setValue(fx->getParameter("drive"));
+            slotV1Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<"Drive "<<std::fixed<<std::setprecision(2)<<v; return ss.str();});
+            slotV1Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("drive", v); slotParamCache[s][type]["drive"] = v; } });
+
+            if (slotV2Label[s]) slotV2Label[s]->setText("Asym");
+            slotV2Slider[s]->setRange(0.0f, 1.0f);
+            slotV2Slider[s]->setValue(fx->getParameter("asym"));
+            slotV2Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<"Asym "<<std::fixed<<std::setprecision(0)<<(v*100.0f)<<"%"; return ss.str();});
+            slotV2Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("asym", v); slotParamCache[s][type]["asym"] = v; } });
+
+            if (slotV3Label[s]) slotV3Label[s]->setText("Bias");
+            slotV3Slider[s]->setRange(-1.0f, 1.0f);
+            slotV3Slider[s]->setValue(fx->getParameter("bias"));
+            slotV3Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<"Bias "<<std::fixed<<std::setprecision(2)<<v; return ss.str();});
+            slotV3Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("bias", v); slotParamCache[s][type]["bias"] = v; } });
+
+            if (slotV4Label[s]) slotV4Label[s]->setText("Output Trim (dB)");
+            slotV4Slider[s]->setRange(-24.0f, 12.0f);
+            slotV4Slider[s]->setValue(fx->getParameter("output_trim_db"));
+            slotV4Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(1)<<v<<" dB"; return ss.str();});
+            slotV4Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("output_trim_db", v); slotParamCache[s][type]["output_trim_db"] = v; } });
+        } else if (type == "RingModulator") {
+            std::cout << "[FXUI] slot " << s << " page=N/A (RingModulator single page)" << std::endl;
+            if (slotV1Label[s]) slotV1Label[s]->setText("Rate (Hz)");
+            if (slotSyncEnabled[s]) {
+                slotV1Slider[s]->setRange(0.0f, (float)divTable.size()-1);
+                slotV1Slider[s]->setStep(1.0f);
+                slotV1Slider[s]->setValue((float)slotDivIndex[s]);
+                slotV1Slider[s]->setValueFormatter([&](float v){ int i=(int)std::round(v); return std::string(divName(i)); });
+                slotV1Slider[s]->setValueChangeCallback([&, s, type](float v){
+                    std::lock_guard<std::mutex> lock(audioMutex);
+                    slotDivIndex[s] = (int)std::round(v);
+                    slotParamCache[s][type]["_divIndex"] = (float)slotDivIndex[s];
+                    if (auto* f = getFxForSlot(s)) {
+                        float bpm = sequencer ? (float)sequencer->getTempo() : 120.0f;
+                        float beatHz = bpm / 60.0f;
+                        float rateHz = std::max(0.1f, beatHz / std::max(0.001f, divBeats(slotDivIndex[s])));
+                        f->setParameter("freq_hz", rateHz);
+                    }
+                });
+                if (slotV1Label[s]) slotV1Label[s]->setText("Rate (Sync)");
+                if (slotSyncBtn[s]) slotSyncBtn[s]->setText("Sync");
+            } else {
+                slotV1Slider[s]->setRange(0.1f, 2000.0f);
+                slotV1Slider[s]->setStep(0.0f);
+                slotV1Slider[s]->setValue(fx->getParameter("freq_hz"));
+                slotV1Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(v>=10?1:2)<<v<<" Hz"; return ss.str();});
+                slotV1Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("freq_hz", v); slotParamCache[s][type]["freq_hz"] = v; } });
+                if (slotSyncBtn[s]) slotSyncBtn[s]->setText("Free");
+            }
+
+            if (slotV2Label[s]) slotV2Label[s]->setText("Depth");
+            slotV2Slider[s]->setRange(0.0f, 1.0f);
+            slotV2Slider[s]->setValue(fx->getParameter("depth"));
+            slotV2Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<"Depth "<<std::fixed<<std::setprecision(0)<<(v*100.0f)<<"%"; return ss.str();});
+            slotV2Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("depth", v); slotParamCache[s][type]["depth"] = v; } });
+
+            if (slotV3Label[s]) slotV3Label[s]->setText("Phase (deg)");
+            slotV3Slider[s]->setRange(0.0f, 180.0f);
+            slotV3Slider[s]->setValue(fx->getParameter("stereo_phase_deg"));
+            slotV3Slider[s]->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(0)<<v<<"°"; return ss.str();});
+            slotV3Slider[s]->setValueChangeCallback([&, s, type](float v){ std::lock_guard<std::mutex> lock(audioMutex); if (auto* f = getFxForSlot(s)) { f->setParameter("stereo_phase_deg", v); slotParamCache[s][type]["stereo_phase_deg"] = v; } });
 
             disableParam(slotV4Label[s], slotV4Slider[s]);
         } else if (type == "EQ") {
@@ -3276,6 +3554,12 @@ int main(int argc, char* argv[]) {
             disableParam(slotV3Label[s], slotV3Slider[s]);
             disableParam(slotV4Label[s], slotV4Slider[s]);
         }
+
+        // Show/hide the Sync toggle only for syncable effects
+        if (s < (int)slotSyncBtn.size() && slotSyncBtn[s]) {
+            bool syncable = (type == "Tremolo" || type == "RingModulator" || type == "Delay" || type == "PingPongDelay");
+            slotSyncBtn[s]->setVisible(syncable);
+        }
     };
 
     // Helper: explicitly set the four vertical parameter labels for a slot based on type/page
@@ -3322,6 +3606,11 @@ int main(int argc, char* argv[]) {
             setLbl(slotV2Label[s], "Feedback");
             setLbl(slotV3Label[s], "N/A");
             setLbl(slotV4Label[s], "N/A");
+        } else if (type == "PingPongDelay") {
+            setLbl(slotV1Label[s], "Time (ms)");
+            setLbl(slotV2Label[s], "Feedback");
+            setLbl(slotV3Label[s], "HP Freq (Hz)");
+            setLbl(slotV4Label[s], "LP Freq (Hz)");
         } else if (type == "BitCrusher") {
             setLbl(slotV1Label[s], "Bit Depth");
             setLbl(slotV2Label[s], "SRR");
@@ -3352,6 +3641,27 @@ int main(int argc, char* argv[]) {
             setLbl(slotV2Label[s], "Tone");
             setLbl(slotV3Label[s], "Mix");
             setLbl(slotV4Label[s], "Output Trim (dB)");
+        } else if (type == "Tremolo") {
+            setLbl(slotV1Label[s], "Rate (Hz)");
+            setLbl(slotV2Label[s], "Depth");
+            setLbl(slotV3Label[s], "Shape/Mode");
+            setLbl(slotV4Label[s], "Phase (deg)");
+            if (slotSyncEnabled[s]) {
+                setLbl(slotV1Label[s], "Rate (Sync)");
+            }
+        } else if (type == "Wavefolder") {
+            setLbl(slotV1Label[s], "Drive");
+            setLbl(slotV2Label[s], "Asym");
+            setLbl(slotV3Label[s], "Bias");
+            setLbl(slotV4Label[s], "Output Trim (dB)");
+        } else if (type == "RingModulator") {
+            setLbl(slotV1Label[s], "Rate (Hz)");
+            setLbl(slotV2Label[s], "Depth");
+            setLbl(slotV3Label[s], "Phase (deg)");
+            setLbl(slotV4Label[s], "N/A");
+            if (slotSyncEnabled[s]) {
+                setLbl(slotV1Label[s], "Rate (Sync)");
+            }
         } else {
             setLbl(slotV1Label[s], "N/A");
             setLbl(slotV2Label[s], "N/A");
@@ -3407,7 +3717,7 @@ int main(int argc, char* argv[]) {
         // Add four vertical sliders to the right of the mix slider (placeholders for per-slot params)
         // Shift vertical sliders 100px to the right from previous position
         const int vBaseX = 610;
-        const int vSpacing = 90;  // keep spacing; only scale slider size
+        const int vSpacing = 100;  // slightly wider spacing to reduce label overlap
         const int vWidth = 15;    // ~30% smaller than previous 21
         const int vHeight = 62;   // ~30% smaller than previous 88
         // Shift vertical sliders an additional 10px down for alignment
@@ -3419,6 +3729,15 @@ int main(int argc, char* argv[]) {
         v1Label->setTextColor(Color(200, 200, 200));
         slotV1Label[s] = v1Label.get();
         effectsScreen->addChild(std::move(v1Label));
+
+        // Add a small Sync toggle next to V1 label for Tremolo/RingMod (reused per type)
+        auto syncBtn = std::make_unique<Button>("fx_sync_" + std::to_string(s), "Free");
+        syncBtn->setPosition(vBaseX - 70, vY - 18);
+        syncBtn->setSize(50, 18);
+        syncBtn->setBackgroundColor(Color(70, 70, 95));
+        syncBtn->setTextColor(Color(230, 230, 255));
+        slotSyncBtn[s] = syncBtn.get();
+        effectsScreen->addChild(std::move(syncBtn));
 
         auto v1 = std::make_unique<Slider>("fx_v1_" + std::to_string(s), "", 0, 0, vWidth, vHeight);
         v1->setOrientation(Slider::Orientation::Vertical);
@@ -3490,9 +3809,28 @@ int main(int argc, char* argv[]) {
         
         // Callbacks
 
-        typeDd->setSelectionCallback([&, s](int index, const std::string& item){
+        typeDd->setSelectionCallback([&, s, effectsVizPtr](int index, const std::string& item){
             slotSelectedType[s] = item;
             rebuildEffectsChain();
+            // Update shared visualizer to reflect most recently changed slot/type
+            if (effectsVizPtr) {
+                effectsVizPtr->setEffectType(item);
+                // Provide a lightweight parameter getter bound to this slot's UI controls
+                auto mixPtr = slotMixSlider[s];
+                auto v1Ptr  = slotV1Slider[s];
+                auto v2Ptr  = slotV2Slider[s];
+                auto v3Ptr  = slotV3Slider[s];
+                auto v4Ptr  = slotV4Slider[s];
+                effectsVizPtr->setParamGetter([mixPtr, v1Ptr, v2Ptr, v3Ptr, v4Ptr, &slotPage, s](const std::string& name) -> float {
+                    if (name == "mix")  return mixPtr ? mixPtr->getValue() : 0.0f;
+                    if (name == "v1")   return v1Ptr  ? v1Ptr->getValue()  : 0.0f;
+                    if (name == "v2")   return v2Ptr  ? v2Ptr->getValue()  : 0.0f;
+                    if (name == "v3")   return v3Ptr  ? v3Ptr->getValue()  : 0.0f;
+                    if (name == "v4")   return v4Ptr  ? v4Ptr->getValue()  : 0.0f;
+                    if (name == "page") return static_cast<float>(slotPage[s]);
+                    return 0.0f;
+                });
+            }
             // Enable/disable controls if None is selected
             bool enableControls = (item != std::string("None"));
             slotMixSlider[s]->setEnabled(enableControls);
@@ -3505,6 +3843,14 @@ int main(int argc, char* argv[]) {
             float uiMix = slotMix[s];
             if (slotMixCache[s].count(item)) uiMix = slotMixCache[s][item];
             slotMixSlider[s]->setValue(uiMix);
+            // If no cached mix for this type, set helpful defaults for audibility/safety
+            if (!slotMixCache[s].count(item)) {
+                if (item == std::string("Tremolo")) {
+                    slotMix[s] = 1.0f; slotMixCache[s][item] = 1.0f; slotMixSlider[s]->setValue(1.0f);
+                } else if (item == std::string("Wavefolder")) {
+                    slotMix[s] = 0.35f; slotMixCache[s][item] = 0.35f; slotMixSlider[s]->setValue(0.35f);
+                }
+            }
             bool uiEnabled = slotEnabled[s];
             if (slotEnabledCache[s].count(item)) uiEnabled = slotEnabledCache[s][item];
             slotBypassBtn[s]->setText(uiEnabled ? "ON" : "OFF");
@@ -3568,6 +3914,33 @@ int main(int argc, char* argv[]) {
             }
         });
 
+        // Sync button toggle callback depends on slot; set after configure to ensure pointers exist
+        if (slotSyncBtn[s]) {
+            slotSyncBtn[s]->setClickCallback([&, s]() {
+                slotSyncEnabled[s] = !slotSyncEnabled[s];
+                slotParamCache[s][slotSelectedType[s]]["_sync"] = slotSyncEnabled[s] ? 1.0f : 0.0f;
+                // Reconfigure to switch slider behavior and label
+                configureSlotParams(s, slotSelectedType[s]);
+                updateFxSlotLabels(s);
+                // If enabling sync, immediately apply to current effect instance
+                std::lock_guard<std::mutex> lock(audioMutex);
+                if (auto* fx = getFxForSlot(s)) {
+                    float bpm = sequencer ? (float)sequencer->getTempo() : 120.0f;
+                    float beatHz = bpm / 60.0f;
+                    float rateHz = std::max(0.1f, beatHz / std::max(0.001f, divBeats(slotDivIndex[s])));
+                    if (slotSelectedType[s] == "Tremolo") fx->setParameter("rate", rateHz);
+                    else if (slotSelectedType[s] == "RingModulator") fx->setParameter("freq_hz", rateHz);
+                    else if (slotSelectedType[s] == "Delay") {
+                        float time_s = std::max(0.002f, divBeats(slotDivIndex[s]) / std::max(0.001f, beatHz));
+                        fx->setParameter("delayTime", time_s);
+                    } else if (slotSelectedType[s] == "PingPongDelay") {
+                        float time_s = std::max(0.002f, divBeats(slotDivIndex[s]) / std::max(0.001f, beatHz));
+                        fx->setParameter("time_ms", time_s * 1000.0f);
+                    }
+                }
+            });
+        }
+
         // Add to screen
         effectsScreen->addChild(std::move(typeDd));
         effectsScreen->addChild(std::move(bypassBtn));
@@ -3586,6 +3959,14 @@ int main(int argc, char* argv[]) {
             if (!ls.type.empty() && ls.type != "None" && !ls.params.empty()) {
                 slotParamCache[s][ls.type] = ls.params;
             }
+            // Restore sync state for types supporting it
+            if (slotParamCache[s][slotSelectedType[s]].count("_sync")) {
+                slotSyncEnabled[s] = (slotParamCache[s][slotSelectedType[s]]["_sync"] > 0.5f);
+                if (slotSyncBtn[s]) slotSyncBtn[s]->setText(slotSyncEnabled[s] ? "Sync" : "Free");
+            }
+            if (slotParamCache[s][slotSelectedType[s]].count("_divIndex")) {
+                slotDivIndex[s] = (int)std::round(slotParamCache[s][slotSelectedType[s]]["_divIndex"]);
+            }
             // Select type in UI (this will trigger rebuild and configure)
             int idx = 0;
             if (ls.type == "None") idx = 0; else {
@@ -3598,6 +3979,14 @@ int main(int argc, char* argv[]) {
                 idx = (found >= 0) ? found : 0;
             }
             slotTypeDd[s]->selectItem(idx);
+            // Restore sync state from params cache if present
+            if (slotParamCache[s][slotSelectedType[s]].count("_sync")) {
+                slotSyncEnabled[s] = (slotParamCache[s][slotSelectedType[s]]["_sync"] > 0.5f);
+            }
+            if (slotParamCache[s][slotSelectedType[s]].count("_divIndex")) {
+                slotDivIndex[s] = (int)std::round(slotParamCache[s][slotSelectedType[s]]["_divIndex"]);
+            }
+            if (slotSyncBtn[s]) slotSyncBtn[s]->setText(slotSyncEnabled[s] ? "Sync" : "Free");
             // Apply persisted page selection and reconfigure
             if (auto* p = dynamic_cast<DropdownMenu*>(effectsScreen->getChild("fx_page_" + std::to_string(s)))) {
                 p->selectItemSilently(slotPage[s]);
@@ -3847,7 +4236,7 @@ int main(int argc, char* argv[]) {
     prewarmMorph->setSize(180, 24);
     prewarmMorph->setRange(0.0f, 4.0f);
     prewarmMorph->setOrientation(Slider::Orientation::Horizontal);
-    prewarmMorph->setValueFormatter([](float v){ std::stringstream ss; ss<<"M ±"<<static_cast<int>(v); return ss.str();});
+    prewarmMorph->setShowValue(false); // hide inline value to avoid duplicate text under label
     auto prewarmPitchLabel = std::make_unique<Label>("prewarm_pitch_label", "Prewarm Pitch Bands (±)");
     prewarmPitchLabel->setPosition(70, 630);
     prewarmPitchLabel->setSize(320, 20);
@@ -3859,7 +4248,7 @@ int main(int argc, char* argv[]) {
     prewarmPitch->setSize(180, 24);
     prewarmPitch->setRange(0.0f, 4.0f);
     prewarmPitch->setOrientation(Slider::Orientation::Horizontal);
-    prewarmPitch->setValueFormatter([](float v){ std::stringstream ss; ss<<"P ±"<<static_cast<int>(v); return ss.str();});
+    prewarmPitch->setShowValue(false); // hide inline value to avoid duplicate text under label
     auto prewarmMorphPtr = prewarmMorph.get();
     auto prewarmPitchPtr = prewarmPitch.get();
     auto applyPrewarm = [&](){
@@ -3882,9 +4271,9 @@ int main(int argc, char* argv[]) {
     settingsScreen->addChild(std::move(prewarmMorph));
     settingsScreen->addChild(std::move(prewarmPitch));
 
-    // Reset stats button
+    // Reset stats button (move to right to avoid overlap with bottom controls)
     auto resetStatsBtn = std::make_unique<Button>("reset_hybrid_stats", "Reset Stats");
-    resetStatsBtn->setPosition(70, 740);
+    resetStatsBtn->setPosition(410, 730);
     resetStatsBtn->setSize(140, 28);
     resetStatsBtn->setBackgroundColor(Color(80, 60, 60));
     resetStatsBtn->setClickCallback([&](){
@@ -3901,15 +4290,15 @@ int main(int argc, char* argv[]) {
     cacheExplain->setTextColor(Color(150, 180, 180));
     settingsScreen->addChild(std::move(cacheExplain));
 
-    // Preset Output Trim (dB)
+    // Preset Output Trim (dB) — placed below prewarm controls
     auto trimLabel = std::make_unique<Label>("preset_trim_label", "Preset Output Trim (dB)");
-    trimLabel->setPosition(50, 560);
+    trimLabel->setPosition(50, 700);
     trimLabel->setSize(200, 20);
     trimLabel->setTextColor(Color(200, 200, 200));
     settingsScreen->addChild(std::move(trimLabel));
 
     auto trimSlider = std::make_unique<Slider>("preset_output_trim_db");
-    trimSlider->setPosition(50, 590);
+    trimSlider->setPosition(50, 730);
     trimSlider->setSize(300, 20);
     trimSlider->setOrientation(Slider::Orientation::Horizontal);
     trimSlider->setRange(-12.0f, 6.0f);
@@ -3931,6 +4320,149 @@ int main(int argc, char* argv[]) {
     settingsScreen->addChild(std::move(pitchExplain));
     
     uiContext->addScreen(std::move(settingsScreen));
+
+    // Create Sensors screen (basic visualization + mappings)
+    auto sensorsScreen = std::make_unique<Screen>("sensors");
+    sensorsScreen->setBackgroundColor(Color(28, 30, 35));
+    sensorsScreen->setPosition(0, 0);
+    sensorsScreen->setSize(1280, 800);
+    addNavigationButtons(sensorsScreen.get(), "sensors", uiContext.get());
+    {
+        auto title = std::make_unique<Label>("sensors_title", "SENSOR MATRIX");
+        title->setPosition(50, 50);
+        title->setSize(240, 30);
+        title->setTextColor(Color(255, 255, 100));
+        sensorsScreen->addChild(std::move(title));
+
+        auto info = std::make_unique<Label>("sensors_info", "Lanes 1-8. Simulate to see movement. Apply to map to FX.");
+        info->setPosition(50, 80);
+        info->setSize(640, 20);
+        info->setTextColor(Color(200, 200, 200));
+        sensorsScreen->addChild(std::move(info));
+
+        // Controls: Simulate + Apply mappings
+        auto simBtn = std::make_unique<Button>("sensors_sim", "Simulate: OFF");
+        simBtn->setPosition(50, 110);
+        simBtn->setSize(120, 26);
+        simBtn->setBackgroundColor(Color(90, 70, 70));
+        simBtn->setTextColor(Color(255,255,255));
+        sensorsScreen->addChild(std::move(simBtn));
+
+        auto applyBtn = std::make_unique<Button>("sensors_apply", "Apply Map: OFF");
+        applyBtn->setPosition(180, 110);
+        applyBtn->setSize(140, 26);
+        applyBtn->setBackgroundColor(Color(90, 70, 70));
+        applyBtn->setTextColor(Color(255,255,255));
+        sensorsScreen->addChild(std::move(applyBtn));
+
+        // Grid overlay toggle for precise placement
+        auto gridBtn = std::make_unique<Button>("sensors_grid", "Grid: OFF");
+        gridBtn->setPosition(330, 110);
+        gridBtn->setSize(110, 26);
+        gridBtn->setBackgroundColor(Color(60, 60, 80));
+        gridBtn->setTextColor(Color(255,255,255));
+        sensorsScreen->addChild(std::move(gridBtn));
+
+        // Lane bars
+        int baseX = 170, baseY = 220; // shift content further right (+40px) for left labels
+        int spacing = 140;           // even more horizontal spacing (+20)
+        for (int i = 0; i < 8; ++i) {
+            auto lbl = std::make_unique<Label>("sensor_lbl_" + std::to_string(i), "Lane " + std::to_string(i+1));
+            lbl->setPosition(baseX + i*spacing, baseY - 16);
+            lbl->setSize(70, 14);
+            lbl->setTextColor(Color(200,200,200));
+            sensorsScreen->addChild(std::move(lbl));
+
+            auto bar = std::make_unique<Slider>("sensor_bar_" + std::to_string(i), "", 0,0,18,140);
+            bar->setOrientation(Slider::Orientation::Vertical);
+            bar->setPosition(baseX + i*spacing, baseY);
+            bar->setRange(0.0f, 1.0f);
+            bar->setShowValue(false);
+            bar->setEnabled(false);
+            sensorsScreen->addChild(std::move(bar));
+        }
+
+        // Per-lane mapping pickers placed beneath each lane
+        // Align the bottom of the Slot dropdown row to gridline 'K' (index 10) with 40px spacing
+        const int gridStep = 40;
+        const int gridIndexK = 10; // A=0, B=1, ..., K=10
+        const int dropdownHeight = 22;
+        int controlsY = gridIndexK * gridStep - dropdownHeight; // bottom sits exactly on line K
+        // Align the bottom of the FX dropdown row to gridline 'L' (index 11)
+        const int gridIndexL = 11;
+        const int fxRowTop = gridIndexL * gridStep - dropdownHeight; // top so bottom sits on L
+        const int gridIndexM = 12;
+        const int paramRowTop = gridIndexM * gridStep - dropdownHeight; // top so bottom sits on M
+        // Left-side horizontal labels for each row of controls
+        auto lblIoTLane = std::make_unique<Label>("sens_l_io_lane", "IoT lane");
+        lblIoTLane->setPosition(20, baseY - 16);
+        lblIoTLane->setSize(100, 18);
+        lblIoTLane->setTextColor(Color(200,200,200));
+        sensorsScreen->addChild(std::move(lblIoTLane));
+
+        auto lblSlot = std::make_unique<Label>("sens_l_slot", "Effects Slot number");
+        // Align label bottom to K by offsetting by label height (18)
+        lblSlot->setPosition(20, gridIndexK * gridStep - 18);
+        lblSlot->setSize(140, 18);
+        lblSlot->setTextColor(Color(200,200,200));
+        sensorsScreen->addChild(std::move(lblSlot));
+
+        auto lblFX = std::make_unique<Label>("sens_l_fx", "Effect");
+        // Align label bottom to L by offsetting by label height (18)
+        lblFX->setPosition(20, gridIndexL * gridStep - 18);
+        lblFX->setSize(140, 18);
+        lblFX->setTextColor(Color(200,200,200));
+        sensorsScreen->addChild(std::move(lblFX));
+
+        auto lblParam = std::make_unique<Label>("sens_l_param", "Effect parameter");
+        // Align label bottom to M by offsetting by label height (18)
+        lblParam->setPosition(20, gridIndexM * gridStep - 18);
+        lblParam->setSize(140, 18);
+        lblParam->setTextColor(Color(200,200,200));
+        sensorsScreen->addChild(std::move(lblParam));
+
+        // Removed Invert/Amount labels to free space
+
+        // IoT input selector label row above lanes
+        auto iotLbl = std::make_unique<Label>("sens_iot_label", "IoT input");
+        iotLbl->setPosition(20, baseY - 60);
+        iotLbl->setSize(100, 18);
+        iotLbl->setTextColor(Color(200,200,200));
+        sensorsScreen->addChild(std::move(iotLbl));
+
+        for (int i = 0; i < 8; ++i) {
+            int x = baseX + i*spacing;
+            // Per-lane IoT input dropdown above the bar
+            auto iotIn = std::make_unique<DropdownMenu>("sens_iot_in_" + std::to_string(i), "Default");
+            iotIn->setPosition(x - 10, baseY - 64);
+            iotIn->setSize(120, 22);
+            iotIn->addItem("Default");
+            iotIn->addItem("SensorBus A");
+            iotIn->addItem("SensorBus B");
+            sensorsScreen->addChild(std::move(iotIn));
+            // Slot selector
+            auto slotDd = std::make_unique<DropdownMenu>("sens_slot_" + std::to_string(i), "None");
+            slotDd->setPosition(x - 10, controlsY);
+            slotDd->setSize(80, 22);
+            slotDd->addItem("None");
+            for (int s=1;s<=5;++s) slotDd->addItem("S"+std::to_string(s));
+            sensorsScreen->addChild(std::move(slotDd));
+
+            // FX type (read-only display of effect in the selected slot). Bottom aligned to gridline 'L'.
+            auto fxDd = std::make_unique<DropdownMenu>("sens_fx_" + std::to_string(i), "<fx>");
+            fxDd->setPosition(x - 20, fxRowTop);
+            fxDd->setSize(130, 22);
+            sensorsScreen->addChild(std::move(fxDd));
+            // Param selector
+            auto paramDd = std::make_unique<DropdownMenu>("sens_param_" + std::to_string(i), "<param>");
+            // Bottom aligned to gridline 'M'
+            paramDd->setPosition(x - 20, paramRowTop);
+            paramDd->setSize(130, 22);
+            sensorsScreen->addChild(std::move(paramDd));
+            // Removed Invert/Amount controls to free space
+        }
+    }
+    uiContext->addScreen(std::move(sensorsScreen));
     
     // Bind Save preset callback now that effects UI state is available
     if (auto* btn = dynamic_cast<Button*>(uiContext->getScreen("main")->getChild("save_preset"))) {
@@ -4562,6 +5094,34 @@ int main(int argc, char* argv[]) {
     auto lastAudioCheck = std::chrono::high_resolution_clock::now();
     int frameCount = 0;
     float cpuUsage = 0.0f;
+    // Sensors state
+    bool sensorsSim = false;
+    bool sensorsApply = false;
+    float sensorsT = 0.0f;
+    // Per-lane mapping state
+    std::array<int,8> laneTargetSlot; laneTargetSlot.fill(-1);
+    std::array<std::string,8> laneParam; laneParam.fill("");
+    // Removed amount/invert UI for now; use defaults (persisted for forward-compat)
+    std::array<float,8> laneAmount; laneAmount.fill(1.0f);
+    std::array<bool,8>  laneInvert; laneInvert.fill(false);
+    const float laneAmountDefault = 1.0f;
+    const bool laneInvertDefault = false;
+
+    // Load persisted Sensors lane mappings (if present)
+    try {
+        if (loadedConfig.contains("sensors") && loadedConfig["sensors"].contains("lanes")) {
+            auto lanes = loadedConfig["sensors"]["lanes"];
+            for (int i = 0; i < 8 && i < (int)lanes.size(); ++i) {
+                try {
+                    const auto& lj = lanes[i];
+                    if (lj.contains("slot")) laneTargetSlot[i] = lj["slot"].get<int>();
+                    if (lj.contains("param")) laneParam[i] = lj["param"].get<std::string>();
+                    if (lj.contains("amount")) laneAmount[i] = lj["amount"].get<float>();
+                    if (lj.contains("invert")) laneInvert[i] = lj["invert"].get<bool>();
+                } catch (...) {}
+            }
+        }
+    } catch (...) {}
     
     std::cout << "Starting main loop..." << std::endl;
     
@@ -4668,6 +5228,43 @@ int main(int argc, char* argv[]) {
                         }
                     }
 
+                    // Sensors page: per-lane slot/param dropdowns (handle in reverse order)
+                    if (!dropdownHandled && uiContext->getActiveScreenId() == std::string("sensors")) {
+                        for (int i = 7; i >= 0; --i) {
+                            if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("sens_iot_in_" + std::to_string(i)))) {
+                                if (dropdown->isDropdownOpen()) {
+                                    dropdownHandled = dropdown->handleInput(inputEvent);
+                                    if (inputEvent.type == InputEventType::TouchPress && !dropdownHandled) {
+                                        dropdownHandled = true; // consume to avoid underlying click-through
+                                    }
+                                    break;
+                                }
+                            }
+                            if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("sens_slot_" + std::to_string(i)))) {
+                                if (dropdown->isDropdownOpen()) {
+                                    dropdownHandled = dropdown->handleInput(inputEvent);
+                                    if (inputEvent.type == InputEventType::TouchPress && !dropdownHandled) {
+                                        dropdownHandled = true; // consume to avoid underlying click-through
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (!dropdownHandled && uiContext->getActiveScreenId() == std::string("sensors")) {
+                        for (int i = 7; i >= 0; --i) {
+                            if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("sens_param_" + std::to_string(i)))) {
+                                if (dropdown->isDropdownOpen()) {
+                                    dropdownHandled = dropdown->handleInput(inputEvent);
+                                    if (inputEvent.type == InputEventType::TouchPress && !dropdownHandled) {
+                                        dropdownHandled = true;
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
                     // Main-screen quick FX dropdowns: handle open lists before other inputs
                     if (!dropdownHandled) {
                         for (int i = 2; i >= 0; --i) {
@@ -4718,6 +5315,17 @@ int main(int argc, char* argv[]) {
                 }
             }
         }
+
+        // Performance: pause heavy effect visualizer when Effects screen is not active
+        {
+            const std::string activeId = uiContext->getActiveScreenId();
+            bool effectsActive = (activeId == std::string("effects"));
+            if (auto* es = uiContext->getScreen("effects")) {
+                if (auto* viz = dynamic_cast<EffectsVisualizerPanel*>(es->getChild("effects_visualizer"))) {
+                    viz->setActive(effectsActive);
+                }
+            }
+        }
         
         // Update UI
         auto currentTime = std::chrono::high_resolution_clock::now();
@@ -4725,6 +5333,255 @@ int main(int argc, char* argv[]) {
         lastFrameTime = currentTime;
         
         uiContext->update(deltaTime);
+
+        // Sensors: read UI toggles if present
+        if (auto* ss = uiContext->getScreen("sensors")) {
+            if (auto* b = dynamic_cast<Button*>(ss->getChild("sensors_sim"))) {
+                if (b->getText().find("ON") != std::string::npos) sensorsSim = true;
+                if (b->getText().find("OFF") != std::string::npos) sensorsSim = false;
+            }
+            if (auto* b = dynamic_cast<Button*>(ss->getChild("sensors_apply"))) {
+                if (b->getText().find("ON") != std::string::npos) sensorsApply = true;
+                if (b->getText().find("OFF") != std::string::npos) sensorsApply = false;
+            }
+        }
+
+        // Sensors: set click callbacks once and drive simulation
+        if (auto* ss = uiContext->getScreen("sensors")) {
+            if (auto* sim = dynamic_cast<Button*>(ss->getChild("sensors_sim"))) {
+                sim->setClickCallback([&sensorsSim, sim]() mutable {
+                    sensorsSim = !sensorsSim;
+                    sim->setText(sensorsSim ? "Simulate: ON" : "Simulate: OFF");
+                    sim->setBackgroundColor(sensorsSim ? Color(60,100,60) : Color(90,70,70));
+                });
+            }
+            if (auto* app = dynamic_cast<Button*>(ss->getChild("sensors_apply"))) {
+                app->setClickCallback([&sensorsApply, app]() mutable {
+                    sensorsApply = !sensorsApply;
+                    app->setText(sensorsApply ? "Apply Map: ON" : "Apply Map: OFF");
+                    app->setBackgroundColor(sensorsApply ? Color(60,100,60) : Color(90,70,70));
+                });
+            }
+
+            // Grid overlay toggle
+            if (auto* grid = dynamic_cast<Button*>(ss->getChild("sensors_grid"))) {
+                grid->setClickCallback([grid]() mutable {
+                    bool on = grid->getText().find("ON") != std::string::npos;
+                    on = !on;
+                    grid->setText(on ? "Grid: ON" : "Grid: OFF");
+                    grid->setBackgroundColor(on ? Color(60,80,100) : Color(60,60,80));
+                });
+            }
+
+            // Populate per-lane param dropdowns based on current slot effect type
+            auto populateParams = [&](DropdownMenu* pm, int slot){
+                if (!pm) return;
+                pm->clearItems();
+                std::string t = (slot>=0 && slot < (int)slotSelectedType.size()) ? slotSelectedType[slot] : std::string();
+                if (t == "Tremolo") {
+                    pm->addItem("depth"); pm->addItem("rate"); pm->addItem("shape"); pm->addItem("stereo_phase_deg");
+                } else if (t == "PingPongDelay") {
+                    pm->addItem("time_ms"); pm->addItem("feedback"); pm->addItem("hp_freq"); pm->addItem("lp_freq");
+                } else if (t == "RingModulator") {
+                    pm->addItem("freq_hz"); pm->addItem("depth"); pm->addItem("stereo_phase_deg");
+                } else if (t == "Delay") {
+                    pm->addItem("delayTime"); pm->addItem("feedback");
+                } else if (t == "Reverb") {
+                    pm->addItem("roomSize"); pm->addItem("damping"); pm->addItem("width");
+                } else if (t == "FDNReverb (Hall)") {
+                    pm->addItem("size"); pm->addItem("decay_rt60_s"); pm->addItem("high_damping"); pm->addItem("bass_mult"); pm->addItem("stereo_width"); pm->addItem("predelay_ms"); pm->addItem("diffusion"); pm->addItem("mod_rate"); pm->addItem("mod_depth");
+                } else if (t == "PlateReverb") {
+                    pm->addItem("predelay_ms"); pm->addItem("diffusion"); pm->addItem("mod_rate"); pm->addItem("mod_depth"); pm->addItem("decay"); pm->addItem("high_damping"); pm->addItem("size"); pm->addItem("output_trim_db");
+                } else if (t == "EQ") {
+                    pm->addItem("lowGain"); pm->addItem("midGain"); pm->addItem("highGain");
+                } else if (t == "LowPassFilter") {
+                    pm->addItem("frequency"); pm->addItem("resonance");
+                } else if (t == "Phaser") {
+                    pm->addItem("rate"); pm->addItem("depth"); pm->addItem("feedback");
+                }
+                if (pm->getSelectedItem().empty()) pm->addItem("<none>");
+                // Always preselect first entry so list is non-empty and selectable
+                pm->selectItemSilently(0);
+            };
+            // Wire per-lane controls (slot/fx/param) under bars
+            for (int lane = 0; lane < 8; ++lane) {
+                if (auto* sl = dynamic_cast<DropdownMenu*>(ss->getChild("sens_slot_" + std::to_string(lane)))) {
+                    int sel = laneTargetSlot[lane] < 0 ? 0 : (laneTargetSlot[lane] + 1);
+                    sl->selectItemSilently(sel);
+                    // Update FX name dropdown to reflect current slot's effect type
+                    if (auto* fxd = dynamic_cast<DropdownMenu*>(ss->getChild("sens_fx_" + std::to_string(lane)))) {
+                        fxd->clearItems();
+                        std::string et = (laneTargetSlot[lane] >= 0 && laneTargetSlot[lane] < (int)slotSelectedType.size()) ? slotSelectedType[laneTargetSlot[lane]] : std::string("<none>");
+                        if (et.empty()) et = "<none>";
+                        fxd->addItem(et);
+                        fxd->selectItemSilently(0);
+                    }
+                    auto* pm = dynamic_cast<DropdownMenu*>(ss->getChild("sens_param_" + std::to_string(lane)));
+                    populateParams(pm, laneTargetSlot[lane]);
+                    if (pm) {
+                        if (!laneParam[lane].empty()) {
+                            pm->selectItemSilently(laneParam[lane]);
+                        } else {
+                            pm->selectItemSilently(0);
+                            laneParam[lane] = pm->getSelectedItem();
+                        }
+                    }
+                    sl->setSelectionCallback([&, lane, pm](int idx, const std::string&){
+                        laneTargetSlot[lane] = (idx==0) ? -1 : (idx-1);
+                        if (auto* fxd = dynamic_cast<DropdownMenu*>(ss->getChild("sens_fx_" + std::to_string(lane)))) {
+                            fxd->clearItems();
+                            std::string et2 = (laneTargetSlot[lane] >= 0 && laneTargetSlot[lane] < (int)slotSelectedType.size()) ? slotSelectedType[laneTargetSlot[lane]] : std::string("<none>");
+                            if (et2.empty()) et2 = "<none>";
+                            fxd->addItem(et2);
+                            fxd->selectItemSilently(0);
+                        }
+                        populateParams(pm, laneTargetSlot[lane]);
+                        if (pm) {
+                            pm->selectItemSilently(0);
+                            laneParam[lane] = pm->getSelectedItem();
+                        }
+                    });
+                }
+                if (auto* pm = dynamic_cast<DropdownMenu*>(ss->getChild("sens_param_" + std::to_string(lane)))) {
+                    pm->setSelectionCallback([&, lane](int, const std::string& item){ laneParam[lane] = item; });
+                }
+            }
+        }
+
+        // Sensor simulation and bar updates
+        sensorsT += deltaTime;
+        for (int i = 0; i < 8; ++i) {
+            if (sensorsSim) {
+                float v = 0.5f + 0.5f * std::sin(sensorsT * (0.6f + 0.1f*i) + i*0.7f);
+                sensorMatrix->setRaw(i, v);
+            }
+            float cv = sensorMatrix->get(i);
+            if (auto* ss = uiContext->getScreen("sensors")) {
+                if (auto* bar = dynamic_cast<Slider*>(ss->getChild("sensor_bar_" + std::to_string(i)))) {
+                    bar->setValueSilently(cv);
+                }
+            }
+        }
+
+        // Apply default mappings when enabled
+        if (sensorsApply) {
+            auto findSlotByType = [&](const std::string& type)->int{
+                for (int i = 0; i < 5; ++i) {
+                    if (i < (int)slotSelectedType.size() && slotSelectedType[i] == type) return i;
+                }
+                return -1;
+            };
+            // Lane1 -> Tremolo depth
+            int tremSlot = findSlotByType("Tremolo");
+            if (tremSlot >= 0) {
+                std::lock_guard<std::mutex> lock(audioMutex);
+                if (auto* fx = getFxForSlot(tremSlot)) {
+                    fx->setParameter("depth", sensorMatrix->get(0));
+                }
+            }
+            // Lane2 -> PingPongDelay HP/LP
+            int ppSlot = findSlotByType("PingPongDelay");
+            if (ppSlot >= 0) {
+                float v = sensorMatrix->get(1);
+                float hp = 20.0f + v * (2000.0f - 20.0f);
+                float lp = 1000.0f + v * (20000.0f - 1000.0f);
+                std::lock_guard<std::mutex> lock(audioMutex);
+                if (auto* fx = getFxForSlot(ppSlot)) {
+                    fx->setParameter("hp_freq", hp);
+                    fx->setParameter("lp_freq", lp);
+                }
+            }
+            // Lane3 -> RingModulator rate (sync-aware)
+            int rmSlot = findSlotByType("RingModulator");
+            if (rmSlot >= 0) {
+                float v = sensorMatrix->get(2);
+                std::lock_guard<std::mutex> lock(audioMutex);
+                if (auto* fx = getFxForSlot(rmSlot)) {
+                    bool synced = false;
+                    if (rmSlot < (int)slotSelectedType.size()) {
+                        auto it = slotParamCache[rmSlot].find("RingModulator");
+                        if (it != slotParamCache[rmSlot].end()) {
+                            auto& pm = it->second;
+                            if (pm.count("_sync")) synced = pm["_sync"] > 0.5f;
+                        }
+                    }
+                    if (synced) {
+                        int N = 6; float beatsPerCycle[6] = {4.f,2.f,1.f,0.5f,1.f/3.f,0.25f};
+                        int idx = std::max(0, std::min(N-1, (int)std::floor(v * N)));
+                        slotParamCache[rmSlot]["RingModulator"]["_divIndex"] = (float)idx;
+                        float bpm = sequencer ? (float)sequencer->getTempo() : 120.0f;
+                        float beatHz = bpm / 60.0f;
+                        float rateHz = std::max(0.1f, beatHz / std::max(0.001f, beatsPerCycle[idx]));
+                        fx->setParameter("freq_hz", rateHz);
+                    } else {
+                        float hz = 0.5f + v * 10.0f;
+                        fx->setParameter("freq_hz", hz);
+                    }
+                }
+            }
+
+            // Apply configured per-lane mappings (if any)
+            for (int lane = 0; lane < 8; ++lane) {
+                int slot = laneTargetSlot[lane];
+                const std::string& p = laneParam[lane];
+                if (slot < 0 || p.empty()) continue;
+                float v = sensorMatrix->get(lane);
+                if (laneInvertDefault) v = 1.0f - v;
+                float amt = laneAmountDefault;
+                std::lock_guard<std::mutex> lock(audioMutex);
+                if (auto* fx = getFxForSlot(slot)) {
+                    auto setf = [&](const std::string& name, float value){ fx->setParameter(name, value); };
+                    if (p == "depth") setf(p, std::clamp(v * amt, 0.0f, 1.0f));
+                    else if (p == "hp_freq") setf(p, 20.0f + (v*amt) * (2000.0f - 20.0f));
+                    else if (p == "lp_freq") setf(p, 1000.0f + (v*amt) * (20000.0f - 1000.0f));
+                    else if (p == "time_ms") setf(p, 10.0f + (v*amt) * (2000.0f - 10.0f));
+                    else if (p == "feedback") setf(p, std::clamp(v * amt, 0.0f, 0.95f));
+                    else if (p == "stereo_phase_deg") setf(p, std::clamp(v * amt * 180.0f, 0.0f, 180.0f));
+                    else if (p == "shape") { int idx = (int)std::floor(std::clamp(v*amt,0.0f,0.999f) * 4.0f); setf(p, (float)idx); }
+                    else if (p == "rate" || p == "freq_hz") {
+                        bool synced = false; int sidx = slot;
+                        if (sidx < (int)slotSelectedType.size()) {
+                            auto it = slotParamCache[sidx].find(slotSelectedType[sidx]);
+                            if (it != slotParamCache[sidx].end() && it->second.count("_sync")) synced = it->second["_sync"] > 0.5f;
+                        }
+                        if (synced) {
+                            int N = 6; float beatsPerCycle[6] = {4.f,2.f,1.f,0.5f,1.f/3.f,0.25f};
+                            int idx = std::max(0, std::min(N-1, (int)std::floor(v * N)));
+                            slotParamCache[sidx][slotSelectedType[sidx]]["_divIndex"] = (float)idx;
+                            float bpm = sequencer ? (float)sequencer->getTempo() : 120.0f;
+                            float beatHz = bpm / 60.0f;
+                            float rateHz = std::max(0.1f, beatHz / std::max(0.001f, beatsPerCycle[idx]));
+                            setf(p == "rate" ? "rate" : "freq_hz", rateHz);
+                        } else {
+                            float lo = (p=="rate") ? 0.10f : 0.5f;
+                            float hi = (p=="rate") ? 15.0f : 10.0f;
+                            float hz = lo + (v*amt) * (hi - lo);
+                            setf(p == "rate" ? "rate" : "freq_hz", hz);
+                        }
+                    } else if (p == "roomSize" || p == "damping" || p == "width") setf(p, std::clamp(v*amt, 0.0f, 1.0f));
+                    else if (p == "lowGain" || p == "midGain" || p == "highGain") setf(p, -12.0f + (v*amt) * 24.0f);
+                    else if (p == "frequency") setf(p, 20.0f + (v*amt) * (20000.0f - 20.0f));
+                    else if (p == "resonance") setf(p, 0.7f + (v*amt) * (5.0f - 0.7f));
+                    else {
+                        setf(p, std::clamp(v*amt, 0.0f, 1.0f));
+                    }
+                }
+            }
+        }
+
+        // Render open dropdown lists for sensors controls to ensure visibility on top
+        if (auto* activeScreen = uiContext->getScreen(uiContext->getActiveScreenId())) {
+            if (uiContext->getActiveScreenId() == std::string("sensors")) {
+                for (int i = 0; i < 8; ++i) {
+                    if (auto* dd = dynamic_cast<DropdownMenu*>(activeScreen->getChild("sens_slot_" + std::to_string(i)))) {
+                        dd->renderDropdownList(sdlDisplayManager.get());
+                    }
+                    if (auto* dd = dynamic_cast<DropdownMenu*>(activeScreen->getChild("sens_param_" + std::to_string(i)))) {
+                        dd->renderDropdownList(sdlDisplayManager.get());
+                    }
+                }
+            }
+        }
 
         // Run deferred synth apply exactly once a short time after startup to ensure callbacks are connected
         if (needsDeferredSynthApply) {
@@ -4940,6 +5797,55 @@ int main(int argc, char* argv[]) {
                     }
                 }
             }
+            // Sensors tab: optional grid overlay + lane iot/slot/param dropdowns (multi-lane)
+            if (uiContext->getActiveScreenId() == std::string("sensors")) {
+                // Draw grid overlay if enabled
+                if (auto* grid = dynamic_cast<Button*>(activeScreen->getChild("sensors_grid"))) {
+                    bool on = grid->getText().find("ON") != std::string::npos;
+                    if (on) {
+                        const int step = 40;
+                        int w = sdlDisplayManager->getWidth();
+                        int h = sdlDisplayManager->getHeight();
+                        Color gc(40, 50, 60, 255);
+                        // Grid lines
+                        for (int x = 0, i = 0; x < w; x += step, ++i) sdlDisplayManager->drawLine(x, 0, x, h, gc);
+                        for (int y = 0, j = 0; y < h; y += step, ++j) sdlDisplayManager->drawLine(0, y, w, y, gc);
+                        // Labels
+                        Color lc(120, 160, 190, 255);
+                        // Numbers along bottom for each vertical line
+                        for (int x = 0, i = 0; x < w; x += step, ++i) {
+                            std::string s = std::to_string(i);
+                            int tx = x + 4; // slight offset so text doesn't overlap line
+                            int ty = h - 16; // near bottom
+                            sdlDisplayManager->drawText(tx, ty, s, nullptr, lc);
+                        }
+                        // Letters on the right for each horizontal line
+                        auto toLetters = [](int idx){
+                            std::string r;
+                            int n = idx + 1; // 1-based
+                            while (n > 0) { int rem = (n - 1) % 26; r.push_back(char('A' + rem)); n = (n - 1) / 26; }
+                            return std::string(r.rbegin(), r.rend());
+                        };
+                        for (int y = 0, j = 0; y < h; y += step, ++j) {
+                            std::string s = toLetters(j);
+                            int tx = w - 28; // near right edge
+                            int ty = y + 2;
+                            sdlDisplayManager->drawText(tx, ty, s, nullptr, lc);
+                        }
+                    }
+                }
+                for (int i = 0; i < 8; ++i) {
+                    if (auto* dd = dynamic_cast<DropdownMenu*>(activeScreen->getChild("sens_iot_in_" + std::to_string(i)))) {
+                        if (dd->isDropdownOpen()) dd->renderDropdownList(sdlDisplayManager.get());
+                    }
+                    if (auto* dd = dynamic_cast<DropdownMenu*>(activeScreen->getChild("sens_slot_" + std::to_string(i)))) {
+                        if (dd->isDropdownOpen()) dd->renderDropdownList(sdlDisplayManager.get());
+                    }
+                    if (auto* dd = dynamic_cast<DropdownMenu*>(activeScreen->getChild("sens_param_" + std::to_string(i)))) {
+                        if (dd->isDropdownOpen()) dd->renderDropdownList(sdlDisplayManager.get());
+                    }
+                }
+            }
             // Main-screen quick FX dropdowns
             for (int i = 0; i < 3; ++i) {
                 if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("effect_type_" + std::to_string(i)))) {
@@ -5090,6 +5996,20 @@ int main(int argc, char* argv[]) {
             sj["lfo2_shape"] = synthesizer->getParameter("lfo2_shape");
         }
         outCfg["synth"] = sj;
+
+        // Sensors: persist lane mappings
+        {
+            nlohmann::json lanes = nlohmann::json::array();
+            for (int i = 0; i < 8; ++i) {
+                nlohmann::json lj;
+                lj["slot"] = laneTargetSlot[i];
+                lj["param"] = laneParam[i];
+                lj["amount"] = laneAmount[i];
+                lj["invert"] = laneInvert[i];
+                lanes.push_back(lj);
+            }
+            outCfg["sensors"]["lanes"] = lanes;
+        }
         std::ofstream out(userConfigPath);
         out << outCfg.dump(2);
         out.flush();

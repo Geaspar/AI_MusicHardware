@@ -626,4 +626,27 @@ private:
     void updateContentVisibility();
 };
 
+// EffectsVisualizerPanel — placeholder panel that will host per-effect visuals
+class EffectsVisualizerPanel : public UIComponent {
+public:
+    EffectsVisualizerPanel(const std::string& id);
+    virtual ~EffectsVisualizerPanel();
+
+    void setEffectType(const std::string& type);
+    using ParamGetter = std::function<float(const std::string&)>;
+    void setParamGetter(ParamGetter getter);
+    void setActive(bool active);
+
+    // UIComponent overrides
+    virtual void update(float deltaTime) override;
+    virtual void render(DisplayManager* display) override;
+    virtual bool handleInput(const InputEvent& event) override;
+
+private:
+    std::string effectType_;
+    ParamGetter getParam_;
+    bool active_;
+    float t_; // simple time accumulator for future animations
+};
+
 } // namespace AIMusicHardware

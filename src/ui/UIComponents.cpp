@@ -2554,4 +2554,370 @@ void TabView::updateContentVisibility() {
     }
 }
 
+//
+// EffectsVisualizerPanel implementation
+//
+EffectsVisualizerPanel::EffectsVisualizerPanel(const std::string& id)
+    : UIComponent(id), effectType_(""), active_(true), t_(0.0f) {}
+
+EffectsVisualizerPanel::~EffectsVisualizerPanel() {}
+
+void EffectsVisualizerPanel::setEffectType(const std::string& type) { effectType_ = type; }
+void EffectsVisualizerPanel::setParamGetter(ParamGetter getter) { getParam_ = std::move(getter); }
+void EffectsVisualizerPanel::setActive(bool active) { active_ = active; }
+
+void EffectsVisualizerPanel::update(float deltaTime) {
+    if (!visible_ || !active_) return;
+    t_ += deltaTime;
+}
+
+void EffectsVisualizerPanel::render(DisplayManager* display) {
+    if (!display || !visible_) return;
+
+    // Panel background and border
+    display->fillRect(x_, y_, width_, height_, Color(28, 28, 34));
+    display->drawRect(x_, y_, width_, height_, Color(90, 90, 120));
+
+    // Title
+    const std::string title = "Effect Visualizer";
+    display->drawText(x_ + 8, y_ + 6, title, nullptr, Color(200, 200, 255));
+
+    // Current effect type (placeholder)
+    std::string line = effectType_.empty() || effectType_ == "None" ? "No effect selected" : ("Effect: " + effectType_);
+    display->drawText(x_ + 8, y_ + 26, line, nullptr, Color(200, 200, 200));
+
+    // Inner viewport for visuals
+    int inset = 6;
+    int innerX = x_ + inset;
+    int innerY = y_ + 48;
+    int innerW = width_ - 2*inset;
+    int innerH = height_ - 56;
+    display->drawRect(innerX, innerY, innerW, innerH, Color(70, 70, 100));
+
+    // Visualizations by effect
+    if (effectType_ == "Delay" || effectType_ == "PingPongDelay") {
+        // Delay visualization: bouncing/echo balls
+        // Parameters
+        auto get = [&](const char* n, float def) -> float {
+            return getParam_ ? getParam_(n) : def;
+        };
+        float timeNorm = get("v1", 0.5f);
+        // If coming from PingPongDelay, v1 is in ms (10..2000). Normalize to 0..1 for visuals.
+        if (timeNorm > 1.0f) {
+            timeNorm = std::clamp((timeNorm - 10.0f) / (2000.0f - 10.0f), 0.0f, 1.0f);
+        } else {
+            timeNorm = std::clamp(timeNorm, 0.0f, 1.0f);
+        }
+        float feedback = std::clamp(get("v2", 0.35f), 0.0f, 1.0f);     // 0..1 ⇒ echoes count/decay
+        float mix      = std::clamp(get("mix", 0.5f), 0.0f, 1.0f);     // 0..1 ⇒ brightness
+
+        // Map parameters
+        int echoes = 3 + static_cast<int>(feedback * 7.0f);  // 3..10 balls
+        // Slow down overall animation for comfort
+        float speed = 0.15f + 0.45f * timeNorm;              // slower units per second
+        float decay = 0.55f + 0.4f * feedback;               // size/energy decay per echo
+
+        // Background tint indicates wetness
+        int tint = static_cast<int>(40 + mix * 40);
+        display->fillRect(innerX+1, innerY+1, innerW-2, innerH-2, Color(28, 28, 34 + (uint8_t)std::min(tint, 90)));
+
+        // Draw echoes with decaying size and brightness
+        for (int i = 0; i < echoes; ++i) {
+            float phase = std::fmod(std::max(0.0f, t_ * speed - i * (0.12f + 0.08f * (1.0f - timeNorm))), 1.0f);
+            float sx = static_cast<float>(innerX) + phase * static_cast<float>(innerW);
+            // Vertical bounce using triangle wave
+            float tri = std::abs(std::fmod(phase * 2.0f, 2.0f) - 1.0f); // 0..1..0
+            float sy = static_cast<float>(innerY) + tri * static_cast<float>(innerH);
+
+            // Decay per echo
+            float k = std::pow(decay, static_cast<float>(i));
+            int radius = std::max(3, static_cast<int>(10 * k));
+            int bright = std::min(255, static_cast<int>(120 + 120 * k * mix));
+            Color c(static_cast<uint8_t>(80 + bright/3), static_cast<uint8_t>(100 + bright/4), static_cast<uint8_t>(140 + bright/5));
+            display->fillCircle(static_cast<int>(sx), static_cast<int>(sy), radius, c);
+        }
+    } else if (effectType_ == "Reverb" || effectType_.find("Reverb") != std::string::npos) {
+        // Reverb visualization: "3D room" box inspired panel
+        auto get = [&](const char* n, float def) -> float { return getParam_ ? getParam_(n) : def; };
+
+        // Defaults
+        float sizeNorm   = 0.5f; // room size (0..1)
+        float damping    = 0.35f; // high-damping (0..1)
+        float decayNorm  = 0.5f; // decay proxy (0..1)
+        float mix        = std::clamp(get("mix", 0.5f), 0.0f, 1.0f);
+        int   page       = static_cast<int>(std::round(get("page", 0.0f)));
+
+        // Map generic v1..v4 depending on the specific reverb flavor/page
+        if (effectType_ == "Reverb") {
+            // v1: Room Size, v2: Damping
+            sizeNorm = std::clamp(get("v1", 0.5f), 0.0f, 1.0f);
+            damping  = std::clamp(get("v2", 0.35f), 0.0f, 1.0f);
+            decayNorm = 0.5f + 0.5f * (1.0f - damping);
+        } else if (effectType_.find("PlateReverb") != std::string::npos) {
+            if (page == 1) {
+                // Page 1: v1 Decay, v2 HighDamp, v3 Size
+                decayNorm = std::clamp(get("v1", 0.5f), 0.0f, 1.0f);
+                damping   = std::clamp(get("v2", 0.35f), 0.0f, 1.0f);
+                sizeNorm  = std::clamp(get("v3", 0.5f), 0.0f, 1.0f);
+            } else {
+                // Page 0 (no size/decay exposed) – use sensible defaults
+                decayNorm = 0.6f; damping = 0.35f; sizeNorm = 0.6f;
+            }
+        } else if (effectType_.find("FDNReverb") != std::string::npos) {
+            if (page == 0) {
+                // Page 0: v2 Size
+                sizeNorm = std::clamp(get("v2", 0.6f), 0.0f, 1.0f);
+                damping  = 0.35f; decayNorm = 0.6f;
+            } else {
+                // Page 1: v1 Decay, v2 HighDamp
+                decayNorm = std::clamp(get("v1", 0.6f), 0.0f, 1.0f);
+                damping   = std::clamp(get("v2", 0.35f), 0.0f, 1.0f);
+            }
+        }
+
+        // Neutral inner background
+        uint8_t bg = static_cast<uint8_t>(22 + mix * 8);
+        display->fillRect(innerX+1, innerY+1, innerW-2, innerH-2, Color(bg, bg, bg));
+
+        // Compute room box dimensions from sizeNorm
+        float scale = 0.45f + 0.45f * sizeNorm; // box occupies 45%..90% of inner area
+        int boxW = std::max(40, static_cast<int>(innerW * scale * 0.6f));
+        int boxH = std::max(30, static_cast<int>(innerH * scale * 0.6f));
+
+        // Perspective offset
+        int offX = std::max(6, static_cast<int>(boxW * 0.18f));
+        int offY = std::max(4, static_cast<int>(boxH * 0.18f));
+
+        // Center the box
+        int cx = innerX + innerW / 2;
+        int cy = innerY + innerH / 2;
+        int fx = cx - boxW / 2;    // front rect top-left
+        int fy = cy - boxH / 2;
+        int bx = fx + offX;        // back rect top-left
+        int by = fy - offY;
+
+        // Wall color: brighter for low damping (more reflective), darker when damping is high
+        uint8_t wall = static_cast<uint8_t>(110 + (1.0f - damping) * 90);
+        Color wallColor(wall, wall, wall);
+
+        // Draw back rectangle
+        display->drawRect(bx, by, boxW, boxH, wallColor);
+        // Draw front rectangle
+        display->drawRect(fx, fy, boxW, boxH, wallColor);
+        // Connect corners (3D edges)
+        display->drawLine(fx, fy,           bx, by,           wallColor);
+        display->drawLine(fx+boxW, fy,      bx+boxW, by,      wallColor);
+        display->drawLine(fx, fy+boxH,      bx, by+boxH,      wallColor);
+        display->drawLine(fx+boxW, fy+boxH, bx+boxW, by+boxH, wallColor);
+
+        // Mix fill: fill the front wall and the right side wall up to the same level
+        int fillH = static_cast<int>(boxH * mix);
+        if (fillH > 0) {
+            int fyFill = fy + boxH - fillH;
+            // Gradient from bottom (brighter) to top (dimmer)
+            for (int yy = 0; yy < fillH; ++yy) {
+                float g = 1.0f - (static_cast<float>(yy) / static_cast<float>(fillH));
+                uint8_t br = static_cast<uint8_t>(80 + 140 * mix * (0.5f * g + 0.5f));
+                Color rowCol(static_cast<uint8_t>(50 + br/3), static_cast<uint8_t>(70 + br/4), static_cast<uint8_t>(100 + br/5));
+                // Front wall horizontal fill line
+                display->drawLine(fx+1, fyFill + yy, fx + boxW - 2, fyFill + yy, rowCol);
+            }
+            // Side wall fill (right face): draw diagonal strips from front-right to back-right edge
+            int frontRightX = fx + boxW - 1;
+            int frontBottomY = fy + boxH - 1;
+            int backRightX = bx + boxW - 1;
+            int backBottomY = by + boxH - 1;
+            for (int yy = 0; yy < fillH; ++yy) {
+                float r = static_cast<float>(yy) / static_cast<float>(fillH);
+                int yFront = frontBottomY - yy;
+                int yBack  = backBottomY  - yy;
+                // Interpolate color similar to front gradient
+                float g = 1.0f - r;
+                uint8_t br = static_cast<uint8_t>(70 + 130 * mix * (0.5f * g + 0.5f));
+                Color sideCol(static_cast<uint8_t>(40 + br/3), static_cast<uint8_t>(65 + br/4), static_cast<uint8_t>(95 + br/5));
+                display->drawLine(frontRightX, yFront, backRightX, yBack, sideCol);
+            }
+        }
+
+        // Reflections disabled per UX feedback — keep static box without moving lines
+
+        // Decay-driven interior hatching (horizontal lines) — more lines for longer decay
+        int lines = 3 + static_cast<int>(decayNorm * 8.0f);
+        uint8_t hatch = static_cast<uint8_t>(80 + (1.0f - damping) * 80);
+        Color hatchCol(hatch, hatch, hatch);
+        for (int i = 1; i <= lines; ++i) {
+            int yLine = fy + (i * boxH) / (lines + 1);
+            // Slight perspective towards the back
+            int x1 = fx + 2;
+            int x2 = fx + boxW - 2;
+            display->drawLine(x1, yLine, x2, yLine, hatchCol);
+        }
+    } else if (effectType_ == "Phaser" || effectType_.find("Chorus") != std::string::npos || effectType_.find("Modulation") != std::string::npos) {
+        // Phaser/Chorus visualization: rotating phase wheel with concentric rings
+        auto get = [&](const char* n, float def) -> float { return getParam_ ? getParam_(n) : def; };
+
+        // Parameter mapping from generic UI: v1=Rate, v2=Depth, v3=Feedback/Spread (approx), mix=mix
+        // Tone down animation: much slower rotation and gentler deformation
+        float rateHz   = 0.05f + std::clamp(get("v1", 0.5f), 0.0f, 1.0f) * 1.5f; // ~0.05..1.55 Hz
+        float depth    = std::clamp(get("v2", 0.5f), 0.0f, 1.0f);
+        float fbSpread = std::clamp(get("v3", 0.3f), 0.0f, 1.0f);   // feedback for phaser or spread for chorus
+        float mix      = std::clamp(get("mix", 0.6f), 0.0f, 1.0f);
+
+        // Center and radius
+        int cx = innerX + innerW/2;
+        int cy = innerY + innerH/2;
+        int R  = std::max(30, std::min(innerW, innerH)/2 - 8);
+
+        // Visual palette
+        uint8_t base = static_cast<uint8_t>(40 + 100 * mix);
+        Color ringBase(static_cast<uint8_t>(base), static_cast<uint8_t>(base + 30), static_cast<uint8_t>(base + 60));
+
+        // Number of rings influenced by fb/spread
+        int rings = 2 + static_cast<int>(fbSpread * 3.0f); // 2..5 rings (reduced)
+        float omega = (2.0f * 3.14159265359f * rateHz) * 0.6f; // additional slow factor
+        float theta = omega * t_;
+
+        // Draw concentric phase-modulated rings
+        for (int i = 0; i < rings; ++i) {
+            float k = (i + 1) / static_cast<float>(rings);
+            int r = static_cast<int>(R * (0.25f + 0.70f * k));
+            // Modulation amount per ring (outer rings modulate more)
+            float ringDepth = depth * (0.4f + 0.6f * k);
+            // Draw circle as multiple short line segments to approximate phase displacement
+            const int segs = 64;
+            for (int s = 0; s < segs; ++s) {
+                float a0 = (2.0f * 3.14159265359f) * (s    / static_cast<float>(segs));
+                float a1 = (2.0f * 3.14159265359f) * ((s+1)/ static_cast<float>(segs));
+                // Phase modulation with rotation
+                float m0 = std::sin(a0 * 2.0f + theta) * (ringDepth * 0.6f);
+                float m1 = std::sin(a1 * 2.0f + theta) * (ringDepth * 0.6f);
+                int x0 = cx + static_cast<int>((r + m0 * 8.0f) * std::cos(a0));
+                int y0 = cy + static_cast<int>((r + m0 * 8.0f) * std::sin(a0));
+                int x1 = cx + static_cast<int>((r + m1 * 8.0f) * std::cos(a1));
+                int y1 = cy + static_cast<int>((r + m1 * 8.0f) * std::sin(a1));
+                // Brightness varies slightly by ring
+                uint8_t add = static_cast<uint8_t>(30 * k);
+                Color c(static_cast<uint8_t>(ringBase.r + add), static_cast<uint8_t>(ringBase.g + add/2), static_cast<uint8_t>(ringBase.b));
+                display->drawLine(x0, y0, x1, y1, c);
+            }
+        }
+
+        // Central indicator showing LFO angle
+        int dotR = 3 + static_cast<int>(3 * depth);
+        int dx = cx + static_cast<int>((R * 0.6f) * std::cos(theta));
+        int dy = cy + static_cast<int>((R * 0.6f) * std::sin(theta));
+        display->fillCircle(dx, dy, dotR, Color(160, 180, 230));
+    } else if (effectType_ == "Tremolo") {
+        // Tremolo visualization: amplitude bars modulated by LFO
+        auto get = [&](const char* n, float def) -> float { return getParam_ ? getParam_(n) : def; };
+        float rateHz = std::max(0.1f, get("v1", 2.0f));
+        float depth  = std::clamp(get("v2", 0.5f), 0.0f, 1.0f);
+        float mix    = std::clamp(get("mix", 1.0f), 0.0f, 1.0f);
+        int   mode   = static_cast<int>(std::round(get("v3", 0.0f))); // 3 => Pan
+        // Slow preview rotation even for high rates
+        float omega = 2.0f * 3.14159265359f * rateHz * 0.2f;
+        float lfo = 0.5f + 0.5f * std::sin(omega * t_);
+        float gain = (1.0f - depth) + depth * lfo; //  (1-depth)..1
+
+        // Draw background tint according to mix
+        uint8_t bg = static_cast<uint8_t>(26 + mix * 10);
+        display->fillRect(innerX+1, innerY+1, innerW-2, innerH-2, Color(bg, bg, bg));
+
+        // Draw a row of bars whose height follows gain
+        int bars = 24;
+        int pad = 6;
+        int w = std::max(2, (innerW - 2*pad) / bars - 2);
+        int baseY = innerY + innerH - 6;
+        int maxH = innerH - 16;
+        int h = std::max(2, static_cast<int>(maxH * gain));
+        for (int i = 0; i < bars; ++i) {
+            int x = innerX + pad + i * (w + 2);
+            Color c(static_cast<uint8_t>(80 + 120 * gain), static_cast<uint8_t>(90 + 100 * gain), static_cast<uint8_t>(140));
+            display->fillRect(x, baseY - h, w, h, c);
+        }
+        if (mode == 3) {
+            display->drawText(innerX + 8, innerY + 8, std::string("Pan mode"), nullptr, Color(200,200,220));
+        }
+    } else if (effectType_ == "Wavefolder") {
+        // Wavefolder visualization: transfer curve with drive/bias/asym
+        auto get = [&](const char* n, float def) -> float { return getParam_ ? getParam_(n) : def; };
+        float drive = std::max(0.1f, get("v1", 2.0f));
+        float asym  = std::clamp(get("v2", 0.0f), 0.0f, 1.0f);
+        float bias  = std::clamp(get("v3", 0.0f), -1.0f, 1.0f);
+        float mix   = std::clamp(get("mix", 0.5f), 0.0f, 1.0f);
+
+        // Axes
+        int cx = innerX + innerW/2;
+        int cy = innerY + innerH/2;
+        display->drawLine(innerX+4, cy, innerX + innerW - 4, cy, Color(90,90,110));
+        display->drawLine(cx, innerY+4, cx, innerY + innerH - 4, Color(90,90,110));
+
+        // Fold function (mirror beyond [-1,1])
+        auto fold = [](float x) {
+            while (x > 1.0f || x < -1.0f) x = (x > 1.0f) ? (2.0f - x) : (-2.0f - x);
+            return x;
+        };
+
+        // Scaling
+        float sx = static_cast<float>(innerW - 20) / 2.0f; // map [-1,1] to inner width
+        float sy = static_cast<float>(innerH - 20) / 2.0f; // map [-1,1] to inner height
+
+        // Draw curve
+        int segs = std::max(64, innerW / 6);
+        for (int i = 0; i < segs; ++i) {
+            float x0n = -1.0f + 2.0f * (i     / static_cast<float>(segs));
+            float x1n = -1.0f + 2.0f * ((i+1) / static_cast<float>(segs));
+            // Asymmetry as sign-dependent gain
+            auto proc = [&](float x){ float g = (x >= 0.0f) ? (drive * (1.0f + 0.8f*asym)) : (drive * (1.0f + 0.8f*(1.0f - asym))); return fold((x + bias) * g); };
+            float y0n = proc(x0n);
+            float y1n = proc(x1n);
+
+            int x0 = cx + static_cast<int>(x0n * sx);
+            int y0 = cy - static_cast<int>(y0n * sy);
+            int x1 = cx + static_cast<int>(x1n * sx);
+            int y1 = cy - static_cast<int>(y1n * sy);
+            uint8_t br = static_cast<uint8_t>(120 + 100 * mix);
+            display->drawLine(x0, y0, x1, y1, Color(br, static_cast<uint8_t>(br*0.8f), static_cast<uint8_t>(br*0.6f)));
+        }
+    } else if (effectType_ == "RingModulator") {
+        // Ring Mod visualization: carrier frequency sweep + product indication
+        auto get = [&](const char* n, float def) -> float { return getParam_ ? getParam_(n) : def; };
+        float freq = std::clamp(get("v1", 30.0f), 0.1f, 2000.0f);
+        float depth = std::clamp(get("v2", 1.0f), 0.0f, 1.0f);
+        float mix   = std::clamp(get("mix", 0.5f), 0.0f, 1.0f);
+        // Background tint by mix
+        uint8_t bg = static_cast<uint8_t>(24 + mix * 12);
+        display->fillRect(innerX+1, innerY+1, innerW-2, innerH-2, Color(bg, bg, bg));
+        // Draw a few cycles of a sine across the width; the apparent density reflects frequency.
+        int midY = innerY + innerH/2;
+        int amp = std::max(6, innerH/3);
+        int segs = std::max(64, innerW);
+        float cycles = std::log10(freq + 1.0f) * 6.0f + 1.0f; // low freq = few cycles, higher = dense
+        for (int s = 0; s < segs; ++s) {
+            float a0 = 2.0f * 3.14159265359f * cycles * (s    / static_cast<float>(segs));
+            float a1 = 2.0f * 3.14159265359f * cycles * ((s+1)/ static_cast<float>(segs));
+            int x0 = innerX + s;
+            int x1 = innerX + s + 1;
+            int y0 = midY - static_cast<int>(std::sin(a0) * amp);
+            int y1 = midY - static_cast<int>(std::sin(a1) * amp);
+            uint8_t br = static_cast<uint8_t>(90 + 120 * depth);
+            display->drawLine(x0, y0, x1, y1, Color(br, static_cast<uint8_t>(br*0.8f), 150));
+        }
+        // Depth indicator bar
+        int barW = std::max(4, static_cast<int>(innerW * depth * 0.5f));
+        display->fillRect(innerX + 6, innerY + 6, barW, 4, Color(150,120,180));
+    } else {
+        // Default: simple diagonal sweep to indicate activity
+        float phase = std::fmod(t_ * 2.0f, 1.0f);
+        int cx = innerX + static_cast<int>(phase * innerW);
+        int cy = innerY + static_cast<int>((1.0f - phase) * innerH);
+        display->fillRect(cx - 3, cy - 3, 6, 6, Color(120, 160, 255));
+    }
+}
+
+bool EffectsVisualizerPanel::handleInput(const InputEvent& event) {
+    // No interactions for now
+    return handleChildrenInput(event);
+}
+
 } // namespace AIMusicHardware

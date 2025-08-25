@@ -138,6 +138,50 @@ The AIMusicHardware project has reached a significant milestone with multiple co
 - **Status**: 🟢 **COMPLETE**
 - **Goal**: Upgrade the synthesis engine to a real-time, frequency-domain-based approach inspired by the Vital synthesizer.
 - **Benefits**: This will enable advanced, real-time spectral morphing and manipulation, significantly increasing sound design capabilities.
+
+## 📅 2025-08-25 — UI Grid + Sensors Enhancements (Today)
+
+### What We Completed Today
+- Effects and Sensors UI polish:
+  - Stabilized dropdown z-order and click-through prevention across Main/Effects/Sensors.
+  - Added Sensors grid overlay with 40px spacing and labels:
+    - X-axis numbered along bottom (0,1,2,…).
+    - Y-axis lettered along right edge (A,B,…,Z,AA,…).
+  - Aligned Sensors rows to gridlines for precise layout:
+    - Slot row bottom on K, label also on K.
+    - Effect row bottom on L, label also on L.
+    - Parameter row and label bottom on M.
+- Effects sync upgrades:
+  - Added tempo Sync to Delay and PingPongDelay, using musical divisions (1/1..1/16, incl. 1/8T).
+  - Preserved Free modes with appropriate units; Sync state persisted per slot.
+- Sensors persistence:
+  - Fixed lane mappings save/load and introduced forward-compatible storage for amount/invert.
+
+### What’s Next — Sensors Mapping Expansion (Plan)
+- Phase 1 (scaffold + minimal behavior):
+  - Target type per lane: Effect (current), Synth, Sequencer.
+  - Param list depends on target type:
+    - Synth: filter_cutoff, filter_resonance, master_volume, ADSR, LFO1/2 params.
+    - Sequencer: actions (Resequence Next/Prev/Jump A/B/C/Shuffle), and continuous (tempo, swing, probability, density).
+  - Per-lane filter/condition: smoothing and threshold controls.
+  - Apply behavior:
+    - Synth: continuous mapping to selected parameter with sensible ranges.
+    - Sequencer: rising-edge triggers for resequencing actions; continuous mapping for tempo/swing/etc.
+  - Persistence: store target type, slot (if Effect), param, smooth, threshold, amount, invert.
+
+- Phase 2 (depth and usability):
+  - Richer Synth set and optional search/preset lists.
+  - Additional Sequencer mappings: mute/solo lanes, density modes, probability maps.
+  - Note generation controls: pitch range/scale, gate length, velocity mode.
+
+- Phase 3 (advanced logic + resequencing):
+  - Conditional logic per lane: operators, hysteresis, edge modes, latching.
+  - Horizontal resequencing targets: named sections, random/weighted, schedule vs immediate.
+
+### Rationale
+- Keeps the Sensors panel compact by reusing the Slot dropdown as a Target selector (None, Synth, Sequencer, S1..S5).
+- Adds immediate value (Sequencer edge-triggered resequencing) while laying a clean path for deeper control later.
+
 - **Plan**: A detailed implementation plan is available in `docs/VITAL_SYNTHESIS_UPGRADE_PLAN.md`.
 - **Progress**: The implementation is complete. The `RealtimeWavetableVoiceManager` is integrated into the `Synthesizer` and can be enabled by calling `setVoiceManagerType(VoiceManagerType::RealTime)`.
 - **Next**: Further testing and optimization of the new engine.
