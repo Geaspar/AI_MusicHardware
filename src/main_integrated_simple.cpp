@@ -4445,6 +4445,8 @@ int main(int argc, char* argv[]) {
             slotDd->setPosition(x - 10, controlsY);
             slotDd->setSize(80, 22);
             slotDd->addItem("None");
+            slotDd->addItem("Synth");
+            slotDd->addItem("Sequencer");
             for (int s=1;s<=5;++s) slotDd->addItem("S"+std::to_string(s));
             sensorsScreen->addChild(std::move(slotDd));
 
@@ -4459,7 +4461,22 @@ int main(int argc, char* argv[]) {
             paramDd->setPosition(x - 20, paramRowTop);
             paramDd->setSize(130, 22);
             sensorsScreen->addChild(std::move(paramDd));
-            // Removed Invert/Amount controls to free space
+            // Simple per-lane filter controls under param row
+            auto smooth = std::make_unique<Slider>("sens_smooth_" + std::to_string(i), "Smooth", 0,0,24,100);
+            smooth->setOrientation(Slider::Orientation::Vertical);
+            smooth->setPosition(x + 50, paramRowTop + 40);
+            smooth->setRange(0.0f, 1.0f);
+            smooth->setValue(0.15f);
+            smooth->setShowValue(false);
+            sensorsScreen->addChild(std::move(smooth));
+
+            auto thresh = std::make_unique<Slider>("sens_thresh_" + std::to_string(i), "Thresh", 0,0,24,100);
+            thresh->setOrientation(Slider::Orientation::Vertical);
+            thresh->setPosition(x + 85, paramRowTop + 40);
+            thresh->setRange(0.0f, 1.0f);
+            thresh->setValue(0.5f);
+            thresh->setShowValue(false);
+            sensorsScreen->addChild(std::move(thresh));
         }
     }
     uiContext->addScreen(std::move(sensorsScreen));
@@ -5373,31 +5390,46 @@ int main(int argc, char* argv[]) {
                 });
             }
 
-            // Populate per-lane param dropdowns based on current slot effect type
-            auto populateParams = [&](DropdownMenu* pm, int slot){
+            // Populate per-lane param dropdowns based on target type + current slot effect type
+            auto populateParams = [&](int lane, DropdownMenu* pm, int slot){
                 if (!pm) return;
                 pm->clearItems();
-                std::string t = (slot>=0 && slot < (int)slotSelectedType.size()) ? slotSelectedType[slot] : std::string();
-                if (t == "Tremolo") {
-                    pm->addItem("depth"); pm->addItem("rate"); pm->addItem("shape"); pm->addItem("stereo_phase_deg");
-                } else if (t == "PingPongDelay") {
-                    pm->addItem("time_ms"); pm->addItem("feedback"); pm->addItem("hp_freq"); pm->addItem("lp_freq");
-                } else if (t == "RingModulator") {
-                    pm->addItem("freq_hz"); pm->addItem("depth"); pm->addItem("stereo_phase_deg");
-                } else if (t == "Delay") {
-                    pm->addItem("delayTime"); pm->addItem("feedback");
-                } else if (t == "Reverb") {
-                    pm->addItem("roomSize"); pm->addItem("damping"); pm->addItem("width");
-                } else if (t == "FDNReverb (Hall)") {
-                    pm->addItem("size"); pm->addItem("decay_rt60_s"); pm->addItem("high_damping"); pm->addItem("bass_mult"); pm->addItem("stereo_width"); pm->addItem("predelay_ms"); pm->addItem("diffusion"); pm->addItem("mod_rate"); pm->addItem("mod_depth");
-                } else if (t == "PlateReverb") {
-                    pm->addItem("predelay_ms"); pm->addItem("diffusion"); pm->addItem("mod_rate"); pm->addItem("mod_depth"); pm->addItem("decay"); pm->addItem("high_damping"); pm->addItem("size"); pm->addItem("output_trim_db");
-                } else if (t == "EQ") {
-                    pm->addItem("lowGain"); pm->addItem("midGain"); pm->addItem("highGain");
-                } else if (t == "LowPassFilter") {
-                    pm->addItem("frequency"); pm->addItem("resonance");
-                } else if (t == "Phaser") {
-                    pm->addItem("rate"); pm->addItem("depth"); pm->addItem("feedback");
+                if (laneTargetKind[lane] == 1) {
+                    // Synth params
+                    const char* synthParams[] = {"filter_cutoff","filter_resonance","master_volume",
+                        "envelope_attack","envelope_decay","envelope_sustain","envelope_release",
+                        "lfo1_rate","lfo1_depth","lfo1_shape","lfo2_rate","lfo2_depth","lfo2_shape"};
+                    for (auto* s : synthParams) pm->addItem(s);
+                } else if (laneTargetKind[lane] == 2) {
+                    // Sequencer mappings (actions first)
+                    pm->addItem("Resequence: Next");
+                    pm->addItem("Resequence: Prev");
+                    pm->addItem("Jump: A"); pm->addItem("Jump: B"); pm->addItem("Jump: C");
+                    pm->addItem("Shuffle Sections");
+                    pm->addItem("tempo"); pm->addItem("swing"); pm->addItem("probability"); pm->addItem("density");
+                } else {
+                    std::string t = (slot>=0 && slot < (int)slotSelectedType.size()) ? slotSelectedType[slot] : std::string();
+                    if (t == "Tremolo") {
+                        pm->addItem("depth"); pm->addItem("rate"); pm->addItem("shape"); pm->addItem("stereo_phase_deg");
+                    } else if (t == "PingPongDelay") {
+                        pm->addItem("time_ms"); pm->addItem("feedback"); pm->addItem("hp_freq"); pm->addItem("lp_freq");
+                    } else if (t == "RingModulator") {
+                        pm->addItem("freq_hz"); pm->addItem("depth"); pm->addItem("stereo_phase_deg");
+                    } else if (t == "Delay") {
+                        pm->addItem("delayTime"); pm->addItem("feedback");
+                    } else if (t == "Reverb") {
+                        pm->addItem("roomSize"); pm->addItem("damping"); pm->addItem("width");
+                    } else if (t == "FDNReverb (Hall)") {
+                        pm->addItem("size"); pm->addItem("decay_rt60_s"); pm->addItem("high_damping"); pm->addItem("bass_mult"); pm->addItem("stereo_width"); pm->addItem("predelay_ms"); pm->addItem("diffusion"); pm->addItem("mod_rate"); pm->addItem("mod_depth");
+                    } else if (t == "PlateReverb") {
+                        pm->addItem("predelay_ms"); pm->addItem("diffusion"); pm->addItem("mod_rate"); pm->addItem("mod_depth"); pm->addItem("decay"); pm->addItem("high_damping"); pm->addItem("size"); pm->addItem("output_trim_db");
+                    } else if (t == "EQ") {
+                        pm->addItem("lowGain"); pm->addItem("midGain"); pm->addItem("highGain");
+                    } else if (t == "LowPassFilter") {
+                        pm->addItem("frequency"); pm->addItem("resonance");
+                    } else if (t == "Phaser") {
+                        pm->addItem("rate"); pm->addItem("depth"); pm->addItem("feedback");
+                    }
                 }
                 if (pm->getSelectedItem().empty()) pm->addItem("<none>");
                 // Always preselect first entry so list is non-empty and selectable
@@ -5406,18 +5438,24 @@ int main(int argc, char* argv[]) {
             // Wire per-lane controls (slot/fx/param) under bars
             for (int lane = 0; lane < 8; ++lane) {
                 if (auto* sl = dynamic_cast<DropdownMenu*>(ss->getChild("sens_slot_" + std::to_string(lane)))) {
-                    int sel = laneTargetSlot[lane] < 0 ? 0 : (laneTargetSlot[lane] + 1);
+                    int sel;
+                    if (laneTargetKind[lane] == 1) sel = 1; // Synth
+                    else if (laneTargetKind[lane] == 2) sel = 2; // Sequencer
+                    else sel = laneTargetSlot[lane] < 0 ? 0 : (laneTargetSlot[lane] + 3);
                     sl->selectItemSilently(sel);
                     // Update FX name dropdown to reflect current slot's effect type
                     if (auto* fxd = dynamic_cast<DropdownMenu*>(ss->getChild("sens_fx_" + std::to_string(lane)))) {
                         fxd->clearItems();
-                        std::string et = (laneTargetSlot[lane] >= 0 && laneTargetSlot[lane] < (int)slotSelectedType.size()) ? slotSelectedType[laneTargetSlot[lane]] : std::string("<none>");
+                        std::string et;
+                        if (laneTargetKind[lane] == 1) et = "Synth";
+                        else if (laneTargetKind[lane] == 2) et = "Sequencer";
+                        else et = (laneTargetSlot[lane] >= 0 && laneTargetSlot[lane] < (int)slotSelectedType.size()) ? slotSelectedType[laneTargetSlot[lane]] : std::string("<none>");
                         if (et.empty()) et = "<none>";
                         fxd->addItem(et);
                         fxd->selectItemSilently(0);
                     }
                     auto* pm = dynamic_cast<DropdownMenu*>(ss->getChild("sens_param_" + std::to_string(lane)));
-                    populateParams(pm, laneTargetSlot[lane]);
+                    populateParams(lane, pm, laneTargetSlot[lane]);
                     if (pm) {
                         if (!laneParam[lane].empty()) {
                             pm->selectItemSilently(laneParam[lane]);
@@ -5427,15 +5465,21 @@ int main(int argc, char* argv[]) {
                         }
                     }
                     sl->setSelectionCallback([&, lane, pm](int idx, const std::string&){
-                        laneTargetSlot[lane] = (idx==0) ? -1 : (idx-1);
+                        if (idx == 0) { laneTargetKind[lane] = -1; laneTargetSlot[lane] = -1; }
+                        else if (idx == 1) { laneTargetKind[lane] = 1; laneTargetSlot[lane] = -1; }
+                        else if (idx == 2) { laneTargetKind[lane] = 2; laneTargetSlot[lane] = -1; }
+                        else { laneTargetKind[lane] = 0; laneTargetSlot[lane] = (idx-3); }
                         if (auto* fxd = dynamic_cast<DropdownMenu*>(ss->getChild("sens_fx_" + std::to_string(lane)))) {
                             fxd->clearItems();
-                            std::string et2 = (laneTargetSlot[lane] >= 0 && laneTargetSlot[lane] < (int)slotSelectedType.size()) ? slotSelectedType[laneTargetSlot[lane]] : std::string("<none>");
+                            std::string et2;
+                            if (laneTargetKind[lane] == 1) et2 = "Synth";
+                            else if (laneTargetKind[lane] == 2) et2 = "Sequencer";
+                            else et2 = (laneTargetSlot[lane] >= 0 && laneTargetSlot[lane] < (int)slotSelectedType.size()) ? slotSelectedType[laneTargetSlot[lane]] : std::string("<none>");
                             if (et2.empty()) et2 = "<none>";
                             fxd->addItem(et2);
                             fxd->selectItemSilently(0);
                         }
-                        populateParams(pm, laneTargetSlot[lane]);
+                        populateParams(lane, pm, laneTargetSlot[lane]);
                         if (pm) {
                             pm->selectItemSilently(0);
                             laneParam[lane] = pm->getSelectedItem();
@@ -5444,6 +5488,14 @@ int main(int argc, char* argv[]) {
                 }
                 if (auto* pm = dynamic_cast<DropdownMenu*>(ss->getChild("sens_param_" + std::to_string(lane)))) {
                     pm->setSelectionCallback([&, lane](int, const std::string& item){ laneParam[lane] = item; });
+                }
+                if (auto* sm = dynamic_cast<Slider*>(ss->getChild("sens_smooth_" + std::to_string(lane)))) {
+                    sm->setValue(laneSmooth[lane]);
+                    sm->setValueChangeCallback([&, lane](float v){ laneSmooth[lane] = v; });
+                }
+                if (auto* th = dynamic_cast<Slider*>(ss->getChild("sens_thresh_" + std::to_string(lane)))) {
+                    th->setValue(laneThresh[lane]);
+                    th->setValueChangeCallback([&, lane](float v){ laneThresh[lane] = v; });
                 }
             }
         }
@@ -5522,48 +5574,127 @@ int main(int argc, char* argv[]) {
 
             // Apply configured per-lane mappings (if any)
             for (int lane = 0; lane < 8; ++lane) {
-                int slot = laneTargetSlot[lane];
                 const std::string& p = laneParam[lane];
-                if (slot < 0 || p.empty()) continue;
-                float v = sensorMatrix->get(lane);
-                if (laneInvertDefault) v = 1.0f - v;
-                float amt = laneAmountDefault;
-                std::lock_guard<std::mutex> lock(audioMutex);
-                if (auto* fx = getFxForSlot(slot)) {
-                    auto setf = [&](const std::string& name, float value){ fx->setParameter(name, value); };
-                    if (p == "depth") setf(p, std::clamp(v * amt, 0.0f, 1.0f));
-                    else if (p == "hp_freq") setf(p, 20.0f + (v*amt) * (2000.0f - 20.0f));
-                    else if (p == "lp_freq") setf(p, 1000.0f + (v*amt) * (20000.0f - 1000.0f));
-                    else if (p == "time_ms") setf(p, 10.0f + (v*amt) * (2000.0f - 10.0f));
-                    else if (p == "feedback") setf(p, std::clamp(v * amt, 0.0f, 0.95f));
-                    else if (p == "stereo_phase_deg") setf(p, std::clamp(v * amt * 180.0f, 0.0f, 180.0f));
-                    else if (p == "shape") { int idx = (int)std::floor(std::clamp(v*amt,0.0f,0.999f) * 4.0f); setf(p, (float)idx); }
-                    else if (p == "rate" || p == "freq_hz") {
-                        bool synced = false; int sidx = slot;
-                        if (sidx < (int)slotSelectedType.size()) {
-                            auto it = slotParamCache[sidx].find(slotSelectedType[sidx]);
-                            if (it != slotParamCache[sidx].end() && it->second.count("_sync")) synced = it->second["_sync"] > 0.5f;
+                if (p.empty()) continue;
+                float raw = sensorMatrix->get(lane);
+                if (laneInvertDefault) raw = 1.0f - raw;
+                // Simple one-pole smoothing; map Smooth 0..1 to alpha 0.02..0.5
+                float alpha = 0.02f + std::clamp(laneSmooth[lane], 0.0f, 1.0f) * 0.48f;
+                laneSmoothed[lane] = laneSmoothed[lane] + alpha * (raw - laneSmoothed[lane]);
+                float v = laneSmoothed[lane];
+                float prev = lanePrev[lane];
+                lanePrev[lane] = v;
+
+                if (laneTargetKind[lane] == 1) {
+                    // Synth target
+                    float val = v * laneAmountDefault;
+                    // Map selected synth params to meaningful ranges
+                    if (p == "filter_cutoff") {
+                        float freq = 20.0f + val * (20000.0f - 20.0f);
+                        synthesizer->setParameter("filter_cutoff", std::clamp(freq, 20.0f, 20000.0f));
+                    } else if (p == "filter_resonance") {
+                        synthesizer->setParameter("filter_resonance", std::clamp(val, 0.0f, 1.0f));
+                    } else if (p == "master_volume") {
+                        synthesizer->setParameter("master_volume", std::clamp(val, 0.0f, 1.0f));
+                    } else if (p == "envelope_attack" || p == "envelope_decay" || p == "envelope_release") {
+                        float sec = 0.001f + val * 4.0f;
+                        synthesizer->setParameter(p, sec);
+                    } else if (p == "envelope_sustain") {
+                        synthesizer->setParameter("envelope_sustain", std::clamp(val, 0.0f, 1.0f));
+                    } else if (p == "lfo1_rate" || p == "lfo2_rate") {
+                        float hz = 0.10f + val * (15.0f - 0.10f);
+                        synthesizer->setParameter(p, hz);
+                    } else if (p == "lfo1_depth" || p == "lfo2_depth") {
+                        synthesizer->setParameter(p, std::clamp(val, 0.0f, 1.0f));
+                    } else if (p == "lfo1_shape" || p == "lfo2_shape") {
+                        int idx = (int)std::floor(std::clamp(val,0.0f,0.999f) * 4.0f);
+                        synthesizer->setParameter(p, (float)idx);
+                    }
+                } else if (laneTargetKind[lane] == 2) {
+                    // Sequencer target
+                    float thr = std::clamp(laneThresh[lane], 0.0f, 1.0f);
+                    bool rising = (prev < thr && v >= thr);
+                    if (p == "Resequence: Next") {
+                        if (rising) {
+                            double pos = sequencer->getPositionInBeats();
+                            int beatsPerBar = 4; // default; could be read if exposed
+                            sequencer->setPositionInBeats(pos + beatsPerBar);
                         }
-                        if (synced) {
-                            int N = 6; float beatsPerCycle[6] = {4.f,2.f,1.f,0.5f,1.f/3.f,0.25f};
-                            int idx = std::max(0, std::min(N-1, (int)std::floor(v * N)));
-                            slotParamCache[sidx][slotSelectedType[sidx]]["_divIndex"] = (float)idx;
-                            float bpm = sequencer ? (float)sequencer->getTempo() : 120.0f;
-                            float beatHz = bpm / 60.0f;
-                            float rateHz = std::max(0.1f, beatHz / std::max(0.001f, beatsPerCycle[idx]));
-                            setf(p == "rate" ? "rate" : "freq_hz", rateHz);
-                        } else {
-                            float lo = (p=="rate") ? 0.10f : 0.5f;
-                            float hi = (p=="rate") ? 15.0f : 10.0f;
-                            float hz = lo + (v*amt) * (hi - lo);
-                            setf(p == "rate" ? "rate" : "freq_hz", hz);
+                    } else if (p == "Resequence: Prev") {
+                        if (rising) {
+                            double pos = sequencer->getPositionInBeats();
+                            int beatsPerBar = 4;
+                            sequencer->setPositionInBeats(std::max(0.0, pos - beatsPerBar));
                         }
-                    } else if (p == "roomSize" || p == "damping" || p == "width") setf(p, std::clamp(v*amt, 0.0f, 1.0f));
-                    else if (p == "lowGain" || p == "midGain" || p == "highGain") setf(p, -12.0f + (v*amt) * 24.0f);
-                    else if (p == "frequency") setf(p, 20.0f + (v*amt) * (20000.0f - 20.0f));
-                    else if (p == "resonance") setf(p, 0.7f + (v*amt) * (5.0f - 0.7f));
-                    else {
-                        setf(p, std::clamp(v*amt, 0.0f, 1.0f));
+                    } else if (p == "Shuffle Sections") {
+                        if (rising) {
+                            // Simple jump to a random bar boundary within song length
+                            double songLen = sequencer->getSongLength();
+                            if (songLen > 0.0) {
+                                int maxBars = std::max(1, (int)std::floor(songLen / 4.0));
+                                int targetBar = rand() % maxBars;
+                                sequencer->setPositionInBeats(targetBar * 4.0);
+                            }
+                        }
+                    } else if (p.rfind("Jump:", 0) == 0) {
+                        if (rising) {
+                            // Map A/B/C to fixed bars 0/4/8 for now
+                            double target = 0.0;
+                            if (p.find('A') != std::string::npos) target = 0.0;
+                            else if (p.find('B') != std::string::npos) target = 4.0;
+                            else if (p.find('C') != std::string::npos) target = 8.0;
+                            sequencer->setPositionInBeats(target);
+                        }
+                    } else if (p == "tempo") {
+                        double bpm = 60.0 + v * (180.0 - 60.0);
+                        sequencer->setTempo(bpm);
+                    } else if (p == "swing") {
+                        // Placeholder: not exposed; could jitter position subtly
+                    } else if (p == "probability" || p == "density") {
+                        // Reserved for future sequencer params
+                    }
+                } else if (laneTargetKind[lane] == 0) {
+                    // Effect slot mapping
+                    int slot = laneTargetSlot[lane];
+                    if (slot < 0) continue;
+                    std::lock_guard<std::mutex> lock(audioMutex);
+                    if (auto* fx = getFxForSlot(slot)) {
+                        auto setf = [&](const std::string& name, float value){ fx->setParameter(name, value); };
+                        float amt = laneAmountDefault;
+                        if (p == "depth") setf(p, std::clamp(v * amt, 0.0f, 1.0f));
+                        else if (p == "hp_freq") setf(p, 20.0f + (v*amt) * (2000.0f - 20.0f));
+                        else if (p == "lp_freq") setf(p, 1000.0f + (v*amt) * (20000.0f - 1000.0f));
+                        else if (p == "time_ms") setf(p, 10.0f + (v*amt) * (2000.0f - 10.0f));
+                        else if (p == "feedback") setf(p, std::clamp(v * amt, 0.0f, 0.95f));
+                        else if (p == "stereo_phase_deg") setf(p, std::clamp(v * amt * 180.0f, 0.0f, 180.0f));
+                        else if (p == "shape") { int idx = (int)std::floor(std::clamp(v*amt,0.0f,0.999f) * 4.0f); setf(p, (float)idx); }
+                        else if (p == "rate" || p == "freq_hz") {
+                            bool synced = false; int sidx = slot;
+                            if (sidx < (int)slotSelectedType.size()) {
+                                auto it = slotParamCache[sidx].find(slotSelectedType[sidx]);
+                                if (it != slotParamCache[sidx].end() && it->second.count("_sync")) synced = it->second["_sync"] > 0.5f;
+                            }
+                            if (synced) {
+                                int N = 6; float beatsPerCycle[6] = {4.f,2.f,1.f,0.5f,1.f/3.f,0.25f};
+                                int idx = std::max(0, std::min(N-1, (int)std::floor(v * N)));
+                                slotParamCache[sidx][slotSelectedType[sidx]]["_divIndex"] = (float)idx;
+                                float bpm = sequencer ? (float)sequencer->getTempo() : 120.0f;
+                                float beatHz = bpm / 60.0f;
+                                float rateHz = std::max(0.1f, beatHz / std::max(0.001f, beatsPerCycle[idx]));
+                                setf(p == "rate" ? "rate" : "freq_hz", rateHz);
+                            } else {
+                                float lo = (p=="rate") ? 0.10f : 0.5f;
+                                float hi = (p=="rate") ? 15.0f : 10.0f;
+                                float hz = lo + (v*amt) * (hi - lo);
+                                setf(p == "rate" ? "rate" : "freq_hz", hz);
+                            }
+                        } else if (p == "roomSize" || p == "damping" || p == "width") setf(p, std::clamp(v*amt, 0.0f, 1.0f));
+                        else if (p == "lowGain" || p == "midGain" || p == "highGain") setf(p, -12.0f + (v*amt) * 24.0f);
+                        else if (p == "frequency") setf(p, 20.0f + (v*amt) * (20000.0f - 20.0f));
+                        else if (p == "resonance") setf(p, 0.7f + (v*amt) * (5.0f - 0.7f));
+                        else {
+                            setf(p, std::clamp(v*amt, 0.0f, 1.0f));
+                        }
                     }
                 }
             }
@@ -6002,10 +6133,14 @@ int main(int argc, char* argv[]) {
             nlohmann::json lanes = nlohmann::json::array();
             for (int i = 0; i < 8; ++i) {
                 nlohmann::json lj;
+                std::string tgt = (laneTargetKind[i]==1?"synth":(laneTargetKind[i]==2?"sequencer":(laneTargetKind[i]==0?"effect":"none")));
+                lj["target"] = tgt;
                 lj["slot"] = laneTargetSlot[i];
                 lj["param"] = laneParam[i];
                 lj["amount"] = laneAmount[i];
                 lj["invert"] = laneInvert[i];
+                lj["smooth"] = laneSmooth[i];
+                lj["threshold"] = laneThresh[i];
                 lanes.push_back(lj);
             }
             outCfg["sensors"]["lanes"] = lanes;
