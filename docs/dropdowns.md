@@ -49,3 +49,12 @@ Notes
 - Text rendering uses SDL_ttf when `HAVE_SDL_TTF` is defined; the integrated app target defines this flag to ensure dropdown text is visible.
 - If runtime environments lack SDL_ttf, consider adding a fallback text routine (e.g., simple bitmap font) or verify dylib search paths.
 
+Sequencer specifics
+- Controls on Sequencer page:
+  - `seq_jump`: quick Jump dropdown populated from `Sequencer::getSectionNames()` (prefixed with `"Jump: "`).
+  - `seq_sec_name_0..4`: section name dropdowns for the inline editor.
+  - `seq_sec_bar_0..4`: bar index dropdowns for the inline editor.
+- Rendering (z-order):
+  - The Sequencer timeline overlay is drawn after the screen render; Sequencer dropdown open lists are rendered after the overlay so lists remain on top.
+- Input handling:
+  - The main loop checks for open `seq_jump`, `seq_sec_name_i`, and `seq_sec_bar_i` first when the Sequencer screen is active, mirroring the Effects/Sensors click-through prevention pattern.

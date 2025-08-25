@@ -179,6 +179,7 @@ set(SEQUENCER_SOURCES
     src/sequencer/Sequencer.cpp
     src/sequencer/MidiFile.cpp
     src/sequencer/AdaptiveSequencer.cpp
+    src/sequencer/SegmentSequencer.cpp
 )
 
 set(PRESET_SOURCES

@@ -158,6 +158,26 @@ pattern->setStepTiming(12, -0.02f); // Step 12 slightly early
 
 The sequencer includes adaptive capabilities inspired by game audio middleware:
 
+### MVP Resequencing Plan (Phase A → C)
+
+- Phase A: Resequencing hooks on current Sequencer
+  - API (new): `queueSection(name, when)`, `jumpToSection(name, when)`, `nextSection(when)`, `prevSection(when)`, with `when` ∈ {Immediate, OnBeat, OnBar}.
+  - Minimal section registry: default A/B/C at 0/1/2 bars; configurable via `defineSections({{"A",0},{"B",4},...})`.
+  - Scheduling: OnBar/OnBeat executed at musical boundaries; Immediate applies right away.
+  - Sensors: existing “Resequence: Next/Prev/Jump A/B/C/Shuffle” now call this API (OnBar).
+
+- Phase B: Segment scaffolding
+  - Introduce light `Segment` data (length, tempo, tags, entry/exit points) and `SegmentTransition` (Immediate/NextBeat/NextBar/ExitPoint, probability, priority).
+  - Minimal `SegmentSequencer` to schedule transitions at boundaries; callbacks for UI.
+
+- Phase C: Conditions + probabilities
+  - Transition parameter conditions (>, <, hysteresis), weighted random selection.
+  - EventBus hooks to trigger resequencing via events.
+
+Notes
+- Horizontal re-sequencing docs (see `HORIZONTAL_RESEQUENCING_IMPLEMENTATION.md`) inform Phase B/C.
+- MVP avoids DSP changes; resequencing manipulates position/queue only.
+
 ```cpp
 // State-based sequencing
 sequencer->defineState("calm", {

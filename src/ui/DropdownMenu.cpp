@@ -1,5 +1,6 @@
 #include "../../include/ui/DropdownMenu.h"
 #include <algorithm>
+#include <iostream>
 
 namespace AIMusicHardware {
 
@@ -133,6 +134,10 @@ void DropdownMenu::renderDropdownList(DisplayManager* display) {
     // Background for dropdown
     display->fillRect(x_, listY, width_, dropdownHeight, Color(35, 35, 40));
     display->drawRect(x_, listY, width_, dropdownHeight, borderColor);
+    // Debug frame for Sequencer dropdowns
+    if (getId().rfind("seq_", 0) == 0) {
+        display->drawRect(x_-2, listY-2, width_+4, dropdownHeight+4, Color(240, 80, 80));
+    }
     
     // Draw visible items
     int visibleItems = std::min(static_cast<int>(items_.size()), maxVisibleItems_);
@@ -173,7 +178,18 @@ bool DropdownMenu::handleInput(const InputEvent& event) {
     
     if (event.type == InputEventType::TouchPress) {
         if (inMainBounds) {
+            // Toggle open state and compute opening direction immediately
             isOpen_ = !isOpen_;
+            openUpwards_ = shouldOpenUpwards();
+            // Debug: log Sequencer dropdown opens with geometry
+            if (getId().rfind("seq_", 0) == 0) {
+                int ddh = getDropdownHeight();
+                int listYdbg = openUpwards_ ? y_ - ddh : y_ + height_;
+                std::cout << "[Dropdown] " << getId() << (isOpen_?" opened":" closed")
+                          << " at (" << x_ << "," << y_ << ") w=" << width_ << ",h=" << height_
+                          << ", listY=" << listYdbg << ", listH=" << ddh
+                          << ", upwards=" << (openUpwards_?"true":"false") << std::endl;
+            }
             return true;
         } else if (isOpen_) {
             // Check if click is in dropdown list

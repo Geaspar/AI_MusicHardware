@@ -193,6 +193,55 @@ The AIMusicHardware project has reached a significant milestone with multiple co
 - Documentation:
   - Add a short guide for Sensors target/param population and normalization strategy.
 
+## 📅 2025-08-25 — Sequencer MVP (In Progress)
+
+### What’s Implemented
+- API (Phase A): Resequencing hooks on the existing `Sequencer`.
+  - `Timing { Immediate, OnBeat, OnBar }` and methods: `defineSections`, `jumpToSection`, `queueSection`, `nextSection`, `prevSection`.
+  - Default sections A/B/C at 0/1/2 bars; section accessors `getSectionNames()`, `getCurrentSectionName()`, `getSectionDefinitions()`.
+  - Pending jumps execute on musical boundaries in the process loop.
+- UI
+  - Main: “Section: …” label with Prev/Next controls.
+  - Sequencer page: Transport (Play/Stop, Loop, BPM), Actions (Jump/Go, Next/Prev, Shuffle), inline Sections editor (Name + Bar, Apply).
+  - Settings: duplicate sections editor removed to avoid confusion; sections now managed on Sequencer page.
+- Sensors
+  - Sequencer Param list dynamically includes “Jump: <SectionName>” from the defined sections.
+  - Resequencing actions (“Next/Prev/Shuffle/Jump”) use the new API with OnBar scheduling.
+- Persistence
+  - Sections load from `user_config` at startup; autosave on Apply (Sequencer page) and on exit.
+- Phase B groundwork
+  - Added minimal `SegmentSequencer` scaffolding (MusicSegment/SegmentTransition types) for future integration.
+
+### Current Issues
+- Sequencer timeline overlay not visible on the Sequencer page for the user.
+  - We currently draw the overlay after rendering the screen and dropdowns, before `SDL_RenderPresent`, with filled background/labels; needs investigation on target machine.
+  - Potential causes: draw order conflicts, incorrect screen ID, coordinate overlap, or missing font/text path for overlay labels.
+- Dropdown rendering glitches reported on Sequencer page.
+  - Symptoms: items not rendering correctly or z-ordering not respected.
+  - Likely related to the per-screen “open list” rendering pass and new Sequencer dropdown IDs; needs explicit inclusion in the post-render dropdown pass, plus click-through handling.
+- Sequencer audio processing remains disabled (by design during earlier debugging); UI operates, but patterns aren’t audible yet.
+
+### Next Steps (Proposed)
+1) Fix timeline rendering
+   - Add temporary debug primitives (solid color bars) without text to isolate text rendering issues.
+   - Verify active screen ID and coordinates; draw a colored test rect at (50,240, 1180×70) to confirm visibility.
+   - Ensure overlay draw runs for both main and secondary render paths; log a one-shot console line when drawing.
+2) Repair Sequencer dropdown rendering
+   - Explicitly include Sequencer-specific dropdowns in the post-render “renderDropdownList” pass (e.g., `seq_jump` and any future lists).
+   - Apply the same click-through prevention guard used for other screens.
+3) Consolidate sections editor
+   - Keep editor on Sequencer page only (already removed from Settings); consider expanding to more than 5 rows and add autosave confirmation.
+4) Optional: enable Sequencer processing with safeguards
+   - Re-enable `sequencer->process(...)` in the audio callback behind a feature flag; validate no duplicate-note issues.
+5) Phase B integration (after UI is stable)
+   - Map section definitions into `MusicSegment` objects; support Exit/Entry points.
+   - Add `SegmentTransition` with priority/probability and OnBeat/OnBar/ExitPoint scheduling.
+   - Expose minimal UI to add/edit transitions; wire Sensors and EventBus triggers to transitions.
+
+### Notes
+- Sensors + Synth normalization fixes are in place; no UI changes required there until we design per-parameter curves.
+- After timeline and dropdown fixes, add a minimalist bar ruler and highlight for the current section for better visibility.
+
 ### What’s Next — Sensors Mapping Expansion (Plan)
 - Phase 1 (scaffold + minimal behavior):
   - Target type per lane: Effect (current), Synth, Sequencer.
@@ -221,6 +270,46 @@ The AIMusicHardware project has reached a significant milestone with multiple co
 - **Plan**: A detailed implementation plan is available in `docs/VITAL_SYNTHESIS_UPGRADE_PLAN.md`.
 - **Progress**: The implementation is complete. The `RealtimeWavetableVoiceManager` is integrated into the `Synthesizer` and can be enabled by calling `setVoiceManagerType(VoiceManagerType::RealTime)`.
 - **Next**: Further testing and optimization of the new engine.
+
+## 📘 Sequencer — Sections + Segments (MVP) Explained
+
+### Sections
+- **Definition**: Named anchors on the global timeline (e.g., A, B, C) each mapped to a start bar via the “Sections” editor and “Apply Sections”.
+- **Usage**: The sequencer can jump between these anchors on musical boundaries using the resequencing API (`Immediate`, `OnBeat`, `OnBar`).
+- **Integration**: Section names are used throughout the UI (Sensors, Jump dropdowns) and persisted in `user_config`.
+
+### Segments (MVP)
+- **Goal**: Lightweight resequencing rules that say “when we’re in this section, jump to that section at this timing, optionally gated by probability”.
+- **Activation**: Rules only run when “Segments: ON” is enabled on the Sequencer page.
+- **Structure**: Three rows, each row is one independent rule:
+  - **From**: The section to watch (current/active section).
+  - **Exit**: Local bar threshold within the From section (used by ExitPoint timing).
+  - **To**: The target section to jump to (must exist in Sections).
+  - **When**: Jump timing — `Immediate`, `OnBeat`, `OnBar`, or `ExitPoint`.
+  - **Prob**: Probability gate (1.0 / 0.75 / 0.5 / 0.25).
+
+### “Exit” in MVP
+- **Purpose**: Coarse exit marker to approximate exit points without sub‑bar markers.
+- **Behavior**: When `When = ExitPoint`, the rule becomes eligible once the local bar index ≥ Exit inside the From section; the actual jump is then scheduled `OnBar`.
+
+### How Sections and Segments Work Together
+- **Sections** define where named parts live on the timeline.
+- **Segments rules** decide when to jump between those named parts during playback.
+- **Example**:
+  - Define A@bar0, B@bar4, C@bar8.
+  - Rule 1: From A → To B, When OnBar (switches on a bar boundary while in A).
+  - Rule 2: From B → To C, When ExitPoint, Exit 2 (eligible at/after the 3rd local bar of B; scheduled on the next bar).
+  - Rule 3: From C → To A, When OnBar, Prob 0.5 (randomly loops back to A on bar boundaries in C).
+
+### Safeguards & Limits (MVP)
+- **Debounce**: After a rule fires, it won’t re‑fire immediately in the same context, preventing spam.
+- **Prioritization**: First rule that qualifies in the scan wins for that evaluation pass.
+- **Scope**: Three rules, simplified ExitPoint, no named entry/exit points yet, no timeline visualization for segments/transitions.
+
+### Planned Enhancements
+- **Persistence**: Save/load Segments rules (From/Exit/To/When/Prob) in `user_config`.
+- **Named points**: True Exit/Entry points per section with precise scheduling.
+- **Visualization**: Draw segment regions and transition hints on the timeline.
 
 #### 2. External MIDI Controller Support
 - **Status**: 🟡 **Starting Development**

@@ -25,6 +25,7 @@
 #include "../include/audio/Synthesizer.h"
 #include "../include/effects/EffectProcessor.h"
 #include "../include/sequencer/Sequencer.h"
+#include "../include/sequencer/SegmentSequencer.h"
 #include "../include/midi/MidiInterface.h"
 #include "../include/hardware/HardwareInterface.h"
 
@@ -351,8 +352,7 @@ void audioCallback(AudioEngine* audioEngine, Synthesizer* synthesizer,
                   WaveformVisualizer* waveform, LevelMeter* levelMeter,
                   float* outputBuffer, int numFrames) {
     
-    // Process sequencer - TEMPORARILY DISABLED to debug duplicate notes
-    // sequencer->process(static_cast<float>(numFrames) / audioEngine->getSampleRate());
+    // Sequencer processing is handled in the outer audio callback when enabled.
     
     // Process synthesizer
     synthesizer->process(outputBuffer, numFrames);
@@ -447,8 +447,19 @@ int main(int argc, char* argv[]) {
     // MIDI activity indicator state
     std::atomic<bool> midiActivityPulse{false};
     float midiActivityTimer = 0.0f; // seconds to keep the light on after a message
+    // Sequencer audio processing toggle (disabled previously during duplicate-note debugging)
+    std::atomic<bool> seqProcEnabled{false};
+    // UI-staged tempo change (applied on next bar)
+    double seqUpcomingTempoUI = 0.0;
+    std::atomic<bool> seqTempoQueuedUI{false};
     // Create Sensor Matrix (8 lanes)
     auto sensorMatrix = std::make_shared<SensorMatrix>(8);
+    // Segment Sequencer (Phase B MVP)
+    auto segmentSequencer = std::make_unique<SegmentSequencer>();
+    std::atomic<bool> segmentsEnabled{false};
+    // State to prevent repeated firings
+    std::string lastSegmentFired;
+    int lastBarChecked = -1;
     
     // Persistence config
     auto getUserConfigPath = []() -> std::string {
@@ -584,6 +595,22 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     
+    // Load persisted sequencer sections (if any)
+    try {
+        if (loadedConfig.contains("sequencer") && loadedConfig["sequencer"].contains("sections")) {
+            std::vector<std::pair<std::string,double>> defs;
+            int bpb = sequencer->getBeatsPerBar();
+            for (const auto& s : loadedConfig["sequencer"]["sections"]) {
+                try {
+                    std::string name = s.contains("name") ? s["name"].get<std::string>() : std::string("A");
+                    int bar = s.contains("bar") ? s["bar"].get<int>() : 0;
+                    defs.push_back({name, (double)(bar * bpb)});
+                } catch (...) {}
+            }
+            if (!defs.empty()) sequencer->defineSections(defs);
+        }
+    } catch (...) {}
+    
     // Add a global low-pass filter to the external effect processor (will be kept at chain END)
     {
         auto filter = std::make_unique<Filter>(audioEngine->getSampleRate(), Filter::Type::LowPass);
@@ -686,6 +713,31 @@ int main(int argc, char* argv[]) {
     };
     mainScreen->setBackgroundColor(Color(40, 40, 50)); // Lighter background
     mainScreen->setPosition(0, 0);
+
+    // Current Section indicator + Prev/Next controls
+    {
+        auto secLbl = std::make_unique<Label>("current_section_lbl", "Section: A");
+        secLbl->setPosition(780, 10);
+        secLbl->setSize(180, 20);
+        secLbl->setTextColor(Color(200, 220, 255));
+        mainScreen->addChild(std::move(secLbl));
+
+        auto prevBtn = std::make_unique<Button>("section_prev_btn", "Prev");
+        prevBtn->setPosition(960, 8);
+        prevBtn->setSize(50, 24);
+        prevBtn->setBackgroundColor(Color(60, 60, 90));
+        prevBtn->setTextColor(Color(255,255,255));
+        prevBtn->setClickCallback([&sequencer]() { sequencer->prevSection(Sequencer::Timing::OnBar); });
+        mainScreen->addChild(std::move(prevBtn));
+
+        auto nextBtn = std::make_unique<Button>("section_next_btn", "Next");
+        nextBtn->setPosition(1016, 8);
+        nextBtn->setSize(50, 24);
+        nextBtn->setBackgroundColor(Color(60, 60, 90));
+        nextBtn->setTextColor(Color(255,255,255));
+        nextBtn->setClickCallback([&sequencer]() { sequencer->nextSection(Sequencer::Timing::OnBar); });
+        mainScreen->addChild(std::move(nextBtn));
+    }
     mainScreen->setSize(1280, 800);
     std::cout << "Created main screen" << std::endl;
     
@@ -2572,157 +2624,346 @@ int main(int argc, char* argv[]) {
     // Add navigation to sequencer screen
     addNavigationButtons(sequencerScreen.get(), "sequencer", uiContext.get());
     
-    // Transport section
-    auto transportSection = std::make_unique<Label>("transport_section", "TRANSPORT");
-    transportSection->setPosition(50, 70);
-    transportSection->setSize(200, 25);
-    transportSection->setTextColor(Color(255, 255, 100));
-    sequencerScreen->addChild(std::move(transportSection));
-    
-    // Play/Stop button
-    auto playStopButton = std::make_unique<Button>("play_stop_btn", "Play");
-    playStopButton->setPosition(50, 110);
-    playStopButton->setSize(80, 40);
-    playStopButton->setBackgroundColor(Color(50, 120, 50));
-    playStopButton->setTextColor(Color(255, 255, 255));
-    
-    // Track playing state
-    bool* isPlaying = new bool(false);
-    
-    auto playStopButtonPtr = playStopButton.get();
-    
-    // Set callback to toggle play/stop
-    playStopButton->setClickCallback([&sequencer, playStopButtonPtr, isPlaying]() {
-        if (*isPlaying) {
-            sequencer->stop();
-            playStopButtonPtr->setText("Play");
-            playStopButtonPtr->setBackgroundColor(Color(50, 120, 50));
-            *isPlaying = false;
-            std::cout << "Sequencer stopped" << std::endl;
-        } else {
-            sequencer->start();
-            playStopButtonPtr->setText("Stop");
-            playStopButtonPtr->setBackgroundColor(Color(120, 50, 50));
-            *isPlaying = true;
-            std::cout << "Sequencer started" << std::endl;
+    // Header + current section indicator
+    auto seqTitle = std::make_unique<Label>("sequencer_title", "SEQUENCER");
+    seqTitle->setPosition(50, 50);
+    seqTitle->setSize(200, 25);
+    seqTitle->setTextColor(Color(255, 255, 100));
+    sequencerScreen->addChild(std::move(seqTitle));
+
+    auto currSec = std::make_unique<Label>("seq_current_section", "Current: A");
+    currSec->setPosition(260, 50);
+    currSec->setSize(200, 20);
+    currSec->setTextColor(Color(200, 220, 255));
+    sequencerScreen->addChild(std::move(currSec));
+
+    auto seqPrev = std::make_unique<Button>("seq_prev", "Prev");
+    seqPrev->setPosition(460, 46);
+    seqPrev->setSize(60, 26);
+    seqPrev->setBackgroundColor(Color(60, 60, 90));
+    seqPrev->setTextColor(Color(255,255,255));
+    seqPrev->setClickCallback([&sequencer](){ sequencer->prevSection(Sequencer::Timing::OnBar); });
+    sequencerScreen->addChild(std::move(seqPrev));
+
+    auto seqNext = std::make_unique<Button>("seq_next", "Next");
+    seqNext->setPosition(528, 46);
+    seqNext->setSize(60, 26);
+    seqNext->setBackgroundColor(Color(60, 60, 90));
+    seqNext->setTextColor(Color(255,255,255));
+    seqNext->setClickCallback([&sequencer](){ sequencer->nextSection(Sequencer::Timing::OnBar); });
+    sequencerScreen->addChild(std::move(seqNext));
+
+    // Transport
+    auto playBtn = std::make_unique<Button>("seq_play", "Play");
+    playBtn->setPosition(50, 90);
+    playBtn->setSize(70, 28);
+    playBtn->setBackgroundColor(Color(50,120,50));
+    playBtn->setTextColor(Color(255,255,255));
+    bool* seqPlaying = new bool(false);
+    auto playBtnPtr = playBtn.get();
+    playBtn->setClickCallback([&sequencer, playBtnPtr, seqPlaying](){
+        if (*seqPlaying) { sequencer->stop(); *seqPlaying=false; playBtnPtr->setText("Play"); playBtnPtr->setBackgroundColor(Color(50,120,50)); }
+        else { sequencer->start(); *seqPlaying=true; playBtnPtr->setText("Stop"); playBtnPtr->setBackgroundColor(Color(120,50,50)); }
+    });
+    sequencerScreen->addChild(std::move(playBtn));
+
+    auto loopBtn = std::make_unique<Button>("seq_loop", "Loop: ON");
+    loopBtn->setPosition(130, 90);
+    loopBtn->setSize(90, 28);
+    loopBtn->setBackgroundColor(Color(50,100,50));
+    loopBtn->setTextColor(Color(255,255,255));
+    bool* seqLooping = new bool(true);
+    auto loopBtnPtr = loopBtn.get();
+    loopBtn->setClickCallback([&sequencer, seqLooping, loopBtnPtr](){
+        *seqLooping = !*seqLooping; sequencer->setLooping(*seqLooping);
+        loopBtnPtr->setText(*seqLooping?"Loop: ON":"Loop: OFF");
+        loopBtnPtr->setBackgroundColor(*seqLooping?Color(50,100,50):Color(100,50,50));
+    });
+    sequencerScreen->addChild(std::move(loopBtn));
+
+    // Sequencer audio processing toggle
+    auto seqProcBtn = std::make_unique<Button>("seq_proc", "Audio: OFF");
+    seqProcBtn->setPosition(230, 90);
+    seqProcBtn->setSize(90, 28);
+    seqProcBtn->setBackgroundColor(Color(90,70,70));
+    seqProcBtn->setTextColor(Color(255,255,255));
+    auto seqProcBtnPtr = seqProcBtn.get();
+    seqProcBtn->setClickCallback([&seqProcEnabled, seqProcBtnPtr]() mutable {
+        bool on = seqProcEnabled.load(std::memory_order_relaxed);
+        on = !on;
+        seqProcEnabled.store(on, std::memory_order_relaxed);
+        seqProcBtnPtr->setText(on ? "Audio: ON" : "Audio: OFF");
+        seqProcBtnPtr->setBackgroundColor(on ? Color(60,100,60) : Color(90,70,70));
+    });
+    sequencerScreen->addChild(std::move(seqProcBtn));
+
+    auto tempoLbl = std::make_unique<Label>("seq_tempo_lbl", "BPM");
+    // Place label above BPM slider top; slider top at B23 -> x=920, y=40
+    tempoLbl->setPosition(920, 20);
+    tempoLbl->setSize(60, 18);
+    tempoLbl->setTextColor(Color(200,200,200));
+    sequencerScreen->addChild(std::move(tempoLbl));
+    auto tempoSld = std::make_unique<Slider>("seq_tempo", "", 920, 40, 40, 100);
+    tempoSld->setRange(60.0f, 200.0f);
+    tempoSld->setValue((float)sequencer->getTempo());
+    tempoSld->setShowValue(false);
+    // Queue tempo change for next bar instead of immediate apply
+    // We'll draw a box to the right showing current vs upcoming
+    seqUpcomingTempoUI = sequencer->getTempo();
+    tempoSld->setValueChangeCallback([&seqUpcomingTempoUI, &seqTempoQueuedUI](float v){
+        seqUpcomingTempoUI = v;
+        seqTempoQueuedUI.store(true, std::memory_order_relaxed);
+    });
+    sequencerScreen->addChild(std::move(tempoSld));
+
+    // Grid overlay toggle (like Sensors page) to aid UI layout communication
+    auto seqGridBtn = std::make_unique<Button>("seq_grid", "Grid: OFF");
+    // Move to grid coordinate B19 -> X=19*40=760, Y='B'(1)*40=40
+    seqGridBtn->setPosition(760, 40);
+    seqGridBtn->setSize(110, 28);
+    seqGridBtn->setBackgroundColor(Color(60, 60, 80));
+    seqGridBtn->setTextColor(Color(255,255,255));
+    auto seqGridBtnPtr = seqGridBtn.get();
+    seqGridBtn->setClickCallback([seqGridBtnPtr]() mutable {
+        bool on = seqGridBtnPtr->getText().find("ON") != std::string::npos;
+        on = !on;
+        seqGridBtnPtr->setText(on ? "Grid: ON" : "Grid: OFF");
+        seqGridBtnPtr->setBackgroundColor(on ? Color(60,80,100) : Color(60,60,80));
+    });
+    sequencerScreen->addChild(std::move(seqGridBtn));
+
+    // Quick Jump / Actions
+    auto actionsLbl = std::make_unique<Label>("seq_actions_lbl", "Actions");
+    actionsLbl->setPosition(360, 90);
+    actionsLbl->setSize(100, 18);
+    actionsLbl->setTextColor(Color(200,200,200));
+    sequencerScreen->addChild(std::move(actionsLbl));
+    auto jumpDd = std::make_unique<DropdownMenu>("seq_jump", "Jump: A");
+    jumpDd->setPosition(360, 112);
+    jumpDd->setSize(140, 24);
+    // Populate with current sections
+    { auto names = sequencer->getSectionNames(); if (names.empty()) names = {"A","B","C"}; for (auto& n : names) jumpDd->addItem(std::string("Jump: ")+n); }
+    sequencerScreen->addChild(std::move(jumpDd));
+    auto jumpBtn = std::make_unique<Button>("seq_jump_btn", "Go");
+    jumpBtn->setPosition(504, 112);
+    jumpBtn->setSize(40, 24);
+    jumpBtn->setBackgroundColor(Color(80,80,120));
+    jumpBtn->setTextColor(Color(255,255,255));
+    jumpBtn->setClickCallback([&uiContext, &sequencer](){
+        if (auto* ss = uiContext->getScreen("sequencer")) {
+            if (auto* dd = dynamic_cast<DropdownMenu*>(ss->getChild("seq_jump"))) {
+                std::string item = dd->getSelectedItem();
+                if (item.rfind("Jump: ",0)==0) { std::string n = item.substr(6); sequencer->jumpToSection(n, Sequencer::Timing::OnBar); }
+            }
         }
     });
-    sequencerScreen->addChild(std::move(playStopButton));
-    
-    // Reset button
-    auto resetButton = std::make_unique<Button>("reset_btn", "Reset");
-    resetButton->setPosition(140, 110);
-    resetButton->setSize(80, 40);
-    resetButton->setBackgroundColor(Color(80, 80, 120));
-    resetButton->setTextColor(Color(255, 255, 255));
-    resetButton->setClickCallback([&sequencer]() {
-        sequencer->reset();
-        std::cout << "Sequencer reset" << std::endl;
+    sequencerScreen->addChild(std::move(jumpBtn));
+
+    auto nextBtn2 = std::make_unique<Button>("seq_next2", "Next");
+    nextBtn2->setPosition(552, 112);
+    nextBtn2->setSize(50, 24);
+    nextBtn2->setBackgroundColor(Color(60,60,90));
+    nextBtn2->setTextColor(Color(255,255,255));
+    nextBtn2->setClickCallback([&sequencer](){ sequencer->nextSection(Sequencer::Timing::OnBar); });
+    sequencerScreen->addChild(std::move(nextBtn2));
+    auto prevBtn2 = std::make_unique<Button>("seq_prev2", "Prev");
+    prevBtn2->setPosition(608, 112);
+    prevBtn2->setSize(50, 24);
+    prevBtn2->setBackgroundColor(Color(60,60,90));
+    prevBtn2->setTextColor(Color(255,255,255));
+    prevBtn2->setClickCallback([&sequencer](){ sequencer->prevSection(Sequencer::Timing::OnBar); });
+    sequencerScreen->addChild(std::move(prevBtn2));
+    auto shufBtn = std::make_unique<Button>("seq_shuffle", "Shuffle");
+    shufBtn->setPosition(664, 112);
+    shufBtn->setSize(70, 24);
+    shufBtn->setBackgroundColor(Color(60,60,90));
+    shufBtn->setTextColor(Color(255,255,255));
+    shufBtn->setClickCallback([&sequencer](){
+        auto names = sequencer->getSectionNames(); if (names.empty()) names = {"A","B","C"};
+        int r = rand() % (int)names.size(); sequencer->jumpToSection(names[r], Sequencer::Timing::OnBar);
     });
-    sequencerScreen->addChild(std::move(resetButton));
-    
-    
-    // Tempo control
-    auto tempoLabel = std::make_unique<Label>("tempo_label", "BPM");
-    tempoLabel->setPosition(250, 70);
-    tempoLabel->setSize(100, 25);
-    tempoLabel->setTextColor(Color(200, 200, 200));
-    sequencerScreen->addChild(std::move(tempoLabel));
-    
-    auto tempoSlider = std::make_unique<Slider>("tempo_slider", "Tempo", 250, 110, 40, 100);
-    tempoSlider->setRange(60.0f, 200.0f);
-    tempoSlider->setValue(120.0f);
-    tempoSlider->setValueChangeCallback([&sequencer](float value) {
-        sequencer->setTempo(value);
-        std::cout << "Tempo set to: " << value << " BPM" << std::endl;
-    });
-    sequencerScreen->addChild(std::move(tempoSlider));
-    
-    // Loop toggle
-    auto loopButton = std::make_unique<Button>("loop_btn", "Loop: ON");
-    loopButton->setPosition(360, 110);
-    loopButton->setSize(80, 40);
-    loopButton->setBackgroundColor(Color(50, 100, 50));
-    loopButton->setTextColor(Color(255, 255, 255));
-    
-    bool* isLooping = new bool(true);
-    auto loopButtonPtr = loopButton.get();
-    
-    loopButton->setClickCallback([&sequencer, loopButtonPtr, isLooping]() {
-        *isLooping = !*isLooping;
-        sequencer->setLooping(*isLooping);
-        if (*isLooping) {
-            loopButtonPtr->setText("Loop: ON");
-            loopButtonPtr->setBackgroundColor(Color(50, 100, 50));
-        } else {
-            loopButtonPtr->setText("Loop: OFF");
-            loopButtonPtr->setBackgroundColor(Color(100, 50, 50));
+    sequencerScreen->addChild(std::move(shufBtn));
+
+    // Sections list editor (inline)
+    auto secEditLbl = std::make_unique<Label>("seq_edit_lbl", "Sections");
+    secEditLbl->setPosition(50, 160);
+    secEditLbl->setSize(120, 18);
+    secEditLbl->setTextColor(Color(200,200,200));
+    sequencerScreen->addChild(std::move(secEditLbl));
+    for (int i=0;i<5;++i) {
+        int x = 50 + i*220; int y = 184;
+        auto nd = std::make_unique<DropdownMenu>("seq_sec_name_"+std::to_string(i), i==0?"A":(i==1?"B":(i==2?"C":"Intro")));
+        nd->setPosition(x, y);
+        nd->setSize(120, 22);
+        std::vector<std::string> opts = {"A","B","C","D","E","Intro","Verse","Chorus","Bridge","Break"};
+        for (auto& o: opts) nd->addItem(o);
+        sequencerScreen->addChild(std::move(nd));
+        auto bd = std::make_unique<DropdownMenu>("seq_sec_bar_"+std::to_string(i), std::to_string(i));
+        bd->setPosition(x, y+26);
+        bd->setSize(80, 22);
+        for (int b=0;b<16;++b) bd->addItem(std::to_string(b));
+        sequencerScreen->addChild(std::move(bd));
+    }
+    auto applySecs = std::make_unique<Button>("seq_apply_secs", "Apply Sections");
+    // Move Apply Sections to 27E -> x=27*40=1080, y='E'(4)*40=160
+    applySecs->setPosition(1080, 160);
+    applySecs->setSize(140, 26);
+    applySecs->setBackgroundColor(Color(60,80,100));
+    applySecs->setTextColor(Color(255,255,255));
+    applySecs->setClickCallback([&uiContext, &sequencer, &loadedConfig, &userConfigPath](){
+        int bpb = sequencer->getBeatsPerBar();
+        std::vector<std::pair<std::string,double>> defs;
+        if (auto* sc = uiContext->getScreen("sequencer")) {
+            for (int i=0;i<5;++i) {
+                auto* nd = dynamic_cast<DropdownMenu*>(sc->getChild("seq_sec_name_"+std::to_string(i)));
+                auto* bd = dynamic_cast<DropdownMenu*>(sc->getChild("seq_sec_bar_"+std::to_string(i)));
+                if (!nd || !bd) continue;
+                std::string name = nd->getSelectedItem(); int bar=0; try{bar=std::stoi(bd->getSelectedItem());}catch(...){bar=0;}
+                defs.push_back({name, (double)(bar*bpb)});
+            }
         }
-        std::cout << "Looping: " << (*isLooping ? "ON" : "OFF") << std::endl;
-    });
-    sequencerScreen->addChild(std::move(loopButton));
-    
-    // Pattern info section
-    auto patternSection = std::make_unique<Label>("pattern_section", "PATTERN");
-    patternSection->setPosition(50, 200);
-    patternSection->setSize(200, 25);
-    patternSection->setTextColor(Color(255, 255, 100));
-    sequencerScreen->addChild(std::move(patternSection));
-    
-    // Current position display
-    auto positionLabel = std::make_unique<Label>("position_label", "Position: 1.1.1");
-    positionLabel->setPosition(50, 240);
-    positionLabel->setSize(200, 25);
-    positionLabel->setTextColor(Color(200, 200, 200));
-    sequencerScreen->addChild(std::move(positionLabel));
-    
-    // Pattern status
-    auto patternStatusLabel = std::make_unique<Label>("pattern_status", "No patterns loaded");
-    patternStatusLabel->setPosition(50, 270);
-    patternStatusLabel->setSize(300, 25);
-    patternStatusLabel->setTextColor(Color(255, 100, 100));
-    sequencerScreen->addChild(std::move(patternStatusLabel));
-    
-    // Info about sequencer being disabled
-    auto infoLabel = std::make_unique<Label>("info_label", "Note: Sequencer audio is temporarily disabled (debugging duplicate notes)");
-    infoLabel->setPosition(50, 350);
-    infoLabel->setSize(600, 25);
-    infoLabel->setTextColor(Color(255, 200, 100));
-    sequencerScreen->addChild(std::move(infoLabel));
-    
-    // Add test pattern button
-    auto addTestPatternButton = std::make_unique<Button>("add_pattern_btn", "Add Test Pattern");
-    addTestPatternButton->setPosition(50, 400);
-    addTestPatternButton->setSize(150, 40);
-    addTestPatternButton->setBackgroundColor(Color(80, 80, 120));
-    addTestPatternButton->setTextColor(Color(255, 255, 255));
-    auto sequencerScreenPtr = sequencerScreen.get();
-    addTestPatternButton->setClickCallback([&sequencer, sequencerScreenPtr]() {
-        // Create a simple test pattern
-        auto pattern = std::make_unique<Pattern>("Test Pattern");
-        pattern->setLength(4.0); // 4 beats
-        
-        // Add some notes (C major scale)
-        pattern->addNote(Note(60, 0.8f, 0.0, 0.5));   // C
-        pattern->addNote(Note(62, 0.8f, 0.5, 0.5));   // D
-        pattern->addNote(Note(64, 0.8f, 1.0, 0.5));   // E
-        pattern->addNote(Note(65, 0.8f, 1.5, 0.5));   // F
-        pattern->addNote(Note(67, 0.8f, 2.0, 0.5));   // G
-        pattern->addNote(Note(69, 0.8f, 2.5, 0.5));   // A
-        pattern->addNote(Note(71, 0.8f, 3.0, 0.5));   // B
-        pattern->addNote(Note(72, 0.8f, 3.5, 0.5));   // C
-        
-        sequencer->addPattern(std::move(pattern));
-        sequencer->setCurrentPattern(0);
-        
-        // Find the pattern status label by ID
-        if (auto* statusLabel = dynamic_cast<Label*>(sequencerScreenPtr->getChild("pattern_status"))) {
-            statusLabel->setText("Test pattern loaded (C major scale)");
-            statusLabel->setTextColor(Color(100, 255, 100));
+        if (!defs.empty()) sequencer->defineSections(defs);
+        // Refresh jump list
+        if (auto* sc = uiContext->getScreen("sequencer")) {
+            if (auto* jd = dynamic_cast<DropdownMenu*>(sc->getChild("seq_jump"))) {
+                jd->clearItems();
+                auto names = sequencer->getSectionNames(); if (names.empty()) names={"A","B","C"};
+                for (auto& n: names) jd->addItem(std::string("Jump: ")+n);
+                jd->selectItemSilently(0);
+            }
         }
-        std::cout << "Added test pattern to sequencer" << std::endl;
+        // Autosave sections to user_config
+        try {
+            // Begin with current loadedConfig, update only sequencer.sections
+            nlohmann::json out = loadedConfig.is_null() ? nlohmann::json::object() : loadedConfig;
+            nlohmann::json secs = nlohmann::json::array();
+            for (const auto& d : defs) {
+                nlohmann::json sj;
+                sj["name"] = d.first;
+                int bar = (int)std::round(d.second / std::max(1, bpb));
+                sj["bar"] = bar;
+                secs.push_back(sj);
+            }
+            out["sequencer"]["sections"] = secs;
+            std::ofstream f(userConfigPath);
+            if (f.good()) {
+                f << out.dump(2);
+                f.flush();
+                loadedConfig = out;
+                std::cout << "Autosaved sequencer sections to: " << userConfigPath << std::endl;
+            }
+        } catch (...) {
+            std::cerr << "Warning: Failed to autosave sequencer sections" << std::endl;
+        }
     });
-    sequencerScreen->addChild(std::move(addTestPatternButton));
+    sequencerScreen->addChild(std::move(applySecs));
+
+    // --- Phase B MVP: Segments + Transitions ---
+    auto segLbl = std::make_unique<Label>("seg_label", "Segments (MVP)");
+    // Move Segments label to H1: X=1*40=40, Y='H'(7)*40=280
+    segLbl->setPosition(40, 280);
+    segLbl->setSize(200, 18);
+    segLbl->setTextColor(Color(200,200,200));
+    sequencerScreen->addChild(std::move(segLbl));
+
+    // Toggle to enable/disable segment transitions
+    auto segToggle = std::make_unique<Button>("seg_toggle", "Segments: OFF");
+    // Place toggle just below the label line (label at 280, row height ~22)
+    segToggle->setPosition(40, 302);
+    segToggle->setSize(130, 24);
+    segToggle->setBackgroundColor(Color(90,70,70));
+    segToggle->setTextColor(Color(255,255,255));
+    auto segTogglePtr = segToggle.get();
+    segToggle->setClickCallback([&segmentsEnabled, segTogglePtr]() mutable {
+        bool on = segmentsEnabled.load(std::memory_order_relaxed);
+        on = !on;
+        segmentsEnabled.store(on, std::memory_order_relaxed);
+        segTogglePtr->setText(on ? "Segments: ON" : "Segments: OFF");
+        segTogglePtr->setBackgroundColor(on ? Color(60,100,60) : Color(90,70,70));
+    });
+    sequencerScreen->addChild(std::move(segToggle));
+
+    // Three simple segment rows: name, exit bar, to, type, prob
+    const int segRows = 3;
+    for (int i=0;i<segRows;++i) {
+        // Anchor positions per group
+        int baseX = 200 + i*260; int baseY = 8 * 40; // default for group 0 on row I
+        if (i == 1) { // Group 2 -> I13 (x=13*40=520, y='I'=8*40=320)
+            baseX = 13 * 40; baseY = 8 * 40;
+        } else if (i == 2) { // Group 3 -> I21 (x=21*40=840, y='I'=320)
+            baseX = 21 * 40; baseY = 8 * 40;
+        }
+
+        const int labelW = 70;
+        const int rowStep = 24; // compact vertical stack
+        int xLabel = baseX;
+        int xCtrl  = baseX + labelW + 6;
+
+        // From (seg_name)
+        auto fromLbl = std::make_unique<Label>("seg_from_lbl_"+std::to_string(i), "From");
+        fromLbl->setPosition(xLabel, baseY);
+        fromLbl->setSize(labelW, 18);
+        fromLbl->setTextColor(Color(180,180,200));
+        sequencerScreen->addChild(std::move(fromLbl));
+        auto nameDd = std::make_unique<DropdownMenu>("seg_name_"+std::to_string(i), i==0?"A":(i==1?"B":"C"));
+        nameDd->setPosition(xCtrl, baseY);
+        nameDd->setSize(110, 22);
+        // Fill with current section names
+        auto names = sequencer->getSectionNames(); if (names.empty()) names = {"A","B","C"};
+        for (auto& n : names) nameDd->addItem(n);
+        sequencerScreen->addChild(std::move(nameDd));
+
+        // Exit (seg_exitbar)
+        auto exitLbl = std::make_unique<Label>("seg_exit_lbl_"+std::to_string(i), "Exit");
+        exitLbl->setPosition(xLabel, baseY + rowStep);
+        exitLbl->setSize(labelW, 18);
+        exitLbl->setTextColor(Color(180,180,200));
+        sequencerScreen->addChild(std::move(exitLbl));
+        auto exitDd = std::make_unique<DropdownMenu>("seg_exitbar_"+std::to_string(i), "Exit 0");
+        exitDd->setPosition(xCtrl, baseY + rowStep);
+        exitDd->setSize(110, 22);
+        for (int b=0;b<16;++b) exitDd->addItem(std::string("Exit ")+std::to_string(b));
+        exitDd->selectItemSilently(0);
+        sequencerScreen->addChild(std::move(exitDd));
+
+        // To (seg_to)
+        auto toLbl = std::make_unique<Label>("seg_to_lbl_"+std::to_string(i), "To");
+        toLbl->setPosition(xLabel, baseY + 2*rowStep);
+        toLbl->setSize(labelW, 18);
+        toLbl->setTextColor(Color(180,180,200));
+        sequencerScreen->addChild(std::move(toLbl));
+        auto toDd = std::make_unique<DropdownMenu>("seg_to_"+std::to_string(i), i==0?"B":(i==1?"C":"A"));
+        toDd->setPosition(xCtrl, baseY + 2*rowStep);
+        toDd->setSize(110, 22);
+        for (auto& n : names) toDd->addItem(n);
+        sequencerScreen->addChild(std::move(toDd));
+
+        // When (seg_type)
+        auto whenLbl = std::make_unique<Label>("seg_when_lbl_"+std::to_string(i), "When");
+        whenLbl->setPosition(xLabel, baseY + 3*rowStep);
+        whenLbl->setSize(labelW, 18);
+        whenLbl->setTextColor(Color(180,180,200));
+        sequencerScreen->addChild(std::move(whenLbl));
+        auto typeDd = std::make_unique<DropdownMenu>("seg_type_"+std::to_string(i), "OnBar");
+        typeDd->setPosition(xCtrl, baseY + 3*rowStep);
+        typeDd->setSize(120, 22);
+        for (auto& t : std::vector<std::string>{"Immediate","OnBeat","OnBar","ExitPoint"}) typeDd->addItem(t);
+        typeDd->selectItemSilently(2);
+        sequencerScreen->addChild(std::move(typeDd));
+
+        // Prob (seg_prob)
+        auto probLbl = std::make_unique<Label>("seg_prob_lbl_"+std::to_string(i), "Prob");
+        probLbl->setPosition(xLabel, baseY + 4*rowStep);
+        probLbl->setSize(labelW, 18);
+        probLbl->setTextColor(Color(180,180,200));
+        sequencerScreen->addChild(std::move(probLbl));
+        auto probDd = std::make_unique<DropdownMenu>("seg_prob_"+std::to_string(i), "Prob 1.0");
+        probDd->setPosition(xCtrl, baseY + 4*rowStep);
+        probDd->setSize(110, 22);
+        for (auto& p : std::vector<std::string>{"Prob 1.0","Prob 0.75","Prob 0.5","Prob 0.25"}) probDd->addItem(p);
+        probDd->selectItemSilently(0);
+        sequencerScreen->addChild(std::move(probDd));
+    }
     
     
     // Add sequencer screen to context
@@ -4361,6 +4602,53 @@ int main(int argc, char* argv[]) {
     
     uiContext->addScreen(std::move(settingsScreen));
 
+    // (Removed: Settings page sections editor — sections editor lives on Sequencer page now)
+    /* if (auto* settings = uiContext->getScreen("settings")) {
+        int baseX = 50, baseY = 720;
+        auto title = std::make_unique<Label>("sections_title", "Sections Editor");
+        title->setPosition(baseX, baseY);
+        title->setSize(200, 18);
+        title->setTextColor(Color(200,200,255));
+        settings->addChild(std::move(title));
+
+        std::vector<std::string> nameOptions = {"Intro","Verse","Chorus","Bridge","Break","A","B","C","D","E"};
+        for (int i = 0; i < 5; ++i) {
+            int x = baseX + i*200;
+            auto nameDd = std::make_unique<DropdownMenu>("sec_name_" + std::to_string(i), i < (int)nameOptions.size() ? nameOptions[i] : "A");
+            nameDd->setPosition(x, baseY + 22);
+            nameDd->setSize(120, 22);
+            for (const auto& n : nameOptions) nameDd->addItem(n);
+            settings->addChild(std::move(nameDd));
+
+            auto barDd = std::make_unique<DropdownMenu>("sec_bar_" + std::to_string(i), std::to_string(i * 1));
+            barDd->setPosition(x, baseY + 48);
+            barDd->setSize(80, 22);
+            for (int b=0; b<16; ++b) barDd->addItem(std::to_string(b));
+            settings->addChild(std::move(barDd));
+        }
+
+        auto applyBtn = std::make_unique<Button>("sections_apply", "Apply Sections");
+        applyBtn->setPosition(baseX + 5*200, baseY + 22);
+        applyBtn->setSize(140, 26);
+        applyBtn->setBackgroundColor(Color(60,80,100));
+        applyBtn->setTextColor(Color(255,255,255));
+        applyBtn->setClickCallback([&uiContext, &sequencer, beatsPerBar = sequencer->getBeatsPerBar()](){
+            std::vector<std::pair<std::string,double>> defs;
+            if (auto* ss = uiContext->getScreen("settings")) {
+                for (int i=0;i<5;++i) {
+                    auto* nd = dynamic_cast<DropdownMenu*>(ss->getChild("sec_name_" + std::to_string(i)));
+                    auto* bd = dynamic_cast<DropdownMenu*>(ss->getChild("sec_bar_" + std::to_string(i)));
+                    if (!nd || !bd) continue;
+                    std::string name = nd->getSelectedItem();
+                    int bar = 0; try { bar = std::stoi(bd->getSelectedItem()); } catch (...) {}
+                    defs.push_back({name, static_cast<double>(bar * beatsPerBar)});
+                }
+            }
+            if (!defs.empty()) sequencer->defineSections(defs);
+        });
+        settings->addChild(std::move(applyBtn));
+    } */
+
     // Create Sensors screen (basic visualization + mappings)
     auto sensorsScreen = std::make_unique<Screen>("sensors");
     sensorsScreen->setBackgroundColor(Color(28, 30, 35));
@@ -5152,6 +5440,14 @@ int main(int argc, char* argv[]) {
     // Set up audio callback (mutex declared earlier, reuse here)
     audioEngine->setAudioCallback([&](float* outputBuffer, int numFrames) {
         std::lock_guard<std::mutex> lock(audioMutex);
+        // Optionally process sequencer based on UI toggle to avoid duplicate-note issues when OFF
+        if (seqProcEnabled.load(std::memory_order_relaxed)) {
+            double sr = audioEngine->getSampleRate();
+            if (sr < 1.0) sr = 44100.0; // safety
+            double dt = static_cast<double>(numFrames) / sr;
+            sequencer->process(dt);
+        }
+        // Then generate audio
         audioCallback(audioEngine.get(), synthesizer.get(), effectProcessor.get(),
                      sequencer.get(), waveformPtr, levelPtr, outputBuffer, numFrames);
     });
@@ -5374,6 +5670,55 @@ int main(int argc, char* argv[]) {
                         }
                     }
 
+                    // Sequencer page: jump, sections editor, and segments MVP dropdowns (reverse order)
+                    if (!dropdownHandled && uiContext->getActiveScreenId() == std::string("sequencer")) {
+                        // Handle the quick Jump dropdown
+                        if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("seq_jump"))) {
+                            if (dropdown->isDropdownOpen()) {
+                                dropdownHandled = dropdown->handleInput(inputEvent);
+                                if (inputEvent.type == InputEventType::TouchPress && !dropdownHandled) {
+                                    dropdownHandled = true; // consume to avoid click-through
+                                }
+                            }
+                        }
+                        // Handle sections editor dropdowns (names and bars) in reverse add order
+                        for (int i = 4; i >= 0 && !dropdownHandled; --i) {
+                            if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("seq_sec_name_" + std::to_string(i)))) {
+                                if (dropdown->isDropdownOpen()) {
+                                    dropdownHandled = dropdown->handleInput(inputEvent);
+                                    if (inputEvent.type == InputEventType::TouchPress && !dropdownHandled) {
+                                        dropdownHandled = true;
+                                    }
+                                    break;
+                                }
+                            }
+                            if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("seq_sec_bar_" + std::to_string(i)))) {
+                                if (dropdown->isDropdownOpen()) {
+                                    dropdownHandled = dropdown->handleInput(inputEvent);
+                                    if (inputEvent.type == InputEventType::TouchPress && !dropdownHandled) {
+                                        dropdownHandled = true;
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                        // Handle segments MVP dropdowns in reverse order (i=2..0)
+                        for (int i = 2; i >= 0 && !dropdownHandled; --i) {
+                            const char* ids[] = {"seg_name_", "seg_exitbar_", "seg_to_", "seg_type_", "seg_prob_"};
+                            for (const char* base : ids) {
+                                if (auto* dd = dynamic_cast<DropdownMenu*>(activeScreen->getChild(std::string(base) + std::to_string(i)))) {
+                                    if (dd->isDropdownOpen()) {
+                                        dropdownHandled = dd->handleInput(inputEvent);
+                                        if (inputEvent.type == InputEventType::TouchPress && !dropdownHandled) {
+                                            dropdownHandled = true;
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     // Main-screen quick FX dropdowns: handle open lists before other inputs
                     if (!dropdownHandled) {
                         for (int i = 2; i >= 0; --i) {
@@ -5443,6 +5788,126 @@ int main(int argc, char* argv[]) {
         
         uiContext->update(deltaTime);
 
+        // Update current section labels on main and sequencer screens
+        {
+            std::string name = sequencer->getCurrentSectionName();
+            if (name.empty()) name = "A";
+            if (auto* ms = uiContext->getScreen("main")) {
+                if (auto* sec = dynamic_cast<Label*>(ms->getChild("current_section_lbl"))) {
+                    sec->setText(std::string("Section: ") + name);
+                }
+            }
+            if (auto* ss = uiContext->getScreen("sequencer")) {
+                if (auto* lb = dynamic_cast<Label*>(ss->getChild("seq_current_section"))) {
+                    lb->setText(std::string("Current: ") + name);
+                }
+            }
+        }
+
+        // Phase B MVP: drive simple segment transitions if enabled
+        if (segmentsEnabled.load(std::memory_order_relaxed)) {
+            // Build a map of section name -> start beat
+            std::unordered_map<std::string,double> sectionStarts;
+            {
+                auto defs = sequencer->getSectionDefinitions();
+                for (const auto& d : defs) sectionStarts[d.first] = d.second;
+            }
+            std::string cur = sequencer->getCurrentSectionName();
+            int barNow = sequencer->getCurrentBar();
+            int bpb = sequencer->getBeatsPerBar();
+            double pos = sequencer->getPositionInBeats();
+            double startBeat = sectionStarts.count(cur)? sectionStarts[cur] : 0.0;
+            int localBar = (int)std::floor((pos - startBeat) / std::max(1,bpb)); if (localBar < 0) localBar = 0;
+
+            bool barChanged = (barNow != lastBarChecked);
+            if (barChanged) {
+                lastBarChecked = barNow;
+            }
+
+            // Evaluate the three rows in order
+            if (auto* ss = uiContext->getScreen("sequencer")) {
+                for (int i=0;i<3;++i) {
+                    auto* nameDd = dynamic_cast<DropdownMenu*>(ss->getChild("seg_name_"+std::to_string(i)));
+                    auto* exitDd = dynamic_cast<DropdownMenu*>(ss->getChild("seg_exitbar_"+std::to_string(i)));
+                    auto* toDd   = dynamic_cast<DropdownMenu*>(ss->getChild("seg_to_"+std::to_string(i)));
+                    auto* typeDd = dynamic_cast<DropdownMenu*>(ss->getChild("seg_type_"+std::to_string(i)));
+                    auto* probDd = dynamic_cast<DropdownMenu*>(ss->getChild("seg_prob_"+std::to_string(i)));
+                    if (!nameDd || !exitDd || !toDd || !typeDd || !probDd) continue;
+                    std::string fromName = nameDd->getSelectedItem();
+                    if (fromName.empty()) continue;
+                    if (fromName != cur) continue;
+
+                    // Probability
+                    float prob = 1.0f;
+                    std::string ps = probDd->getSelectedItem();
+                    if (ps.find("0.75")!=std::string::npos) prob = 0.75f;
+                    else if (ps.find("0.5")!=std::string::npos) prob = 0.5f;
+                    else if (ps.find("0.25")!=std::string::npos) prob = 0.25f;
+
+                    // Transition type
+                    std::string tt = typeDd->getSelectedItem();
+                    bool doNow = false;
+                    bool scheduleOnBeat = false;
+                    bool scheduleOnBar = false;
+                    bool atExitPoint = false;
+                    if (tt == "Immediate") doNow = true;
+                    else if (tt == "OnBeat") scheduleOnBeat = true;
+                    else if (tt == "OnBar") scheduleOnBar = true;
+                    else if (tt == "ExitPoint") {
+                        // Parse exit number
+                        int exitBar = 0; try {
+                            std::string exs = exitDd->getSelectedItem();
+                            auto posx = exs.find(' ');
+                            if (posx != std::string::npos) exitBar = std::stoi(exs.substr(posx+1));
+                        } catch (...) {}
+                        if (localBar >= exitBar) atExitPoint = true; // simple check: at/after exit bar
+                    }
+
+                    // Prevent repeated triggers within same section/bar when not appropriate
+                    std::string toName = toDd->getSelectedItem();
+                    if (toName.empty()) continue;
+                    bool allowedByProb = ((float)rand()/(float)RAND_MAX) <= prob;
+                    if (!allowedByProb) continue;
+
+                    if (doNow) {
+                        if (lastSegmentFired != (cur+"->"+toName+"@imm")) {
+                            sequencer->jumpToSection(toName, Sequencer::Timing::Immediate);
+                            lastSegmentFired = cur+"->"+toName+"@imm";
+                        }
+                        break;
+                    }
+                    if (scheduleOnBar && barChanged) {
+                        sequencer->jumpToSection(toName, Sequencer::Timing::OnBar);
+                        lastSegmentFired = cur+"->"+toName+"@bar";
+                        break;
+                    }
+                    if (scheduleOnBeat && barChanged) { // approximate: use bar change as coarse beat step
+                        sequencer->jumpToSection(toName, Sequencer::Timing::OnBeat);
+                        lastSegmentFired = cur+"->"+toName+"@beat";
+                        break;
+                    }
+                    if (atExitPoint) {
+                        sequencer->jumpToSection(toName, Sequencer::Timing::OnBar);
+                        lastSegmentFired = cur+"->"+toName+"@exit";
+                        break;
+                    }
+                }
+            }
+        }
+        // Apply queued tempo change on bar boundary and update BPM readout
+        {
+            static int lastBarSeen = -1;
+            int bar = sequencer->getCurrentBar();
+            if (bar != lastBarSeen) {
+                // Bar changed
+                if (seqTempoQueuedUI.load(std::memory_order_relaxed)) {
+                    sequencer->setTempo((float)seqUpcomingTempoUI);
+                    seqTempoQueuedUI.store(false, std::memory_order_relaxed);
+                }
+                lastBarSeen = bar;
+            }
+        }
+
         // Sensors: read UI toggles if present
         if (auto* ss = uiContext->getScreen("sensors")) {
             if (auto* b = dynamic_cast<Button*>(ss->getChild("sensors_sim"))) {
@@ -5496,7 +5961,11 @@ int main(int argc, char* argv[]) {
                     // Sequencer mappings (actions first)
                     pm->addItem("Resequence: Next");
                     pm->addItem("Resequence: Prev");
-                    pm->addItem("Jump: A"); pm->addItem("Jump: B"); pm->addItem("Jump: C");
+                    // Dynamic Jump list from defined sections
+                    if (sequencer) {
+                        auto names = sequencer->getSectionNames();
+                        for (const auto& nm : names) pm->addItem(std::string("Jump: ") + nm);
+                    }
                     pm->addItem("Shuffle Sections");
                     pm->addItem("tempo"); pm->addItem("swing"); pm->addItem("probability"); pm->addItem("density");
                 } else {
@@ -5689,34 +6158,24 @@ int main(int argc, char* argv[]) {
                     bool rising = (prev < thr && v >= thr);
                     if (p == "Resequence: Next") {
                         if (rising) {
-                            double pos = sequencer->getPositionInBeats();
-                            int beatsPerBar = 4; // default; could be read if exposed
-                            sequencer->setPositionInBeats(pos + beatsPerBar);
+                            sequencer->nextSection(Sequencer::Timing::OnBar);
                         }
                     } else if (p == "Resequence: Prev") {
                         if (rising) {
-                            double pos = sequencer->getPositionInBeats();
-                            int beatsPerBar = 4;
-                            sequencer->setPositionInBeats(std::max(0.0, pos - beatsPerBar));
+                            sequencer->prevSection(Sequencer::Timing::OnBar);
                         }
                     } else if (p == "Shuffle Sections") {
                         if (rising) {
-                            // Simple jump to a random bar boundary within song length
-                            double songLen = sequencer->getSongLength();
-                            if (songLen > 0.0) {
-                                int maxBars = std::max(1, (int)std::floor(songLen / 4.0));
-                                int targetBar = rand() % maxBars;
-                                sequencer->setPositionInBeats(targetBar * 4.0);
-                            }
+                            // Randomly choose among A/B/C for now
+                            int r = rand() % 3;
+                            if (r == 0) sequencer->jumpToSection("A", Sequencer::Timing::OnBar);
+                            else if (r == 1) sequencer->jumpToSection("B", Sequencer::Timing::OnBar);
+                            else sequencer->jumpToSection("C", Sequencer::Timing::OnBar);
                         }
                     } else if (p.rfind("Jump:", 0) == 0) {
                         if (rising) {
-                            // Map A/B/C to fixed bars 0/4/8 for now
-                            double target = 0.0;
-                            if (p.find('A') != std::string::npos) target = 0.0;
-                            else if (p.find('B') != std::string::npos) target = 4.0;
-                            else if (p.find('C') != std::string::npos) target = 8.0;
-                            sequencer->setPositionInBeats(target);
+                            std::string name = p.substr(6); // after "Jump: "
+                            sequencer->jumpToSection(name, Sequencer::Timing::OnBar);
                         }
                     } else if (p == "tempo") {
                         double bpm = 60.0 + v * (180.0 - 60.0);
@@ -6065,6 +6524,137 @@ int main(int argc, char* argv[]) {
                     dropdown->renderDropdownList(sdlDisplayManager.get());
                 }
             }
+
+            // Sequencer grid overlay (optional) and timeline (drawn after screen render)
+            if (uiContext->getActiveScreenId() == std::string("sequencer")) {
+                static bool loggedOnce = false;
+                // Optional grid overlay for layout reference
+                if (auto* seqScreen = uiContext->getScreen("sequencer")) {
+                    if (auto* grid = dynamic_cast<Button*>(seqScreen->getChild("seq_grid"))) {
+                        bool on = grid->getText().find("ON") != std::string::npos;
+                        if (on) {
+                            const int step = 40;
+                            int w = sdlDisplayManager->getWidth();
+                            int h = sdlDisplayManager->getHeight();
+                            Color gc(40, 50, 60, 255);
+                            // Grid lines
+                            for (int x = 0, i = 0; x < w; x += step, ++i) sdlDisplayManager->drawLine(x, 0, x, h, gc);
+                            for (int y = 0, j = 0; y < h; y += step, ++j) sdlDisplayManager->drawLine(0, y, w, y, gc);
+                            // Labels
+                            Color lc(120, 160, 190, 255);
+                            // Numbers along bottom for each vertical line
+                            for (int x = 0, i = 0; x < w; x += step, ++i) {
+                                std::string s = std::to_string(i);
+                                int tx = x + 4;
+                                int ty = h - 16;
+                                sdlDisplayManager->drawText(tx, ty, s, nullptr, lc);
+                            }
+                            // Letters on the right for each horizontal line
+                            auto toLetters = [](int idx){
+                                std::string r; int n = idx + 1; while (n > 0) { int rem = (n - 1) % 26; r.push_back(char('A' + rem)); n = (n - 1) / 26; }
+                                return std::string(r.rbegin(), r.rend());
+                            };
+                            for (int y = 0, j = 0; y < h; y += step, ++j) {
+                                std::string s = toLetters(j);
+                                int tx = w - 28;
+                                int ty = y + 2;
+                                sdlDisplayManager->drawText(tx, ty, s, nullptr, lc);
+                            }
+                        }
+                    }
+                }
+                // Timeline label at L1 and timeline underneath
+                // Grid step is 40px; 1L -> X=1*40=40, Y='L'(11)*40=440
+                const int step = 40;
+                const int textX = 1 * step;
+                const int textY = 11 * step;
+                sdlDisplayManager->drawText(textX, textY, "TIMELINE", nullptr, Color(200, 220, 255));
+                // Timeline rectangle below label: start at row M (12*40 = 480), span 1200px (30 columns)
+                int tlX = 1 * step;
+                int tlY = 12 * step;
+                int tlW = 30 * step;
+                int tlH = 70;
+                // High-contrast debug stripe behind timeline to verify visibility on all setups
+                sdlDisplayManager->fillRect(tlX, tlY - 6, tlW, tlH + 12, Color(90, 20, 20));
+                sdlDisplayManager->fillRect(tlX, tlY, tlW, tlH, Color(35, 45, 65));
+                // Sections and grid
+                auto defs = sequencer->getSectionDefinitions();
+                int bpb = sequencer->getBeatsPerBar();
+                double maxBeat = (double)bpb * 8.0;
+                for (const auto& d : defs) maxBeat = std::max(maxBeat, d.second + bpb);
+                if (maxBeat < 1.0) maxBeat = (double)bpb * 8.0;
+                double pxPerBeat = (double)tlW / maxBeat;
+                // Bar lines and labels
+                for (int beat = 0; beat <= (int)maxBeat; beat += bpb) {
+                    int x = tlX + (int)std::round(beat * pxPerBeat);
+                    sdlDisplayManager->drawLine(x, tlY, x, tlY + tlH, Color(90, 110, 140));
+                    int barIdx = beat / bpb;
+                    sdlDisplayManager->drawText(x + 2, tlY + tlH + 4, std::to_string(barIdx), nullptr, Color(140, 160, 190));
+                }
+                // Section markers
+                for (const auto& d : defs) {
+                    int sx = tlX + (int)std::round(d.second * pxPerBeat);
+                    sdlDisplayManager->drawLine(sx, tlY, sx, tlY + tlH, Color(60, 200, 120));
+                    sdlDisplayManager->drawText(sx + 4, tlY - 16, d.first, nullptr, Color(140, 220, 160));
+                }
+                // Playhead
+                double pos = sequencer->getPositionInBeats();
+                int phx = tlX + (int)std::round(std::fmod(std::max(0.0, pos), maxBeat) * pxPerBeat);
+                sdlDisplayManager->drawLine(phx, tlY, phx, tlY + tlH, Color(240, 70, 70));
+
+                // BPM values box to the right of the BPM slider
+                int boxX = 920 + 50; // to the right of slider (x=920)
+                int boxY = 40;
+                int boxW = 220;
+                int boxH = 54;
+                sdlDisplayManager->fillRect(boxX, boxY, boxW, boxH, Color(30, 35, 45));
+                sdlDisplayManager->drawRect(boxX, boxY, boxW, boxH, Color(80, 100, 140));
+                char buf1[64]; char buf2[64];
+                std::snprintf(buf1, sizeof(buf1), "BPM: %.1f", sequencer->getTempo());
+                if (seqTempoQueuedUI.load(std::memory_order_relaxed)) {
+                    std::snprintf(buf2, sizeof(buf2), "Next: %.1f (On bar)", seqUpcomingTempoUI);
+                } else {
+                    std::snprintf(buf2, sizeof(buf2), "Next: %.1f", sequencer->getTempo());
+                }
+                sdlDisplayManager->drawText(boxX + 8, boxY + 8, buf1, nullptr, Color(200, 210, 230));
+                sdlDisplayManager->drawText(boxX + 8, boxY + 30, buf2, nullptr, Color(160, 180, 210));
+
+                // One-shot log to verify this path executes
+                if (!loggedOnce) { std::cout << "[UI] Drawing Sequencer timeline overlay (pos beats=" << pos << ")" << std::endl; loggedOnce = true; }
+
+                // Draw Sequencer dropdown lists AFTER overlay so lists sit on top
+                if (auto* seqScreen = uiContext->getScreen("sequencer")) {
+                    if (auto* dd = dynamic_cast<DropdownMenu*>(seqScreen->getChild("seq_jump"))) {
+                        if (dd->isDropdownOpen()) {
+                            std::cout << "[UI] Rendering open dropdown: seq_jump" << std::endl;
+                            dd->renderDropdownList(sdlDisplayManager.get());
+                        }
+                    }
+                    for (int i = 0; i < 5; ++i) {
+                        if (auto* dd = dynamic_cast<DropdownMenu*>(seqScreen->getChild("seq_sec_name_" + std::to_string(i)))) {
+                            if (dd->isDropdownOpen()) {
+                                std::cout << "[UI] Rendering open dropdown: seq_sec_name_" << i << std::endl;
+                                dd->renderDropdownList(sdlDisplayManager.get());
+                            }
+                        }
+                        if (auto* dd = dynamic_cast<DropdownMenu*>(seqScreen->getChild("seq_sec_bar_" + std::to_string(i)))) {
+                            if (dd->isDropdownOpen()) {
+                                std::cout << "[UI] Rendering open dropdown: seq_sec_bar_" << i << std::endl;
+                                dd->renderDropdownList(sdlDisplayManager.get());
+                            }
+                        }
+                    }
+                    // Render Segments MVP dropdowns if open
+                    for (int i = 0; i < 3; ++i) {
+                        const char* ids[] = {"seg_name_", "seg_exitbar_", "seg_to_", "seg_type_", "seg_prob_"};
+                        for (const char* base : ids) {
+                            if (auto* dd = dynamic_cast<DropdownMenu*>(seqScreen->getChild(std::string(base) + std::to_string(i)))) {
+                                if (dd->isDropdownOpen()) dd->renderDropdownList(sdlDisplayManager.get());
+                            }
+                        }
+                    }
+                }
+            }
         }
         
         // Present the frame
@@ -6217,6 +6807,20 @@ int main(int argc, char* argv[]) {
                 lanes.push_back(lj);
             }
             outCfg["sensors"]["lanes"] = lanes;
+        }
+        // Sequencer: persist section definitions (name + bar)
+        {
+            nlohmann::json secs = nlohmann::json::array();
+            int bpb = sequencer ? sequencer->getBeatsPerBar() : 4;
+            auto defs = sequencer ? sequencer->getSectionDefinitions() : std::vector<std::pair<std::string,double>>{};
+            for (const auto& d : defs) {
+                nlohmann::json sj;
+                sj["name"] = d.first;
+                int bar = (int)std::round(d.second / std::max(1, bpb));
+                sj["bar"] = bar;
+                secs.push_back(sj);
+            }
+            outCfg["sequencer"]["sections"] = secs;
         }
         std::ofstream out(userConfigPath);
         out << outCfg.dump(2);
