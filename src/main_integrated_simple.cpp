@@ -4407,7 +4407,7 @@ int main(int argc, char* argv[]) {
         lblSlot->setTextColor(Color(200,200,200));
         sensorsScreen->addChild(std::move(lblSlot));
 
-        auto lblFX = std::make_unique<Label>("sens_l_fx", "Effect");
+        auto lblFX = std::make_unique<Label>("sens_l_fx", "Destination");
         // Align label bottom to L by offsetting by label height (18)
         lblFX->setPosition(20, gridIndexL * gridStep - 18);
         lblFX->setSize(140, 18);
@@ -4447,7 +4447,7 @@ int main(int argc, char* argv[]) {
             slotDd->addItem("None");
             slotDd->addItem("Synth");
             slotDd->addItem("Sequencer");
-            for (int s=1;s<=5;++s) slotDd->addItem("S"+std::to_string(s));
+            for (int s=1;s<=5;++s) slotDd->addItem(std::string("Effects Slot ") + std::to_string(s));
             sensorsScreen->addChild(std::move(slotDd));
 
             // FX type (read-only display of effect in the selected slot). Bottom aligned to gridline 'L'.
