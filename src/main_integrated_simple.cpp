@@ -56,6 +56,46 @@
 
 using namespace AIMusicHardware;
 
+// Helper: centralize effect parameter name lists so Sensors Param dropdowns auto-populate
+static std::vector<std::string> getParamListForEffectType(const std::string& type) {
+    using VS = std::vector<std::string>;
+    if (type == "Delay") {
+        return VS{"delayTime","feedback","mix"};
+    } else if (type == "PingPongDelay") {
+        return VS{"time_ms","feedback","hp_freq","lp_freq","ping_pong","width","output_trim_db","mix"};
+    } else if (type == "Reverb") {
+        return VS{"roomSize","damping","width","wetLevel","dryLevel"};
+    } else if (type == "FDNReverb (Hall)") {
+        return VS{"mix","predelay_ms","er_level","er_width","decay_rt60_s","diffusion","mod_rate","mod_depth","size","high_damping","bass_mult","stereo_width"};
+    } else if (type == "PlateReverb") {
+        return VS{"mix","predelay_ms","diffusion","mod_rate","mod_depth","decay","high_damping","size","output_trim_db"};
+    } else if (type == "Tremolo") {
+        return VS{"rate","depth","shape","stereo_phase_deg","mix"};
+    } else if (type == "Wavefolder") {
+        return VS{"drive","asym","bias","output_trim_db","mix"};
+    } else if (type == "RingModulator") {
+        return VS{"freq_hz","depth","stereo_phase_deg","mix"};
+    } else if (type == "Phaser") {
+        return VS{"rate","depth","feedback","mix"};
+    } else if (type == "EQ") {
+        return VS{"lowGain","midGain","highGain","lowFreq","highFreq"};
+    } else if (type == "LowPassFilter" || type == "HighPassFilter" || type == "BandPassFilter" || type == "NotchFilter") {
+        return VS{"frequency","resonance","gain","mix"};
+    } else if (type == "Distortion") {
+        return VS{"drive","tone","level","mix"};
+    } else if (type == "BitCrusher") {
+        return VS{"bitDepth","sampleRateReduction","drive","output_trim_db","mix"};
+    } else if (type == "Saturation") {
+        return VS{"drive","tone","mix"};
+    } else if (type == "Compressor") {
+        // If defined elsewhere; provide common params
+        return VS{"threshold","ratio","attack","release","makeup","mix"};
+    } else if (type == "Modulation" || type == "Chorus") {
+        return VS{"rate","depth","spread","feedback","mix"};
+    }
+    return VS{};
+}
+
 // Custom SDL DisplayManager for rendering
 class SDLDisplayManager : public DisplayManager {
 public:
@@ -4400,21 +4440,21 @@ int main(int argc, char* argv[]) {
         lblIoTLane->setTextColor(Color(200,200,200));
         sensorsScreen->addChild(std::move(lblIoTLane));
 
-        auto lblSlot = std::make_unique<Label>("sens_l_slot", "Effects Slot number");
+        auto lblSlot = std::make_unique<Label>("sens_l_slot", "Destination");
         // Align label bottom to K by offsetting by label height (18)
         lblSlot->setPosition(20, gridIndexK * gridStep - 18);
         lblSlot->setSize(140, 18);
         lblSlot->setTextColor(Color(200,200,200));
         sensorsScreen->addChild(std::move(lblSlot));
 
-        auto lblFX = std::make_unique<Label>("sens_l_fx", "Destination");
+        auto lblFX = std::make_unique<Label>("sens_l_fx", "drill down");
         // Align label bottom to L by offsetting by label height (18)
         lblFX->setPosition(20, gridIndexL * gridStep - 18);
         lblFX->setSize(140, 18);
         lblFX->setTextColor(Color(200,200,200));
         sensorsScreen->addChild(std::move(lblFX));
 
-        auto lblParam = std::make_unique<Label>("sens_l_param", "Effect parameter");
+        auto lblParam = std::make_unique<Label>("sens_l_param", "parameter");
         // Align label bottom to M by offsetting by label height (18)
         lblParam->setPosition(20, gridIndexM * gridStep - 18);
         lblParam->setSize(140, 18);
@@ -4440,10 +4480,10 @@ int main(int argc, char* argv[]) {
             iotIn->addItem("SensorBus A");
             iotIn->addItem("SensorBus B");
             sensorsScreen->addChild(std::move(iotIn));
-            // Slot selector
+            // Destination selector (target): width aligned with Effect dropdowns
             auto slotDd = std::make_unique<DropdownMenu>("sens_slot_" + std::to_string(i), "None");
-            slotDd->setPosition(x - 10, controlsY);
-            slotDd->setSize(80, 22);
+            slotDd->setPosition(x - 20, controlsY);
+            slotDd->setSize(130, 22);
             slotDd->addItem("None");
             slotDd->addItem("Synth");
             slotDd->addItem("Sequencer");
@@ -4461,22 +4501,56 @@ int main(int argc, char* argv[]) {
             paramDd->setPosition(x - 20, paramRowTop);
             paramDd->setSize(130, 22);
             sensorsScreen->addChild(std::move(paramDd));
-            // Simple per-lane filter controls under param row
-            auto smooth = std::make_unique<Slider>("sens_smooth_" + std::to_string(i), "Smooth", 0,0,24,100);
+            // Smooth slider: top aligned to gridline N (below Param row), label centered above each slider
+            auto smooth = std::make_unique<Slider>("sens_smooth_" + std::to_string(i), "", 0,0,24,100);
             smooth->setOrientation(Slider::Orientation::Vertical);
-            smooth->setPosition(x + 50, paramRowTop + 40);
+            const int gridIndexN = 13;
+            int smoothTop = gridIndexN * gridStep;
+            // Align Lane 1 to absolute X=4*gridStep, others keep relative spacing to lane base
+            int smoothXOffset = (4 * gridStep) - baseX; // may be negative relative to lane base
+            int smoothX = baseX + i*spacing + smoothXOffset + 10; // nudge 10px right toward lane center
+            smooth->setPosition(smoothX, smoothTop);
             smooth->setRange(0.0f, 1.0f);
             smooth->setValue(0.15f);
             smooth->setShowValue(false);
             sensorsScreen->addChild(std::move(smooth));
+            // Per-lane Smooth label, centered above slider
+            {
+                int lblW = 60;
+                int lblH = 14;
+                int lblX = smoothX + (24 - lblW) / 2; // center label over 24px slider
+                int lblY = smoothTop - lblH;
+                auto smLbl = std::make_unique<Label>("sens_smooth_lbl_" + std::to_string(i), "Smooth");
+                smLbl->setPosition(lblX, lblY);
+                smLbl->setSize(lblW, lblH);
+                smLbl->setTextColor(Color(200,200,200));
+                sensorsScreen->addChild(std::move(smLbl));
+            }
 
-            auto thresh = std::make_unique<Slider>("sens_thresh_" + std::to_string(i), "Thresh", 0,0,24,100);
+            // Threshold slider: top aligned to gridline N (same Y as Smooth), label centered above each slider
+            auto thresh = std::make_unique<Slider>("sens_thresh_" + std::to_string(i), "", 0,0,24,100);
             thresh->setOrientation(Slider::Orientation::Vertical);
-            thresh->setPosition(x + 85, paramRowTop + 40);
+            int threshTop = gridIndexN * gridStep;
+            // Align Lane 1 to absolute X=6*gridStep
+            int threshXOffset = (6 * gridStep) - baseX;
+            int threshX = baseX + i*spacing + threshXOffset - 10; // nudge 10px left toward lane center
+            thresh->setPosition(threshX, threshTop);
             thresh->setRange(0.0f, 1.0f);
             thresh->setValue(0.5f);
             thresh->setShowValue(false);
             sensorsScreen->addChild(std::move(thresh));
+            // Per-lane Threshold label, centered above slider
+            {
+                int lblW = 70;
+                int lblH = 14;
+                int lblX = threshX + (24 - lblW) / 2;
+                int lblY = threshTop - lblH;
+                auto thLbl = std::make_unique<Label>("sens_thresh_lbl_" + std::to_string(i), "Threshold");
+                thLbl->setPosition(lblX, lblY);
+                thLbl->setSize(lblW, lblH);
+                thLbl->setTextColor(Color(200,200,200));
+                sensorsScreen->addChild(std::move(thLbl));
+            }
         }
     }
     uiContext->addScreen(std::move(sensorsScreen));
@@ -5116,11 +5190,18 @@ int main(int argc, char* argv[]) {
     bool sensorsApply = false;
     float sensorsT = 0.0f;
     // Per-lane mapping state
+    // laneTargetKind: -1=None, 0=Effect(slot), 1=Synth, 2=Sequencer
+    std::array<int,8> laneTargetKind; laneTargetKind.fill(-1);
     std::array<int,8> laneTargetSlot; laneTargetSlot.fill(-1);
     std::array<std::string,8> laneParam; laneParam.fill("");
     // Removed amount/invert UI for now; use defaults (persisted for forward-compat)
     std::array<float,8> laneAmount; laneAmount.fill(1.0f);
     std::array<bool,8>  laneInvert; laneInvert.fill(false);
+    // Lane filters/edge detection
+    std::array<float,8> laneSmooth; laneSmooth.fill(0.15f);
+    std::array<float,8> laneThresh; laneThresh.fill(0.5f);
+    std::array<float,8> laneSmoothed; laneSmoothed.fill(0.0f);
+    std::array<float,8> lanePrev; lanePrev.fill(0.0f);
     const float laneAmountDefault = 1.0f;
     const bool laneInvertDefault = false;
 
@@ -5131,10 +5212,21 @@ int main(int argc, char* argv[]) {
             for (int i = 0; i < 8 && i < (int)lanes.size(); ++i) {
                 try {
                     const auto& lj = lanes[i];
+                    if (lj.contains("target")) {
+                        try {
+                            std::string t = lj["target"].get<std::string>();
+                            if (t == "effect") laneTargetKind[i] = 0;
+                            else if (t == "synth") laneTargetKind[i] = 1;
+                            else if (t == "sequencer") laneTargetKind[i] = 2;
+                            else laneTargetKind[i] = -1;
+                        } catch (...) {}
+                    }
                     if (lj.contains("slot")) laneTargetSlot[i] = lj["slot"].get<int>();
                     if (lj.contains("param")) laneParam[i] = lj["param"].get<std::string>();
                     if (lj.contains("amount")) laneAmount[i] = lj["amount"].get<float>();
                     if (lj.contains("invert")) laneInvert[i] = lj["invert"].get<bool>();
+                    if (lj.contains("smooth")) laneSmooth[i] = lj["smooth"].get<float>();
+                    if (lj.contains("threshold")) laneThresh[i] = lj["threshold"].get<float>();
                 } catch (...) {}
             }
         }
@@ -5409,27 +5501,8 @@ int main(int argc, char* argv[]) {
                     pm->addItem("tempo"); pm->addItem("swing"); pm->addItem("probability"); pm->addItem("density");
                 } else {
                     std::string t = (slot>=0 && slot < (int)slotSelectedType.size()) ? slotSelectedType[slot] : std::string();
-                    if (t == "Tremolo") {
-                        pm->addItem("depth"); pm->addItem("rate"); pm->addItem("shape"); pm->addItem("stereo_phase_deg");
-                    } else if (t == "PingPongDelay") {
-                        pm->addItem("time_ms"); pm->addItem("feedback"); pm->addItem("hp_freq"); pm->addItem("lp_freq");
-                    } else if (t == "RingModulator") {
-                        pm->addItem("freq_hz"); pm->addItem("depth"); pm->addItem("stereo_phase_deg");
-                    } else if (t == "Delay") {
-                        pm->addItem("delayTime"); pm->addItem("feedback");
-                    } else if (t == "Reverb") {
-                        pm->addItem("roomSize"); pm->addItem("damping"); pm->addItem("width");
-                    } else if (t == "FDNReverb (Hall)") {
-                        pm->addItem("size"); pm->addItem("decay_rt60_s"); pm->addItem("high_damping"); pm->addItem("bass_mult"); pm->addItem("stereo_width"); pm->addItem("predelay_ms"); pm->addItem("diffusion"); pm->addItem("mod_rate"); pm->addItem("mod_depth");
-                    } else if (t == "PlateReverb") {
-                        pm->addItem("predelay_ms"); pm->addItem("diffusion"); pm->addItem("mod_rate"); pm->addItem("mod_depth"); pm->addItem("decay"); pm->addItem("high_damping"); pm->addItem("size"); pm->addItem("output_trim_db");
-                    } else if (t == "EQ") {
-                        pm->addItem("lowGain"); pm->addItem("midGain"); pm->addItem("highGain");
-                    } else if (t == "LowPassFilter") {
-                        pm->addItem("frequency"); pm->addItem("resonance");
-                    } else if (t == "Phaser") {
-                        pm->addItem("rate"); pm->addItem("depth"); pm->addItem("feedback");
-                    }
+                    auto names = getParamListForEffectType(t);
+                    for (const auto& n : names) pm->addItem(n);
                 }
                 if (pm->getSelectedItem().empty()) pm->addItem("<none>");
                 // Always preselect first entry so list is non-empty and selectable
@@ -5590,8 +5663,8 @@ int main(int argc, char* argv[]) {
                     float val = v * laneAmountDefault;
                     // Map selected synth params to meaningful ranges
                     if (p == "filter_cutoff") {
-                        float freq = 20.0f + val * (20000.0f - 20.0f);
-                        synthesizer->setParameter("filter_cutoff", std::clamp(freq, 20.0f, 20000.0f));
+                        // Synth expects normalized cutoff (0..1), it maps internally to Hz
+                        synthesizer->setParameter("filter_cutoff", std::clamp(val, 0.0f, 1.0f));
                     } else if (p == "filter_resonance") {
                         synthesizer->setParameter("filter_resonance", std::clamp(val, 0.0f, 1.0f));
                     } else if (p == "master_volume") {

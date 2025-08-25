@@ -157,6 +157,42 @@ The AIMusicHardware project has reached a significant milestone with multiple co
 - Sensors persistence:
   - Fixed lane mappings save/load and introduced forward-compatible storage for amount/invert.
 
+### Sensors Page — Phase 1 Implementation (Today)
+- Targets per lane: Added compact Destination selector using the first dropdown per lane.
+  - Options: None, Synth, Sequencer, Effects Slot 1..5.
+  - Param list repopulates dynamically with `selectItemSilently(0)` to avoid blanks.
+- Auto-populated Effect parameters: Centralized registry maps effect type → parameter names so the Param dropdown reflects the chosen effect.
+- Per-lane filtering UI:
+  - Smooth and Threshold vertical sliders with labels centered above each slider.
+  - Grid-aligned positioning (Lane 1 reference):
+    - Smooth label sits at 4N; Smooth slider top at N.
+    - Threshold label sits at 6N; Threshold slider top at N.
+  - Sliders nudged ±10px toward lane centers for clarity.
+- Label/spacing updates:
+  - Left labels aligned to grid: Destination (K), drill down (L), parameter (M).
+  - Destination dropdowns use the same width and x-position as Effect dropdowns for consistency.
+- Synth mapping fixes:
+  - Normalized `filter_cutoff` (0..1) is now passed into the Synth engine (engine maps to Hz internally). Audible filter changes verified.
+- Build pipeline verified; integrated app renders dropdowns above other controls; click-through prevention maintained (as documented in dropdowns.md).
+
+### Sensors Page — Next Steps
+- Normalization & curves:
+  - Add exponential/user-selectable curves per parameter (e.g., perceptual cutoff) and show short labels for scale.
+- Dynamic parameter discovery:
+  - Longer-term: add `listParameters()` to `Effect` interface and generate lists directly from DSP classes.
+  - Short-term: extend the centralized registry as new params/types are added.
+- Sequencer mapping depth:
+  - Continuous: tempo, swing, probability, density (with visible feedback where possible).
+  - Actions: named section jumps and resequencing plans; add EventBus hooks for clean handoff.
+- Conditional logic:
+  - Per-lane operators (>, <, range), hysteresis, edge modes (rising/falling), and latching.
+- IoT sources:
+  - Wire per-lane IoT input dropdowns to real SensorMatrix sources and persist selection.
+- Persistence polish:
+  - Optionally persist Grid toggle and Sensors Simulate/Apply state.
+- Documentation:
+  - Add a short guide for Sensors target/param population and normalization strategy.
+
 ### What’s Next — Sensors Mapping Expansion (Plan)
 - Phase 1 (scaffold + minimal behavior):
   - Target type per lane: Effect (current), Synth, Sequencer.
