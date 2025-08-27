@@ -903,8 +903,19 @@ int main(int argc, char* argv[]) {
         uiContext->setActiveScreen("sensors");
     });
     mainScreen->addChild(std::move(sensorsNavButton));
-    
+
     // Removed duplicate nav text label; button text is sufficient
+
+    // Patterns button
+    auto patternsNavButton = std::make_unique<Button>("patterns_nav_btn", "Patterns");
+    patternsNavButton->setPosition(720, 5);
+    patternsNavButton->setSize(90, 30);
+    patternsNavButton->setBackgroundColor(Color(80, 80, 120));
+    patternsNavButton->setTextColor(Color(255, 255, 255));
+    patternsNavButton->setClickCallback([&uiContext]() {
+        uiContext->setActiveScreen("patterns");
+    });
+    mainScreen->addChild(std::move(patternsNavButton));
     
     // Create oscillator section with bright colors
     auto oscSection = std::make_unique<Label>("osc_section", "OSCILLATOR");
@@ -2690,6 +2701,15 @@ int main(int argc, char* argv[]) {
         sensorsBtn->setClickCallback([uiContext]() { uiContext->setActiveScreen("sensors"); });
         screen->addChild(std::move(sensorsBtn));
 
+        // Patterns button
+        auto patternsBtn = std::make_unique<Button>("nav_patterns", "Patterns");
+        patternsBtn->setPosition(720, 5);
+        patternsBtn->setSize(90, 30);
+        patternsBtn->setBackgroundColor(currentScreen == "patterns" ? Color(100, 100, 140) : Color(80, 80, 120));
+        patternsBtn->setTextColor(Color(255, 255, 255));
+        patternsBtn->setClickCallback([uiContext]() { uiContext->setActiveScreen("patterns"); });
+        screen->addChild(std::move(patternsBtn));
+
         // Remove duplicate label; button caption suffices
     };
     
@@ -3163,6 +3183,190 @@ int main(int argc, char* argv[]) {
     // Add sequencer screen to context
     uiContext->addScreen(std::move(sequencerScreen));
     std::cout << "Added sequencer screen to UI context" << std::endl;
+
+    // Create Patterns screen (scaffold)
+    auto patternsScreen = std::make_unique<Screen>("patterns");
+    patternsScreen->setBackgroundColor(Color(28, 28, 38));
+    patternsScreen->setPosition(0, 0);
+    patternsScreen->setSize(1280, 800);
+    addNavigationButtons(patternsScreen.get(), "patterns", uiContext.get());
+
+    // Title
+    {
+        auto title = std::make_unique<Label>("patterns_title", "PATTERNS");
+        title->setPosition(50, 50);
+        title->setSize(220, 24);
+        title->setTextColor(Color(255, 255, 100));
+        patternsScreen->addChild(std::move(title));
+    }
+
+    // Header controls: selector, prev/next, length, quantize, keep phase, mode
+    Button* patPrevPtr = nullptr; Button* patNextPtr = nullptr; 
+    Button* keepPhaseBtnPtr = nullptr;
+    DropdownMenu* patSelectPtr = nullptr; DropdownMenu* patLenPtr = nullptr; DropdownMenu* patQuantPtr = nullptr;
+    {
+        auto prev = std::make_unique<Button>("pat_prev", "Prev");
+        prev->setPosition(260, 46);
+        prev->setSize(60, 26);
+        prev->setBackgroundColor(Color(60,60,90));
+        prev->setTextColor(Color(255,255,255));
+        patPrevPtr = prev.get();
+        prev->setClickCallback([patPrevPtr](){ std::cout << "[Patterns] Prev pattern" << std::endl; });
+        patternsScreen->addChild(std::move(prev));
+
+        auto select = std::make_unique<DropdownMenu>("pat_select", "Pattern 1");
+        select->setPosition(328, 46);
+        select->setSize(160, 24);
+        for (int i=1;i<=8;++i) select->addItem(std::string("Pattern ")+std::to_string(i));
+        patSelectPtr = select.get();
+        // Add after other header widgets later for z-order
+
+        auto next = std::make_unique<Button>("pat_next", "Next");
+        next->setPosition(494, 46);
+        next->setSize(60, 26);
+        next->setBackgroundColor(Color(60,60,90));
+        next->setTextColor(Color(255,255,255));
+        patNextPtr = next.get();
+        next->setClickCallback([patNextPtr](){ std::cout << "[Patterns] Next pattern" << std::endl; });
+        patternsScreen->addChild(std::move(next));
+
+        auto len = std::make_unique<DropdownMenu>("pat_len", "4 bars");
+        len->setPosition(570, 46);
+        len->setSize(110, 24);
+        for (auto s : std::vector<std::string>{"1 bar","2 bars","4 bars","8 bars","16 bars"}) len->addItem(s);
+        patLenPtr = len.get();
+
+        auto quant = std::make_unique<DropdownMenu>("pat_quantize", "OnBar");
+        quant->setPosition(690, 46);
+        quant->setSize(120, 24);
+        for (auto s : std::vector<std::string>{"Immediate","OnBeat","OnBar"}) quant->addItem(s);
+        quant->selectItemSilently(2);
+        patQuantPtr = quant.get();
+
+        auto keep = std::make_unique<Button>("pat_keep_phase", "Keep Phase: OFF");
+        keep->setPosition(820, 46);
+        keep->setSize(150, 26);
+        keep->setBackgroundColor(Color(90,70,70));
+        keep->setTextColor(Color(255,255,255));
+        keepPhaseBtnPtr = keep.get();
+        keep->setClickCallback([keepPhaseBtnPtr]() mutable {
+            bool on = keepPhaseBtnPtr->getText().find("ON") == std::string::npos;
+            keepPhaseBtnPtr->setText(on?"Keep Phase: ON":"Keep Phase: OFF");
+            keepPhaseBtnPtr->setBackgroundColor(on ? Color(60,100,60) : Color(90,70,70));
+        });
+        patternsScreen->addChild(std::move(keep));
+
+        auto modeLbl = std::make_unique<Label>("pat_mode", "Mode: Single Pattern");
+        modeLbl->setPosition(980, 50);
+        modeLbl->setSize(220, 18);
+        modeLbl->setTextColor(Color(200,220,255));
+        patternsScreen->addChild(std::move(modeLbl));
+
+        // Add dropdowns last for proper z-order
+        patternsScreen->addChild(std::move(select));
+        patternsScreen->addChild(std::move(len));
+        patternsScreen->addChild(std::move(quant));
+    }
+
+    // Editor grid placeholder
+    {
+        auto grid = std::make_unique<SequencerGrid>("pat_grid", 8, 16);
+        grid->setPosition(50, 120);
+        grid->setSize(980, 360);
+        grid->setActiveColor(Color(120,200,120));
+        grid->setInactiveColor(Color(40,50,60));
+        grid->setGridLineColor(Color(80,90,110));
+        patternsScreen->addChild(std::move(grid));
+
+        auto velLbl = std::make_unique<Label>("pat_velocity_label", "Velocity (MVP placeholder)");
+        velLbl->setPosition(50, 490);
+        velLbl->setSize(240, 18);
+        velLbl->setTextColor(Color(180,180,200));
+        patternsScreen->addChild(std::move(velLbl));
+    }
+
+    // Sidebar actions
+    {
+        int sx = 1060; int y = 120; int h = 26; int w = 150; int dy = 30;
+        auto makeBtn = [&](const std::string& id, const std::string& text, std::function<void()> cb){
+            auto b = std::make_unique<Button>(id, text);
+            b->setPosition(sx, y);
+            b->setSize(w, h);
+            b->setBackgroundColor(Color(70,70,100));
+            b->setTextColor(Color(255,255,255));
+            b->setClickCallback(cb);
+            y += dy; return b;
+        };
+        patternsScreen->addChild(makeBtn("pat_new", "New", [](){ std::cout << "[Patterns] New" << std::endl; }));
+        patternsScreen->addChild(makeBtn("pat_dup", "Duplicate", [](){ std::cout << "[Patterns] Duplicate" << std::endl; }));
+        patternsScreen->addChild(makeBtn("pat_del", "Delete", [](){ std::cout << "[Patterns] Delete" << std::endl; }));
+        y += 10; // small gap
+        patternsScreen->addChild(makeBtn("pat_clear", "Clear", [](){ std::cout << "[Patterns] Clear" << std::endl; }));
+        patternsScreen->addChild(makeBtn("pat_rand_safe", "Randomize (safe)", [](){ std::cout << "[Patterns] Randomize" << std::endl; }));
+        y += 10;
+        patternsScreen->addChild(makeBtn("pat_copy", "Copy", [](){ std::cout << "[Patterns] Copy" << std::endl; }));
+        patternsScreen->addChild(makeBtn("pat_paste", "Paste", [](){ std::cout << "[Patterns] Paste" << std::endl; }));
+        y += 10;
+        patternsScreen->addChild(makeBtn("pat_nudge_l", "Nudge Left", [](){ std::cout << "[Patterns] Nudge Left" << std::endl; }));
+        patternsScreen->addChild(makeBtn("pat_nudge_r", "Nudge Right", [](){ std::cout << "[Patterns] Nudge Right" << std::endl; }));
+        y += 10;
+        patternsScreen->addChild(makeBtn("pat_scale_half", "Scale 1/2x", [](){ std::cout << "[Patterns] Scale 1/2x" << std::endl; }));
+        patternsScreen->addChild(makeBtn("pat_scale_double", "Scale 2x", [](){ std::cout << "[Patterns] Scale 2x" << std::endl; }));
+        y += 10;
+        patternsScreen->addChild(makeBtn("pat_tr_down12", "Transpose -12", [](){ std::cout << "[Patterns] Transpose -12" << std::endl; }));
+        patternsScreen->addChild(makeBtn("pat_tr_down1", "Transpose -1", [](){ std::cout << "[Patterns] Transpose -1" << std::endl; }));
+        patternsScreen->addChild(makeBtn("pat_tr_up1", "Transpose +1", [](){ std::cout << "[Patterns] Transpose +1" << std::endl; }));
+        patternsScreen->addChild(makeBtn("pat_tr_up12", "Transpose +12", [](){ std::cout << "[Patterns] Transpose +12" << std::endl; }));
+    }
+
+    // Footer transport and save/apply
+    {
+        auto play = std::make_unique<Button>("pat_play", "Play");
+        play->setPosition(50, 740);
+        play->setSize(70, 28);
+        play->setBackgroundColor(Color(50,120,50));
+        play->setTextColor(Color(255,255,255));
+        play->setClickCallback([](){ std::cout << "[Patterns] Play audition" << std::endl; });
+        patternsScreen->addChild(std::move(play));
+
+        auto stop = std::make_unique<Button>("pat_stop", "Stop");
+        stop->setPosition(124, 740);
+        stop->setSize(70, 28);
+        stop->setBackgroundColor(Color(120,50,50));
+        stop->setTextColor(Color(255,255,255));
+        stop->setClickCallback([](){ std::cout << "[Patterns] Stop audition" << std::endl; });
+        patternsScreen->addChild(std::move(stop));
+
+        auto click = std::make_unique<Button>("pat_click", "Met: OFF");
+        click->setPosition(200, 740);
+        click->setSize(90, 28);
+        click->setBackgroundColor(Color(90,70,70));
+        click->setTextColor(Color(255,255,255));
+        auto clickPtr = click.get();
+        click->setClickCallback([clickPtr]() mutable { 
+            bool on = clickPtr->getText().find("ON") == std::string::npos;
+            clickPtr->setText(on?"Met: ON":"Met: OFF");
+            clickPtr->setBackgroundColor(on ? Color(60,100,60) : Color(90,70,70));
+        });
+        patternsScreen->addChild(std::move(click));
+
+        auto autosaveLbl = std::make_unique<Label>("pat_autosave", "Autosave: ON");
+        autosaveLbl->setPosition(980, 745);
+        autosaveLbl->setSize(120, 18);
+        autosaveLbl->setTextColor(Color(180,200,220));
+        patternsScreen->addChild(std::move(autosaveLbl));
+
+        auto applyBtn = std::make_unique<Button>("pat_apply", "Apply Now");
+        applyBtn->setPosition(1108, 738);
+        applyBtn->setSize(120, 28);
+        applyBtn->setBackgroundColor(Color(70,100,140));
+        applyBtn->setTextColor(Color(255,255,255));
+        applyBtn->setClickCallback([](){ std::cout << "[Patterns] Apply Now" << std::endl; });
+        patternsScreen->addChild(std::move(applyBtn));
+    }
+
+    // Add Patterns screen to context
+    uiContext->addScreen(std::move(patternsScreen));
     
     // Create Effects screen
     auto effectsScreen = std::make_unique<Screen>("effects");
@@ -5947,6 +6151,41 @@ int main(int argc, char* argv[]) {
                                             dropdownHandled = true;
                                         }
                                         break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Patterns page: handle its dropdowns in reverse order
+                    if (!dropdownHandled && uiContext->getActiveScreenId() == std::string("patterns")) {
+                        // pat_quantize
+                        if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("pat_quantize"))) {
+                            if (dropdown->isDropdownOpen()) {
+                                dropdownHandled = dropdown->handleInput(inputEvent);
+                                if (inputEvent.type == InputEventType::TouchPress && !dropdownHandled) {
+                                    dropdownHandled = true; // consume click-through
+                                }
+                            }
+                        }
+                        // pat_len
+                        if (!dropdownHandled) {
+                            if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("pat_len"))) {
+                                if (dropdown->isDropdownOpen()) {
+                                    dropdownHandled = dropdown->handleInput(inputEvent);
+                                    if (inputEvent.type == InputEventType::TouchPress && !dropdownHandled) {
+                                        dropdownHandled = true;
+                                    }
+                                }
+                            }
+                        }
+                        // pat_select
+                        if (!dropdownHandled) {
+                            if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("pat_select"))) {
+                                if (dropdown->isDropdownOpen()) {
+                                    dropdownHandled = dropdown->handleInput(inputEvent);
+                                    if (inputEvent.type == InputEventType::TouchPress && !dropdownHandled) {
+                                        dropdownHandled = true;
                                     }
                                 }
                             }
