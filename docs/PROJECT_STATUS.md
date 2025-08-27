@@ -422,6 +422,152 @@ Integration Layer (Ready for Deployment)
 
 ## 📅 Recent Updates
 
+### **August 27, 2025** — Sequencer Stabilization, Resequencing MVP, BPM UX, and UI Polish
+
+**Status**: 🟢 STABILIZED (core issues addressed; patterns next)
+
+- **Dropdown/UI robustness**: Fixed z-order and click-through by delaying list rendering post-screen, blocking background input, and explicitly handling Sequencer dropdown IDs (`seq_jump`, `seq_sec_name_i`, `seq_sec_bar_i`, `seg_name_i`, `seg_to_i`, `seg_type_i`, `seg_exitbar_i`, `seg_prob_i`). Updated `docs/dropdowns.md` with Sequencer specifics.
+- **Timeline overlay**: Implemented visible, layered overlay with bar grid, section markers/labels, active-section highlight, and playhead. Ensured correct draw order and visibility; added grid overlay toggles for Sensors/Sequencer and aligned labels/bands to grid coordinates.
+- **Resequencing API + UI**: Added `Immediate/OnBeat/OnBar` timing, `defineSections`, `jumpToSection`, `queueSection`, `nextSection`, `prevSection`, and dynamic jump list. Built Sections editor on Sequencer page with autosave on Apply. Implemented Segments MVP (3 rules: From/Exit/To/When/Prob) with runtime logic that schedules `jumpToSection` at boundaries; rules persist; transition flash text appears on timeline.
+- **BPM UX**: Moved BPM slider to grid with label and a readout showing “BPM/Next”; tempo changes can be queued and apply on-bar. Shows upcoming tempo in UI.
+- **Audio stability + safety**: Re-enabled sequencer processing via new `Test Audio` toggle (default ON). Added `Panic` (all-notes-off) and a note-off fallback in the audio callback to prevent drones. Introduced optional `Recovery ON/OFF` with grace period and a `Restart Audio` button. MIDI sends in sequencer callbacks now guard on `isDeviceOpen()`.
+- **Per-voice ADSR mapping**: `Synthesizer::noteOn(midiNote, vel, Envelope)` applies per-note envelopes to the newly started voice, fixing long global attack interactions.
+- **UI layout and naming**: Aligned Sensors/Sequencer controls to the grid; centered button text; adjusted widths. Moved/renamed buttons: `S1`→Restart Audio, `S4`→Recovery ON/OFF, `T1`→Panic, `T4`→Test Audio ON/OFF (renamed from “Audio”). Play is gated with a helpful hint if Test Audio is OFF.
+- **Docs**: Added a concise explanation of Sections + Segments (MVP) and dropdown behaviors. This entry tracks today’s stabilization work; patterns are up next.
+
+**Known follow-ups**
+- Timeline should immediately reflect jumps from both manual actions and Segments rules across systems; verify on target machine if any lag remains.
+- Default Recovery is OFF; confirm that `Restart Audio` suffices across devices and consider adding a subtle stream-health HUD indicator.
+
+---
+
+### Next Steps — Patterns
+
+The next focused milestone is Patterns: adding a Section-driven pattern flow with safe musical defaults and simple UI. The following plan is included verbatim per request.
+
+codex
+Here’s a clear, scalable approach to patterns that fits what you have now and grows
+with you.
+
+Goals
+
+- Keep it musical: fast looped sketching, reliable on-bar changes.
+- Make it performable: quick pattern switching, section-aware jumps.
+- Avoid timing footguns: quantized changes, no drones on mode changes.
+
+Core Model
+
+- Pattern: a named clip with notes and length in beats (e.g., 4, 8, 16).
+    - Data: notes [pitch, vel, startBeat, dur], patternLength, swing, humanize,
+transpose.
+- Pattern Pool: N patterns managed globally (e.g., 64).
+- Section Binding: optional mapping of section name (A/B/C/…) to one or more
+pattern IDs (cycle or choose).
+- Song Arrangement: optional ordered list of pattern instances on the timeline (for
+linear playback).
+
+Playback Modes
+
+- Single Pattern: loop a single pattern (current behavior). Great for testing.
+- Section-Driven: the current section dictates the active pattern; jumps change
+the pattern.
+- Song Mode: traverse an arrangement (pattern instances) linearly; jumps move the
+playhead to target section in the arrangement.
+- Chain Queue (live): press patterns to queue on-bar; queue takes priority over
+section-default.
+
+Timing & Quantization
+
+- Jump Timing: Immediate, OnBeat, OnBar (already in API).
+- Pattern Change Quantization: decoupled but defaults to on-bar (1 bar). Allow
+per-action override if needed.
+- Phase Handling: on change, reset local pattern phase to 0 unless “keep phase” is
+explicitly on (useful for polyrhythms).
+
+Section Integration
+
+- Default Pattern per Section: e.g., A→Pattern 1, B→Pattern 2.
+- Multi-Pattern per Section (optional): cycle each bar or random weighted select
+(simple and musical).
+- Jumps: when jumping sections, schedule pattern switch with the same quantization
+as the jump.
+
+Editing Workflow (MVP)
+
+- Pattern Selector: dropdown + Prev/Next on Sequencer page.
+- Length: dropdown (1, 2, 4, 8, 16 bars).
+- Simple Grid Editing (Phase 2): note toggles on 16th grid, velocity “row”, tie/
+ratchet toggles.
+- Record (Phase 2): quantized live record from the virtual keyboard (optional
+count-in).
+
+Storage & Persistence
+
+- Save patterns in user_config (or separate patterns.json if they get large).
+- Save section→pattern bindings in user_config (sequencer.sectionPatterns).
+- Export/import pattern sets later (nice to have).
+
+UI/UX Touches
+
+- Timeline: show active pattern region with pattern name; reflect jumps immediately
+(Immediate) or at boundary (OnBar).
+- HUD: show “Pattern X”, length, and “Quantize: OnBar” when queued.
+- Actions: “Duplicate Pattern”, “Clear Pattern”, “Randomize (safe)” for fast
+sketching.
+
+Sensors + MIDI
+
+- New Sensor targets:
+    - “Pattern: Next/Prev”, “Pattern: Random (weighted)”
+    - “Pattern: Set X”, “Pattern Length +/-”
+    - “Resequence: Jump To A/B/C” (already there).
+- MIDI input:
+    - Note input for live record (quantized).
+    - CCs to scroll/select patterns and toggle record.
+
+Advanced (Phase 2+)
+
+- Per-step probability, ratchets, tie, microtiming.
+- Polymeter/polyrhythm: per-pattern length and step grid; “keep phase” option on
+pattern change.
+- Per-section transpose or density modifier (musical continuity across sections).
+- Parameter locks (FX or synth macros) per step (later).
+
+Engine/API Changes (minimal now)
+
+- Sequencer:
+    - add setPlaybackMode(SinglePattern/SectionDriven/Song)
+    - setCurrentPattern(id), getCurrentPatternId()
+    - setPatternForSection(sectionName, patternId)
+    - on jumpToSection(): if SectionDriven, schedule pattern change with same
+timing.
+- Pattern store:
+    - addPattern(), removePattern(), duplicatePattern(), setLength(), addNote(),
+clear()
+
+Incremental Rollout (suggested)
+
+1. Bind one pattern per section; pattern selector + length controls in UI;
+SectionDriven mode + quantized changes.
+2. Chain queue buttons (queue pattern n on bar); simple grid editor.
+3. Optional: Song arrangement view; basic live record.
+
+Why this works
+
+- Keeps your current loop flow intact.
+- Cleanly integrates sections so jumps change both section and pattern coherently.
+- Gives safe, musical defaults (on-bar, reset phase) with room to go deeper (keep
+phase, polyrhythm).
+- Scales from quick loops → structured arrangements without UI overload.
+
+If you want, I can start by:
+
+- Adding SectionDriven mode and a simple Section→Pattern binding UI.
+- Updating the jump code so the timeline and active pattern switch together at the
+right boundary.
+- Adding a minimal pattern selector + length control on the Sequencer page.
+
+
 ### **August 18–19, 2025** — Preset Recall Stabilization (UI + Engine) and Reverb Implementation
 
 Status: 🟡 Improved; pending final UX fixes
