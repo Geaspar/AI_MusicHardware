@@ -448,12 +448,30 @@ int main(int argc, char* argv[]) {
     std::atomic<bool> midiActivityPulse{false};
     float midiActivityTimer = 0.0f; // seconds to keep the light on after a message
     // Sequencer audio processing toggle (disabled previously during duplicate-note debugging)
-    std::atomic<bool> seqProcEnabled{false};
+    std::atomic<bool> seqProcEnabled{true};
     // UI-staged tempo change (applied on next bar)
     double seqUpcomingTempoUI = 0.0;
     std::atomic<bool> seqTempoQueuedUI{false};
+    // Segments (MVP) cached state for persistence (updated from UI regularly)
+    struct SegRule { std::string from; int exitBar=0; std::string to; std::string when; float prob=1.0f; };
+    std::array<SegRule,3> segRulesCache{};
+    // Segments toggle persisted state
+    bool loadedSegmentsEnabled = false;
+    // Timeline transition flash indicator
+    std::string transitionFlashName; 
+    float transitionFlashTimer = 0.0f;
+    // Recovery control and mute window
+    std::atomic<bool> recoveryEnabled{false};
+    double muteAfterRecoverySec = 0.0; // when >0, suppress note-ons and force silence
+    // Play defer: suppress health checks for a few seconds after Play pressed
+    auto lastPlayStart = std::chrono::high_resolution_clock::time_point{};
+    // UI hint timer for messages (e.g., Audio OFF gating)
+    double hintTimerSec = 0.0;
     // Create Sensor Matrix (8 lanes)
     auto sensorMatrix = std::make_shared<SensorMatrix>(8);
+    // Fallback note-off scheduler (belt-and-suspenders to avoid stuck notes)
+    struct PendingNoteOff { int pitch=0; int channel=0; double remainingSec=0.0; };
+    std::vector<PendingNoteOff> pendingNoteOffs;
     // Segment Sequencer (Phase B MVP)
     auto segmentSequencer = std::make_unique<SegmentSequencer>();
     std::atomic<bool> segmentsEnabled{false};
@@ -589,6 +607,28 @@ int main(int argc, char* argv[]) {
     // Ensure sequencer is stopped to prevent unwanted note triggers
     sequencer->stop();
     std::cout << "Sequencer initialized and stopped. Playing: " << (sequencer->isPlaying() ? "YES" : "NO") << std::endl;
+
+    // Seed a simple default pattern for audible verification (quarter notes on C4)
+    {
+        auto pat = std::make_unique<Pattern>("Init Pattern");
+        int root = 60; // C4
+        double t = 0.0;
+        for (int i=0;i<4;++i) {
+            // Shorter notes with tighter envelope for distinct articulation
+            float vel = 0.9f;
+            double dur = 0.45; // < 1 beat to create separation
+            float a=0.005f, d=0.03f, s=0.6f, r=0.08f;
+            pat->addNote(Note(root + (i%2==0?0:7), vel, t, dur, 0, a, d, s, r)); // C or G
+            t += 1.0; // quarter note grid
+        }
+        pat->setLength(4.0);
+        sequencer->addPattern(std::move(pat));
+        // Select the newly added pattern (last index), not the default empty one
+        size_t last = std::max<size_t>(0, sequencer->getNumPatterns() > 0 ? sequencer->getNumPatterns() - 1 : 0);
+        sequencer->setCurrentPattern(last);
+        sequencer->setPlaybackMode(PlaybackMode::SinglePattern);
+        sequencer->setLooping(true);
+    }
     
     if (!audioEngine->initialize()) {
         std::cerr << "Failed to initialize audio engine!" << std::endl;
@@ -610,6 +650,38 @@ int main(int argc, char* argv[]) {
             if (!defs.empty()) sequencer->defineSections(defs);
         }
     } catch (...) {}
+    // Load Segments toggle state (if any)
+    try {
+        if (loadedConfig.contains("sequencer") && loadedConfig["sequencer"].contains("segments_enabled")) {
+            loadedSegmentsEnabled = loadedConfig["sequencer"]["segments_enabled"].get<bool>();
+        }
+    } catch (...) {}
+    
+    // Helper to apply loaded segments to UI once it's built
+    auto applyLoadedSegmentsToUI = [&](UIContext* ctx){
+        if (!loadedConfig.contains("sequencer") || !loadedConfig["sequencer"].contains("segments_mvp")) return;
+        auto* sc = ctx->getScreen("sequencer"); if (!sc) return;
+        int i = 0;
+        for (const auto& r : loadedConfig["sequencer"]["segments_mvp"]) {
+            if (i >= 3) break;
+            try {
+                std::string from = r.contains("from") ? r["from"].get<std::string>() : std::string();
+                int exitBar = r.contains("exit") ? r["exit"].get<int>() : 0;
+                std::string to = r.contains("to") ? r["to"].get<std::string>() : std::string();
+                std::string when = r.contains("when") ? r["when"].get<std::string>() : std::string("OnBar");
+                float prob = r.contains("prob") ? r["prob"].get<float>() : 1.0f;
+                if (auto* dd = dynamic_cast<DropdownMenu*>(sc->getChild("seg_name_"+std::to_string(i)))) dd->selectItemSilently(from);
+                if (auto* dd = dynamic_cast<DropdownMenu*>(sc->getChild("seg_exitbar_"+std::to_string(i)))) dd->selectItemSilently(std::string("Exit ")+std::to_string(exitBar));
+                if (auto* dd = dynamic_cast<DropdownMenu*>(sc->getChild("seg_to_"+std::to_string(i)))) dd->selectItemSilently(to);
+                if (auto* dd = dynamic_cast<DropdownMenu*>(sc->getChild("seg_type_"+std::to_string(i)))) dd->selectItemSilently(when);
+                if (auto* dd = dynamic_cast<DropdownMenu*>(sc->getChild("seg_prob_"+std::to_string(i)))) {
+                    std::string ps = (prob>=0.99f?"Prob 1.0":(prob>=0.74f?"Prob 0.75":(prob>=0.49f?"Prob 0.5":"Prob 0.25")));
+                    dd->selectItemSilently(ps);
+                }
+            } catch (...) {}
+            ++i;
+        }
+    };
     
     // Add a global low-pass filter to the external effect processor (will be kept at chain END)
     {
@@ -2661,9 +2733,33 @@ int main(int argc, char* argv[]) {
     playBtn->setTextColor(Color(255,255,255));
     bool* seqPlaying = new bool(false);
     auto playBtnPtr = playBtn.get();
-    playBtn->setClickCallback([&sequencer, playBtnPtr, seqPlaying](){
-        if (*seqPlaying) { sequencer->stop(); *seqPlaying=false; playBtnPtr->setText("Play"); playBtnPtr->setBackgroundColor(Color(50,120,50)); }
-        else { sequencer->start(); *seqPlaying=true; playBtnPtr->setText("Stop"); playBtnPtr->setBackgroundColor(Color(120,50,50)); }
+    playBtn->setClickCallback([&sequencer, &synthesizer, &midiOutput, &seqProcEnabled, &uiContext, &lastPlayStart, &hintTimerSec, playBtnPtr, seqPlaying](){
+        if (!seqProcEnabled.load(std::memory_order_relaxed)) {
+            // Audio OFF: show hint and do not start
+            if (auto* ss = uiContext->getScreen("sequencer")) {
+                if (!ss->getChild("seq_hint")) {
+                    auto hl = std::make_unique<Label>("seq_hint", "Turn Test Audio ON to start playback");
+                    hl->setPosition(50, 130);
+                    hl->setSize(260, 18);
+                    hl->setTextColor(Color(255,200,120));
+                    ss->addChild(std::move(hl));
+                }
+            }
+            hintTimerSec = 2.0; // show for 2 seconds
+            return;
+        }
+        if (*seqPlaying) {
+            // Stop + panic to ensure no stuck notes
+            sequencer->stop();
+            try { if (synthesizer) synthesizer->allNotesOff(-1); } catch (...) {}
+            if (midiOutput && midiOutput->isDeviceOpen()) {
+                try { for (int ch=0; ch<16; ++ch) for (int n=0; n<128; ++n) midiOutput->sendNoteOff(ch, n); } catch (...) {}
+            }
+            *seqPlaying=false; playBtnPtr->setText("Play"); playBtnPtr->setBackgroundColor(Color(50,120,50));
+        } else {
+            sequencer->start(); *seqPlaying=true; playBtnPtr->setText("Stop"); playBtnPtr->setBackgroundColor(Color(120,50,50));
+            lastPlayStart = std::chrono::high_resolution_clock::now();
+        }
     });
     sequencerScreen->addChild(std::move(playBtn));
 
@@ -2682,20 +2778,46 @@ int main(int argc, char* argv[]) {
     sequencerScreen->addChild(std::move(loopBtn));
 
     // Sequencer audio processing toggle
-    auto seqProcBtn = std::make_unique<Button>("seq_proc", "Audio: OFF");
-    seqProcBtn->setPosition(230, 90);
-    seqProcBtn->setSize(90, 28);
+    auto seqProcBtn = std::make_unique<Button>("seq_proc", "Test Audio: OFF");
+    // Move to T4: x=4*40=160, y='T'(19)*40=760
+    seqProcBtn->setPosition(160, 760);
+    seqProcBtn->setSize(140, 28);
     seqProcBtn->setBackgroundColor(Color(90,70,70));
     seqProcBtn->setTextColor(Color(255,255,255));
     auto seqProcBtnPtr = seqProcBtn.get();
-    seqProcBtn->setClickCallback([&seqProcEnabled, seqProcBtnPtr]() mutable {
+    seqProcBtn->setClickCallback([&seqProcEnabled, &sequencer, &synthesizer, &midiOutput, seqProcBtnPtr]() mutable {
         bool on = seqProcEnabled.load(std::memory_order_relaxed);
         on = !on;
         seqProcEnabled.store(on, std::memory_order_relaxed);
-        seqProcBtnPtr->setText(on ? "Audio: ON" : "Audio: OFF");
+        seqProcBtnPtr->setText(on ? "Test Audio: ON" : "Test Audio: OFF");
         seqProcBtnPtr->setBackgroundColor(on ? Color(60,100,60) : Color(90,70,70));
+        if (!on) {
+            // Safety: stop sequencer and flush any active notes to avoid stuck notes
+            try { sequencer->stop(); } catch (...) {}
+            try { if (synthesizer) synthesizer->allNotesOff(-1); } catch (...) {}
+            if (midiOutput && midiOutput->isDeviceOpen()) {
+                try { for (int ch=0; ch<16; ++ch) for (int n=0; n<128; ++n) midiOutput->sendNoteOff(ch, n); } catch (...) {}
+            }
+        }
     });
     sequencerScreen->addChild(std::move(seqProcBtn));
+
+    // Recovery toggle
+    auto recBtn = std::make_unique<Button>("seq_recovery", "Recovery: ON");
+    // Row S move Recovery to column 4 (x=160)
+    recBtn->setPosition(160, 720);
+    recBtn->setSize(110, 28);
+    recBtn->setBackgroundColor(Color(60,80,100));
+    recBtn->setTextColor(Color(255,255,255));
+    auto recBtnPtr = recBtn.get();
+    recBtn->setClickCallback([&recoveryEnabled, recBtnPtr]() mutable {
+        bool on = recoveryEnabled.load(std::memory_order_relaxed);
+        on = !on;
+        recoveryEnabled.store(on, std::memory_order_relaxed);
+        recBtnPtr->setText(on ? "Recovery: ON" : "Recovery: OFF");
+        recBtnPtr->setBackgroundColor(on ? Color(60,80,100) : Color(90,70,70));
+    });
+    sequencerScreen->addChild(std::move(recBtn));
 
     auto tempoLbl = std::make_unique<Label>("seq_tempo_lbl", "BPM");
     // Place label above BPM slider top; slider top at B23 -> x=920, y=40
@@ -2731,6 +2853,51 @@ int main(int argc, char* argv[]) {
         seqGridBtnPtr->setBackgroundColor(on ? Color(60,80,100) : Color(60,60,80));
     });
     sequencerScreen->addChild(std::move(seqGridBtn));
+
+    // (Removed) debug counters
+
+    // Panic button
+    auto panicBtn = std::make_unique<Button>("seq_panic", "Panic");
+    // Row T first button at column 1
+    panicBtn->setPosition(40, 760);
+    panicBtn->setSize(70, 28);
+    panicBtn->setBackgroundColor(Color(140,60,60));
+    panicBtn->setTextColor(Color(255,255,255));
+    panicBtn->setClickCallback([&synthesizer, &midiOutput]() {
+        try { if (synthesizer) synthesizer->allNotesOff(-1); } catch (...) {}
+        if (midiOutput && midiOutput->isDeviceOpen()) {
+            try { for (int ch=0; ch<16; ++ch) for (int n=0; n<128; ++n) midiOutput->sendNoteOff(ch, n); } catch (...) {}
+        }
+    });
+    sequencerScreen->addChild(std::move(panicBtn));
+
+    // Restart Audio button (manual re-open)
+    auto restartBtn = std::make_unique<Button>("seq_restart_audio", "Restart Audio");
+    // Move Restart Audio to S1 (x=40, y=720)
+    restartBtn->setPosition(40, 720);
+    restartBtn->setSize(110, 28);
+    restartBtn->setBackgroundColor(Color(80,80,120));
+    restartBtn->setTextColor(Color(255,255,255));
+    restartBtn->setClickCallback([&audioEngine, &audioMutex, &synthesizer, &effectProcessor, &sequencer, &midiOutput, waveformPtr, levelPtr]() {
+        std::lock_guard<std::mutex> lock(audioMutex);
+        try { audioEngine->shutdown(); } catch (...) {}
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        audioEngine = std::make_unique<AudioEngine>();
+        if (audioEngine->initialize()) {
+            audioEngine->setAudioCallback([&](float* outputBuffer, int numFrames) {
+                std::lock_guard<std::mutex> lock2(audioMutex);
+                // Use existing audio callback pipeline (sequencer process is gated elsewhere)
+                audioCallback(audioEngine.get(), synthesizer.get(), effectProcessor.get(),
+                             sequencer.get(), waveformPtr, levelPtr, outputBuffer, numFrames);
+            });
+            // Panic to ensure clean start
+            try { if (synthesizer) synthesizer->allNotesOff(-1); } catch (...) {}
+            if (midiOutput && midiOutput->isDeviceOpen()) {
+                try { for (int ch=0; ch<16; ++ch) for (int n=0; n<128; ++n) midiOutput->sendNoteOff(ch, n); } catch (...) {}
+            }
+        }
+    });
+    sequencerScreen->addChild(std::move(restartBtn));
 
     // Quick Jump / Actions
     auto actionsLbl = std::make_unique<Label>("seq_actions_lbl", "Actions");
@@ -2786,20 +2953,36 @@ int main(int argc, char* argv[]) {
 
     // Sections list editor (inline)
     auto secEditLbl = std::make_unique<Label>("seq_edit_lbl", "Sections");
+    // Sections header stays on row E for context
     secEditLbl->setPosition(50, 160);
     secEditLbl->setSize(120, 18);
     secEditLbl->setTextColor(Color(200,200,200));
     sequencerScreen->addChild(std::move(secEditLbl));
+    // Left-side labels for rows
+    // Row F (letters): "Assign"
+    auto assignLbl = std::make_unique<Label>("sections_assign_lbl", "Assign");
+    assignLbl->setPosition(10, 5 * 40); // x=10, y=200 (row F)
+    assignLbl->setSize(80, 18);
+    assignLbl->setTextColor(Color(180,180,200));
+    sequencerScreen->addChild(std::move(assignLbl));
+    // Row G (bars): "To bar number:"
+    auto toBarLbl = std::make_unique<Label>("sections_to_bar_lbl", "To bar number:");
+    toBarLbl->setPosition(10, 6 * 40); // x=10, y=240 (row G)
+    toBarLbl->setSize(140, 18);
+    toBarLbl->setTextColor(Color(180,180,200));
+    sequencerScreen->addChild(std::move(toBarLbl));
     for (int i=0;i<5;++i) {
-        int x = 50 + i*220; int y = 184;
+        int x = 4 * 40 + i*240; // Start at F4, snap spacing to 6 columns (240px)
+        int yLetters = 5 * 40;  // Row F
+        int yBars    = 6 * 40;  // Row G
         auto nd = std::make_unique<DropdownMenu>("seq_sec_name_"+std::to_string(i), i==0?"A":(i==1?"B":(i==2?"C":"Intro")));
-        nd->setPosition(x, y);
+        nd->setPosition(x, yLetters);
         nd->setSize(120, 22);
         std::vector<std::string> opts = {"A","B","C","D","E","Intro","Verse","Chorus","Bridge","Break"};
         for (auto& o: opts) nd->addItem(o);
         sequencerScreen->addChild(std::move(nd));
         auto bd = std::make_unique<DropdownMenu>("seq_sec_bar_"+std::to_string(i), std::to_string(i));
-        bd->setPosition(x, y+26);
+        bd->setPosition(x, yBars);
         bd->setSize(80, 22);
         for (int b=0;b<16;++b) bd->addItem(std::to_string(b));
         sequencerScreen->addChild(std::move(bd));
@@ -2857,6 +3040,17 @@ int main(int argc, char* argv[]) {
         }
     });
     sequencerScreen->addChild(std::move(applySecs));
+
+    // After building Sequencer screen, apply loaded Segments rules (if any)
+    applyLoadedSegmentsToUI(uiContext.get());
+    // Apply persisted Segments toggle state to button and internal flag
+    if (auto* sc = uiContext->getScreen("sequencer")) {
+        if (auto* btn = dynamic_cast<Button*>(sc->getChild("seg_toggle"))) {
+            segmentsEnabled.store(loadedSegmentsEnabled, std::memory_order_relaxed);
+            btn->setText(loadedSegmentsEnabled ? "Segments: ON" : "Segments: OFF");
+            btn->setBackgroundColor(loadedSegmentsEnabled ? Color(60,100,60) : Color(90,70,70));
+        }
+    }
 
     // --- Phase B MVP: Segments + Transitions ---
     auto segLbl = std::make_unique<Label>("seg_label", "Segments (MVP)");
@@ -5428,12 +5622,26 @@ int main(int argc, char* argv[]) {
     // Set up sequencer callbacks
     sequencer->setNoteCallbacks(
         [&](int pitch, float velocity, int channel, const Envelope& env) {
-            synthesizer->noteOn(pitch, velocity);
-            midiOutput->sendNoteOn(channel, pitch, static_cast<int>(velocity * 127.0f));
+            // Use per-note envelope from sequencer for clearer articulation
+            synthesizer->noteOn(pitch, velocity, env);
+            if (midiOutput && midiOutput->isDeviceOpen()) {
+                try { midiOutput->sendNoteOn(channel, pitch, static_cast<int>(velocity * 127.0f)); } catch (...) {}
+            }
+            // Schedule a conservative fallback note-off based on current tempo (to avoid stuck notes)
+            double bpm = sequencer->getTempo();
+            double secPerBeat = 60.0 / std::max(1.0, bpm);
+            double fallbackDurSec = secPerBeat * 0.6; // shorter than 1 beat
+            pendingNoteOffs.push_back({pitch, channel, fallbackDurSec});
         },
         [&](int pitch, int channel) {
             synthesizer->noteOff(pitch);
-            midiOutput->sendNoteOff(channel, pitch);
+            if (midiOutput && midiOutput->isDeviceOpen()) {
+                try { midiOutput->sendNoteOff(channel, pitch); } catch (...) {}
+            }
+            // Remove any pending fallback for this pitch/channel
+            for (auto it = pendingNoteOffs.begin(); it != pendingNoteOffs.end(); ) {
+                if (it->pitch == pitch && it->channel == channel) it = pendingNoteOffs.erase(it); else ++it;
+            }
         }
     );
     
@@ -5445,7 +5653,33 @@ int main(int argc, char* argv[]) {
             double sr = audioEngine->getSampleRate();
             if (sr < 1.0) sr = 44100.0; // safety
             double dt = static_cast<double>(numFrames) / sr;
-            sequencer->process(dt);
+            if (muteAfterRecoverySec <= 0.0) {
+                sequencer->process(dt);
+            }
+            // Mute window after recovery: suppress note-ons and force silence
+            if (muteAfterRecoverySec > 0.0) {
+                muteAfterRecoverySec -= dt;
+                try { if (synthesizer) synthesizer->allNotesOff(-1); } catch (...) {}
+                if (midiOutput && midiOutput->isDeviceOpen()) {
+                    try { for (int ch=0; ch<16; ++ch) for (int n=0; n<128; ++n) midiOutput->sendNoteOff(ch, n); } catch (...) {}
+                }
+            }
+            // (Removed) Demo pulse fallback — sequencer should drive notes now
+            // Service fallback note-offs
+            if (!pendingNoteOffs.empty()) {
+                for (auto it = pendingNoteOffs.begin(); it != pendingNoteOffs.end(); ) {
+                    it->remainingSec -= dt;
+                    if (it->remainingSec <= 0.0) {
+                        try { synthesizer->noteOff(it->pitch, it->channel); } catch (...) {}
+                        if (midiOutput && midiOutput->isDeviceOpen()) {
+                            try { midiOutput->sendNoteOff(it->channel, it->pitch); } catch (...) {}
+                        }
+                        it = pendingNoteOffs.erase(it);
+                    } else {
+                        ++it;
+                    }
+                }
+            }
         }
         // Then generate audio
         audioCallback(audioEngine.get(), synthesizer.get(), effectProcessor.get(),
@@ -5801,6 +6035,60 @@ int main(int argc, char* argv[]) {
                 if (auto* lb = dynamic_cast<Label*>(ss->getChild("seq_current_section"))) {
                     lb->setText(std::string("Current: ") + name);
                 }
+                // Transport HUD: Bar/Beat
+                if (!ss->getChild("seq_transport_hud")) {
+                    auto hud = std::make_unique<Label>("seq_transport_hud", "Bar 1 Beat 1");
+                    hud->setPosition(600, 90);
+                    hud->setSize(120, 18);
+                    hud->setTextColor(Color(200,220,255));
+                    ss->addChild(std::move(hud));
+                }
+                if (auto* hud = dynamic_cast<Label*>(ss->getChild("seq_transport_hud"))) {
+                    int bar = sequencer->getCurrentBar();
+                    int beat = sequencer->getCurrentBeat();
+                    hud->setText(std::string("Bar ") + std::to_string(bar) + " Beat " + std::to_string(beat));
+                }
+            }
+        }
+
+        // Hide hint after timer
+        if (hintTimerSec > 0.0) {
+            hintTimerSec -= deltaTime;
+            if (hintTimerSec <= 0.0) {
+                if (auto* ss = uiContext->getScreen("sequencer")) {
+                    if (auto* hl = ss->getChild("seq_hint")) {
+                        ss->removeChild("seq_hint");
+                    }
+                }
+                hintTimerSec = 0.0;
+            }
+        }
+
+        // Update cached Segments rules from UI for persistence
+        if (auto* ss = uiContext->getScreen("sequencer")) {
+            for (int i=0;i<3;++i) {
+                if (auto* dd = dynamic_cast<DropdownMenu*>(ss->getChild("seg_name_"+std::to_string(i))))
+                    segRulesCache[i].from = dd->getSelectedItem();
+                if (auto* dd = dynamic_cast<DropdownMenu*>(ss->getChild("seg_exitbar_"+std::to_string(i)))) {
+                    int eb = 0; try {
+                        std::string s = dd->getSelectedItem();
+                        auto p = s.find(' ');
+                        eb = (p!=std::string::npos) ? std::stoi(s.substr(p+1)) : std::stoi(s);
+                    } catch (...) { eb = 0; }
+                    segRulesCache[i].exitBar = eb;
+                }
+                if (auto* dd = dynamic_cast<DropdownMenu*>(ss->getChild("seg_to_"+std::to_string(i))))
+                    segRulesCache[i].to = dd->getSelectedItem();
+                if (auto* dd = dynamic_cast<DropdownMenu*>(ss->getChild("seg_type_"+std::to_string(i))))
+                    segRulesCache[i].when = dd->getSelectedItem();
+                if (auto* dd = dynamic_cast<DropdownMenu*>(ss->getChild("seg_prob_"+std::to_string(i)))) {
+                    std::string ps = dd->getSelectedItem();
+                    float prob = 1.0f;
+                    if (ps.find("0.75")!=std::string::npos) prob = 0.75f;
+                    else if (ps.find("0.5")!=std::string::npos) prob = 0.5f;
+                    else if (ps.find("0.25")!=std::string::npos) prob = 0.25f;
+                    segRulesCache[i].prob = prob;
+                }
             }
         }
 
@@ -5873,22 +6161,26 @@ int main(int argc, char* argv[]) {
                         if (lastSegmentFired != (cur+"->"+toName+"@imm")) {
                             sequencer->jumpToSection(toName, Sequencer::Timing::Immediate);
                             lastSegmentFired = cur+"->"+toName+"@imm";
+                            transitionFlashName = toName; transitionFlashTimer = 1.0f;
                         }
                         break;
                     }
                     if (scheduleOnBar && barChanged) {
                         sequencer->jumpToSection(toName, Sequencer::Timing::OnBar);
                         lastSegmentFired = cur+"->"+toName+"@bar";
+                        transitionFlashName = toName; transitionFlashTimer = 1.0f;
                         break;
                     }
                     if (scheduleOnBeat && barChanged) { // approximate: use bar change as coarse beat step
                         sequencer->jumpToSection(toName, Sequencer::Timing::OnBeat);
                         lastSegmentFired = cur+"->"+toName+"@beat";
+                        transitionFlashName = toName; transitionFlashTimer = 1.0f;
                         break;
                     }
                     if (atExitPoint) {
                         sequencer->jumpToSection(toName, Sequencer::Timing::OnBar);
                         lastSegmentFired = cur+"->"+toName+"@exit";
+                        transitionFlashName = toName; transitionFlashTimer = 1.0f;
                         break;
                     }
                 }
@@ -6327,16 +6619,25 @@ int main(int argc, char* argv[]) {
             
             static bool lastStreamState = true;
             static int retryCount = 0;
+            static auto stopSince = std::chrono::high_resolution_clock::now();
             
             // Detect when stream stops
             if (!streamRunning && lastStreamState) {
                 std::cout << "\n!!! Audio stream stopped (device disconnected?) - attempting recovery..." << std::endl;
                 lastStreamState = false;
                 retryCount = 0;
+                stopSince = currentTime;
             }
             
             // Try to recover if stream is not running
-            if (!streamRunning && retryCount < 10) {
+            if (!streamRunning && retryCount < 10 && recoveryEnabled.load(std::memory_order_relaxed)) {
+                // Grace period: wait at least 2s before first attempt
+                float sinceStop = std::chrono::duration<float>(currentTime - stopSince).count();
+                float sincePlay = lastPlayStart.time_since_epoch().count() == 0 ? 9999.0f : std::chrono::duration<float>(currentTime - lastPlayStart).count();
+                if (sinceStop < 2.0f || sincePlay < 5.0f) {
+                    lastAudioCheck = currentTime; // skip this tick
+                    continue;
+                }
                 std::cout << "Recovery attempt " << (retryCount + 1) << "/10..." << std::endl;
                 
                 // Stop the current audio engine completely
@@ -6354,9 +6655,40 @@ int main(int argc, char* argv[]) {
                 if (audioEngine->initialize()) {
                     std::cout << "  - Audio engine initialized!" << std::endl;
                     
-                    // Re-set the audio callback
+                    // Re-set the audio callback (enhanced: sequencer process + fallbacks)
                     audioEngine->setAudioCallback([&](float* outputBuffer, int numFrames) {
                         std::lock_guard<std::mutex> lock(audioMutex);
+                        if (seqProcEnabled.load(std::memory_order_relaxed)) {
+                            double sr = audioEngine->getSampleRate();
+                            if (sr < 1.0) sr = 44100.0;
+                            double dt = static_cast<double>(numFrames) / sr;
+                            if (muteAfterRecoverySec <= 0.0) {
+                                sequencer->process(dt);
+                            }
+                            if (muteAfterRecoverySec > 0.0) {
+                                muteAfterRecoverySec -= dt;
+                                try { if (synthesizer) synthesizer->allNotesOff(-1); } catch (...) {}
+                                if (midiOutput && midiOutput->isDeviceOpen()) {
+                                    try { for (int ch=0; ch<16; ++ch) for (int n=0; n<128; ++n) midiOutput->sendNoteOff(ch, n); } catch (...) {}
+                                }
+                            }
+                            // (Removed) Demo pulse fallback
+                            // Service fallback note-offs
+                            if (!pendingNoteOffs.empty()) {
+                                for (auto it = pendingNoteOffs.begin(); it != pendingNoteOffs.end(); ) {
+                                    it->remainingSec -= dt;
+                                    if (it->remainingSec <= 0.0) {
+                                        try { synthesizer->noteOff(it->pitch, it->channel); } catch (...) {}
+                                        if (midiOutput && midiOutput->isDeviceOpen()) {
+                                            try { midiOutput->sendNoteOff(it->channel, it->pitch); } catch (...) {}
+                                        }
+                                        it = pendingNoteOffs.erase(it);
+                                    } else {
+                                        ++it;
+                                    }
+                                }
+                            }
+                        }
                         audioCallback(audioEngine.get(), synthesizer.get(), effectProcessor.get(),
                                      sequencer.get(), waveformPtr, levelPtr, outputBuffer, numFrames);
                     });
@@ -6371,6 +6703,14 @@ int main(int argc, char* argv[]) {
                             // Re-initialize synthesizer sample rate if needed
                             std::cout << "  - Audio sample rate: " << audioEngine->getSampleRate() << " Hz" << std::endl;
                         }
+                        // Post-recovery panic: ensure no held notes linger from pre-recovery
+                        try { if (synthesizer) synthesizer->allNotesOff(-1); } catch (...) {}
+                        if (midiOutput && midiOutput->isDeviceOpen()) {
+                            try { for (int ch=0; ch<16; ++ch) for (int n=0; n<128; ++n) midiOutput->sendNoteOff(ch, n); } catch (...) {}
+                        }
+                        pendingNoteOffs.clear();
+                        // Start short mute to avoid immediate retrigger during bounce
+                        muteAfterRecoverySec = 0.3;
                     } else {
                         std::cout << "✗ Stream failed to start" << std::endl;
                         retryCount++;
@@ -6591,7 +6931,24 @@ int main(int argc, char* argv[]) {
                     int barIdx = beat / bpb;
                     sdlDisplayManager->drawText(x + 2, tlY + tlH + 4, std::to_string(barIdx), nullptr, Color(140, 160, 190));
                 }
-                // Section markers
+                // Section markers and active section highlight
+                // Compute active section start/end
+                double posBeats = sequencer->getPositionInBeats();
+                double activeStart = 0.0, activeEnd = maxBeat;
+                std::string activeName = sequencer->getCurrentSectionName();
+                for (size_t i=0;i<defs.size();++i) {
+                    if (defs[i].first == activeName) {
+                        activeStart = defs[i].second;
+                        // next section start or end of timeline
+                        activeEnd = (i+1<defs.size()) ? defs[i+1].second : maxBeat;
+                        break;
+                    }
+                }
+                // Draw active region fill (subtle)
+                int ax = tlX + (int)std::round(activeStart * pxPerBeat);
+                int aw = std::max(1, (int)std::round((activeEnd - activeStart) * pxPerBeat));
+                sdlDisplayManager->fillRect(ax, tlY, aw, tlH, Color(30, 55, 65));
+                // Draw section markers and labels
                 for (const auto& d : defs) {
                     int sx = tlX + (int)std::round(d.second * pxPerBeat);
                     sdlDisplayManager->drawLine(sx, tlY, sx, tlY + tlH, Color(60, 200, 120));
@@ -6821,6 +7178,20 @@ int main(int argc, char* argv[]) {
                 secs.push_back(sj);
             }
             outCfg["sequencer"]["sections"] = secs;
+            // Persist Segments (MVP) rules from cache
+            nlohmann::json segs = nlohmann::json::array();
+            for (int i=0;i<3;++i) {
+                nlohmann::json r;
+                r["from"] = segRulesCache[i].from;
+                r["exit"] = segRulesCache[i].exitBar;
+                r["to"] = segRulesCache[i].to;
+                r["when"] = segRulesCache[i].when;
+                r["prob"] = segRulesCache[i].prob;
+                segs.push_back(r);
+            }
+            outCfg["sequencer"]["segments_mvp"] = segs;
+            // Persist Segments toggle
+            outCfg["sequencer"]["segments_enabled"] = segmentsEnabled.load(std::memory_order_relaxed);
         }
         std::ofstream out(userConfigPath);
         out << outCfg.dump(2);

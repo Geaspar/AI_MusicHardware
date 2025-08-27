@@ -660,13 +660,23 @@ void Synthesizer::noteOn(int midiNote, float velocity, int channel) {
 
 void Synthesizer::noteOn(int midiNote, float velocity, const AIMusicHardware::Envelope& legacyEnv, int channel) {
     if (voiceManager_) {
-        // Legacy support - first use standard noteOn
+        // Trigger voice first
         voiceManager_->noteOn(midiNote, velocity, channel);
-        
-        // Then find and update the envelope for this note
-        // This is not implemented here since we don't have direct access to voice envelopes
-        // through VoiceManager. In a real implementation, we'd need to extend VoiceManager
-        // to support this or handle envelope mapping differently.
+
+        // Find the newly triggered voice and apply per-note ADSR parameters
+        for (int i = 0; i < voiceManager_->getMaxVoices(); ++i) {
+            if (auto* voice = voiceManager_->getVoice(i)) {
+                if (voice->getMidiNote() == midiNote && voice->getChannel() == channel && voice->isActive()) {
+                    if (auto* env = voice->getEnvelope()) {
+                        env->setAttack(std::max(0.0f, legacyEnv.attack));
+                        env->setDecay(std::max(0.0f, legacyEnv.decay));
+                        env->setSustain(std::clamp(legacyEnv.sustain, 0.0f, 1.0f));
+                        env->setRelease(std::max(0.0f, legacyEnv.release));
+                    }
+                    break;
+                }
+            }
+        }
     }
 }
 
