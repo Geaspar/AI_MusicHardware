@@ -94,6 +94,8 @@ public:
     // Connect modulation source to destination
     void connectModulation(const std::string& sourceName, const std::string& destName, float amount);
     void disconnectModulation(const std::string& sourceName, const std::string& destName);
+    // Inspect current modulation connection amount if present
+    std::optional<float> getModAmount(const std::string& sourceName, const std::string& destName) const;
     
     // LFO control
     void setLFORate(int lfoIndex, float rate);

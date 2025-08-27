@@ -1308,6 +1308,10 @@ void Synthesizer::disconnectModulation(const std::string& sourceName, const std:
     std::cout << "Disconnected " << sourceName << " from " << destName << std::endl;
 }
 
+std::optional<float> Synthesizer::getModAmount(const std::string& sourceName, const std::string& destName) const {
+    return modulationMatrix_.getConnectionAmount(sourceName, destName);
+}
+
 void Synthesizer::setLFORate(int lfoIndex, float rate) {
     std::string lfoName = "LFO" + std::to_string(lfoIndex + 1);
     if (auto* source = modulationMatrix_.getSource(lfoName)) {

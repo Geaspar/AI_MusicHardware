@@ -1300,6 +1300,8 @@ SequencerGrid::SequencerGrid(const std::string& id, int rows, int columns)
     
     // Initialize grid with all cells inactive
     cells_.resize(rows_ * columns_, false);
+    cellIntensity_.resize(rows_ * columns_, -1.0f);
+    cellText_.resize(rows_ * columns_);
 }
 
 SequencerGrid::~SequencerGrid() {
@@ -1312,6 +1314,8 @@ void SequencerGrid::setGridSize(int rows, int columns) {
     
     // Resize cells array
     cells_.resize(rows_ * columns_, false);
+    cellIntensity_.resize(rows_ * columns_, -1.0f);
+    cellText_.resize(rows_ * columns_);
     
     // Reset cursor if needed
     cursorRow_ = std::min(cursorRow_, rows_ - 1);
@@ -1331,13 +1335,33 @@ void SequencerGrid::getGridSize(int& rows, int& columns) const {
 void SequencerGrid::setCellActive(int row, int column, bool active) {
     if (row >= 0 && row < rows_ && column >= 0 && column < columns_) {
         int index = getCellIndex(row, column);
+        // Only notify if state actually changes to avoid recursive callback loops
+        bool changed = (cells_[index] != active);
+        if (!changed) {
+            // No-op: avoid re-entrant callback storms
+            return;
+        }
         cells_[index] = active;
-        
-        // Notify callback
+
+        // Notify callback after updating internal state
         if (cellChangeCallback_) {
             cellChangeCallback_(row, column, active);
         }
     }
+}
+
+void SequencerGrid::setCellIntensity(int row, int column, float intensity) {
+    if (row < 0 || row >= rows_ || column < 0 || column >= columns_) return;
+    int idx = getCellIndex(row, column);
+    if (intensity < 0.0f) intensity = 0.0f;
+    if (intensity > 1.0f) intensity = 1.0f;
+    cellIntensity_[idx] = intensity;
+}
+
+void SequencerGrid::setCellText(int row, int column, const std::string& text) {
+    if (row < 0 || row >= rows_ || column < 0 || column >= columns_) return;
+    int idx = getCellIndex(row, column);
+    cellText_[idx] = text;
 }
 
 bool SequencerGrid::isCellActive(int row, int column) const {
@@ -1401,7 +1425,19 @@ void SequencerGrid::render(DisplayManager* display) {
             int cellH = static_cast<int>(cellHeight);
             
             // Determine cell color
-            Color cellColor = isCellActive(row, col) ? activeColor_ : inactiveColor_;
+            bool on = isCellActive(row, col);
+            Color cellColor = on ? activeColor_ : inactiveColor_;
+            // Per-cell intensity scaling for active cells (e.g., velocity)
+            if (on) {
+                float level = cellIntensity_[getCellIndex(row, col)];
+                if (level >= 0.0f) {
+                    auto scale = [&](uint8_t c)->uint8_t{
+                        int v = static_cast<int>(std::round(static_cast<float>(c) * (0.4f + 0.6f * level)));
+                        if (v < 0) v = 0; if (v > 255) v = 255; return static_cast<uint8_t>(v);
+                    };
+                    cellColor = Color(scale(cellColor.r), scale(cellColor.g), scale(cellColor.b), cellColor.a);
+                }
+            }
             
             // Highlight current playback position
             if (col == playbackPosition_) {
@@ -1425,6 +1461,18 @@ void SequencerGrid::render(DisplayManager* display) {
                 // Draw normal cell
                 display->fillRect(cellX, cellY, cellW, cellH, cellColor);
             }
+
+            // Optional overlay text (e.g., velocity %)
+            const std::string& t = cellText_[getCellIndex(row, col)];
+            if (!t.empty()) {
+                // Pick contrasting text color based on luminance
+                int lum = (int)(0.2126 * cellColor.r + 0.7152 * cellColor.g + 0.0722 * cellColor.b);
+                Color tc = lum > 160 ? Color(20, 20, 20) : Color(230, 230, 230);
+                // Approximate centering using 8px per character wide, 12px tall
+                int tx = cellX + cellW / 2 - (int)t.size() * 4;
+                int ty = cellY + cellH / 2 - 6;
+                display->drawText(tx, ty, t, nullptr, tc);
+            }
             
             // Draw cell border
             display->drawRect(cellX, cellY, cellW, cellH, gridLineColor_);
@@ -1446,7 +1494,7 @@ bool SequencerGrid::handleInput(const InputEvent& event) {
     float cellHeight = static_cast<float>(height_) / rows_;
     
     // Handle touch input
-    if (event.type == InputEventType::TouchPress) {
+    if (event.type == InputEventType::TouchPress || event.type == InputEventType::TouchMove) {
         // Check if touch is within grid bounds
         if (event.value >= x_ && event.value < x_ + width_ &&
             event.value2 >= y_ && event.value2 < y_ + height_) {
@@ -1459,9 +1507,10 @@ bool SequencerGrid::handleInput(const InputEvent& event) {
             cursorRow_ = row;
             cursorColumn_ = col;
             
-            // Toggle cell state
-            toggleCurrentCell();
-            
+            if (event.type == InputEventType::TouchPress) {
+                // Toggle cell state on press only (not on hover move)
+                toggleCurrentCell();
+            }
             handled = true;
         }
     }

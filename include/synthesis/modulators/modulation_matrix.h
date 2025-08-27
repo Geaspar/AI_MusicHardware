@@ -4,6 +4,7 @@
 #include <vector>
 #include <unordered_map>
 #include <memory>
+#include <optional>
 #include <functional>
 
 namespace AIMusicHardware {
@@ -146,6 +147,10 @@ public:
     
     // Update all modulation sources and connections
     void update();
+    
+    // Query a specific connection amount if present
+    std::optional<float> getConnectionAmount(const std::string& sourceName,
+                                             const std::string& destinationName) const;
     
 private:
     std::vector<std::unique_ptr<ModulationSource>> sources_;

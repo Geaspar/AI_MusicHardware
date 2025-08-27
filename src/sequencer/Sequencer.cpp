@@ -618,6 +618,57 @@ void Sequencer::setTransportCallback(TransportCallback callback) {
     transportCallback_ = callback;
 }
 
+//------------------------------------------------------------------------------
+// Thread-safe editor helpers
+//------------------------------------------------------------------------------
+
+void Sequencer::setColumnVelocity(size_t patternIndex, int column16th, float velocity) {
+    // Clamp velocity 0..1 for safety
+    if (velocity < 0.0f) velocity = 0.0f;
+    if (velocity > 1.0f) velocity = 1.0f;
+
+    std::lock_guard<std::mutex> lock(patternMutex_);
+    if (patternIndex >= patterns_.size()) return;
+    Pattern* p = patterns_[patternIndex].get();
+    if (!p) return;
+
+    const double stepBeats = static_cast<double>(beatsPerBar_) / 16.0;
+    const double startBeat = static_cast<double>(column16th) * stepBeats;
+    constexpr double EPS = 1e-6;
+    const size_t n = p->getNumNotes();
+    for (size_t i = 0; i < n; ++i) {
+        if (Note* note = p->getNote(i)) {
+            if (std::abs(note->startTime - startBeat) < EPS) {
+                note->velocity = velocity;
+            }
+        }
+    }
+}
+
+void Sequencer::addNoteToPattern(size_t patternIndex, const Note& note) {
+    std::lock_guard<std::mutex> lock(patternMutex_);
+    if (patternIndex >= patterns_.size()) return;
+    Pattern* p = patterns_[patternIndex].get();
+    if (!p) return;
+    p->addNote(note);
+}
+
+void Sequencer::removeNotesAt(size_t patternIndex, int pitch, double startBeat, double epsilon) {
+    std::lock_guard<std::mutex> lock(patternMutex_);
+    if (patternIndex >= patterns_.size()) return;
+    Pattern* p = patterns_[patternIndex].get();
+    if (!p) return;
+    // Erase any matching notes
+    for (size_t i = 0; i < p->getNumNotes(); ) {
+        Note* n = p->getNote(i);
+        if (n && n->pitch == pitch && std::abs(n->startTime - startBeat) < epsilon) {
+            p->removeNote(i);
+        } else {
+            ++i;
+        }
+    }
+}
+
 void Sequencer::process(double deltaTime) {
     // Fast path exit with atomic check - no lock needed
     if (!isPlaying_.load(std::memory_order_acquire)) {

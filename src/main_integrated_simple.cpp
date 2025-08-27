@@ -5,6 +5,7 @@
 #include <mutex>
 #include <atomic>
 #include <iomanip>
+#include <algorithm>
 #include "../include/synthesis/modulators/modulation_matrix.h"
 #include <sstream>
 #include <cmath>
@@ -318,12 +319,11 @@ InputEvent translateSDLEvent(const SDL_Event& sdlEvent) {
             break;
             
         case SDL_MOUSEMOTION:
-            if (sdlEvent.motion.state & SDL_BUTTON_LMASK) {
-                event.type = InputEventType::TouchMove;
-                event.id = 0;
-                event.value = static_cast<float>(sdlEvent.motion.x);
-                event.value2 = static_cast<float>(sdlEvent.motion.y);
-            }
+            // Report pointer movement for hover-highlight even without button pressed
+            event.type = InputEventType::TouchMove;
+            event.id = 0;
+            event.value = static_cast<float>(sdlEvent.motion.x);
+            event.value2 = static_cast<float>(sdlEvent.motion.y);
             break;
             
         case SDL_KEYDOWN:
@@ -467,6 +467,8 @@ int main(int argc, char* argv[]) {
     auto lastPlayStart = std::chrono::high_resolution_clock::time_point{};
     // UI hint timer for messages (e.g., Audio OFF gating)
     double hintTimerSec = 0.0;
+    // Metronome toggle shared with audio thread
+    std::atomic<bool> metronomeEnabled{false};
     // Create Sensor Matrix (8 lanes)
     auto sensorMatrix = std::make_shared<SensorMatrix>(8);
     // Fallback note-off scheduler (belt-and-suspenders to avoid stuck notes)
@@ -789,7 +791,7 @@ int main(int argc, char* argv[]) {
     // Current Section indicator + Prev/Next controls
     {
         auto secLbl = std::make_unique<Label>("current_section_lbl", "Section: A");
-        secLbl->setPosition(780, 10);
+        secLbl->setPosition(860, 10);
         secLbl->setSize(180, 20);
         secLbl->setTextColor(Color(200, 220, 255));
         mainScreen->addChild(std::move(secLbl));
@@ -2620,6 +2622,62 @@ int main(int argc, char* argv[]) {
     uiContext->setActiveScreen("main");
     std::cout << "Added main screen to UI context" << std::endl;
     
+    // Patterns state & helpers
+    // Pending pattern change (quantized)
+    struct PendingPatternChange { bool active=false; int targetIndex=0; Sequencer::Timing when=Sequencer::Timing::OnBar; bool keepPhase=true; } pendingPatChange;
+    // Per-pattern column velocity preferences (used when adding new notes via grid)
+    std::unordered_map<int, std::vector<float>> patternColumnVelocity; // patternIndex -> per-column velocity [0..1]
+    // Section-driven mode and bindings
+    bool sectionDriven = false;
+    std::unordered_map<std::string,int> sectionPatternBinding; // name->patternIndex
+    // Pattern clipboard (Copy/Paste)
+    struct PatternClipboard { std::vector<Note> notes; double lengthBeats = 16.0; bool hasData=false; } patClipboard;
+
+    // Velocity curve for sequencer-triggered notes
+    enum class VelocityCurve { Linear=0, Exponential=1, Logarithmic=2 };
+    std::atomic<int> velocityCurveMode{static_cast<int>(VelocityCurve::Linear)};
+    auto applyVelocityCurve = [&](float v)->float {
+        v = std::clamp(v, 0.0f, 1.0f);
+        switch (static_cast<VelocityCurve>(velocityCurveMode.load(std::memory_order_relaxed))) {
+            case VelocityCurve::Exponential: return std::pow(v, 2.0f);      // softer dynamics
+            case VelocityCurve::Logarithmic: return std::pow(v, 0.5f);      // harder dynamics
+            case VelocityCurve::Linear:
+            default: return v;
+        }
+    };
+
+    auto savePatternsToConfig = [&](const std::string& path){
+        try {
+            nlohmann::json out = loadedConfig.is_null() ? nlohmann::json::object() : loadedConfig;
+            nlohmann::json pats = nlohmann::json::array();
+            size_t n = sequencer->getNumPatterns();
+            for (size_t i=0;i<n;++i) {
+                auto* p = sequencer->getPattern(i); if (!p) continue;
+                nlohmann::json pj;
+                pj["name"] = p->getName();
+                pj["length_beats"] = p->getLength();
+                nlohmann::json notes = nlohmann::json::array();
+                for (size_t k=0;k<p->getNumNotes();++k) {
+                    if (auto* no = p->getNote(k)) {
+                        nlohmann::json nj;
+                        nj["pitch"]=no->pitch; nj["vel"]=no->velocity; nj["start"]=no->startTime; nj["dur"]=no->duration; nj["ch"]=no->channel;
+                        notes.push_back(nj);
+                    }
+                }
+                pj["notes"] = notes;
+                pats.push_back(pj);
+            }
+            out["patterns"] = pats;
+            // Save section-driven bindings
+            out["sequencer"]["sectionDriven"] = sectionDriven;
+            nlohmann::json binds = nlohmann::json::object();
+            for (auto& kv : sectionPatternBinding) binds[kv.first] = kv.second;
+            out["sequencer"]["sectionPatterns"] = binds;
+            std::ofstream f(path);
+            if (f.good()) { f << out.dump(2); f.flush(); loadedConfig = out; }
+        } catch (...) { std::cerr << "Warning: Failed to save patterns to config" << std::endl; }
+    };
+
     // Create sequencer screen
     auto sequencerScreen = std::make_unique<Screen>("sequencer");
     sequencerScreen->setBackgroundColor(Color(30, 30, 40));
@@ -3191,6 +3249,101 @@ int main(int argc, char* argv[]) {
     patternsScreen->setSize(1280, 800);
     addNavigationButtons(patternsScreen.get(), "patterns", uiContext.get());
 
+    // Helper: get UI-selected pattern index (decoupled from playing pattern)
+    auto getUISelectedPatternIndex = [&](UIContext* ctx) -> size_t {
+        if (auto* ps = ctx->getScreen("patterns")) {
+            if (auto* dd = dynamic_cast<DropdownMenu*>(ps->getChild("pat_select"))) {
+                int s = dd->getSelectedIndex();
+                if (s >= 0) return static_cast<size_t>(s);
+            }
+        }
+        return sequencer->getCurrentPatternIndex();
+    };
+
+    // Helper: refresh Patterns grid from selected pattern in UI
+    auto refreshPatternGrid = [&](UIContext* ctx){
+        auto* ps = ctx->getScreen("patterns"); if (!ps) return;
+        auto* grid = dynamic_cast<SequencerGrid*>(ps->getChild("pat_grid")); if (!grid) return;
+        // Clear existing dynamic labels (bar/row/legend) to avoid duplicates
+        if (ps->getChild("pat_grid_legend")) ps->removeChild("pat_grid_legend");
+        for (int i=0;i<64;++i) { // up to 64 bars possible in UI options
+            if (ps->getChild(std::string("pat_bar_lbl_")+std::to_string(i))) ps->removeChild(std::string("pat_bar_lbl_")+std::to_string(i));
+        }
+        for (int r=0;r<8;++r) {
+            if (ps->getChild(std::string("pat_row_lbl_")+std::to_string(r))) ps->removeChild(std::string("pat_row_lbl_")+std::to_string(r));
+        }
+        size_t idx = getUISelectedPatternIndex(ctx);
+        Pattern* pat = sequencer->getPattern(idx);
+        if (!pat) return;
+        int bpb = sequencer->getBeatsPerBar(); if (bpb <= 0) bpb = 4;
+        double lenBeats = std::max(1.0, pat->getLength());
+        // Snap length to whole bars for grid sizing
+        int bars = std::max(1, static_cast<int>(std::round(lenBeats / bpb)));
+        int cols = bars * 16; // 16th grid per bar
+        int rows = 8; // 8 pitch lanes for MVP
+        grid->setGridSize(rows, cols);
+        grid->clearAllCells();
+        // Each bar is split into 16 columns, so one column = (beatsPerBar / 16.0) beats
+        double stepBeats = (double)bpb / 16.0;
+        // Place cells for each note that aligns to the 16th grid (approximate)
+        for (size_t i=0;i<pat->getNumNotes();++i) {
+            Note* n = pat->getNote(i); if (!n) continue;
+            int col = (int)std::round(n->startTime / stepBeats);
+            // Map pitch to row: base 60 at bottom row (row=7), upwards to row=0
+            int base = 60; int row = 7 - (n->pitch - base); // 1 semitone per row
+            if (row >=0 && row < rows && col >=0 && col < cols) grid->setCellActive(row, col, true);
+        }
+        // Update length dropdown to reflect bars
+        if (auto* dd = dynamic_cast<DropdownMenu*>(ps->getChild("pat_len"))) {
+            dd->selectItemSilently(0); // ensure valid index
+            const int optBars[5] = {1,2,4,8,16};
+            for (int j=0;j<5;++j) if (optBars[j]==bars) { dd->selectItemSilently(j); break; }
+        }
+        // Do not override UI selection here; the dropdown represents the edit target
+        // Legend and axis labels
+        auto gb = grid->getBounds();
+        {
+            auto legend = std::make_unique<Label>("pat_grid_legend", "Columns: 16th notes | Rows: pitches (G4..C4)");
+            legend->setPosition(gb.x, gb.y - 28);
+            legend->setSize(380, 18);
+            legend->setTextColor(Color(180,200,220));
+            ps->addChild(std::move(legend));
+        }
+        // Bar labels above grid
+        for (int bar=0; bar<bars; ++bar) {
+            auto lbl = std::make_unique<Label>(std::string("pat_bar_lbl_")+std::to_string(bar), std::string("Bar ")+std::to_string(bar+1));
+            int x = gb.x + (bar * gb.width) / std::max(1, bars);
+            lbl->setPosition(x + 2, gb.y - 14);
+            lbl->setSize(60, 14);
+            lbl->setTextColor(Color(150,170,200));
+            ps->addChild(std::move(lbl));
+        }
+        // Row pitch labels (left side)
+        auto noteName = [](int midi) {
+            static const char* names[] = {"C","C#","D","D#","E","F","F#","G","G#","A","A#","B"};
+            int octave = (midi / 12) - 1; int pc = midi % 12; if (pc<0) pc=0; if (pc>11) pc=11;
+            return std::string(names[pc]) + std::to_string(octave);
+        };
+        for (int r=0; r<rows; ++r) {
+            int pitch = 60 + (7 - r);
+            auto lbl = std::make_unique<Label>(std::string("pat_row_lbl_")+std::to_string(r), noteName(pitch));
+            int y = gb.y + (r * gb.height) / std::max(1, rows) + 2;
+            lbl->setPosition(gb.x - 38, y);
+            lbl->setSize(36, 14);
+            lbl->setTextColor(Color(160,180,200));
+            ps->addChild(std::move(lbl));
+        }
+        // Update length dropdown to reflect bars
+        if (auto* dd = dynamic_cast<DropdownMenu*>(ps->getChild("pat_len"))) {
+            std::string label = std::to_string(bars) + (bars==1?" bar":" bars");
+            dd->selectItemSilently(0); // ensure valid index
+            // Try to select matching item
+            // Items: 1,2,4,8,16 bars
+            const int optBars[5] = {1,2,4,8,16};
+            for (int j=0;j<5;++j) if (optBars[j]==bars) { dd->selectItemSilently(j); break; }
+        }
+    };
+
     // Title
     {
         auto title = std::make_unique<Label>("patterns_title", "PATTERNS");
@@ -3200,7 +3353,24 @@ int main(int argc, char* argv[]) {
         patternsScreen->addChild(std::move(title));
     }
 
-    // Header controls: selector, prev/next, length, quantize, keep phase, mode
+    // Temporary grid overlay toggle (like Sensors)
+    {
+        auto gridBtn = std::make_unique<Button>("patterns_grid", "Grid: OFF");
+        // Move to grid coordinate C11 -> X=11*40=440, Y='C'(2)*40=80
+        gridBtn->setPosition(440, 80);
+        gridBtn->setSize(110, 26);
+        gridBtn->setBackgroundColor(Color(60, 60, 80));
+        gridBtn->setTextColor(Color(255,255,255));
+        auto gridPtr = gridBtn.get();
+        gridBtn->setClickCallback([gridPtr]() mutable {
+            bool on = gridPtr->getText().find("ON") == std::string::npos;
+            gridPtr->setText(on ? "Grid: ON" : "Grid: OFF");
+            gridPtr->setBackgroundColor(on ? Color(60,80,100) : Color(60,60,80));
+        });
+        patternsScreen->addChild(std::move(gridBtn));
+    }
+
+    // Header controls: selector, prev/next, length, quantize, keep phase, velocity curve, mode
     Button* patPrevPtr = nullptr; Button* patNextPtr = nullptr; 
     Button* keepPhaseBtnPtr = nullptr;
     DropdownMenu* patSelectPtr = nullptr; DropdownMenu* patLenPtr = nullptr; DropdownMenu* patQuantPtr = nullptr;
@@ -3211,14 +3381,63 @@ int main(int argc, char* argv[]) {
         prev->setBackgroundColor(Color(60,60,90));
         prev->setTextColor(Color(255,255,255));
         patPrevPtr = prev.get();
-        prev->setClickCallback([patPrevPtr](){ std::cout << "[Patterns] Prev pattern" << std::endl; });
+        prev->setClickCallback([&]() {
+            std::cout << "[Patterns] Prev\n";
+            if (auto* ps = uiContext->getScreen("patterns")) {
+                if (auto* dd = dynamic_cast<DropdownMenu*>(ps->getChild("pat_select"))) {
+                    int idx = dd->getSelectedIndex();
+                    if (idx < 0) idx = 0;
+                    int next = (idx - 1); if (next < 0) next = 63; // wrap 64
+                    dd->selectItem(next);
+                }
+            }
+        });
         patternsScreen->addChild(std::move(prev));
 
         auto select = std::make_unique<DropdownMenu>("pat_select", "Pattern 1");
         select->setPosition(328, 46);
         select->setSize(160, 24);
-        for (int i=1;i<=8;++i) select->addItem(std::string("Pattern ")+std::to_string(i));
+        // Ensure a default pool of patterns exists in the sequencer (64 slots)
+        if (sequencer->getNumPatterns() < 64) {
+            for (size_t i = sequencer->getNumPatterns(); i < 64; ++i) {
+                auto p = std::make_unique<Pattern>(std::string("Pattern ")+std::to_string(i+1));
+                // Default to 4 bars (16 beats)
+                p->setLength(16.0);
+                sequencer->addPattern(std::move(p));
+            }
+            sequencer->setCurrentPattern(0);
+        }
+        for (int i=1;i<=64;++i) select->addItem(std::string("Pattern ")+std::to_string(i));
         patSelectPtr = select.get();
+        // On selection change: quantize pattern switch per pat_quantize and keep phase
+        patSelectPtr->setSelectionCallback([&](int index, const std::string&){
+            if (index >= 0) {
+                Sequencer::Timing when = Sequencer::Timing::OnBar;
+                if (auto* q = dynamic_cast<DropdownMenu*>(uiContext->getScreen("patterns")->getChild("pat_quantize"))) {
+                    auto t = q->getSelectedItem();
+                    if (t == "Immediate") when = Sequencer::Timing::Immediate; else if (t == "OnBeat") when = Sequencer::Timing::OnBeat; else when = Sequencer::Timing::OnBar;
+                }
+                bool keepPhase = true;
+                if (auto* k = dynamic_cast<Button*>(uiContext->getScreen("patterns")->getChild("pat_keep_phase"))) {
+                    keepPhase = (k->getText().find("ON") != std::string::npos);
+                }
+                // If not playing, always apply immediately and refresh UI
+                if (!sequencer->isPlaying() || when == Sequencer::Timing::Immediate) {
+                    sequencer->setCurrentPattern((size_t)index);
+                    if (!keepPhase) sequencer->setPositionInBeats(0.0);
+                    pendingPatChange.active = false;
+                    refreshPatternGrid(uiContext.get());
+                    if (auto* hud = dynamic_cast<Label*>(uiContext->getScreen("patterns")->getChild("pat_queue_hud"))) {
+                        hud->setText("");
+                    }
+                } else {
+                    pendingPatChange = {true, index, when, keepPhase};
+                    if (auto* hud = dynamic_cast<Label*>(uiContext->getScreen("patterns")->getChild("pat_queue_hud"))) {
+                        hud->setText(std::string("Queued Pattern ") + std::to_string(index+1) + (when==Sequencer::Timing::OnBar?" OnBar":(when==Sequencer::Timing::OnBeat?" OnBeat":" Now")));
+                    }
+                }
+            }
+        });
         // Add after other header widgets later for z-order
 
         auto next = std::make_unique<Button>("pat_next", "Next");
@@ -3227,7 +3446,17 @@ int main(int argc, char* argv[]) {
         next->setBackgroundColor(Color(60,60,90));
         next->setTextColor(Color(255,255,255));
         patNextPtr = next.get();
-        next->setClickCallback([patNextPtr](){ std::cout << "[Patterns] Next pattern" << std::endl; });
+        next->setClickCallback([&]() {
+            std::cout << "[Patterns] Next\n";
+            if (auto* ps = uiContext->getScreen("patterns")) {
+                if (auto* dd = dynamic_cast<DropdownMenu*>(ps->getChild("pat_select"))) {
+                    int idx = dd->getSelectedIndex();
+                    if (idx < 0) idx = 0;
+                    int next = (idx + 1) % 64; // wrap 64
+                    dd->selectItem(next);
+                }
+            }
+        });
         patternsScreen->addChild(std::move(next));
 
         auto len = std::make_unique<DropdownMenu>("pat_len", "4 bars");
@@ -3235,6 +3464,19 @@ int main(int argc, char* argv[]) {
         len->setSize(110, 24);
         for (auto s : std::vector<std::string>{"1 bar","2 bars","4 bars","8 bars","16 bars"}) len->addItem(s);
         patLenPtr = len.get();
+        patLenPtr->setSelectionCallback([&](int index, const std::string& item){
+            // Map selection to bars
+            int bars = 4;
+            switch (index) {
+                case 0: bars = 1; break; case 1: bars = 2; break; case 2: bars = 4; break; case 3: bars = 8; break; case 4: bars = 16; break;
+                default: break;
+            }
+            int bpb = sequencer->getBeatsPerBar(); if (bpb <= 0) bpb = 4;
+            double lenBeats = (double)bars * (double)bpb;
+            if (auto* pat = sequencer->getPattern(sequencer->getCurrentPatternIndex())) { pat->setLength(lenBeats); }
+            // Resize grid to match new length
+            refreshPatternGrid(uiContext.get());
+        });
 
         auto quant = std::make_unique<DropdownMenu>("pat_quantize", "OnBar");
         quant->setPosition(690, 46);
@@ -3266,23 +3508,108 @@ int main(int argc, char* argv[]) {
         patternsScreen->addChild(std::move(select));
         patternsScreen->addChild(std::move(len));
         patternsScreen->addChild(std::move(quant));
+
+        // Velocity curve dropdown
+        auto velCurveLbl = std::make_unique<Label>("pat_velcurve_lbl", "Vel Curve");
+        velCurveLbl->setPosition(820, 76);
+        velCurveLbl->setSize(100, 18);
+        velCurveLbl->setTextColor(Color(180, 180, 200));
+        patternsScreen->addChild(std::move(velCurveLbl));
+
+        auto velCurve = std::make_unique<DropdownMenu>("pat_velcurve", "Linear");
+        velCurve->setPosition(900, 72);
+        velCurve->setSize(100, 24);
+        velCurve->addItem("Linear");
+        velCurve->addItem("Exponential");
+        velCurve->addItem("Logarithmic");
+        auto velCurvePtr = velCurve.get();
+        velCurvePtr->setSelectionCallback([&](int index, const std::string&){
+            switch (index) {
+                case 1: velocityCurveMode.store(static_cast<int>(VelocityCurve::Exponential), std::memory_order_relaxed); break;
+                case 2: velocityCurveMode.store(static_cast<int>(VelocityCurve::Logarithmic), std::memory_order_relaxed); break;
+                case 0:
+                default: velocityCurveMode.store(static_cast<int>(VelocityCurve::Linear), std::memory_order_relaxed); break;
+            }
+            std::cout << "[Patterns] Velocity curve set to index " << index << std::endl;
+        });
+        patternsScreen->addChild(std::move(velCurve));
     }
 
-    // Editor grid placeholder
+    // Editor grid placeholder + velocity row
     {
         auto grid = std::make_unique<SequencerGrid>("pat_grid", 8, 16);
         grid->setPosition(50, 120);
         grid->setSize(980, 360);
         grid->setActiveColor(Color(120,200,120));
         grid->setInactiveColor(Color(40,50,60));
+        // Revert regular grid lines color
         grid->setGridLineColor(Color(80,90,110));
+        auto gridPtr = grid.get();
+        // Toggle cells to add/remove notes in current pattern (thread-safe)
+        gridPtr->setCellChangeCallback([&](int row, int col, bool active){
+            size_t pi = getUISelectedPatternIndex(uiContext.get());
+            int bpb = sequencer->getBeatsPerBar(); if (bpb <= 0) bpb = 4;
+            int rows = 8; (void)rows;
+            int cols, rtmp; gridPtr->getGridSize(rtmp, cols);
+            const double stepBeats = (double)bpb / 16.0;
+            const double startBeat = (double)col * stepBeats;
+            int base = 60; int pitch = base + (7 - row); // invert mapping
+            if (active) {
+                // Use per-column velocity if present
+                float vel = 0.8f;
+                auto it = patternColumnVelocity.find((int)pi);
+                if (it != patternColumnVelocity.end()) { auto& v = it->second; if (col < (int)v.size()) vel = v[col]; }
+                Note n; n.pitch=pitch; n.velocity=vel; n.channel=0; n.startTime=startBeat; n.duration=stepBeats; n.env = Envelope();
+                sequencer->addNoteToPattern(pi, n);
+            } else {
+                // Remove any note that matches this cell (pitch and start within epsilon)
+                sequencer->removeNotesAt(pi, pitch, startBeat, 1e-6);
+            }
+            savePatternsToConfig(userConfigPath);
+        });
         patternsScreen->addChild(std::move(grid));
 
-        auto velLbl = std::make_unique<Label>("pat_velocity_label", "Velocity (MVP placeholder)");
+        auto velLbl = std::make_unique<Label>("pat_velocity_label", "Velocity per step (click to cycle)");
         velLbl->setPosition(50, 490);
-        velLbl->setSize(240, 18);
+        velLbl->setSize(280, 18);
         velLbl->setTextColor(Color(180,180,200));
         patternsScreen->addChild(std::move(velLbl));
+        auto velGrid = std::make_unique<SequencerGrid>("pat_vel_grid", 1, 16);
+        velGrid->setPosition(50, 510);
+        velGrid->setSize(980, 30);
+        velGrid->setActiveColor(Color(255,220,60));
+        velGrid->setInactiveColor(Color(50,50,60));
+        velGrid->setGridLineColor(Color(80,90,110));
+        auto velGridPtr = velGrid.get();
+        velGridPtr->setCellChangeCallback([&](int row, int col, bool active){
+            size_t pi = getUISelectedPatternIndex(uiContext.get());
+            int rows=0, cols=0; velGridPtr->getGridSize(rows, cols);
+            auto& v = patternColumnVelocity[(int)pi]; if ((int)v.size() < cols) v.resize(cols, 0.8f);
+            float nv = v[col];
+            if (nv < 0.6f) nv = 0.7f; else if (nv < 0.9f) nv = 1.0f; else nv = 0.4f;
+            v[col] = nv;
+            // Reflect velocity visually by intensity and numeric label; keep cell active
+            velGridPtr->setCellIntensity(0, col, nv);
+            int pct = static_cast<int>(std::round(nv * 100.0f));
+            velGridPtr->setCellText(0, col, std::to_string(pct));
+            velGridPtr->setCellActive(0, col, true);
+            sequencer->setColumnVelocity(pi, col, nv);
+            std::cout << "[Patterns] Column " << col << " velocity set to " << nv << std::endl;
+            savePatternsToConfig(userConfigPath);
+        });
+        // Initialize velocity visualization from stored per-column values
+        {
+            int rows=0, cols=0; velGridPtr->getGridSize(rows, cols);
+            size_t pi = getUISelectedPatternIndex(uiContext.get());
+            auto& v = patternColumnVelocity[(int)pi]; if ((int)v.size() < cols) v.resize(cols, 0.8f);
+            for (int c=0;c<cols;++c) {
+                velGridPtr->setCellIntensity(0, c, v[c]);
+                int pct = static_cast<int>(std::round(v[c] * 100.0f));
+                velGridPtr->setCellText(0, c, std::to_string(pct));
+                velGridPtr->setCellActive(0, c, true);
+            }
+        }
+        patternsScreen->addChild(std::move(velGrid));
     }
 
     // Sidebar actions
@@ -3297,26 +3624,165 @@ int main(int argc, char* argv[]) {
             b->setClickCallback(cb);
             y += dy; return b;
         };
-        patternsScreen->addChild(makeBtn("pat_new", "New", [](){ std::cout << "[Patterns] New" << std::endl; }));
-        patternsScreen->addChild(makeBtn("pat_dup", "Duplicate", [](){ std::cout << "[Patterns] Duplicate" << std::endl; }));
-        patternsScreen->addChild(makeBtn("pat_del", "Delete", [](){ std::cout << "[Patterns] Delete" << std::endl; }));
+        patternsScreen->addChild(makeBtn("pat_new", "New", [&](){
+            std::cout << "[Patterns] New pattern (clear)\n";
+            size_t idx = getUISelectedPatternIndex(uiContext.get());
+            if (auto* p = sequencer->getPattern(idx)) {
+                p->clear();
+                int bpb = std::max(1, sequencer->getBeatsPerBar());
+                p->setLength(4.0 * bpb);
+                p->setName(std::string("Pattern ")+std::to_string((int)idx+1));
+                patternColumnVelocity[(int)idx].assign(16, 0.8f);
+                savePatternsToConfig(userConfigPath);
+                refreshPatternGrid(uiContext.get());
+            }
+        }));
+        patternsScreen->addChild(makeBtn("pat_dup", "Duplicate", [&](){
+            std::cout << "[Patterns] Duplicate pattern to next slot\n";
+            size_t srcIdx = getUISelectedPatternIndex(uiContext.get());
+            size_t dstIdx = (srcIdx + 1) % std::max<size_t>(1, sequencer->getNumPatterns());
+            if (dstIdx >= sequencer->getNumPatterns()) return;
+            Pattern* src = sequencer->getPattern(srcIdx);
+            Pattern* dst = sequencer->getPattern(dstIdx);
+            if (!src || !dst) return;
+            dst->clear();
+            for (size_t i=0;i<src->getNumNotes();++i) { if (auto* n = src->getNote(i)) dst->addNote(*n); }
+            dst->setLength(src->getLength());
+            dst->setName(src->getName() + " (Copy)");
+            patternColumnVelocity[(int)dstIdx] = patternColumnVelocity[(int)srcIdx];
+            savePatternsToConfig(userConfigPath);
+            if (auto* ps = uiContext->getScreen("patterns")) {
+                if (auto* dd = dynamic_cast<DropdownMenu*>(ps->getChild("pat_select"))) {
+                    dd->selectItem((int)dstIdx);
+                }
+            }
+        }));
+        patternsScreen->addChild(makeBtn("pat_del", "Delete", [&](){
+            std::cout << "[Patterns] Delete (clear current)\n";
+            size_t idx = getUISelectedPatternIndex(uiContext.get());
+            if (auto* p = sequencer->getPattern(idx)) {
+                p->clear();
+                patternColumnVelocity[(int)idx].assign(16, 0.8f);
+                savePatternsToConfig(userConfigPath);
+                refreshPatternGrid(uiContext.get());
+            }
+        }));
         y += 10; // small gap
-        patternsScreen->addChild(makeBtn("pat_clear", "Clear", [](){ std::cout << "[Patterns] Clear" << std::endl; }));
-        patternsScreen->addChild(makeBtn("pat_rand_safe", "Randomize (safe)", [](){ std::cout << "[Patterns] Randomize" << std::endl; }));
+        patternsScreen->addChild(makeBtn("pat_clear", "Clear", [&](){
+            std::cout << "[Patterns] Clear notes (keep name/length)\n";
+            size_t idx = getUISelectedPatternIndex(uiContext.get());
+            if (auto* p = sequencer->getPattern(idx)) {
+                std::string name = p->getName(); double len = p->getLength();
+                p->clear(); p->setName(name); p->setLength(len);
+                savePatternsToConfig(userConfigPath);
+                refreshPatternGrid(uiContext.get());
+            }
+        }));
+        patternsScreen->addChild(makeBtn("pat_rand_safe", "Randomize (safe)", [&](){
+            std::cout << "[Patterns] Randomize (safe)\n";
+            size_t idx = getUISelectedPatternIndex(uiContext.get());
+            Pattern* p = sequencer->getPattern(idx); if (!p) return;
+            p->clear();
+            int bpb = std::max(1, sequencer->getBeatsPerBar());
+            const double step = (double)bpb / 16.0;
+            int base = 60; int scaleInts[] = {0,2,4,5,7,9,11,12,14,16,17,19,21,23};
+            int scaleCount = (int)(sizeof(scaleInts)/sizeof(scaleInts[0]));
+            auto& vcols = patternColumnVelocity[(int)idx]; if (vcols.empty()) vcols.assign(16, 0.8f);
+            for (int col=0; col<16; ++col) {
+                if ((rand() % 100) < 25) {
+                    int si = scaleInts[rand() % scaleCount];
+                    int pitch = base + si;
+                    float vel = (col < (int)vcols.size() ? vcols[col] : 0.8f);
+                    Note n(pitch, vel, col * step, step, 0);
+                    sequencer->addNoteToPattern(idx, n);
+                }
+            }
+            savePatternsToConfig(userConfigPath);
+            refreshPatternGrid(uiContext.get());
+        }));
         y += 10;
-        patternsScreen->addChild(makeBtn("pat_copy", "Copy", [](){ std::cout << "[Patterns] Copy" << std::endl; }));
-        patternsScreen->addChild(makeBtn("pat_paste", "Paste", [](){ std::cout << "[Patterns] Paste" << std::endl; }));
+        patternsScreen->addChild(makeBtn("pat_copy", "Copy", [&](){
+            std::cout << "[Patterns] Copy\n";
+            size_t idx = getUISelectedPatternIndex(uiContext.get());
+            Pattern* p = sequencer->getPattern(idx); if (!p) return;
+            patClipboard.notes.clear();
+            for (size_t i=0;i<p->getNumNotes();++i) { if (auto* n = p->getNote(i)) patClipboard.notes.push_back(*n); }
+            patClipboard.lengthBeats = p->getLength();
+            patClipboard.hasData = true;
+            std::cout << "[Patterns] Copied pattern " << (idx+1) << " with " << patClipboard.notes.size() << " notes\n";
+        }));
+        patternsScreen->addChild(makeBtn("pat_paste", "Paste", [&](){
+            std::cout << "[Patterns] Paste\n";
+            if (!patClipboard.hasData) return;
+            size_t idx = getUISelectedPatternIndex(uiContext.get());
+            Pattern* p = sequencer->getPattern(idx); if (!p) return;
+            p->clear();
+            for (const auto& n : patClipboard.notes) { sequencer->addNoteToPattern(idx, n); }
+            p->setLength(patClipboard.lengthBeats);
+            savePatternsToConfig(userConfigPath);
+            refreshPatternGrid(uiContext.get());
+        }));
         y += 10;
-        patternsScreen->addChild(makeBtn("pat_nudge_l", "Nudge Left", [](){ std::cout << "[Patterns] Nudge Left" << std::endl; }));
-        patternsScreen->addChild(makeBtn("pat_nudge_r", "Nudge Right", [](){ std::cout << "[Patterns] Nudge Right" << std::endl; }));
+        auto nudgeBy = [&](int dir){
+            size_t idx = getUISelectedPatternIndex(uiContext.get());
+            Pattern* p = sequencer->getPattern(idx); if (!p) return;
+            int bpb = std::max(1, sequencer->getBeatsPerBar());
+            double step = (double)bpb / 16.0;
+            double len = std::max(0.0001, p->getLength());
+            std::vector<Note> notes;
+            for (size_t i=0;i<p->getNumNotes();++i) if (auto* n = p->getNote(i)) notes.push_back(*n);
+            p->clear(); p->setLength(len);
+            for (auto& n : notes) {
+                double s = n.startTime + step * (dir);
+                while (s < 0.0) s += len;
+                while (s >= len) s -= len;
+                n.startTime = s;
+                sequencer->addNoteToPattern(idx, n);
+            }
+            savePatternsToConfig(userConfigPath);
+            refreshPatternGrid(uiContext.get());
+        };
+        patternsScreen->addChild(makeBtn("pat_nudge_l", "Nudge Left", [&, nudgeBy](){ std::cout << "[Patterns] Nudge Left\n"; nudgeBy(-1); }));
+        patternsScreen->addChild(makeBtn("pat_nudge_r", "Nudge Right", [&, nudgeBy](){ std::cout << "[Patterns] Nudge Right\n"; nudgeBy(1); }));
         y += 10;
-        patternsScreen->addChild(makeBtn("pat_scale_half", "Scale 1/2x", [](){ std::cout << "[Patterns] Scale 1/2x" << std::endl; }));
-        patternsScreen->addChild(makeBtn("pat_scale_double", "Scale 2x", [](){ std::cout << "[Patterns] Scale 2x" << std::endl; }));
+        auto scaleTime = [&](double factor){
+            size_t idx = getUISelectedPatternIndex(uiContext.get());
+            Pattern* p = sequencer->getPattern(idx); if (!p) return;
+            double oldLen = std::max(0.0001, p->getLength());
+            std::vector<Note> notes;
+            for (size_t i=0;i<p->getNumNotes();++i) if (auto* n = p->getNote(i)) notes.push_back(*n);
+            p->clear();
+            double newLen = std::max(0.0001, oldLen * factor);
+            for (auto& n : notes) {
+                n.startTime *= factor;
+                n.duration *= factor;
+                while (n.startTime >= newLen) n.startTime -= newLen;
+                if (n.startTime + n.duration > newLen) n.duration = std::max(0.01, newLen - n.startTime);
+                sequencer->addNoteToPattern(idx, n);
+            }
+            p->setLength(newLen);
+            savePatternsToConfig(userConfigPath);
+            refreshPatternGrid(uiContext.get());
+        };
+        patternsScreen->addChild(makeBtn("pat_scale_half", "Scale 1/2x", [&, scaleTime](){ std::cout << "[Patterns] Scale 1/2x\n"; scaleTime(0.5); }));
+        patternsScreen->addChild(makeBtn("pat_scale_double", "Scale 2x", [&, scaleTime](){ std::cout << "[Patterns] Scale 2x\n"; scaleTime(2.0); }));
         y += 10;
-        patternsScreen->addChild(makeBtn("pat_tr_down12", "Transpose -12", [](){ std::cout << "[Patterns] Transpose -12" << std::endl; }));
-        patternsScreen->addChild(makeBtn("pat_tr_down1", "Transpose -1", [](){ std::cout << "[Patterns] Transpose -1" << std::endl; }));
-        patternsScreen->addChild(makeBtn("pat_tr_up1", "Transpose +1", [](){ std::cout << "[Patterns] Transpose +1" << std::endl; }));
-        patternsScreen->addChild(makeBtn("pat_tr_up12", "Transpose +12", [](){ std::cout << "[Patterns] Transpose +12" << std::endl; }));
+        auto transposeBy = [&](int semitones){
+            size_t idx = getUISelectedPatternIndex(uiContext.get());
+            Pattern* p = sequencer->getPattern(idx); if (!p) return;
+            for (size_t i=0;i<p->getNumNotes();++i) {
+                if (auto* n = p->getNote(i)) {
+                    int np = std::clamp(n->pitch + semitones, 0, 127);
+                    n->pitch = np;
+                }
+            }
+            savePatternsToConfig(userConfigPath);
+            refreshPatternGrid(uiContext.get());
+        };
+        patternsScreen->addChild(makeBtn("pat_tr_down12", "Transpose -12", [&, transposeBy](){ std::cout << "[Patterns] Transpose -12\n"; transposeBy(-12); }));
+        patternsScreen->addChild(makeBtn("pat_tr_down1", "Transpose -1", [&, transposeBy](){ std::cout << "[Patterns] Transpose -1\n"; transposeBy(-1); }));
+        patternsScreen->addChild(makeBtn("pat_tr_up1", "Transpose +1", [&, transposeBy](){ std::cout << "[Patterns] Transpose +1\n"; transposeBy(1); }));
+        patternsScreen->addChild(makeBtn("pat_tr_up12", "Transpose +12", [&, transposeBy](){ std::cout << "[Patterns] Transpose +12\n"; transposeBy(12); }));
     }
 
     // Footer transport and save/apply
@@ -3327,6 +3793,14 @@ int main(int argc, char* argv[]) {
         play->setBackgroundColor(Color(50,120,50));
         play->setTextColor(Color(255,255,255));
         play->setClickCallback([](){ std::cout << "[Patterns] Play audition" << std::endl; });
+        auto playPtr = play.get();
+        playPtr->setClickCallback([&](){
+            sequencer->setPlaybackMode(PlaybackMode::SinglePattern);
+            // Ensure audio plays the UI-selected pattern
+            size_t idx = getUISelectedPatternIndex(uiContext.get());
+            sequencer->setCurrentPattern(idx);
+            sequencer->start();
+        });
         patternsScreen->addChild(std::move(play));
 
         auto stop = std::make_unique<Button>("pat_stop", "Stop");
@@ -3334,7 +3808,7 @@ int main(int argc, char* argv[]) {
         stop->setSize(70, 28);
         stop->setBackgroundColor(Color(120,50,50));
         stop->setTextColor(Color(255,255,255));
-        stop->setClickCallback([](){ std::cout << "[Patterns] Stop audition" << std::endl; });
+        stop->setClickCallback([&](){ sequencer->stop(); });
         patternsScreen->addChild(std::move(stop));
 
         auto click = std::make_unique<Button>("pat_click", "Met: OFF");
@@ -3343,10 +3817,11 @@ int main(int argc, char* argv[]) {
         click->setBackgroundColor(Color(90,70,70));
         click->setTextColor(Color(255,255,255));
         auto clickPtr = click.get();
-        click->setClickCallback([clickPtr]() mutable { 
+        click->setClickCallback([clickPtr, &metronomeEnabled]() mutable { 
             bool on = clickPtr->getText().find("ON") == std::string::npos;
             clickPtr->setText(on?"Met: ON":"Met: OFF");
             clickPtr->setBackgroundColor(on ? Color(60,100,60) : Color(90,70,70));
+            metronomeEnabled.store(on, std::memory_order_relaxed);
         });
         patternsScreen->addChild(std::move(click));
 
@@ -3361,12 +3836,41 @@ int main(int argc, char* argv[]) {
         applyBtn->setSize(120, 28);
         applyBtn->setBackgroundColor(Color(70,100,140));
         applyBtn->setTextColor(Color(255,255,255));
-        applyBtn->setClickCallback([](){ std::cout << "[Patterns] Apply Now" << std::endl; });
+        applyBtn->setClickCallback([&](){ savePatternsToConfig(userConfigPath); });
         patternsScreen->addChild(std::move(applyBtn));
+
+        // Queue HUD
+        auto hud = std::make_unique<Label>("pat_queue_hud", "");
+        hud->setPosition(310, 744);
+        hud->setSize(260, 18);
+        hud->setTextColor(Color(200,220,255));
+        patternsScreen->addChild(std::move(hud));
     }
 
     // Add Patterns screen to context
     uiContext->addScreen(std::move(patternsScreen));
+    // Initialize Patterns screen grid from current pattern
+    refreshPatternGrid(uiContext.get());
+
+    // Pads for quick note audition (C4..G4)
+    if (auto* ps = uiContext->getScreen("patterns")) {
+        struct Pad { int pitch; const char* name; } pads[] = {{60,"C4"},{61,"C#4"},{62,"D4"},{63,"D#4"},{64,"E4"},{65,"F4"},{66,"F#4"},{67,"G4"}};
+        int x0 = 50, y0 = 540, w=70, h=40, gap=10;
+        for (int i=0;i<8;++i) {
+            auto btn = std::make_unique<Button>(std::string("pat_pad_")+std::to_string(i), pads[i].name);
+            btn->setPosition(x0 + i*(w+gap), y0);
+            btn->setSize(w, h);
+            btn->setBackgroundColor(Color(70,70,100));
+            btn->setTextColor(Color(255,255,255));
+            int pitch = pads[i].pitch;
+            btn->setClickCallback([&, pitch](){
+                try { synthesizer->noteOn(pitch, 0.9f, 0); } catch (...) {}
+                double bpm = sequencer->getTempo(); double secPerBeat = 60.0 / std::max(1.0, bpm);
+                pendingNoteOffs.push_back({pitch, 0, secPerBeat * 0.25}); // quarter-beat blip
+            });
+            ps->addChild(std::move(btn));
+        }
+    }
     
     // Create Effects screen
     auto effectsScreen = std::make_unique<Screen>("effects");
@@ -5827,7 +6331,8 @@ int main(int argc, char* argv[]) {
     sequencer->setNoteCallbacks(
         [&](int pitch, float velocity, int channel, const Envelope& env) {
             // Use per-note envelope from sequencer for clearer articulation
-            synthesizer->noteOn(pitch, velocity, env);
+            float v = applyVelocityCurve(velocity);
+            synthesizer->noteOn(pitch, v, env);
             if (midiOutput && midiOutput->isDeviceOpen()) {
                 try { midiOutput->sendNoteOn(channel, pitch, static_cast<int>(velocity * 127.0f)); } catch (...) {}
             }
@@ -5850,6 +6355,11 @@ int main(int argc, char* argv[]) {
     );
     
     // Set up audio callback (mutex declared earlier, reuse here)
+    // Metronome state (toggle updated from UI via metronomeEnabled atomic declared earlier)
+    int clickSamplesRemaining = 0;
+    float clickAmplitude = 0.4f;
+    int clickDecaySamples = 2205; // ~50ms at 44.1kHz
+
     audioEngine->setAudioCallback([&](float* outputBuffer, int numFrames) {
         std::lock_guard<std::mutex> lock(audioMutex);
         // Optionally process sequencer based on UI toggle to avoid duplicate-note issues when OFF
@@ -5888,6 +6398,28 @@ int main(int argc, char* argv[]) {
         // Then generate audio
         audioCallback(audioEngine.get(), synthesizer.get(), effectProcessor.get(),
                      sequencer.get(), waveformPtr, levelPtr, outputBuffer, numFrames);
+
+        // Metronome: add click at beat boundaries when enabled
+        if (metronomeEnabled.load(std::memory_order_relaxed)) {
+            double sr = audioEngine->getSampleRate(); if (sr < 1.0) sr = 44100.0;
+            // Detect boundary using precise position
+            static int lastBeat = -1;
+            double pos = sequencer->getPrecisePositionInBeats();
+            int beat = (int)std::floor(pos);
+            if (beat != lastBeat) { clickSamplesRemaining = clickDecaySamples; lastBeat = beat; }
+            // Synthesize simple decaying click (mono) added to both channels
+            for (int i=0; i<numFrames; ++i) {
+                if (clickSamplesRemaining > 0) {
+                    float env = (float)clickSamplesRemaining / (float)clickDecaySamples;
+                    float s = clickAmplitude * env;
+                    outputBuffer[2*i]   += s;
+                    outputBuffer[2*i+1] += s;
+                    --clickSamplesRemaining;
+                }
+            }
+        } else {
+            clickSamplesRemaining = 0;
+        }
     });
     
     // Deferred apply: if synth settings were loaded, re-apply once after UI has fully initialized
@@ -6108,6 +6640,49 @@ int main(int argc, char* argv[]) {
                         }
                     }
 
+                    // Patterns page: pattern header dropdowns (reverse order)
+                    if (!dropdownHandled && uiContext->getActiveScreenId() == std::string("patterns")) {
+                        // Handle velocity curve first (rightmost)
+                        if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("pat_velcurve"))) {
+                            if (dropdown->isDropdownOpen()) {
+                                dropdownHandled = dropdown->handleInput(inputEvent);
+                                if (inputEvent.type == InputEventType::TouchPress && !dropdownHandled) {
+                                    dropdownHandled = true; // consume to avoid click-through
+                                }
+                            }
+                        }
+                        if (!dropdownHandled) {
+                            if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("pat_quantize"))) {
+                                if (dropdown->isDropdownOpen()) {
+                                    dropdownHandled = dropdown->handleInput(inputEvent);
+                                    if (inputEvent.type == InputEventType::TouchPress && !dropdownHandled) {
+                                        dropdownHandled = true;
+                                    }
+                                }
+                            }
+                        }
+                        if (!dropdownHandled) {
+                            if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("pat_len"))) {
+                                if (dropdown->isDropdownOpen()) {
+                                    dropdownHandled = dropdown->handleInput(inputEvent);
+                                    if (inputEvent.type == InputEventType::TouchPress && !dropdownHandled) {
+                                        dropdownHandled = true;
+                                    }
+                                }
+                            }
+                        }
+                        if (!dropdownHandled) {
+                            if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("pat_select"))) {
+                                if (dropdown->isDropdownOpen()) {
+                                    dropdownHandled = dropdown->handleInput(inputEvent);
+                                    if (inputEvent.type == InputEventType::TouchPress && !dropdownHandled) {
+                                        dropdownHandled = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     // Sequencer page: jump, sections editor, and segments MVP dropdowns (reverse order)
                     if (!dropdownHandled && uiContext->getActiveScreenId() == std::string("sequencer")) {
                         // Handle the quick Jump dropdown
@@ -6159,6 +6734,15 @@ int main(int argc, char* argv[]) {
 
                     // Patterns page: handle its dropdowns in reverse order
                     if (!dropdownHandled && uiContext->getActiveScreenId() == std::string("patterns")) {
+                        // pat_velcurve
+                        if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("pat_velcurve"))) {
+                            if (dropdown->isDropdownOpen()) {
+                                dropdownHandled = dropdown->handleInput(inputEvent);
+                                if (inputEvent.type == InputEventType::TouchPress && !dropdownHandled) {
+                                    dropdownHandled = true; // consume click-through
+                                }
+                            }
+                        }
                         // pat_quantize
                         if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("pat_quantize"))) {
                             if (dropdown->isDropdownOpen()) {
@@ -6286,6 +6870,47 @@ int main(int argc, char* argv[]) {
                     int bar = sequencer->getCurrentBar();
                     int beat = sequencer->getCurrentBeat();
                     hud->setText(std::string("Bar ") + std::to_string(bar) + " Beat " + std::to_string(beat));
+                }
+            }
+            // Pending quantized pattern change service and Patterns playhead
+            if (auto* ps = uiContext->getScreen("patterns")) {
+                if (auto* grid = dynamic_cast<SequencerGrid*>(ps->getChild("pat_grid"))) {
+                    // Determine current pattern length and grid columns
+                    Pattern* pat = sequencer->getPattern(sequencer->getCurrentPatternIndex());
+                    if (pat) {
+                        int rows=0, cols=0; grid->getGridSize(rows, cols);
+                        cols = std::max(cols, 1);
+                        double patLen = std::max(0.0001, pat->getLength());
+                        // position modulo pattern length for looping
+                        double pos = sequencer->getPositionInBeats();
+                        double posMod = std::fmod(pos, patLen);
+                        if (posMod < 0.0) posMod += patLen;
+                        // map to column
+                        double colF = (posMod / patLen) * cols;
+                        int col = std::max(0, std::min(cols - 1, (int)std::floor(colF + 1e-6)));
+                        grid->setPlaybackPosition(col);
+                    }
+                }
+                // Service pending pattern change on beat/bar boundaries
+                if (pendingPatChange.active) {
+                    static int lastBarSrv = -1; static int lastBeatSrv = -1;
+                    int bar = sequencer->getCurrentBar();
+                    int beat = sequencer->getCurrentBeat();
+                    bool fire = false;
+                    if (pendingPatChange.when == Sequencer::Timing::OnBar) {
+                        if (bar != lastBarSrv) fire = true;
+                    } else if (pendingPatChange.when == Sequencer::Timing::OnBeat) {
+                        if (beat != lastBeatSrv) fire = true;
+                    }
+                    lastBarSrv = bar; lastBeatSrv = beat;
+                    if (pendingPatChange.when == Sequencer::Timing::Immediate) fire = true;
+                    if (fire) {
+                        sequencer->setCurrentPattern((size_t)pendingPatChange.targetIndex);
+                        if (!pendingPatChange.keepPhase) sequencer->setPositionInBeats(0.0);
+                        pendingPatChange.active = false;
+                        refreshPatternGrid(uiContext.get());
+                        if (auto* hud = dynamic_cast<Label*>(ps->getChild("pat_queue_hud"))) hud->setText("");
+                    }
                 }
             }
         }
@@ -7022,6 +7647,24 @@ int main(int argc, char* argv[]) {
                     dropdown->renderDropdownList(sdlDisplayManager.get());
                 }
             }
+            // Patterns: render open dropdown lists
+            if (uiContext->getActiveScreenId() == std::string("patterns")) {
+                if (auto* dd = dynamic_cast<DropdownMenu*>(activeScreen->getChild("pat_select"))) {
+                    if (dd->isDropdownOpen()) dd->renderDropdownList(sdlDisplayManager.get());
+                }
+                if (auto* dd = dynamic_cast<DropdownMenu*>(activeScreen->getChild("pat_len"))) {
+                    if (dd->isDropdownOpen()) dd->renderDropdownList(sdlDisplayManager.get());
+                }
+                if (auto* dd = dynamic_cast<DropdownMenu*>(activeScreen->getChild("pat_quantize"))) {
+                    if (dd->isDropdownOpen()) dd->renderDropdownList(sdlDisplayManager.get());
+                }
+            }
+            // Patterns: render velocity curve dropdown list if open
+            if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("pat_velcurve"))) {
+                if (dropdown->isDropdownOpen()) {
+                    dropdown->renderDropdownList(sdlDisplayManager.get());
+                }
+            }
             
             // Effects tab: effect type dropdowns (multi-slot)
             for (int i = 0; i < fxSlotCount; ++i) {
@@ -7101,6 +7744,50 @@ int main(int argc, char* argv[]) {
             if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("midi_device_selector"))) {
                 if (dropdown->isDropdownOpen()) {
                     dropdown->renderDropdownList(sdlDisplayManager.get());
+                }
+            }
+
+            // Patterns grid overlay (optional)
+            if (uiContext->getActiveScreenId() == std::string("patterns")) {
+                if (auto* patScreen = uiContext->getScreen("patterns")) {
+                    if (auto* grid = dynamic_cast<Button*>(patScreen->getChild("patterns_grid"))) {
+                        bool on = grid->getText().find("ON") != std::string::npos;
+                        if (on) {
+                            const int step = 40;
+                            int w = sdlDisplayManager->getWidth();
+                            int h = sdlDisplayManager->getHeight();
+                            // Patterns overlay grid lines toned down (subtle grey)
+                            Color gc(150, 150, 160, 255);
+                            // Grid lines
+                            for (int x = 0, i = 0; x < w; x += step, ++i) sdlDisplayManager->drawLine(x, 0, x, h, gc);
+                            for (int y = 0, j = 0; y < h; y += step, ++j) sdlDisplayManager->drawLine(0, y, w, y, gc);
+                            // Labels (numbers bottom, letters right)
+                            Color lc(120, 160, 190, 255);
+                            for (int x = 0, i = 0; x < w; x += step, ++i) {
+                                std::string s = std::to_string(i);
+                                int tx = x + 4; int ty = h - 16;
+                                sdlDisplayManager->drawText(tx, ty, s, nullptr, lc);
+                            }
+                            auto toLetters = [](int idx){
+                                std::string r; int n = idx + 1; while (n > 0) { int rem = (n - 1) % 26; r.push_back(char('A' + rem)); n = (n - 1) / 26; }
+                                return std::string(r.rbegin(), r.rend());
+                            };
+                            for (int y = 0, j = 0; y < h; y += step, ++j) {
+                                std::string s = toLetters(j);
+                                int tx = w - 28; int ty = y + 2;
+                                sdlDisplayManager->drawText(tx, ty, s, nullptr, lc);
+                            }
+                            // Debug overlay: show Velocity->Volume and Velocity->Filter Cutoff amounts
+                            auto fmtAmt = [](std::optional<float> a){
+                                if (!a.has_value()) return std::string("0.00");
+                                std::stringstream ss; ss.setf(std::ios::fixed); ss<<std::setprecision(2)<<a.value(); return ss.str();
+                            };
+                            auto aVol = synthesizer->getModAmount("Velocity","Volume");
+                            auto aCut = synthesizer->getModAmount("Velocity","Filter Cutoff");
+                            std::string dbg = std::string("Vel->Vol: ") + fmtAmt(aVol) + "  |  Vel->Cutoff: " + fmtAmt(aCut);
+                            sdlDisplayManager->drawText(20, 20, dbg, nullptr, Color(200, 220, 255));
+                        }
+                    }
                 }
             }
 

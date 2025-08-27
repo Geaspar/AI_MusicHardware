@@ -204,4 +204,21 @@ void ModulationMatrix::update() {
     }
 }
 
+std::optional<float> ModulationMatrix::getConnectionAmount(const std::string& sourceName,
+                                                           const std::string& destinationName) const {
+    auto srcIt = sourceMap_.find(sourceName);
+    auto dstIt = destinationMap_.find(destinationName);
+    if (srcIt == sourceMap_.end() || dstIt == destinationMap_.end()) {
+        return std::nullopt;
+    }
+    ModulationSource* src = srcIt->second;
+    ModulationDestination* dst = dstIt->second;
+    for (const auto& conn : connections_) {
+        if (conn && conn->getSource() == src && conn->getDestination() == dst) {
+            return conn->getAmount();
+        }
+    }
+    return std::nullopt;
+}
+
 } // namespace AIMusicHardware

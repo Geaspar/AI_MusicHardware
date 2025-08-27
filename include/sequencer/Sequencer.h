@@ -141,6 +141,13 @@ public:
     // Call this at regular intervals from the audio thread
     void process(double sampleTime);
 
+    // Thread-safe helpers for UI/editor interactions
+    // These methods take the internal pattern mutex to avoid races with the
+    // audio thread while editing pattern data from the UI thread.
+    void setColumnVelocity(size_t patternIndex, int column16th, float velocity);
+    void addNoteToPattern(size_t patternIndex, const Note& note);
+    void removeNotesAt(size_t patternIndex, int pitch, double startBeat, double epsilon = 1e-6);
+
     // Synchronize with audio engine - allows accurate timing coordination
     void synchronizeWithAudioEngine(double audioEngineTimeInSeconds, double engineSampleRate);
 

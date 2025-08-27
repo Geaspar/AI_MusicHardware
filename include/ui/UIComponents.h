@@ -339,6 +339,13 @@ public:
     bool isCellActive(int row, int column) const;
     void clearAllCells();
     
+    // Optional per-cell intensity (0..1). When set (>=0), active cell color
+    // brightness is scaled for that cell, useful for velocity visualization.
+    void setCellIntensity(int row, int column, float intensity);
+    
+    // Optional per-cell text overlay (e.g., numeric values)
+    void setCellText(int row, int column, const std::string& text);
+    
     // Appearance
     void setActiveColor(const Color& color);
     void setInactiveColor(const Color& color);
@@ -362,6 +369,8 @@ private:
     int rows_;
     int columns_;
     std::vector<bool> cells_; // row-major order
+    std::vector<float> cellIntensity_; // -1 = unset, else 0..1
+    std::vector<std::string> cellText_; // optional overlay text per cell
     int cursorRow_;
     int cursorColumn_;
     int playbackPosition_;
