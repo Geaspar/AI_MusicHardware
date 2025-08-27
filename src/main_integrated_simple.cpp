@@ -2632,6 +2632,8 @@ int main(int argc, char* argv[]) {
     std::unordered_map<std::string,int> sectionPatternBinding; // name->patternIndex
     // Pattern clipboard (Copy/Paste)
     struct PatternClipboard { std::vector<Note> notes; double lengthBeats = 16.0; bool hasData=false; } patClipboard;
+    // Randomize density (0..1)
+    float randomizeDensity = 0.25f;
 
     // Velocity curve for sequencer-triggered notes
     enum class VelocityCurve { Linear=0, Exponential=1, Logarithmic=2 };
@@ -3689,7 +3691,8 @@ int main(int argc, char* argv[]) {
             int scaleCount = (int)(sizeof(scaleInts)/sizeof(scaleInts[0]));
             auto& vcols = patternColumnVelocity[(int)idx]; if (vcols.empty()) vcols.assign(16, 0.8f);
             for (int col=0; col<16; ++col) {
-                if ((rand() % 100) < 25) {
+                int threshold = static_cast<int>(std::round(randomizeDensity * 100.0f));
+                if ((rand() % 100) < std::max(0, std::min(100, threshold))) {
                     int si = scaleInts[rand() % scaleCount];
                     int pitch = base + si;
                     float vel = (col < (int)vcols.size() ? vcols[col] : 0.8f);
@@ -3701,6 +3704,16 @@ int main(int argc, char* argv[]) {
             refreshPatternGrid(uiContext.get());
         }));
         y += 10;
+        // Randomize density slider (0..100%)
+        auto dens = std::make_unique<Slider>("pat_rand_density", "Density", sx, y);
+        dens->setSize(w, 60);
+        dens->setRange(0.0f, 1.0f);
+        dens->setValue(randomizeDensity);
+        dens->setValueFormatter([](float v){ std::stringstream ss; ss<<std::fixed<<std::setprecision(0)<<(v*100.0f)<<"%"; return ss.str(); });
+        Slider* densPtr = dens.get();
+        densPtr->setValueChangeCallback([&](float v){ randomizeDensity = std::clamp(v,0.0f,1.0f); });
+        y += 70;
+        patternsScreen->addChild(std::move(dens));
         patternsScreen->addChild(makeBtn("pat_copy", "Copy", [&](){
             std::cout << "[Patterns] Copy\n";
             size_t idx = getUISelectedPatternIndex(uiContext.get());
@@ -3783,6 +3796,34 @@ int main(int argc, char* argv[]) {
         patternsScreen->addChild(makeBtn("pat_tr_down1", "Transpose -1", [&, transposeBy](){ std::cout << "[Patterns] Transpose -1\n"; transposeBy(-1); }));
         patternsScreen->addChild(makeBtn("pat_tr_up1", "Transpose +1", [&, transposeBy](){ std::cout << "[Patterns] Transpose +1\n"; transposeBy(1); }));
         patternsScreen->addChild(makeBtn("pat_tr_up12", "Transpose +12", [&, transposeBy](){ std::cout << "[Patterns] Transpose +12\n"; transposeBy(12); }));
+
+        // Quick Section Bindings A..F for current UI-selected pattern
+        y += 10;
+        auto bindLbl = std::make_unique<Label>("pat_bind_lbl", "Bind to Section:");
+        bindLbl->setPosition(sx, y);
+        bindLbl->setSize(w, 16);
+        bindLbl->setTextColor(Color(180,180,200));
+        y += 20; patternsScreen->addChild(std::move(bindLbl));
+        auto addBindBtn = [&](const std::string& sec){
+            auto b = std::make_unique<Button>(std::string("pat_bind_")+sec, std::string("Bind ")+sec);
+            b->setPosition(sx, y);
+            b->setSize(w, h);
+            b->setBackgroundColor(Color(70,70,100));
+            b->setTextColor(Color(255,255,255));
+            b->setClickCallback([&, sec](){
+                size_t idx = getUISelectedPatternIndex(uiContext.get());
+                sectionPatternBinding[sec] = static_cast<int>(idx);
+                std::cout << "[Patterns] Bound Section "<<sec<<" -> Pattern "<<(idx+1)<<"\n";
+                savePatternsToConfig(userConfigPath);
+            });
+            y += dy; return b;
+        };
+        patternsScreen->addChild(addBindBtn("A"));
+        patternsScreen->addChild(addBindBtn("B"));
+        patternsScreen->addChild(addBindBtn("C"));
+        patternsScreen->addChild(addBindBtn("D"));
+        patternsScreen->addChild(addBindBtn("E"));
+        patternsScreen->addChild(addBindBtn("F"));
     }
 
     // Footer transport and save/apply
@@ -3831,7 +3872,7 @@ int main(int argc, char* argv[]) {
         autosaveLbl->setTextColor(Color(180,200,220));
         patternsScreen->addChild(std::move(autosaveLbl));
 
-        auto applyBtn = std::make_unique<Button>("pat_apply", "Apply Now");
+        auto applyBtn = std::make_unique<Button>("pat_apply", "Apply Now (Save)");
         applyBtn->setPosition(1108, 738);
         applyBtn->setSize(120, 28);
         applyBtn->setBackgroundColor(Color(70,100,140));
@@ -3845,11 +3886,36 @@ int main(int argc, char* argv[]) {
         hud->setSize(260, 18);
         hud->setTextColor(Color(200,220,255));
         patternsScreen->addChild(std::move(hud));
+
+        // Clarify save behavior
+        auto saveHint = std::make_unique<Label>("pat_save_hint", "Edits apply live. Apply saves to disk.");
+        saveHint->setPosition(870, 770);
+        saveHint->setSize(360, 16);
+        saveHint->setTextColor(Color(150,160,180));
+        patternsScreen->addChild(std::move(saveHint));
     }
 
     // Add Patterns screen to context
     uiContext->addScreen(std::move(patternsScreen));
-    // Initialize Patterns screen grid from current pattern
+    // Initialize Patterns screen grid from current pattern and restore persisted settings
+    // Restore velocity curve selection
+    try {
+        if (loadedConfig.contains("patterns") && loadedConfig["patterns"].contains("velocity_curve")) {
+            std::string vc = loadedConfig["patterns"]["velocity_curve"].get<std::string>();
+            int idx = (vc=="Exponential"?1:(vc=="Logarithmic"?2:0));
+            if (auto* ps = uiContext->getScreen("patterns")) {
+                if (auto* dd = dynamic_cast<DropdownMenu*>(ps->getChild("pat_velcurve"))) {
+                    dd->selectItemSilently(idx);
+                    // Apply to engine state
+                    switch (idx) {
+                        case 1: velocityCurveMode.store(static_cast<int>(VelocityCurve::Exponential), std::memory_order_relaxed); break;
+                        case 2: velocityCurveMode.store(static_cast<int>(VelocityCurve::Logarithmic), std::memory_order_relaxed); break;
+                        default: velocityCurveMode.store(static_cast<int>(VelocityCurve::Linear), std::memory_order_relaxed); break;
+                    }
+                }
+            }
+        }
+    } catch (...) {}
     refreshPatternGrid(uiContext.get());
 
     // Pads for quick note audition (C4..G4)
