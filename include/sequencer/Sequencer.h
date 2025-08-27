@@ -147,6 +147,18 @@ public:
     // Get precise timing information
     double getPrecisePositionInBeats() const;
     double getPreciseBeatTime() const;  // Returns time in seconds per beat
+
+    // Resequencing MVP API (Phase A)
+    enum class Timing { Immediate, OnBeat, OnBar };
+    void defineSections(const std::vector<std::pair<std::string,double>>& sectionsInBeats);
+    void jumpToSection(const std::string& name, Timing when = Timing::OnBar);
+    void queueSection(const std::string& name, Timing when = Timing::OnBar); // alias to jump
+    void nextSection(Timing when = Timing::OnBar);
+    void prevSection(Timing when = Timing::OnBar);
+    std::vector<std::string> getSectionNames() const;
+    std::string getCurrentSectionName() const;
+    int getBeatsPerBar() const { return beatsPerBar_; }
+    std::vector<std::pair<std::string,double>> getSectionDefinitions() const { return sections_; }
     
 private:
     // Pattern processing method for audio thread
@@ -197,6 +209,18 @@ private:
     double lastSyncTimeSeconds_;
     double beatTimeSeconds_;       // Time in seconds for one beat at current tempo
     mutable std::mutex syncMutex_; // Protect synchronization state
+
+    // Resequencing MVP state
+    std::vector<std::pair<std::string,double>> sections_; // name -> startBeat
+    int currentSectionIndex_ = 0;
+    struct PendingJump {
+        bool active = false;
+        double targetBeat = 0.0;
+        Timing timing = Timing::OnBar;
+    } pendingJump_;
+
+    void scheduleJumpToBeat(double beat, Timing when);
+    void servicePendingJump(double previousPosition, double currentPosition);
 };
 
 } // namespace AIMusicHardware

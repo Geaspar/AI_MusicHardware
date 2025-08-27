@@ -158,6 +158,26 @@ pattern->setStepTiming(12, -0.02f); // Step 12 slightly early
 
 The sequencer includes adaptive capabilities inspired by game audio middleware:
 
+### MVP Resequencing Plan (Phase A → C)
+
+- Phase A: Resequencing hooks on current Sequencer
+  - API (new): `queueSection(name, when)`, `jumpToSection(name, when)`, `nextSection(when)`, `prevSection(when)`, with `when` ∈ {Immediate, OnBeat, OnBar}.
+  - Minimal section registry: default A/B/C at 0/1/2 bars; configurable via `defineSections({{"A",0},{"B",4},...})`.
+  - Scheduling: OnBar/OnBeat executed at musical boundaries; Immediate applies right away.
+  - Sensors: existing “Resequence: Next/Prev/Jump A/B/C/Shuffle” now call this API (OnBar).
+
+- Phase B: Segment scaffolding
+  - Introduce light `Segment` data (length, tempo, tags, entry/exit points) and `SegmentTransition` (Immediate/NextBeat/NextBar/ExitPoint, probability, priority).
+  - Minimal `SegmentSequencer` to schedule transitions at boundaries; callbacks for UI.
+
+- Phase C: Conditions + probabilities
+  - Transition parameter conditions (>, <, hysteresis), weighted random selection.
+  - EventBus hooks to trigger resequencing via events.
+
+Notes
+- Horizontal re-sequencing docs (see `HORIZONTAL_RESEQUENCING_IMPLEMENTATION.md`) inform Phase B/C.
+- MVP avoids DSP changes; resequencing manipulates position/queue only.
+
 ```cpp
 // State-based sequencing
 sequencer->defineState("calm", {
@@ -367,3 +387,69 @@ sequencer->mapControllerToScene(2, "full");
 ```
 
 The sequencer system provides professional-grade functionality suitable for both studio production and live performance, with adaptive capabilities that respond intelligently to musical context and user input.
+
+## Patterns Page Layout (Draft)
+
+Here’s a clean, focused Patterns page layout that fits your grid system and scales.
+
+**Layout Overview**
+- Header: pattern selection + basics (left), quantize/mode (right).
+- Main editor: step grid with piano-roll-lite lane and velocity row.
+- Sidebar: pattern ops, randomize, copy/paste, transpose, utilities.
+- Footer: audition transport, record arm (later), save/apply status.
+
+**Header Bar**
+- Pattern Select: Prev/Next, dropdown, name field, Duplicate/Delete.
+- Length: dropdown (1/2/4/8/16 bars), per-pattern swing, humanize, transpose.
+- Quantize: dropdown (Off/OnBeat/OnBar), Keep Phase toggle.
+- Mode: Playback mode readout (Single/SectionDriven/Song) + quick switch.
+
+**Editor Grid**
+- Piano-Roll Lite: 1–2 octaves on Y, 16th steps on X; monophonic toggle for MVP.
+- Velocity Row: single row under grid with per-step velocity handles.
+- Step Tools: Tie/Ratchet per-step (disabled in MVP; placeholders OK).
+- Mini Timeline: above grid showing bar boundaries and pattern length.
+
+**Right Sidebar**
+- Actions: New, Duplicate, Clear, Randomize (safe).
+- Edit Ops: Copy/Paste, Nudge Left/Right, Scale Length (2x/½).
+- Transpose: -12/-1/+1/+12 buttons with preview.
+- Bindings (compact): Section→Pattern quick set list (A/B/C/…) for SectionDriven.
+
+**Footer**
+- Audition: Play/Stop loop of the current pattern; Metronome toggle.
+- Quantize Queue HUD: “Pattern X queued OnBar” when changes are scheduled.
+- Record (Phase 2): Arm, Count-in, Source: Virtual Keyboard.
+- Save: Autosave ON indicator + “Apply Now” button for explicit commit if needed.
+
+**UI IDs (proposed)**
+- Header: `pat_prev`, `pat_select`, `pat_next`, `pat_name`, `pat_new`, `pat_dup`, `pat_del`, `pat_len`, `pat_swing`, `pat_human`, `pat_transpose`, `pat_quantize`, `pat_keep_phase`, `pat_mode`.
+- Grid: `pat_grid`, `pat_velocity_row`, `pat_tie_step_i`, `pat_ratchet_step_i`.
+- Sidebar: `pat_clear`, `pat_rand_safe`, `pat_copy`, `pat_paste`, `pat_nudge_l`, `pat_nudge_r`, `pat_scale_half`, `pat_scale_double`, `pat_tr_down12`, `pat_tr_down1`, `pat_tr_up1`, `pat_tr_up12`, `pat_bind_A`..`pat_bind_F`.
+- Footer: `pat_play`, `pat_stop`, `pat_click`, `pat_record_arm`, `pat_countin`, `pat_apply`, `pat_autosave`.
+
+**Grid Placement (suggested)**
+- Header band: full-width top row; split left (selection/length) and right (quantize/mode).
+- Editor: centered block spanning most width; velocity row directly underneath.
+- Sidebar: right column stack aligned to grid, consistent with Sequencer page.
+- Footer: bottom band, left-aligned transport; right-aligned save/status.
+
+**MVP Scope**
+- Pattern pool: 64 slots; selector + name.
+- Length control: 1, 2, 4, 8, 16 bars; redraw grid dynamically.
+- Grid editing: note toggles per 16th and a single velocity row.
+- Actions: New, Duplicate, Clear, Randomize (safe).
+- Audition: local loop play/stop of the current pattern.
+- Persistence: autosave to `user_config` on change; Apply button syncs immediately.
+
+**Engine Wiring**
+- Pattern Store: `addPattern`, `duplicatePattern`, `clear`, `setLength`, `addNote`, `removeNote`, `setVelocity(step, v)`.
+- Sequencer Link: `setCurrentPattern(id)`, `getCurrentPatternId()`.
+- Quantize: on pattern switch, schedule OnBar by default; option to Immediate/OnBeat via `pat_quantize`.
+- Section Binding: write `sequencer.sectionPatterns` when using quick bindings.
+
+**Acceptance (MVP)**
+- Create/rename a pattern, set length, place steps, audition loop reliably.
+- Duplicate, clear, and safe-randomize produce expected results.
+- Pattern switches honor quantize and reflect in HUD.
+- Autosave and Apply persist/reload patterns across restarts.

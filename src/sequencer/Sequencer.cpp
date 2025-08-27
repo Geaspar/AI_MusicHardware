@@ -181,6 +181,10 @@ Sequencer::Sequencer(double tempo, int beatsPerBar)
       audioEngineTimeOffset_(0.0),
       lastSyncTimeSeconds_(0.0),
       beatTimeSeconds_(60.0 / tempo) {  // Initialize beat time based on tempo
+    // Default sections A/B/C at 0, 4, 8 beats
+    sections_.push_back({"A", 0.0});
+    sections_.push_back({"B", static_cast<double>(beatsPerBar_) });
+    sections_.push_back({"C", static_cast<double>(2 * beatsPerBar_) });
 }
 
 Sequencer::~Sequencer() {
@@ -324,6 +328,92 @@ double Sequencer::getPrecisePositionInBeats() const {
 double Sequencer::getPreciseBeatTime() const {
     std::lock_guard<std::mutex> lock(syncMutex_);
     return beatTimeSeconds_;
+}
+
+// Resequencing MVP API
+void Sequencer::defineSections(const std::vector<std::pair<std::string,double>>& sectionsInBeats) {
+    sections_ = sectionsInBeats;
+    if (sections_.empty()) {
+        sections_.push_back({"A", 0.0});
+    }
+    currentSectionIndex_ = 0;
+}
+
+void Sequencer::scheduleJumpToBeat(double beat, Timing when) {
+    if (when == Timing::Immediate) {
+        setPositionInBeats(beat);
+        // Update current section index to closest
+        int best = 0; double bestDiff = 1e9;
+        for (int i=0;i<(int)sections_.size();++i) {
+            double d = std::abs(sections_[i].second - beat);
+            if (d < bestDiff) { bestDiff = d; best = i; }
+        }
+        currentSectionIndex_ = best;
+    } else {
+        pendingJump_.active = true;
+        pendingJump_.targetBeat = beat;
+        pendingJump_.timing = when;
+    }
+}
+
+void Sequencer::servicePendingJump(double previousPosition, double currentPosition) {
+    if (!pendingJump_.active) return;
+    if (pendingJump_.timing == Timing::OnBar) {
+        int prevBar = static_cast<int>(std::floor(previousPosition / beatsPerBar_));
+        int currBar = static_cast<int>(std::floor(currentPosition / beatsPerBar_));
+        if (currBar != prevBar) {
+            setPositionInBeats(pendingJump_.targetBeat);
+            pendingJump_.active = false;
+        }
+    } else if (pendingJump_.timing == Timing::OnBeat) {
+        int prevBeat = static_cast<int>(std::floor(previousPosition));
+        int currBeat = static_cast<int>(std::floor(currentPosition));
+        if (currBeat != prevBeat) {
+            setPositionInBeats(pendingJump_.targetBeat);
+            pendingJump_.active = false;
+        }
+    }
+}
+
+void Sequencer::jumpToSection(const std::string& name, Timing when) {
+    for (size_t i = 0; i < sections_.size(); ++i) {
+        if (sections_[i].first == name) {
+            currentSectionIndex_ = static_cast<int>(i);
+            scheduleJumpToBeat(sections_[i].second, when);
+            return;
+        }
+    }
+}
+
+void Sequencer::queueSection(const std::string& name, Timing when) {
+    jumpToSection(name, when);
+}
+
+void Sequencer::nextSection(Timing when) {
+    if (sections_.empty()) return;
+    currentSectionIndex_ = (currentSectionIndex_ + 1) % static_cast<int>(sections_.size());
+    scheduleJumpToBeat(sections_[currentSectionIndex_].second, when);
+}
+
+void Sequencer::prevSection(Timing when) {
+    if (sections_.empty()) return;
+    currentSectionIndex_ = (currentSectionIndex_ - 1);
+    if (currentSectionIndex_ < 0) currentSectionIndex_ = static_cast<int>(sections_.size()) - 1;
+    scheduleJumpToBeat(sections_[currentSectionIndex_].second, when);
+}
+
+std::vector<std::string> Sequencer::getSectionNames() const {
+    std::vector<std::string> names;
+    for (const auto& s : sections_) names.push_back(s.first);
+    return names;
+}
+
+std::string Sequencer::getCurrentSectionName() const {
+    if (sections_.empty()) return std::string();
+    int idx = currentSectionIndex_;
+    if (idx < 0) idx = 0;
+    if (idx >= static_cast<int>(sections_.size())) idx = static_cast<int>(sections_.size()) - 1;
+    return sections_[idx].first;
 }
 
 void Sequencer::addPattern(std::unique_ptr<Pattern> pattern) {
@@ -659,6 +749,9 @@ void Sequencer::processSinglePattern(double deltaBeats) {
         currentPosition = positionInBeats_;
     }
 
+    // Service any pending resequencing at musical boundaries
+    servicePendingJump(previousPosition, currentPosition);
+
     // Define a small epsilon for floating-point comparisons with better precision
     constexpr double EPSILON = 1e-9; // Smaller epsilon for more precise comparisons
 
@@ -814,6 +907,9 @@ void Sequencer::processSongArrangement(double deltaBeats) {
         positionInBeats_ += deltaBeats;
         currentPosition = positionInBeats_;
     }
+
+    // Service any pending resequencing at musical boundaries
+    servicePendingJump(previousPosition, currentPosition);
 
     // Define a small epsilon for floating-point comparisons with better precision
     constexpr double EPSILON = 1e-9; // Smaller epsilon for more precise comparisons

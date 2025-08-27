@@ -140,6 +140,7 @@ set(EFFECTS_SOURCES
     src/effects/EQ.cpp
     src/effects/Filter.cpp
     src/effects/Modulation.cpp
+    src/effects/Tremolo.cpp
     src/effects/Phaser.cpp
     src/effects/Reverb.cpp
     src/effects/Saturation.cpp
@@ -152,6 +153,9 @@ set(EFFECTS_SOURCES
     src/effects/FormantFilter.cpp
     src/effects/FDNReverb.cpp
     src/effects/PlateReverb.cpp
+    src/effects/PingPongDelay.cpp
+    src/effects/Wavefolder.cpp
+    src/effects/RingModulator.cpp
 )
 
 set(BASIC_AUDIO_SOURCES
@@ -175,6 +179,7 @@ set(SEQUENCER_SOURCES
     src/sequencer/Sequencer.cpp
     src/sequencer/MidiFile.cpp
     src/sequencer/AdaptiveSequencer.cpp
+    src/sequencer/SegmentSequencer.cpp
 )
 
 set(PRESET_SOURCES
@@ -674,6 +679,8 @@ if(SDL2_FOUND)
         AIMusicCore
         ${SDL2_LIBRARIES}
     )
+    # Ensure SDL_ttf text rendering is compiled in
+    target_compile_definitions(AIMusicHardwareIntegrated PRIVATE HAVE_SDL_TTF)
     if(SDL2_TTF_LIBRARIES)
         target_link_libraries(AIMusicHardwareIntegrated PRIVATE ${SDL2_TTF_LIBRARIES})
     else()

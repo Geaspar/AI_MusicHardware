@@ -138,9 +138,178 @@ The AIMusicHardware project has reached a significant milestone with multiple co
 - **Status**: 🟢 **COMPLETE**
 - **Goal**: Upgrade the synthesis engine to a real-time, frequency-domain-based approach inspired by the Vital synthesizer.
 - **Benefits**: This will enable advanced, real-time spectral morphing and manipulation, significantly increasing sound design capabilities.
+
+## 📅 2025-08-25 — UI Grid + Sensors Enhancements (Today)
+
+### What We Completed Today
+- Effects and Sensors UI polish:
+  - Stabilized dropdown z-order and click-through prevention across Main/Effects/Sensors.
+  - Added Sensors grid overlay with 40px spacing and labels:
+    - X-axis numbered along bottom (0,1,2,…).
+    - Y-axis lettered along right edge (A,B,…,Z,AA,…).
+  - Aligned Sensors rows to gridlines for precise layout:
+    - Slot row bottom on K, label also on K.
+    - Effect row bottom on L, label also on L.
+    - Parameter row and label bottom on M.
+- Effects sync upgrades:
+  - Added tempo Sync to Delay and PingPongDelay, using musical divisions (1/1..1/16, incl. 1/8T).
+  - Preserved Free modes with appropriate units; Sync state persisted per slot.
+- Sensors persistence:
+  - Fixed lane mappings save/load and introduced forward-compatible storage for amount/invert.
+
+### Sensors Page — Phase 1 Implementation (Today)
+- Targets per lane: Added compact Destination selector using the first dropdown per lane.
+  - Options: None, Synth, Sequencer, Effects Slot 1..5.
+  - Param list repopulates dynamically with `selectItemSilently(0)` to avoid blanks.
+- Auto-populated Effect parameters: Centralized registry maps effect type → parameter names so the Param dropdown reflects the chosen effect.
+- Per-lane filtering UI:
+  - Smooth and Threshold vertical sliders with labels centered above each slider.
+  - Grid-aligned positioning (Lane 1 reference):
+    - Smooth label sits at 4N; Smooth slider top at N.
+    - Threshold label sits at 6N; Threshold slider top at N.
+  - Sliders nudged ±10px toward lane centers for clarity.
+- Label/spacing updates:
+  - Left labels aligned to grid: Destination (K), drill down (L), parameter (M).
+  - Destination dropdowns use the same width and x-position as Effect dropdowns for consistency.
+- Synth mapping fixes:
+  - Normalized `filter_cutoff` (0..1) is now passed into the Synth engine (engine maps to Hz internally). Audible filter changes verified.
+- Build pipeline verified; integrated app renders dropdowns above other controls; click-through prevention maintained (as documented in dropdowns.md).
+
+### Sensors Page — Next Steps
+- Normalization & curves:
+  - Add exponential/user-selectable curves per parameter (e.g., perceptual cutoff) and show short labels for scale.
+- Dynamic parameter discovery:
+  - Longer-term: add `listParameters()` to `Effect` interface and generate lists directly from DSP classes.
+  - Short-term: extend the centralized registry as new params/types are added.
+- Sequencer mapping depth:
+  - Continuous: tempo, swing, probability, density (with visible feedback where possible).
+  - Actions: named section jumps and resequencing plans; add EventBus hooks for clean handoff.
+- Conditional logic:
+  - Per-lane operators (>, <, range), hysteresis, edge modes (rising/falling), and latching.
+- IoT sources:
+  - Wire per-lane IoT input dropdowns to real SensorMatrix sources and persist selection.
+- Persistence polish:
+  - Optionally persist Grid toggle and Sensors Simulate/Apply state.
+- Documentation:
+  - Add a short guide for Sensors target/param population and normalization strategy.
+
+## 📅 2025-08-25 — Sequencer MVP (In Progress)
+
+### What’s Implemented
+- API (Phase A): Resequencing hooks on the existing `Sequencer`.
+  - `Timing { Immediate, OnBeat, OnBar }` and methods: `defineSections`, `jumpToSection`, `queueSection`, `nextSection`, `prevSection`.
+  - Default sections A/B/C at 0/1/2 bars; section accessors `getSectionNames()`, `getCurrentSectionName()`, `getSectionDefinitions()`.
+  - Pending jumps execute on musical boundaries in the process loop.
+- UI
+  - Main: “Section: …” label with Prev/Next controls.
+  - Sequencer page: Transport (Play/Stop, Loop, BPM), Actions (Jump/Go, Next/Prev, Shuffle), inline Sections editor (Name + Bar, Apply).
+  - Settings: duplicate sections editor removed to avoid confusion; sections now managed on Sequencer page.
+- Sensors
+  - Sequencer Param list dynamically includes “Jump: <SectionName>” from the defined sections.
+  - Resequencing actions (“Next/Prev/Shuffle/Jump”) use the new API with OnBar scheduling.
+- Persistence
+  - Sections load from `user_config` at startup; autosave on Apply (Sequencer page) and on exit.
+- Phase B groundwork
+  - Added minimal `SegmentSequencer` scaffolding (MusicSegment/SegmentTransition types) for future integration.
+
+### Current Issues
+- Sequencer timeline overlay not visible on the Sequencer page for the user.
+  - We currently draw the overlay after rendering the screen and dropdowns, before `SDL_RenderPresent`, with filled background/labels; needs investigation on target machine.
+  - Potential causes: draw order conflicts, incorrect screen ID, coordinate overlap, or missing font/text path for overlay labels.
+- Dropdown rendering glitches reported on Sequencer page.
+  - Symptoms: items not rendering correctly or z-ordering not respected.
+  - Likely related to the per-screen “open list” rendering pass and new Sequencer dropdown IDs; needs explicit inclusion in the post-render dropdown pass, plus click-through handling.
+- Sequencer audio processing remains disabled (by design during earlier debugging); UI operates, but patterns aren’t audible yet.
+
+### Next Steps (Proposed)
+1) Fix timeline rendering
+   - Add temporary debug primitives (solid color bars) without text to isolate text rendering issues.
+   - Verify active screen ID and coordinates; draw a colored test rect at (50,240, 1180×70) to confirm visibility.
+   - Ensure overlay draw runs for both main and secondary render paths; log a one-shot console line when drawing.
+2) Repair Sequencer dropdown rendering
+   - Explicitly include Sequencer-specific dropdowns in the post-render “renderDropdownList” pass (e.g., `seq_jump` and any future lists).
+   - Apply the same click-through prevention guard used for other screens.
+3) Consolidate sections editor
+   - Keep editor on Sequencer page only (already removed from Settings); consider expanding to more than 5 rows and add autosave confirmation.
+4) Optional: enable Sequencer processing with safeguards
+   - Re-enable `sequencer->process(...)` in the audio callback behind a feature flag; validate no duplicate-note issues.
+5) Phase B integration (after UI is stable)
+   - Map section definitions into `MusicSegment` objects; support Exit/Entry points.
+   - Add `SegmentTransition` with priority/probability and OnBeat/OnBar/ExitPoint scheduling.
+   - Expose minimal UI to add/edit transitions; wire Sensors and EventBus triggers to transitions.
+
+### Notes
+- Sensors + Synth normalization fixes are in place; no UI changes required there until we design per-parameter curves.
+- After timeline and dropdown fixes, add a minimalist bar ruler and highlight for the current section for better visibility.
+
+### What’s Next — Sensors Mapping Expansion (Plan)
+- Phase 1 (scaffold + minimal behavior):
+  - Target type per lane: Effect (current), Synth, Sequencer.
+  - Param list depends on target type:
+    - Synth: filter_cutoff, filter_resonance, master_volume, ADSR, LFO1/2 params.
+    - Sequencer: actions (Resequence Next/Prev/Jump A/B/C/Shuffle), and continuous (tempo, swing, probability, density).
+  - Per-lane filter/condition: smoothing and threshold controls.
+  - Apply behavior:
+    - Synth: continuous mapping to selected parameter with sensible ranges.
+    - Sequencer: rising-edge triggers for resequencing actions; continuous mapping for tempo/swing/etc.
+  - Persistence: store target type, slot (if Effect), param, smooth, threshold, amount, invert.
+
+- Phase 2 (depth and usability):
+  - Richer Synth set and optional search/preset lists.
+  - Additional Sequencer mappings: mute/solo lanes, density modes, probability maps.
+  - Note generation controls: pitch range/scale, gate length, velocity mode.
+
+- Phase 3 (advanced logic + resequencing):
+  - Conditional logic per lane: operators, hysteresis, edge modes, latching.
+  - Horizontal resequencing targets: named sections, random/weighted, schedule vs immediate.
+
+### Rationale
+- Keeps the Sensors panel compact by reusing the Slot dropdown as a Target selector (None, Synth, Sequencer, S1..S5).
+- Adds immediate value (Sequencer edge-triggered resequencing) while laying a clean path for deeper control later.
+
 - **Plan**: A detailed implementation plan is available in `docs/VITAL_SYNTHESIS_UPGRADE_PLAN.md`.
 - **Progress**: The implementation is complete. The `RealtimeWavetableVoiceManager` is integrated into the `Synthesizer` and can be enabled by calling `setVoiceManagerType(VoiceManagerType::RealTime)`.
 - **Next**: Further testing and optimization of the new engine.
+
+## 📘 Sequencer — Sections + Segments (MVP) Explained
+
+### Sections
+- **Definition**: Named anchors on the global timeline (e.g., A, B, C) each mapped to a start bar via the “Sections” editor and “Apply Sections”.
+- **Usage**: The sequencer can jump between these anchors on musical boundaries using the resequencing API (`Immediate`, `OnBeat`, `OnBar`).
+- **Integration**: Section names are used throughout the UI (Sensors, Jump dropdowns) and persisted in `user_config`.
+
+### Segments (MVP)
+- **Goal**: Lightweight resequencing rules that say “when we’re in this section, jump to that section at this timing, optionally gated by probability”.
+- **Activation**: Rules only run when “Segments: ON” is enabled on the Sequencer page.
+- **Structure**: Three rows, each row is one independent rule:
+  - **From**: The section to watch (current/active section).
+  - **Exit**: Local bar threshold within the From section (used by ExitPoint timing).
+  - **To**: The target section to jump to (must exist in Sections).
+  - **When**: Jump timing — `Immediate`, `OnBeat`, `OnBar`, or `ExitPoint`.
+  - **Prob**: Probability gate (1.0 / 0.75 / 0.5 / 0.25).
+
+### “Exit” in MVP
+- **Purpose**: Coarse exit marker to approximate exit points without sub‑bar markers.
+- **Behavior**: When `When = ExitPoint`, the rule becomes eligible once the local bar index ≥ Exit inside the From section; the actual jump is then scheduled `OnBar`.
+
+### How Sections and Segments Work Together
+- **Sections** define where named parts live on the timeline.
+- **Segments rules** decide when to jump between those named parts during playback.
+- **Example**:
+  - Define A@bar0, B@bar4, C@bar8.
+  - Rule 1: From A → To B, When OnBar (switches on a bar boundary while in A).
+  - Rule 2: From B → To C, When ExitPoint, Exit 2 (eligible at/after the 3rd local bar of B; scheduled on the next bar).
+  - Rule 3: From C → To A, When OnBar, Prob 0.5 (randomly loops back to A on bar boundaries in C).
+
+### Safeguards & Limits (MVP)
+- **Debounce**: After a rule fires, it won’t re‑fire immediately in the same context, preventing spam.
+- **Prioritization**: First rule that qualifies in the scan wins for that evaluation pass.
+- **Scope**: Three rules, simplified ExitPoint, no named entry/exit points yet, no timeline visualization for segments/transitions.
+
+### Planned Enhancements
+- **Persistence**: Save/load Segments rules (From/Exit/To/When/Prob) in `user_config`.
+- **Named points**: True Exit/Entry points per section with precise scheduling.
+- **Visualization**: Draw segment regions and transition hints on the timeline.
 
 #### 2. External MIDI Controller Support
 - **Status**: 🟡 **Starting Development**
@@ -253,61 +422,151 @@ Integration Layer (Ready for Deployment)
 
 ## 📅 Recent Updates
 
-### **August 22, 2025** - Gemini Development Report
+### **August 27, 2025** — Sequencer Stabilization, Resequencing MVP, BPM UX, and UI Polish
 
-You are right to point that out, and I apologize for the confusion and the repetitive actions. I was stuck in a loop, and I should have recognized the pattern and sought clarification sooner. Thank you for your patience.
+**Status**: 🟢 STABILIZED (core issues addressed; patterns next)
 
-Here is a report of the changes I made, the errors I encountered, and the reasoning behind my actions:
+- **Dropdown/UI robustness**: Fixed z-order and click-through by delaying list rendering post-screen, blocking background input, and explicitly handling Sequencer dropdown IDs (`seq_jump`, `seq_sec_name_i`, `seq_sec_bar_i`, `seg_name_i`, `seg_to_i`, `seg_type_i`, `seg_exitbar_i`, `seg_prob_i`). Updated `docs/dropdowns.md` with Sequencer specifics.
+- **Timeline overlay**: Implemented visible, layered overlay with bar grid, section markers/labels, active-section highlight, and playhead. Ensured correct draw order and visibility; added grid overlay toggles for Sensors/Sequencer and aligned labels/bands to grid coordinates.
+- **Resequencing API + UI**: Added `Immediate/OnBeat/OnBar` timing, `defineSections`, `jumpToSection`, `queueSection`, `nextSection`, `prevSection`, and dynamic jump list. Built Sections editor on Sequencer page with autosave on Apply. Implemented Segments MVP (3 rules: From/Exit/To/When/Prob) with runtime logic that schedules `jumpToSection` at boundaries; rules persist; transition flash text appears on timeline.
+- **BPM UX**: Moved BPM slider to grid with label and a readout showing “BPM/Next”; tempo changes can be queued and apply on-bar. Shows upcoming tempo in UI.
+- **Audio stability + safety**: Re-enabled sequencer processing via new `Test Audio` toggle (default ON). Added `Panic` (all-notes-off) and a note-off fallback in the audio callback to prevent drones. Introduced optional `Recovery ON/OFF` with grace period and a `Restart Audio` button. MIDI sends in sequencer callbacks now guard on `isDeviceOpen()`.
+- **Per-voice ADSR mapping**: `Synthesizer::noteOn(midiNote, vel, Envelope)` applies per-note envelopes to the newly started voice, fixing long global attack interactions.
+- **UI layout and naming**: Aligned Sensors/Sequencer controls to the grid; centered button text; adjusted widths. Moved/renamed buttons: `S1`→Restart Audio, `S4`→Recovery ON/OFF, `T1`→Panic, `T4`→Test Audio ON/OFF (renamed from “Audio”). Play is gated with a helpful hint if Test Audio is OFF.
+- **Docs**: Added a concise explanation of Sections + Segments (MVP) and dropdown behaviors. This entry tracks today’s stabilization work; patterns are up next.
 
-**Objective:** Implement the "Sensor Matrix" feature as described in the project documentation.
+**Known follow-ups**
+- Timeline should immediately reflect jumps from both manual actions and Segments rules across systems; verify on target machine if any lag remains.
+- Default Recovery is OFF; confirm that `Restart Audio` suffices across devices and consider adding a subtle stream-health HUD indicator.
 
-**Initial Steps (Correct):**
+---
 
-1.  **Review Project Status:** I started by reading `docs/PROJECT_STATUS.md` to understand the current state of the project. This was the correct first step.
-2.  **Identify Next Steps:** Based on the project status, I identified several potential next steps and proposed a plan to you. This was also correct.
-3.  **Create `docs/Effects` Directory:** I initially tried to create a `docs/Effects` directory, but you correctly pointed out that it already existed. I apologize for not checking this first.
+### Next Steps — Patterns
 
-**Implementation of Sensor Matrix (Where the problems started):**
+The next focused milestone is Patterns: adding a Section-driven pattern flow with safe musical defaults and simple UI. The following plan is included verbatim per request.
 
-1.  **Scaffolding:** I began implementing the "Sensor Matrix" feature by creating the `include/iot/SensorMatrix.h` and `src/iot/SensorMatrix.cpp` files. This was part of the plan outlined in `docs/Effects/sensor_matrix.md`.
-2.  **Hardware Interface:** I then looked for a way to integrate the `SensorMatrix` with the hardware. I examined `include/hardware/HardwareInterface.h` and concluded that it was not suitable for sensor data. This was a reasonable conclusion.
-3.  **`IoTInterface`:** I decided to create a new `IoTInterface` to handle sensor data. This was also a reasonable decision, given the existing `iot` directory and the "IoT Sensor -> Modulation Hub" concept from the documentation.
-4.  **Integration with `main`:** I proceeded to integrate the new `IoTInterface` and `SensorMatrix` into the main application file, `src/main_integrated_simple.cpp`. This involved including the new headers, instantiating the classes, and adding UI elements to display sensor data.
+codex
+Here’s a clear, scalable approach to patterns that fits what you have now and grows
+with you.
 
-**The Build Error and the Loop:**
+Goals
 
-This is where I got stuck. After adding the new code, I tried to build the project, and it failed with a series of errors related to the `MQTTInterface`.
+- Keep it musical: fast looped sketching, reliable on-bar changes.
+- Make it performable: quick pattern switching, section-aware jumps.
+- Avoid timing footguns: quantized changes, no drones on mode changes.
 
-*   **The Error:** The errors were all related to the `MQTTInterface` class. It was trying to inherit from `IoTInterface` (which was not designed to be a base class), and it was using an undefined `MessageCallback` type.
-*   **My Mistake:** Instead of carefully analyzing the `MQTTInterface` code to understand its intended purpose, I made a series of incorrect assumptions. I assumed that `MQTTInterface` was *supposed* to inherit from `IoTInterface`, and I tried to force this to work by making a series of incorrect changes.
-*   **The Loop:** This led to the loop you observed. I would:
-    1.  Try to "fix" the `MQTTInterface` by removing `override` keywords and changing namespaces.
-    2.  The build would fail with a new set of errors.
-    3.  I would then try to revert my changes and try a different "fix".
-    4.  This cycle repeated several times, and I apologize for the noise and lack of progress.
+Core Model
 
-**What I Should Have Done:**
+- Pattern: a named clip with notes and length in beats (e.g., 4, 8, 16).
+    - Data: notes [pitch, vel, startBeat, dur], patternLength, swing, humanize,
+transpose.
+- Pattern Pool: N patterns managed globally (e.g., 64).
+- Section Binding: optional mapping of section name (A/B/C/…) to one or more
+pattern IDs (cycle or choose).
+- Song Arrangement: optional ordered list of pattern instances on the timeline (for
+linear playback).
 
-Instead of getting stuck in this loop, I should have:
+Playback Modes
 
-1.  **Stopped and Analyzed:** After the first build failure, I should have stopped and taken the time to read and understand the `MQTTInterface.h` and `MQTTInterface.cpp` files thoroughly.
-2.  **Recognized the Architectural Mismatch:** I should have recognized that `MQTTInterface` was not designed to inherit from `IoTInterface` and that my initial approach was flawed.
-3.  **Formulated a Correct Plan:** I should have then formulated a correct plan, which would have been to either:
-    *   Refactor `IoTInterface` into a proper abstract base class.
-    *   Or, as I eventually concluded, have `IoTInterface` *use* an `MQTTInterface` internally, without inheritance.
-4.  **Communicated with You:** I should have communicated my findings and my new plan to you before proceeding.
+- Single Pattern: loop a single pattern (current behavior). Great for testing.
+- Section-Driven: the current section dictates the active pattern; jumps change
+the pattern.
+- Song Mode: traverse an arrangement (pattern instances) linearly; jumps move the
+playhead to target section in the arrangement.
+- Chain Queue (live): press patterns to queue on-bar; queue takes priority over
+section-default.
 
-**Current Status:**
+Timing & Quantization
 
-The project is currently in a state where the build is still broken due to the incorrect changes I made to the `MQTTInterface` and `IoTInterface` files.
+- Jump Timing: Immediate, OnBeat, OnBar (already in API).
+- Pattern Change Quantization: decoupled but defaults to on-bar (1 bar). Allow
+per-action override if needed.
+- Phase Handling: on change, reset local pattern phase to 0 unless “keep phase” is
+explicitly on (useful for polyrhythms).
 
-**Next Steps:**
+Section Integration
 
-I believe the correct path forward is to revert all the changes I made to the `iot` directory and then re-implement the `SensorMatrix` integration using the correct architecture.
+- Default Pattern per Section: e.g., A→Pattern 1, B→Pattern 2.
+- Multi-Pattern per Section (optional): cycle each bar or random weighted select
+(simple and musical).
+- Jumps: when jumping sections, schedule pattern switch with the same quantization
+as the jump.
 
-I apologize again for the confusion and the churn. I will be more careful and methodical going forward. Please let me know how you would like to proceed.
+Editing Workflow (MVP)
 
--- Gemini
+- Pattern Selector: dropdown + Prev/Next on Sequencer page.
+- Length: dropdown (1, 2, 4, 8, 16 bars).
+- Simple Grid Editing (Phase 2): note toggles on 16th grid, velocity “row”, tie/
+ratchet toggles.
+- Record (Phase 2): quantized live record from the virtual keyboard (optional
+count-in).
+
+Storage & Persistence
+
+- Save patterns in user_config (or separate patterns.json if they get large).
+- Save section→pattern bindings in user_config (sequencer.sectionPatterns).
+- Export/import pattern sets later (nice to have).
+
+UI/UX Touches
+
+- Timeline: show active pattern region with pattern name; reflect jumps immediately
+(Immediate) or at boundary (OnBar).
+- HUD: show “Pattern X”, length, and “Quantize: OnBar” when queued.
+- Actions: “Duplicate Pattern”, “Clear Pattern”, “Randomize (safe)” for fast
+sketching.
+
+Sensors + MIDI
+
+- New Sensor targets:
+    - “Pattern: Next/Prev”, “Pattern: Random (weighted)”
+    - “Pattern: Set X”, “Pattern Length +/-”
+    - “Resequence: Jump To A/B/C” (already there).
+- MIDI input:
+    - Note input for live record (quantized).
+    - CCs to scroll/select patterns and toggle record.
+
+Advanced (Phase 2+)
+
+- Per-step probability, ratchets, tie, microtiming.
+- Polymeter/polyrhythm: per-pattern length and step grid; “keep phase” option on
+pattern change.
+- Per-section transpose or density modifier (musical continuity across sections).
+- Parameter locks (FX or synth macros) per step (later).
+
+Engine/API Changes (minimal now)
+
+- Sequencer:
+    - add setPlaybackMode(SinglePattern/SectionDriven/Song)
+    - setCurrentPattern(id), getCurrentPatternId()
+    - setPatternForSection(sectionName, patternId)
+    - on jumpToSection(): if SectionDriven, schedule pattern change with same
+timing.
+- Pattern store:
+    - addPattern(), removePattern(), duplicatePattern(), setLength(), addNote(),
+clear()
+
+Incremental Rollout (suggested)
+
+1. Bind one pattern per section; pattern selector + length controls in UI;
+SectionDriven mode + quantized changes.
+2. Chain queue buttons (queue pattern n on bar); simple grid editor.
+3. Optional: Song arrangement view; basic live record.
+
+Why this works
+
+- Keeps your current loop flow intact.
+- Cleanly integrates sections so jumps change both section and pattern coherently.
+- Gives safe, musical defaults (on-bar, reset phase) with room to go deeper (keep
+phase, polyrhythm).
+- Scales from quick loops → structured arrangements without UI overload.
+
+If you want, I can start by:
+
+- Adding SectionDriven mode and a simple Section→Pattern binding UI.
+- Updating the jump code so the timeline and active pattern switch together at the
+right boundary.
+- Adding a minimal pattern selector + length control on the Sequencer page.
+
 
 ### **August 18–19, 2025** — Preset Recall Stabilization (UI + Engine) and Reverb Implementation
 
