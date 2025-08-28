@@ -421,6 +421,54 @@ void Sequencer::addPattern(std::unique_ptr<Pattern> pattern) {
     patterns_.push_back(std::move(pattern));
 }
 
+size_t Sequencer::createPattern(const std::string& name, int steps16th) {
+    if (steps16th < 1) steps16th = 16; // default 1 bar @ 4/4
+    double stepBeats = static_cast<double>(beatsPerBar_) / 16.0;
+    double lenBeats = static_cast<double>(steps16th) * stepBeats;
+    auto p = std::make_unique<Pattern>(name);
+    p->setLength(lenBeats);
+    std::lock_guard<std::mutex> lock(patternMutex_);
+    patterns_.push_back(std::move(p));
+    return patterns_.size() - 1;
+}
+
+size_t Sequencer::duplicatePattern(size_t index) {
+    std::lock_guard<std::mutex> lock(patternMutex_);
+    if (index >= patterns_.size()) return patterns_.size();
+    const Pattern* src = patterns_[index].get();
+    auto copy = std::make_unique<Pattern>(src->getName() + " Copy");
+    copy->setLength(src->getLength());
+    for (size_t i = 0; i < src->getNumNotes(); ++i) {
+        if (const Note* n = src->getNote(i)) {
+            copy->addNote(*n);
+        }
+    }
+    patterns_.push_back(std::move(copy));
+    return patterns_.size() - 1;
+}
+
+void Sequencer::clearPattern(size_t index) {
+    std::lock_guard<std::mutex> lock(patternMutex_);
+    if (index < patterns_.size() && patterns_[index]) {
+        patterns_[index]->clear();
+    }
+}
+
+void Sequencer::renamePattern(size_t index, const std::string& newName) {
+    std::lock_guard<std::mutex> lock(patternMutex_);
+    if (index < patterns_.size() && patterns_[index]) {
+        patterns_[index]->setName(newName);
+    }
+}
+
+std::optional<size_t> Sequencer::getPatternIndexByName(const std::string& name) const {
+    std::lock_guard<std::mutex> lock(patternMutex_);
+    for (size_t i = 0; i < patterns_.size(); ++i) {
+        if (patterns_[i] && patterns_[i]->getName() == name) return i;
+    }
+    return std::nullopt;
+}
+
 Pattern* Sequencer::getPattern(size_t index) {
     std::lock_guard<std::mutex> lock(patternMutex_);
     if (index < patterns_.size()) {
@@ -698,6 +746,45 @@ void Sequencer::setAllNotesChance(size_t patternIndex, float chance) {
     const size_t n = p->getNumNotes();
     for (size_t i = 0; i < n; ++i) {
         if (Note* no = p->getNote(i)) no->chance = chance;
+    }
+}
+
+void Sequencer::setStep(size_t patternIndex, int step16th, int pitch, float velocity, float gate) {
+    if (step16th < 0) return;
+    if (velocity < 0.0f) velocity = 0.0f; if (velocity > 1.0f) velocity = 1.0f;
+    if (gate <= 0.0f) gate = 1.0f; if (gate > 4.0f) gate = 4.0f; // allow up to 4x step length (ties)
+    double stepBeats = static_cast<double>(beatsPerBar_) / 16.0;
+    double startBeat = static_cast<double>(step16th) * stepBeats;
+    double dur = gate * stepBeats;
+    // Remove any existing note at this cell (same pitch and start)
+    removeNotesAt(patternIndex, pitch, startBeat, 1e-6);
+    // Add new
+    Note n;
+    n.pitch = pitch; n.velocity = velocity; n.channel = 0; n.startTime = startBeat; n.duration = dur; n.env = Envelope(); n.chance = 1.0f;
+    addNoteToPattern(patternIndex, n);
+}
+
+void Sequencer::toggleStep(size_t patternIndex, int step16th, int pitch) {
+    if (step16th < 0) return;
+    double stepBeats = static_cast<double>(beatsPerBar_) / 16.0;
+    double startBeat = static_cast<double>(step16th) * stepBeats;
+    // Check if note exists at this start/pitch
+    bool exists = false;
+    {
+        std::lock_guard<std::mutex> lock(patternMutex_);
+        if (patternIndex < patterns_.size()) {
+            Pattern* p = patterns_[patternIndex].get();
+            for (size_t i = 0; i < p->getNumNotes(); ++i) {
+                Note* no = p->getNote(i);
+                if (!no) continue;
+                if (no->pitch == pitch && std::fabs(no->startTime - startBeat) <= 1e-6) { exists = true; break; }
+            }
+        }
+    }
+    if (exists) {
+        removeNotesAt(patternIndex, pitch, startBeat, 1e-6);
+    } else {
+        setStep(patternIndex, step16th, pitch, 0.8f, 1.0f);
     }
 }
 

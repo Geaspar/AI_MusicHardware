@@ -103,6 +103,18 @@ public:
     
     // Pattern management
     void addPattern(std::unique_ptr<Pattern> pattern);
+    // Convenience APIs for pattern workflows
+    // Create a new pattern with a name and a length expressed in 16th-note steps.
+    // Returns the index of the created pattern.
+    size_t createPattern(const std::string& name, int steps16th);
+    // Duplicate an existing pattern and append it to the pool. Returns new index.
+    size_t duplicatePattern(size_t index);
+    // Clear all notes in a pattern and reset to default bar length.
+    void clearPattern(size_t index);
+    // Rename a pattern by index.
+    void renamePattern(size_t index, const std::string& newName);
+    // Lookup pattern index by name.
+    std::optional<size_t> getPatternIndexByName(const std::string& name) const;
     Pattern* getPattern(size_t index);
     const Pattern* getPattern(size_t index) const;
     size_t getNumPatterns() const;
@@ -152,6 +164,9 @@ public:
     // Per-column probability (chance) setter: sets Note::chance for notes at a 16th column
     void setColumnChance(size_t patternIndex, int column16th, float chance);
     void setAllNotesChance(size_t patternIndex, float chance);
+    // Step helpers for grid-style editing
+    void setStep(size_t patternIndex, int step16th, int pitch, float velocity, float gate);
+    void toggleStep(size_t patternIndex, int step16th, int pitch);
 
     // Synchronize with audio engine - allows accurate timing coordination
     void synchronizeWithAudioEngine(double audioEngineTimeInSeconds, double engineSampleRate);
