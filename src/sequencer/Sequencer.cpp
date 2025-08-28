@@ -669,6 +669,38 @@ void Sequencer::removeNotesAt(size_t patternIndex, int pitch, double startBeat, 
     }
 }
 
+void Sequencer::setColumnChance(size_t patternIndex, int column16th, float chance) {
+    if (chance < 0.0f) chance = 0.0f;
+    if (chance > 1.0f) chance = 1.0f;
+    std::lock_guard<std::mutex> lock(patternMutex_);
+    if (patternIndex >= patterns_.size()) return;
+    Pattern* p = patterns_[patternIndex].get();
+    if (!p) return;
+    const double stepBeats = static_cast<double>(beatsPerBar_) / 16.0;
+    const double startBeat = static_cast<double>(column16th) * stepBeats;
+    constexpr double EPS = 1e-6;
+    const size_t n = p->getNumNotes();
+    for (size_t i = 0; i < n; ++i) {
+        if (Note* note = p->getNote(i)) {
+            if (std::abs(note->startTime - startBeat) < EPS) {
+                note->chance = chance;
+            }
+        }
+    }
+}
+
+void Sequencer::setAllNotesChance(size_t patternIndex, float chance) {
+    if (chance < 0.0f) chance = 0.0f; if (chance > 1.0f) chance = 1.0f;
+    std::lock_guard<std::mutex> lock(patternMutex_);
+    if (patternIndex >= patterns_.size()) return;
+    Pattern* p = patterns_[patternIndex].get();
+    if (!p) return;
+    const size_t n = p->getNumNotes();
+    for (size_t i = 0; i < n; ++i) {
+        if (Note* no = p->getNote(i)) no->chance = chance;
+    }
+}
+
 void Sequencer::process(double deltaTime) {
     // Fast path exit with atomic check - no lock needed
     if (!isPlaying_.load(std::memory_order_acquire)) {
@@ -885,6 +917,13 @@ void Sequencer::processSinglePattern(double deltaBeats) {
         }
 
         if (noteStartsInFrame) {
+            // Gate by per-note chance (probability)
+            float prob = 1.0f;
+            if (note->chance < 0.0f) prob = 0.0f; else if (note->chance > 1.0f) prob = 1.0f; else prob = note->chance;
+            if (prob < 1.0f) {
+                double r = (double)rand() / (double)RAND_MAX;
+                if (r > prob) continue; // skip triggering this note this time
+            }
             // Add to queue of notes to start
             NoteToStart noteStart;
             noteStart.pitch = note->pitch;

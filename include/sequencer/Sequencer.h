@@ -28,11 +28,13 @@ struct Note {
     double duration;    // Duration in beats
     int channel;        // MIDI channel (0-15)
     Envelope env;       // ADSR envelope parameters
+    float chance;       // Per-note trigger probability (0.0-1.0)
     
     Note(int p = 60, float v = 1.0f, double start = 0.0, double dur = 1.0, int ch = 0,
-         float attack = 0.01f, float decay = 0.1f, float sustain = 0.7f, float release = 0.5f)
+         float attack = 0.01f, float decay = 0.1f, float sustain = 0.7f, float release = 0.5f,
+         float chanceIn = 1.0f)
         : pitch(p), velocity(v), startTime(start), duration(dur), channel(ch), 
-          env(attack, decay, sustain, release) {}
+          env(attack, decay, sustain, release), chance(chanceIn) {}
 };
 
 class Pattern {
@@ -147,6 +149,9 @@ public:
     void setColumnVelocity(size_t patternIndex, int column16th, float velocity);
     void addNoteToPattern(size_t patternIndex, const Note& note);
     void removeNotesAt(size_t patternIndex, int pitch, double startBeat, double epsilon = 1e-6);
+    // Per-column probability (chance) setter: sets Note::chance for notes at a 16th column
+    void setColumnChance(size_t patternIndex, int column16th, float chance);
+    void setAllNotesChance(size_t patternIndex, float chance);
 
     // Synchronize with audio engine - allows accurate timing coordination
     void synchronizeWithAudioEngine(double audioEngineTimeInSeconds, double engineSampleRate);
