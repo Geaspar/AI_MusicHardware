@@ -3513,8 +3513,8 @@ int main(int argc, char* argv[]) {
     // Temporary grid overlay toggle (like Sensors)
     {
         auto gridBtn = std::make_unique<Button>("patterns_grid", "Grid: OFF");
-        // Move to grid coordinate C13 -> X=13*40=520, Y='C'(2)*40=80
-        gridBtn->setPosition(520, 80);
+        // Move to grid coordinate A0 -> X=0*40=0, Y='A'(0)*40=0
+        gridBtn->setPosition(0, 0);
         gridBtn->setSize(110, 26);
         gridBtn->setBackgroundColor(Color(60, 60, 80));
         gridBtn->setTextColor(Color(255,255,255));
