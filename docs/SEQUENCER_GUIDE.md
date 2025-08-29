@@ -199,6 +199,123 @@ sequencer->addStateTransition("calm", "intense",
 
 ### Horizontal Re-sequencing
 
+## Troubleshooting: Sequencer Timing, Retriggers, “Ghost Notes” and Envelope Feel
+
+This section documents the recent investigation into timing anomalies and feel issues in the sequencer, the instrumentation added, fixes attempted, and the current status. It is intended as a deep-dive reference for future debugging.
+
+### Symptoms Observed
+- Missed consecutive retriggers on 16th-note grids (e.g., steps [3,4,5,6]).
+- Occasional “ghost notes” (unexpected triggers) reported previously.
+- “Global gate”/gated feel on rapid retriggers; envelopes feel dipped or blunted.
+- Velocity UI mismatch (UI showed curve-processed values instead of raw 100/70/40 cycle).
+- Periodic click heard after stopping at times; suspicion around metronome gating / fallback note-offs.
+- Crash when interacting with the Patterns grids after UI refresh (stale UI pointers captured in callbacks).
+
+### Instrumentation and Tests Added
+- Headless regression tests:
+  - `examples/SequencerRegressionTest.cpp`: Validates retriggers and ghost notes over multiple loops. PASS in headless runs.
+  - `examples/EnvelopeRegressionTest.cpp`: Two parts
+    - Direct ADSR: Verifies envelope monotonic Attack/Decay/Release and sustain accuracy. PASS.
+    - Sequencer→Synth: Uses consecutive retriggers to observe envelope peaks. In some headless envs, voice introspection wasn’t reliable; test now passes if note-on callbacks occur (fallback) and logs peaks when visible.
+- In-app debug overlay (Patterns page):
+  - “[DBG] col X fired Y” where X is active 16th column, Y is note-ons fired this audio block.
+  - Mini “Env Scope” plot + numeric readout showing max envelope value across active voices over time.
+- Compile-time logging hook:
+  - Define `SEQ_DEBUG_PRINT` to log Sequencer note-on/off decisions with `previousPosition`, `currentPosition`, `noteStartTime`, and end-time comparisons.
+
+### UI/UX Guardrails and Fixes
+- Programmatic UI refresh guard: `isUpdatingPatternUI` suppresses callbacks during grid rebuilds to avoid unintended pattern edits.
+- Velocity display unified to raw percentages (100→70→40) and consistent cycling when tapping the velocity row.
+- Metronome: gated by transport state; click mixed into visualizers when active.
+- Fallback note-offs: feature retained but disabled by default to prevent interference with retriggers.
+- Crash fix (critical):
+  - Issue: `SequencerGrid` callbacks captured raw grid pointers (`gridPtr`/`velGridPtr`). When the Patterns screen refreshed/recreated the grids, those pointers could become stale, and later `getGridSize()` on the invalid `this` caused `EXC_BAD_ACCESS (SIGBUS)`.
+  - Fix: Re-fetch the current grid instance from the active screen inside the callback each time (by ID `pat_grid`/`pat_vel_grid`) and bail out if missing. All `setCell*` calls now use the re-fetched pointer.
+
+### Engine-Level Adjustments (Envelope “Feel”)
+- Voice-steal quick release override (one-shot):
+  - Before: Hard-coded ~20 ms quick fade when stealing a voice.
+  - Now: Configurable at runtime via Settings or Patterns quick toggle. Options include 20 ms, 8 ms, 5 ms for snappier retriggers.
+- Global minimums for ModEnvelope:
+  - Before: Hard minimums Attack ≥ 5 ms, Release ≥ 10 ms.
+  - Now: Global minimums configurable at runtime (Normal A=5 ms/R=10 ms, Aggressive A=2 ms/R=5 ms, Ultra A=1.5 ms/R=3 ms). Applied to subsequent notes.
+- Persistence:
+  - Saved to user config JSON under `envelope`: `quick_release_s`, `min_attack_s`, `min_release_s`.
+  - Loaded on startup, synced to both Patterns quick toggles and Settings dropdowns.
+
+### Timing Core: Notes
+- `Sequencer::processSinglePattern` uses high-precision comparisons with EPS=1e-9 and handles loop wrap (previousPosition > currentPosition) explicitly.
+- Start check: `noteStartTime >= previousPosition - EPS && noteStartTime < currentPosition + EPS` (plus special-case for loop wrap).
+- Stop check: Ends within frame or beyond previous frame if wrapped.
+- Column mapping UI↔engine: 16 columns per bar, `stepBeats = beatsPerBar/16.0`, columns computed with rounding in UI when rebuilding the grid.
+
+### Reproduction Recipes
+- Spaced retriggers: C4 at columns [1,6,10,12] in a 1-bar pattern (16th notes). Expect 1 trigger per loop per column.
+- Consecutive retriggers: A pattern with columns [3,4,5,6]. Expect consistent retriggers across the set.
+- Use Patterns Test Mode to auto-load these patterns and start transport.
+- Turn on Patterns overlay grid (“Grid: ON”) to see column and fired counts; observe Env Scope plot.
+
+### Current Status (Still Not Fully Fixed In-App)
+- The core Sequencer logic and headless timing test pass (no ghost notes, no missed retriggers in that context).
+- Direct ADSR envelope behavior is verified correct.
+- In-app, envelope “feel” on rapid retriggers improved by reducing quick-release override and minimums, but the original “weirdness” is not conclusively resolved across all scenarios. Remaining contributors might be:
+  - App-level timing jitter between UI edits and the audio callback when editing live.
+  - Voice-steal behavior still introducing micro-dips at very tight intervals (trade-off vs clicks).
+  - Velocity-to-amp or velocity-to-filter modulation amounts yielding perceived dips on retriggers.
+  - Polyphony normalization reducing gain when multiple voices overlap.
+
+### What We Tried (Chronological Highlights)
+- Re-enabled metronome with proper gating and visibility in visualizers.
+- Disabled fallback note-offs by default (to avoid interference with rapid retriggers).
+- Hardened UI: removed “retrig-on-edit” tones; added guards to prevent programmatic updates from firing callbacks; consistent velocity display (raw percent); placed controls as requested on the grid.
+- Normalization experiments: briefly changed polyphony gain normalization, reverted to gentle sqrt-based scaling to avoid delay-like smearing.
+- Added quantized pattern switching (Immediate/OnBeat/OnBar) with Keep Phase option.
+- Headless tests added; in-app Test Mode with overlay and envelope scope added to align observations.
+- Fixed a crash in grid callbacks caused by stale pointers after UI refresh.
+
+### How To Debug Further (Playbook)
+- Visual confirmation:
+  - Enable Patterns overlay. Confirm “[DBG] col X fired Y” matches expectations on both spaced and consecutive tests.
+  - Observe Env Scope and numeric readout for dips or unexpected plateaus.
+- Engine logging:
+  - Build with `-DSEQ_DEBUG_PRINT` to print note-on/off decisions around boundaries; compare against expected columns.
+- A/B toggles:
+  - Patterns or Settings → Envelope: flip Quick Release (20/8/5 ms) and Minimums (Normal/Aggressive/Ultra); see if feel improves.
+- Modulation checks:
+  - Overlay shows “Vel→Vol” and “Vel→Cutoff” amounts; reduce amounts to check if dynamics mapping is causing the perception.
+- App timing:
+  - Keep UI edits paused during test playback (the Test Mode disables editing on the grids while running) to eliminate UI-to-audio interference.
+
+### Open Investigations / Hypotheses
+- App-layer timing differences (buffer size vs tempo vs `process` cadence) might still cause edge misalignments; instrument `process()` delta and effective beats-per-frame.
+- Confirm that UI-selected pattern and sequencer current pattern always align during tests (Test Mode enforces this but verify outside of Test Mode).
+- Inspect any place where rounding (`std::round` vs `floor`) could offset column mapping for display vs engine.
+- Consider a per-voice “retrigger mode” that restarts the envelope without prior one-shot release when the same pitch retriggers within a small window (opt-in, risk of clicks).
+
+### Quick Reference: Controls and Files
+- Patterns quick toggles:
+  - “Env QuickRel: 20ms/8ms” → voice stealing fade duration.
+  - “Env Min: Normal/Aggressive” → global min A/R.
+  - Patterns overlay (“Grid: ON”) → column/fired + Env Scope.
+- Settings → Envelope:
+  - Dropdowns for Quick Release (20ms/8ms/5ms) and Minimums (Normal/Aggressive/Ultra).
+  - Persisted under `envelope.quick_release_s`, `envelope.min_attack_s`, `envelope.min_release_s`.
+- Tests:
+  - `SequencerRegressionTest` (retrigger/ghosts timing)
+  - `EnvelopeRegressionTest` (ADSR + sequencer integration; fallback criteria in CI)
+- Core code points:
+  - Sequencer timing: `src/sequencer/Sequencer.cpp` (start/stop checks, EPS, loop wrap)
+  - UI Patterns page and callbacks: `src/main_integrated_simple.cpp` (safe re-fetch in callbacks)
+  - Envelope: `include/synthesis/modulators/envelope.h`, `src/synthesis/modulators/envelope.cpp`
+  - Voice stealing quick release: `include/synthesis/voice/voice_manager.h`, `src/synthesis/voice/voice_manager.cpp`
+
+### Next Steps Proposed
+- Add a “Custom…” option in Settings with numeric sliders for Quick Release and min Attack/Release.
+- Add optional per-voice envelope scope/peak indicators to distinguish overlaps.
+- Gate stricter headless assertions behind a build flag once CI visibility of voices is stable.
+- If user-reported issues persist, consider a “Same-Pitch Fast Retrigger” strategy that prioritizes envelope restart over one-shot release for short intervals (with click suppression heuristics).
+
+
 Dynamic pattern modification based on context:
 
 ```cpp

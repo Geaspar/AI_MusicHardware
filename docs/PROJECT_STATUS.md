@@ -422,6 +422,38 @@ Integration Layer (Ready for Deployment)
 
 ## 📅 Recent Updates
 
+### August 29, 2025 — Sequencer Debugging, Envelope A/B, Patterns Test Mode (Changes Pending)
+
+Status: 🟠 CHANGES PENDING (not fully functional)
+
+- Sequencer debugging & visibility
+  - Added headless regression tests:
+    - SequencerRegressionTest (retrigger/ghosts; PASS in headless).
+    - EnvelopeRegressionTest (ADSR PASS; sequencer→synth has fallback pass when callbacks present due to CI visibility limits).
+  - In‑app Patterns overlay now shows “[DBG] col X fired Y” per audio block and an Env Scope mini‑plot with numeric readout.
+  - Optional compile‑time `SEQ_DEBUG_PRINT` for precise note-on/off timing logs.
+
+- Patterns UI & safety
+  - Patterns Test Mode loads two canned patterns (spaced [1,6,10,12] and consecutive [3,4,5,6]), disables editing while running, and starts transport.
+  - Velocity row shows raw 100→70→40 cycle; consistent cycling on tap.
+  - Fixed critical crash in grid callbacks (stale pointer capture). Callbacks now re-fetch `pat_grid`/`pat_vel_grid` safely each time.
+  - Silent programmatic refresh guard maintained (`isUpdatingPatternUI`).
+
+- Envelope “feel” A/B controls (Patterns + Settings)
+  - Voice-steal quick release override: switchable (20 ms / 8 ms / 5 ms) to reduce retrigger dips.
+  - Global ModEnvelope minimums: Normal (A=5ms/R=10ms), Aggressive (A=2ms/R=5ms), Ultra (A=1.5ms/R=3ms).
+  - Persistence: saved under `envelope.quick_release_s`, `envelope.min_attack_s`, `envelope.min_release_s`; loaded at startup; UI synced.
+
+- Metronome & transport polish
+  - Metronome re-enabled and gated by transport; mixed into visualizers when active; silenced when off.
+  - Fallback note-offs disabled by default to avoid retrigger interference (retained as optional safeguard).
+
+- Current state & open issues
+  - Core sequencer logic and headless retrigger tests PASS; direct ADSR tests PASS.
+  - In-app consecutive retriggers still occasionally feel “gated” or inconsistent. Changes above improve feel but do not fully resolve reports in all cases.
+  - Hypotheses under investigation: app-layer timing jitter; same‑pitch retrigger policy vs one‑shot release; velocity→amp/filter mod amounts; polyphony normalization gain.
+  - Next steps: optional “Custom” numeric controls in Settings; instrument `process()` cadence; consider same‑pitch fast‑retrigger mode with click suppression; add per‑voice envelope traces.
+
 ### **August 27, 2025** — Sequencer Stabilization, Resequencing MVP, BPM UX, and UI Polish
 
 **Status**: 🟢 STABILIZED (core issues addressed; patterns next)
