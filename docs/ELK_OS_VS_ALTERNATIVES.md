@@ -170,6 +170,67 @@ This document outlines the trade‑offs for synthesizer performance and producti
 
 > Share your SoC, SR/buffer targets, expected polyphony/FX budget, boot/power constraints, and unit volumes. I’ll tailor the bake‑off and provide an A/B decision checklist.
 
+## IoT‑First Architecture (Minimal UI)
+
+Given a goal of multi‑voice synth + multi‑FX, with IoT as a priority and no rich UI requirement, Linux (with Elk OS) is a strong default. You get the DSP throughput you need plus first‑class networking/DevOps.
+
+- **Audio engine**: Elk OS engine at 48/96 kHz with 32/64‑frame blocks; pin audio threads to isolated cores; `mlockall`, IRQ affinity set, CPU governor pinned.
+- **Control plane**: MQTT (QoS 1) for parameter/preset/state, device config, and analytics; optional OSC for low‑latency local control; consider gRPC/REST for admin APIs.
+- **Process isolation**: Run IoT stack in low‑priority cgroups/cpuset; never block audio on networking; decouple control and audio with lock‑free queues + parameter smoothing.
+- **Persistence/updates**: A/B rootfs (RAUC/Mender), signed images, read‑only root; journaled config in `/var`; per‑device certs and secure provisioning.
+- **Telemetry**: Push metrics (CPU, XRUNs, thermal headroom, polyphony, buffer size) to MQTT or a telemetry aggregator; enable remote diagnostics and crash dumps.
+- **Optional hybrid**: Offload long reverbs/oversampled filters to a DSP via RPMsg/SPI when needed; prefer a shared master clock to avoid drift.
+
+Hardware targets to consider:
+- **SoC**: RPi 4/5, NXP i.MX8, Rockchip RK3566/RK3588 (align with Elk’s support matrix).
+- **Audio**: Proven class‑compliant USB or supported I²S/TDM codecs; stick to Elk‑validated parts where possible.
+- **Connectivity**: Ethernet for reliability; Wi‑Fi with robust drivers/firmware; BLE for provisioning/pairing only.
+
+Elk vs DIY RT Linux in this IoT‑first context:
+- **Elk OS** — Pros: Predictable low‑latency scheduling, plugin ecosystem, faster time‑to‑product, vendor support when USB/driver/jitter gremlins appear. Cons: Licensing cost; best on Elk‑supported SoCs/codecs; Linux‑class boot/power.
+- **DIY PREEMPT_RT** — Pros: Full control, no license; can match Elk with careful tuning. Cons: You own kernel/BSP/audio tuning, regression risk, long‑term security/IoT maintenance.
+
+Recommendation summary: Use Elk OS for the engine and IoT control plane headless (or with a minimal front panel). Only consider Linux+DSP hybrid if SoC load at 32–64‑frame buffers is too high or if you need stricter determinism than RT Linux can guarantee.
+
+## Linux + DSP (Hybrid) with Elk
+
+A hybrid design combines deterministic audio on a DSP with Elk handling UI/IoT/storage/networking. Typical models:
+
+- **DSP‑as‑engine**: DSP runs the full audio graph; Elk handles MIDI/IoT/updates. Audio flows DSP↔codec (I²S/TDM). Elk controls DSP via SPI/I²C/UART/Ethernet and exposes parameters to IoT/UI.
+- **Elk‑host + DSP offload**: Elk hosts the audio graph (VST3/LV2/JUCE); specific plugins offload heavy kernels to DSP via low‑latency IPC (shared memory/RPMsg/SPI‑DMA/PCIe). Keep blocks small (32/64) and transfer latency <100–200 µs.
+- **Heterogeneous SoC DSP (e.g., i.MX8 HiFi4)**: Elk on Cortex‑A; DSP managed via remoteproc + rpmsg; ASoC wires CPU‑DAI↔DSP↔codec; offload handled by kernel/userspace driver.
+
+Audio & clocking:
+- Use a single master clock (codec MCLK/BCLK/LRCLK) for Elk SoC and DSP to avoid drift; otherwise insert ASRC at the boundary.
+- Keep symmetric block sizes and align DMA descriptors; avoid hidden buffering that adds latency.
+- Decide ownership of the ALSA device: if DSP owns the codec, Elk sees a control/stream endpoint; if Elk owns the codec, DSP is an accelerator with a tight turnaround SLA.
+
+Data paths & drivers:
+- ASoC machine drivers to wire CPU‑DAI↔DSP‑DAI↔codec; start from reference designs.
+- RPMsg/OpenAMP for on‑die DSPs; deterministic buffer and control exchange.
+- External DSPs (e.g., SHARC): SPORT/I²S for audio, SPI/I²C/UART for control; define a compact command protocol and parameter map.
+
+Control & IPC:
+- Real‑time safe control path: UI/IoT → (OSC/MIDI/IPC) → Elk engine → (RPMsg/SPI) → DSP; apply smoothing on DSP side; never block audio on control.
+- Mirror DSP parameters as ALSA kcontrols or a char dev/sysfs; expose presets, snapshots, automation.
+
+Pros of Elk + DSP:
+- Deterministic audio with rich UX/IoT on Elk; isolation from UI/network hiccups.
+- Scalability: Offload long/oversampled FX to DSP; keep sequencing/host/mix on Elk.
+
+Gotchas:
+- Added complexity (drivers, IPC, clocking) and cross‑domain debugging.
+- Offload must beat copy/IPC overhead; design for bounded turnaround at small buffers.
+- Integration time: Budget for BSP/driver tooling and cross‑trace of underruns.
+
+Questions to ask Elk for hybrid support:
+- Supported topologies and any reference designs (SoC + DSP + codec).
+- Clocking guidance (masters, ASRC options) and known‑good codecs/layouts.
+- Typical block sizes and offload round‑trip budgets (RPMsg/SPI/PCIe).
+- remoteproc/rpmsg/ASoC examples; profiling/trace tools for hybrid graphs.
+- Patterns to wrap a VST3/LV2 plugin that delegates compute to DSP.
+- OTA/update strategy with DSP firmware, crash isolation, and logging on both sides.
+
 ## Meeting Prep: What to Know & What to Ask Elk
 
 ### Bring to the meeting (your constraints)
