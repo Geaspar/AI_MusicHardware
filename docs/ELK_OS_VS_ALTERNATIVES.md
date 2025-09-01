@@ -1,5 +1,36 @@
 # Elk OS vs Alternatives for Embedded Synth Performance
 
+## Executive Overview: Is Linux a Good Option?
+
+Short answer: Linux is often the right choice for a modern, feature‑rich standalone synth/effects box (multi‑voice, multi‑FX, rich UI, storage/networking). For ultra‑fast boot, ultra‑low power, or extreme determinism, MCU/DSP or a hybrid (Linux + DSP) is more typical.
+
+- When Linux shines:
+  - Throughput: Multi‑core ARM SoCs + NEON/SIMD handle “desktop‑class” DSP (many voices + FX).
+  - Rich UI + I/O: Displays, file system, USB/MIDI/BT/Wi‑Fi, OTA updates, plugins, logging, diagnostics.
+  - Dev velocity: POSIX tools, profiling, containers/CI; reuse VST3/LV2/JUCE assets.
+  - Latency: With PREEMPT_RT/Elk OS, 3–10 ms round‑trip is realistic and stable on supported SoCs.
+
+- Linux watchouts:
+  - Boot/power: Seconds to boot; higher idle power. Plan staged UI and thermal/power design.
+  - RT discipline: Pin governors/IRQs/priorities; never block audio on UI; manage thermal throttling.
+  - BSP/supply: Choose well‑supported SoCs/codecs; avoid exotic drivers late.
+
+- Typical alternatives:
+  - MCU/FreeRTOS/Daisy/STM32: Sub‑second boot, very low power, tactile feel; limited polyphony/FX and UI/network.
+  - Bela/Xenomai (BeagleBone): Extremely deterministic scheduling; less raw CPU; limited plugin reuse.
+  - Dedicated DSP (e.g., SHARC): Hard real‑time pipelines; low jitter; limited UI/network; often paired with MCU/SoC.
+  - Hybrid (Linux + DSP/MCU): Linux for UX/ops, DSP for guaranteed audio timing; higher integration complexity.
+
+- What’s “regular” by product type:
+  - Guitar pedals/compact stompboxes: MCU or DSP; hybrid for top tier.
+  - Desktop module/groovebox/workstation: Linux SoC (PREEMPT_RT/Elk), sometimes with DSP coprocessor.
+  - Rack processors/stage gear: DSP‑centric or hybrid; Linux for management/UI.
+  - Consumer‑ish portable: MCU if battery/instant‑on dominate; Linux only if features justify it.
+
+Recommendation for this project: If the goal is multi‑voice synth + multi‑FX with rich UI, storage/networking, and plugin reuse, Linux on an ARM SoC (with Elk OS or a well‑tuned PREEMPT_RT) is a strong default. If later you need stricter determinism or lower RTL, add a DSP coprocessor for the audio core and keep Linux for UX/ops.
+
+---
+
 This document outlines the trade‑offs for synthesizer performance and productization when choosing Elk Audio OS versus common alternatives. It focuses on sound quality under load, low‑latency behavior, maximum concurrent voices/FX, stability, and practical integration for a Linux‑class embedded instrument.
 
 ## Summary
