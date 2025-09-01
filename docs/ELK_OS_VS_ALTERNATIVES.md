@@ -27,12 +27,31 @@ This document outlines the trade‑offs for synthesizer performance and producti
 - I/O & drivers: Mature ALSA/USB audio & MIDI; GPIO/I2C/SPI; straightforward multi‑channel audio and storage/network.
 - Tooling/support: SDKs, profiling tools, examples; avoids hand‑rolling kernel tuning.
 
+### Advantages in Practice (why this can de‑risk your build)
+
+- Predictable real‑time scheduling: Pre‑tuned threading priorities, buffer sizes, and IRQ affinity reduce “mystery jitter” and dropouts that often plague DIY RT setups.
+- Faster time‑to‑audio: You can spend your cycles on DSP/UX rather than kernel configs, cpusets, governors, isolcpus, and JACK/PipeWire edge cases.
+- Plugin leverage: If you (or partners) deliver FX/instruments as VST3/LV2/JUCE, you can reuse them on desktop for authoring/tests and on the box for runtime.
+- Better multi‑core utilization: Clear patterns for spreading voices/FX across cores, with guardrails for real‑time priorities and avoiding priority inversions.
+- Reference hardware paths: Dev kits and known‑good SBCs lower the risk of codec/USB class‑compliant quirks and strange ALSA device behavior.
+- Integration guidance: Typical embedded audio product needs (MIDI, control surface, persistence, logging, remote debug) have starter recipes.
+- Support channel: When corner cases appear (USB hub interactions, isochronous endpoints, thermal throttling), you have vendor eyes on the problem.
+
 ### Cons
 
 - Licensing/cost: Commercial OS + support vs fully DIY.
 - Boot & power: Not MCU‑fast boot; higher idle power than microcontroller platforms.
 - Hardware scope: Best on Elk‑supported SoCs; exotic codecs/DACs may require extra driver work.
 - UI model: Many products split RT DSP and UI (QML/Web/control surface) rather than single‑process SDL GUIs.
+
+### Gotchas & Mitigations
+
+- Boot time not MCU‑fast: Expect several seconds depending on services. If fast‑boot matters, plan a stripped userspace, deferred services, and splash/UX that tolerates a short warm‑up.
+- Power/thermals: SBCs idle higher than MCUs and can throttle under load. Validate thermals early; design airflow/heat‑spreader; pin governors and disable turbo if stability > peak.
+- Hardware support envelope: Best results on Elk‑certified SoCs/codecs. If you diverge (custom codec/I²S clocks), budget time for driver/BSP work or pick from their reference list.
+- UI process separation: Moving UI out of RT process is a mindset shift. Use OSC/MIDI/IPC between UI and engine; never block audio on UI.
+- Storage and updates: Plan for read‑only rootfs or journaling settings; define your OTA/update and rollback strategy early.
+- Licensing/redistribution: Clarify commercial terms, LTS kernel cadence, and what you can ship to third parties (SDK, plugins, firmware).
 
 ## DIY Linux (PREEMPT_RT + JACK/PipeWire)
 
@@ -120,3 +139,51 @@ This document outlines the trade‑offs for synthesizer performance and producti
 
 > Share your SoC, SR/buffer targets, expected polyphony/FX budget, boot/power constraints, and unit volumes. I’ll tailor the bake‑off and provide an A/B decision checklist.
 
+## Meeting Prep: What to Know & What to Ask Elk
+
+### Bring to the meeting (your constraints)
+
+- Target hardware: SoC/SBC candidates, audio codec/interface, sample rates, channel count, USB/MIDI needs.
+- Performance targets: Round‑trip latency budget (ms), jitter tolerance, min/max buffer sizes, polyphony/FX budget for key patches.
+- Product constraints: Boot time, power/thermal envelope, physical I/O, storage, security/updates, UI approach (screen vs control surface).
+- Software architecture: Engine language/stack, plugin formats (if any), UI tech, persistence/telemetry requirements.
+
+### Ask about platform support
+
+- Supported SoCs/boards and reference audio codecs; any recommended designs close to your needs.
+- Kernel/BSP version, LTS cadence, and how RT tuning is delivered and updated.
+- Proven latency/jitter distributions (P50/P99/P99.9) at 48/96 kHz and 32/64/128‑frame buffers on your target class hardware.
+- Maximum sustained CPU load guidance for glitch‑free operation; thermal guidance and throttling avoidance patterns.
+
+### Ask about development workflow
+
+- Toolchain/SDK: cross‑compilers, examples, profiling/tracing for underruns; logging best practices on target.
+- Plugin hosting details: VST3/LV2/JUCE support level, recommended patterns for real‑time safe parameter automation and preset management.
+- UI integration: Recommended UI stack (QML/Web/SDL), IPC patterns (OSC/MIDI/ZeroMQ), and sample projects.
+- Testing on target: Any harness for automated latency/jitter/underrun detection; headless CI strategies they support.
+
+### Ask about operations & licensing
+
+- Licensing model and unit economics; what’s included in support (SLA, bugfixes, platform updates).
+- Update story: OTA options, A/B updates, rollback, secure boot/signed images.
+- Deliverables: Kernel config/patches, userspace components, sample device trees; what’s proprietary vs open.
+
+### Risks & mitigations
+
+- Known limitations on specific USB chipsets, hubs, or audio interfaces; recommended parts list.
+- Any constraints around multi‑client audio/MIDI, multi‑rate clocks, or low‑power states.
+- How they recommend structuring multi‑core DSP scheduling (voices vs FX) to avoid RT priority inversions.
+
+## Success Metrics to Align On
+
+- Round‑trip latency target and jitter bounds (e.g., RTL ≤ 6 ms @ 48 kHz, P99 jitter ≤ 0.3 ms).
+- Dropout‑free operation at N voices + M FX at buffer sizes of 32/64/128 across 30‑minute soak tests.
+- Thermal stability: No throttling at ambient X°C with enclosure Y over Z minutes.
+- Boot time target and acceptable staged‑UI behavior during warm‑up.
+
+## Next Steps After the Meeting
+
+- Lock a dev kit or mutually supported SBC + audio HAT.
+- Schedule a joint bake‑off with shared measurement script and metrics.
+- Identify any BSP/driver gaps early (codecs, GPIO/I²C) and assign owners.
+- Define OTA/update/security requirements and align on delivery.
