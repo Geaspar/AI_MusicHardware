@@ -124,3 +124,63 @@
 - Allocate bench space, 5 V PSU, and basic tools.
 - Create branches for `firmware-rp2040/` and `host-led-service/` in the repo.
 
+## Sourcing Links (64×64 matrix + 7–8″ touch)
+
+- HUB75 64×32 P3 RGB panels (need 2 for 64×64):
+  - ElectroDragon: https://www.electrodragon.com/product/rgb-led-matrix-panel-64x32-3mm-pitch/
+  - AliExpress search (many vendors): https://www.aliexpress.com/wholesale?SearchText=HUB75+P3+64x32+RGB
+  - Amazon search: https://www.amazon.com/s?k=HUB75+P3+64x32+RGB
+- RP2040 HUB75 driver (recommended):
+  - Pimoroni Interstate 75 (RP2040 + HUB75 connector): https://shop.pimoroni.com/products/interstate-75
+- Alternative driver (if switching MCU):
+  - Pixelmatix SmartLED Shield for Teensy 3.x/4.x: https://www.pixelmatix.com/smartled-shield/
+- LED power supply (5 V):
+  - Mean Well LRS-100-5 (5 V, 18 A): https://www.mouser.com/ProductDetail/Mean-Well/LRS-100-5
+  - Mean Well LRS-150-5 (5 V, 30 A) for larger headroom: https://www.mouser.com/ProductDetail/Mean-Well/LRS-150-5
+- LC/EMI filtering and ferrites:
+  - Murata BNX series DC line filters: https://www.murata.com/en-us/products/emicon-filtr/emi/rf/bnx
+  - Ferrite beads/chokes (selector): https://www.digikey.com/en/products/filter/ferrite-beads-and-chips
+- 7–8″ capacitive touch foil + controller (USB/I2C):
+  - 7″ USB capacitive touch overlay (search): https://www.amazon.com/s?k=7+inch+capacitive+touch+usb+overlay
+  - 8″ USB capacitive touch overlay (search): https://www.amazon.com/s?k=8+inch+capacitive+touch+usb+overlay
+  - AliExpress search (GT911/FT5x06 controllers): https://www.aliexpress.com/wholesale?SearchText=7+inch+capacitive+touch+USB+panel+GT911
+- Diffuser/top materials:
+  - Opal acrylic 2–3 mm (supplier category): https://www.theplasticpeople.co.uk/category/opal-acrylic-sheets
+  - Polycarbonate clear sheet (top lens): https://www.theplasticpeople.co.uk/category/polycarbonate-sheets
+
+Notes
+- Panel pinout and HUB75 scan type can vary; prefer panels known to work with SmartMatrix/Interstate 75. If in doubt, order two from the same batch/vendor.
+- Touch overlays often list controller ICs (e.g., GT911, FT5436). Prefer ones that expose USB HID or I2C with a small breakout.
+- If you want EU/UK‑specific distributors for everything, I can localize the BOM further.
+
+
+## Sourcing Links (64×64 matrix + 7–8″ touch)
+
+- HUB75 64×32 P3 RGB panels (need 2 for 64×64):
+  - ElectroDragon: https://www.electrodragon.com/product/rgb-led-matrix-panel-64x32-3mm-pitch/
+  - AliExpress search (many vendors): https://www.aliexpress.com/wholesale?SearchText=HUB75+P3+64x32+RGB
+  - Amazon search: https://www.amazon.com/s?k=HUB75+P3+64x32+RGB
+- RP2040 HUB75 driver (recommended):
+  - Pimoroni Interstate 75 (RP2040 + HUB75 connector): https://shop.pimoroni.com/products/interstate-75
+- Alternative driver (if switching MCU):
+  - Pixelmatix SmartLED Shield for Teensy 3.x/4.x: https://www.pixelmatix.com/smartled-shield/
+- LED power supply (5 V):
+  - Mean Well LRS-100-5 (5 V, 18 A): https://www.mouser.com/ProductDetail/Mean-Well/LRS-100-5
+  - Mean Well LRS-150-5 (5 V, 30 A) for larger headroom: https://www.mouser.com/ProductDetail/Mean-Well/LRS-150-5
+- LC/EMI filtering and ferrites:
+  - Murata BNX series DC line filters: https://www.murata.com/en-us/products/emicon-filtr/emi/rf/bnx
+  - Ferrite beads/chokes (selector): https://www.digikey.com/en/products/filter/ferrite-beads-and-chips
+- 7–8″ capacitive touch foil + controller (USB/I2C):
+  - 7″ USB capacitive touch overlay (search): https://www.amazon.com/s?k=7+inch+capacitive+touch+usb+overlay
+  - 8″ USB capacitive touch overlay (search): https://www.amazon.com/s?k=8+inch+capacitive+touch+usb+overlay
+  - AliExpress search (GT911/FT5x06 controllers): https://www.aliexpress.com/wholesale?SearchText=7+inch+capacitive+touch+USB+panel+GT911
+- Diffuser/top materials:
+  - Opal acrylic 2–3 mm (supplier category): https://www.theplasticpeople.co.uk/category/opal-acrylic-sheets
+  - Polycarbonate clear sheet (top lens): https://www.theplasticpeople.co.uk/category/polycarbonate-sheets
+
+Notes
+- Panel pinout and HUB75 scan type can vary; prefer panels known to work with SmartMatrix/Interstate 75. If in doubt, order two from the same batch/vendor.
+- Touch overlays often list controller ICs (e.g., GT911, FT5436). Prefer ones that expose USB HID or I2C with a small breakout.
+- If you want EU/UK‑specific distributors for everything, I can localize the BOM further.
+
+
