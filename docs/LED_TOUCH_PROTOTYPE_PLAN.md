@@ -184,3 +184,71 @@ Notes
 - If you want EU/UK‑specific distributors for everything, I can localize the BOM further.
 
 
+
+## JUCE Adaptation Plan for Elk OS
+
+Goal
+- Wrap the existing synth into a JUCE AudioProcessor that builds as a desktop Standalone for iteration and as a plugin/binary for Elk’s host, reusing your DSP/engine intact.
+
+Why JUCE (for Elk)
+- Portable audio/MIDI I/O with minimal platform quirks.
+- Same codebase for Standalone (fast dev loop) and plugin (Elk deployment).
+- Clean parameter/state model via AudioProcessorValueTreeState (APVTS).
+- CMake-based workflow aligns with Elk guidance; fewer integration surprises.
+
+Target Shape
+- Audio: `AIHardwareAudioProcessor` calls your engine in `prepareToPlay/processBlock/releaseResources` with strict RT-safety.
+- Parameters: APVTS exposes canonical parameter IDs; atomics/lock-free mirroring into the engine.
+- State: Preset save/restore via `getStateInformation`/`setStateInformation`.
+- MIDI/MPE: JUCE MPE mapped to your voice manager.
+- Hardware I/O (LED/touch): Non-RT thread or service (USB/OSC) — never in the audio thread.
+
+Repo Changes
+- New `clients/juce/` (or `juce/`) with:
+  - `CMakeLists.txt` using `juce_add_plugin(...)` (Standalone + plugin).
+  - `AIHardwareAudioProcessor.{h,cpp}` thin wrapper around your engine.
+  - `ParameterLayout.{h,cpp}` APVTS parameter defs + engine mapping.
+  - Optional `HardwareBridge.{h,cpp}` for LED/touch service.
+  - Optional minimal `AudioProcessorEditor` for desktop meters/debug.
+
+Real-Time Safety
+- No allocations/logging in `processBlock`.
+- Use atomics or lock-free queues for parameter updates.
+- Pre-allocate temp buffers; linear MIDI parsing.
+
+Build Strategy
+- Desktop: Standalone app on macOS/Linux for fast iteration.
+- Elk: Cross-compile per Elk’s toolchain (VST3/LV2/hosted AudioProcessor per Elk’s preference).
+
+Plan & Timeline (estimate)
+- Week 0 (Decisions/Scaffold): Confirm Elk plugin target; add JUCE via FetchContent/submodule; scaffold target.
+- Week 1 (Audio Core): Wire `processBlock` to your engine; verify audio/MIDI; basic tests.
+- Week 2 (Params/State): APVTS mapping for priority params; smoothing; preset save/restore.
+- Week 3 (MPE/Multi-timbral): Enable MPE; verify per-note controls; channel/part mapping.
+- Week 4 (Hardware Bridge, optional): Non-RT LED/touch link via USB/OSC; map gestures to parameters/events.
+- Week 5 (Packaging): Cross-compile for Elk; runtime test; latency/CPU/XRUN checks.
+- Week 6 (Polish): Complete parameter coverage, preset browser glue, docs.
+
+Effort Estimate
+- 4–6 weeks total elapsed for a solid, shippable first pass.
+- ~8–12 engineer-days for core wrapper + params + state (Weeks 0–2).
+- ~3–5 days for MPE/multi-timbral (Week 3) depending on coverage.
+- ~3–5 days for Elk cross-compile, testing, and polishing (Weeks 5–6).
+- Hardware bridge (optional): ~3–5 days baseline, independent of Elk.
+
+Risks & Mitigations
+- RT stalls from parameter churn: use atomics, precomputed curves; push only final values into RT path.
+- Elk toolchain quirks: keep CMake simple, pin JUCE version known good on ARM/Linux; provide reproducible presets.
+- GUI on Elk: keep headless/minimal; rely on hardware/OSC for control.
+
+Does this change the Elk OS choice?
+- No — if we adopt JUCE, Elk remains a strong option: real-time kernel, predictable scheduling, and a clean deployment story.
+- Consider alternatives only if you need heavy GPU UI or bespoke kernel/driver features; otherwise Elk reduces ops/integration overheads.
+
+Responsibilities
+- I will implement: JUCE scaffold, AudioProcessor wrapper, APVTS mapping, MIDI/MPE, state/presets, desktop debug UI (minimal), Elk build instructions.
+- You/Support: Confirm Elk plugin target, provide cross-compile environment access; mechanical/CAD remains out-of-scope.
+
+Immediate Next Steps
+- Confirm Elk’s preferred plugin format (VST3 vs LV2 vs hosted AudioProcessor).
+- I can scaffold `clients/juce/` and wire `processBlock` to your engine next.
