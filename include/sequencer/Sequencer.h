@@ -12,6 +12,9 @@
 
 namespace AIMusicHardware {
 
+class ClockSource;
+class HostSync;
+
 struct Envelope {
     float attack;       // Attack time in seconds
     float decay;        // Decay time in seconds
@@ -196,6 +199,10 @@ public:
     void setWrapLongNotesAcrossLoop(bool enabled) { wrapLongNotesAcrossLoop_.store(enabled, std::memory_order_relaxed); }
     bool getWrapLongNotesAcrossLoop() const { return wrapLongNotesAcrossLoop_.load(std::memory_order_relaxed); }
     void seedRandom(uint32_t seed) { if (seed == 0) seed = 0x9E3779B9u; rngState_ = seed; }
+
+    // Optional external/host clock integration
+    void attachClockSource(ClockSource* cs) { clockSource_ = cs; }
+    void attachHostSync(HostSync* hs) { hostSync_ = hs; }
     
 private:
     // Pattern processing method for audio thread
@@ -312,6 +319,10 @@ private:
         if (epsBeats < 1e-6) epsBeats = 1e-6; // hard floor
         return epsBeats;
     }
+
+    // Optional clock/host
+    ClockSource* clockSource_ = nullptr;
+    HostSync* hostSync_ = nullptr;
 };
 
 } // namespace AIMusicHardware

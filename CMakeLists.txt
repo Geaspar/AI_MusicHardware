@@ -180,6 +180,8 @@ set(SEQUENCER_SOURCES
     src/sequencer/MidiFile.cpp
     src/sequencer/AdaptiveSequencer.cpp
     src/sequencer/SegmentSequencer.cpp
+    src/sequencer/ClockSource.cpp
+    src/sequencer/HostSync.cpp
 )
 
 set(PRESET_SOURCES
@@ -432,6 +434,12 @@ message(STATUS "- Run ./bin/TestMpeVoiceManager to try the MPE-aware voice manag
 message(STATUS "- Run ./bin/TestAudio to test real-time audio generation")
 message(STATUS "- Run ./bin/OscillatorStackDemo to try the oscillator stacking capabilities")
 message(STATUS "- Run ./bin/AdvancedFilterDemo to try the enhanced filter system with multiple filter types")
+
+# External Clock Demo (headless)
+add_executable(ExternalClockDemo examples/ExternalClockDemo.cpp)
+target_link_libraries(ExternalClockDemo PRIVATE AIMusicCore)
+message(STATUS "Building ExternalClockDemo")
+message(STATUS "- Run ./bin/ExternalClockDemo to see sequencer driven by an external clock with stable probability mode")
 
 # Sequencer regression test (headless)
 add_executable(SequencerRegressionTest examples/SequencerRegressionTest.cpp)

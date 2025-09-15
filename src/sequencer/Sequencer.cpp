@@ -1,4 +1,6 @@
 #include "../../include/sequencer/Sequencer.h"
+#include "../../include/sequencer/ClockSource.h"
+#include "../../include/sequencer/HostSync.h"
 #include <algorithm>
 #include <iostream>
 #include <cmath>
@@ -818,14 +820,29 @@ void Sequencer::process(double deltaTime) {
         sampleRate = audioEngineSampleRate_;
     }
 
-    // Calculate beats per second from the current tempo
-    const double beatsPerSecond = 1.0 / currentBeatTime;
+    // If we have a host sync, update tempo from host
+    if (hostSync_) {
+        double hbpm = hostSync_->getHostBpm();
+        if (hbpm > 1.0) setTempo(hbpm);
+    }
 
-    // Convert delta time to beats with high precision using synchronized timing
-    double deltaBeats = deltaTime * beatsPerSecond;
+    // Calculate beats delta from either clockSource or local tempo
+    double deltaBeats = 0.0;
+    if (clockSource_) {
+        // Advance clock by audio samples for consistent timing
+        double sr = sampleRate;
+        double samples = deltaTime * sr;
+        if (samples < 0) samples = 0;
+        clockSource_->processAudio(samples);
+        double inc = clockSource_->popBeatIncrements();
+        if (inc > 0.0) deltaBeats = inc;
+    }
+    if (deltaBeats <= 0.0) {
+        // Fallback to internal tempo-based conversion
+        const double beatsPerSecond = 1.0 / currentBeatTime;
+        deltaBeats = deltaTime * beatsPerSecond;
+    }
 
-    // Simplified timing correction - just use the delta beats directly
-    // The complex quantization was causing timing issues
     double adjustedDeltaBeats = deltaBeats;
 
     // Simplified audio synchronization - just use basic timing without complex drift correction
