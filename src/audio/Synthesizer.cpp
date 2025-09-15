@@ -737,6 +737,16 @@ void Synthesizer::resetAllControllers() {
     }
 }
 
+bool Synthesizer::hasActiveVoices() const {
+    if (!voiceManager_) return false;
+    for (int i = 0; i < voiceManager_->getMaxVoices(); ++i) {
+        if (auto* v = voiceManager_->getVoice(i)) {
+            if (v->isActive()) return true;
+        }
+    }
+    return false;
+}
+
 void Synthesizer::setParameter(const std::string& paramId, float value) {
     // We'll need a parameter system for this in the future
     // For now, just handle a few basic parameters

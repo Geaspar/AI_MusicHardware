@@ -2,7 +2,7 @@ Dropdowns Implementation Overview
 
 Scope
 - Component: `DropdownMenu` (UI)
-- Pages using dropdowns: Main (LFO selector, quick FX), Effects (per-slot Effect Type + Page), Sensors (per-lane Slot, FX name, Param)
+- Pages using dropdowns: Main (LFO selector, quick FX), Effects (per-slot Effect Type + Page), Sensors (per-lane Slot, FX name, Param), Settings (Envelope)
 
 Core behaviors
 - Population:
@@ -13,9 +13,10 @@ Core behaviors
 - Rendering (z-order):
   - Each dropdown renders its closed state in the normal component pass (`DropdownMenu::render`).
   - The open list is drawn later using `DropdownMenu::renderDropdownList(DisplayManager*)` so it appears above other UI elements.
-  - The app’s main loop explicitly renders open lists after the active screen’s render:
+  - The app’s main loop explicitly renders open lists after the active screen’s render. Coverage includes:
     - Effects: iterate `fx_type_*`, `fx_page_*`, plus main quick `effect_type_*` and LFO/preset/MIDI dropdowns.
     - Sensors: iterate `sens_slot_*` and `sens_param_*` (for lanes 0..7).
+    - Settings (Envelope): render `env_qr_dd` and `env_min_dd` when open.
 
 - Input handling (click-through prevention):
   - In the event loop, before handling other controls, check if any dropdown is open on the active screen and pass the input to it.
@@ -42,8 +43,9 @@ Common pitfalls avoided
 
 Code reference (key places)
 - UI component: `src/ui/DropdownMenu.cpp` (render, renderDropdownList, handleInput)
-- Effects population and z-ordering: `src/main_integrated_simple.cpp` (look for `fx_type_`, `fx_page_`, `renderDropdownList` calls)
-- Sensors population and z-ordering: `src/main_integrated_simple.cpp` (look for `sens_slot_`, `sens_fx_`, `sens_param_` setup and list rendering)
+- Effects population and z-ordering: `src/main_integrated_simple.cpp` (search `fx_type_`, `fx_page_`)
+- Sensors population and z-ordering: `src/main_integrated_simple.cpp` (search `sens_slot_`, `sens_param_`)
+- Settings (Envelope) population & persistence: `src/main_integrated_simple.cpp` (search `env_qr_dd`, `env_min_dd`; load/save `envelope.*`)
 
 Notes
 - Text rendering uses SDL_ttf when `HAVE_SDL_TTF` is defined; the integrated app target defines this flag to ensure dropdown text is visible.
@@ -57,4 +59,17 @@ Sequencer specifics
 - Rendering (z-order):
   - The Sequencer timeline overlay is drawn after the screen render; Sequencer dropdown open lists are rendered after the overlay so lists remain on top.
 - Input handling:
+Settings (Envelope) specifics
+- Controls on Settings screen:
+  - `env_qr_dd` (Retrigger Quick Release):
+    - Items: `"20 ms"`, `"8 ms"`, `"5 ms"`.
+    - Behavior: Updates the per-voice one-shot release override used on voice stealing; persists to user config `envelope.quick_release_s`.
+  - `env_min_dd` (Envelope Minimums):
+    - Items: `"Normal (A5ms/R10ms)"`, `"Aggressive (A2ms/R5ms)"`, `"Ultra (A1.5ms/R3ms)"`.
+    - Behavior: Sets global ModEnvelope minimums for attack/release; persists to user config `envelope.min_attack_s` and `envelope.min_release_s`.
+- Population & defaults:
+  - Items are added at Settings build; we `selectItemSilently(...)` to ensure a visible default.
+  - On startup, persisted values are loaded and selections synced.
+- Z‑order & click‑through:
+  - Settings dropdowns follow the same render-after-screen and click-through prevention pattern; open lists render above controls and consume clicks outside the list to prevent background activation.
   - The main loop checks for open `seq_jump`, `seq_sec_name_i`, and `seq_sec_bar_i` first when the Sequencer screen is active, mirroring the Effects/Sensors click-through prevention pattern.

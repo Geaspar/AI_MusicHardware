@@ -84,7 +84,12 @@ void VoiceManager::noteOn(int midiNote, float velocity, int channel) {
         if (voice->isActive()) {
             // Apply a one-shot quick release to avoid clicks without altering base release
             if (auto* envelope = voice->getEnvelope()) {
-                envelope->setReleaseOverrideOnce(0.02f);  // 20ms quick fade (one-shot)
+                float qr = std::max(0.0f, quickReleaseOverrideSeconds_);
+                if (fastRetriggerEnabled_) {
+                    // Shorten quick release dramatically for fast retriggers to re-arm envelope quickly
+                    qr = std::min(qr, 0.003f); // ~3ms
+                }
+                if (qr > 0.0f) envelope->setReleaseOverrideOnce(qr);
                 voice->noteOff();
             }
         }
@@ -114,7 +119,8 @@ void VoiceManager::noteOff(int midiNote, int channel) {
         } else {
             // Otherwise, release the note normally
             it->second->noteOff();
-            activeNotes_.erase(it);
+            // Don't remove from activeNotes_ immediately - let the cleanup process handle it
+            // when the voice is completely finished (in Finished state)
         }
     }
 }
@@ -172,7 +178,7 @@ void VoiceManager::process(float* buffer, int numFrames) {
         }
     }
     
-    // Gentle polyphony gain normalization: only count loud voices
+    // Gentle polyphony gain normalization to prevent clipping when many voices overlap
     {
         int loudCount = 0;
         for (auto& voice : voices_) {
@@ -391,7 +397,7 @@ void VoiceManager::sustainOff(int channel) {
         auto it = activeNotes_.find(noteKey);
         if (it != activeNotes_.end()) {
             it->second->noteOff();
-            activeNotes_.erase(it);
+            // Don't remove from activeNotes_ immediately - let the cleanup process handle it
         }
     }
     

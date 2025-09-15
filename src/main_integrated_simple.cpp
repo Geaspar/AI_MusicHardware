@@ -469,11 +469,29 @@ int main(int argc, char* argv[]) {
     double hintTimerSec = 0.0;
     // Metronome toggle shared with audio thread
     std::atomic<bool> metronomeEnabled{false};
+    // Debug overlay: active column and fired count per audio block
+    std::atomic<int> debugActiveColumn{-1};
+    std::atomic<int> debugFiredCount{0};
+    std::atomic<bool> strictTimingEnabled{false};
+    std::atomic<bool> perLoopDedupeEnabled{true};
+    // Sequencer envelope mode: true = use Synth envelope; false = use per-note Pattern envelope
+    std::atomic<bool> seqUseSynthEnvelope{true};
+    std::atomic<bool> logSeqStarts{false};
+    // Debug: inject a short click on each sequencer note-on
+    std::atomic<bool> noteClickEnabled{false};
+    std::atomic<int> noteClickSamplesRemaining{0};
+    std::atomic<int> overlayActiveVoices{0};
+    std::atomic<int> overlayLastPitch{-1};
+    // Envelope scope (simple dev overlay)
+    static constexpr int EnvScopeSize = 256;
+    static std::array<float, EnvScopeSize> envScope{};
+    static std::atomic<int> envScopeIndex{0};
     // Create Sensor Matrix (8 lanes)
     auto sensorMatrix = std::make_shared<SensorMatrix>(8);
     // Fallback note-off scheduler (belt-and-suspenders to avoid stuck notes)
     struct PendingNoteOff { int pitch=0; int channel=0; double remainingSec=0.0; };
-    std::vector<PendingNoteOff> pendingNoteOffs;
+    std::vector<PendingNoteOff> pendingNoteOffs; // legacy safety; disabled by default
+    bool fallbackNoteOffsEnabled = false;
     // Segment Sequencer (Phase B MVP)
     auto segmentSequencer = std::make_unique<SegmentSequencer>();
     std::atomic<bool> segmentsEnabled{false};
@@ -2625,6 +2643,8 @@ int main(int argc, char* argv[]) {
     // Patterns state & helpers
     // Pending pattern change (quantized)
     struct PendingPatternChange { bool active=false; int targetIndex=0; Sequencer::Timing when=Sequencer::Timing::OnBar; bool keepPhase=true; } pendingPatChange;
+    // Sequencer UI Test Mode (disables editing callbacks and loads canned patterns)
+    std::atomic<bool> sequencerTestMode{false};
     // Per-pattern column velocity preferences (used when adding new notes via grid)
     std::unordered_map<int, std::vector<float>> patternColumnVelocity; // patternIndex -> per-column velocity [0..1]
     // Per-pattern column probability (chance) preferences
@@ -2635,8 +2655,78 @@ int main(int argc, char* argv[]) {
     std::unordered_map<std::string, std::vector<int>> sectionPatternSets; // name->list of pattern indices
     // Pattern clipboard (Copy/Paste)
     struct PatternClipboard { std::vector<Note> notes; double lengthBeats = 16.0; bool hasData=false; } patClipboard;
-    // Randomize density (0..1)
-    float randomizeDensity = 0.25f;
+    // Randomize density (0..1) — default to 100% so accidental "Apply Chance" doesn't mute steps
+    float randomizeDensity = 1.0f;
+
+    // Helper: load canned test content and start playback
+    auto runSequencerUITests = [&](UIContext* ctx){
+        // Pattern A: spaced triggers to check misses/ghosts
+        {
+            size_t idx = 0;
+            if (sequencer->getNumPatterns() <= idx) {
+                for (size_t i=sequencer->getNumPatterns(); i<=idx; ++i) {
+                    auto p = std::make_unique<Pattern>(std::string("Pattern ")+std::to_string(i+1));
+                    p->setLength(4.0);
+                    sequencer->addPattern(std::move(p));
+                }
+            }
+            if (auto* p = sequencer->getPattern(idx)) {
+                p->clear(); p->setName("Test Spaced"); p->setLength(4.0);
+                int bpb = std::max(1, sequencer->getBeatsPerBar());
+                double step = (double)bpb / 16.0;
+                int base = 60;
+                int cols[] = {1,6,10,12};
+                for (int c : cols) {
+                    Note n(base, 1.0f, c*step, step, 0);
+                    sequencer->addNoteToPattern(idx, n);
+                }
+            }
+        }
+        // Pattern B: consecutive retrigger stress test
+        {
+            size_t idx = 1;
+            if (sequencer->getNumPatterns() <= idx) {
+                for (size_t i=sequencer->getNumPatterns(); i<=idx; ++i) {
+                    auto p = std::make_unique<Pattern>(std::string("Pattern ")+std::to_string(i+1));
+                    p->setLength(4.0);
+                    sequencer->addPattern(std::move(p));
+                }
+            }
+            if (auto* p = sequencer->getPattern(idx)) {
+                p->clear(); p->setName("Test Retriggers"); p->setLength(4.0);
+                int bpb = std::max(1, sequencer->getBeatsPerBar());
+                double step = (double)bpb / 16.0;
+                int base = 62;
+                int cols[] = {3,4,5,6};
+                for (int c : cols) {
+                    Note n(base, 1.0f, c*step, step, 0);
+                    sequencer->addNoteToPattern(idx, n);
+                }
+            }
+        }
+        // Reset per-column velocities for clarity
+        for (int i=0;i<2;++i) { patternColumnVelocity[i].assign(16, 1.0f); }
+        // Jump to first test pattern and start
+        sequencer->setCurrentPattern(0);
+        sequencer->setPositionInBeats(0.0);
+        if (!sequencer->isPlaying()) sequencer->start();
+        // Update UI selection and refresh
+        if (auto* ps = ctx->getScreen("patterns")) {
+            if (auto* dd = dynamic_cast<DropdownMenu*>(ps->getChild("pat_select"))) {
+                dd->selectItemSilently(0);
+            }
+            // Show HUD message
+            if (!ps->getChild("pat_test_hud")) {
+                auto hud = std::make_unique<Label>("pat_test_hud", "Test Mode: Running — check [DBG] col/fired overlay");
+                hud->setPosition(50, 96);
+                hud->setSize(520, 18);
+                hud->setTextColor(Color(255, 200, 120));
+                ps->addChild(std::move(hud));
+            } else if (auto* hud = dynamic_cast<Label*>(ps->getChild("pat_test_hud"))) {
+                hud->setText("Test Mode: Running — check [DBG] col/fired overlay");
+            }
+        }
+    };
 
     // Load persisted section pattern bindings (if any)
     try {
@@ -3359,6 +3449,9 @@ int main(int argc, char* argv[]) {
     patternsScreen->setSize(1280, 800);
     addNavigationButtons(patternsScreen.get(), "patterns", uiContext.get());
 
+    // Guard to prevent callbacks firing during programmatic grid updates
+    static bool isUpdatingPatternUI = false;
+
     // Helper: get UI-selected pattern index (decoupled from playing pattern)
     auto getUISelectedPatternIndex = [&](UIContext* ctx) -> size_t {
         if (auto* ps = ctx->getScreen("patterns")) {
@@ -3372,6 +3465,7 @@ int main(int argc, char* argv[]) {
 
     // Helper: refresh Patterns grid from selected pattern in UI
     auto refreshPatternGrid = [&](UIContext* ctx){
+        isUpdatingPatternUI = true;
         auto* ps = ctx->getScreen("patterns"); if (!ps) return;
         auto* grid = dynamic_cast<SequencerGrid*>(ps->getChild("pat_grid")); if (!grid) return;
         // Clear existing dynamic labels (bar/row/legend) to avoid duplicates
@@ -3494,11 +3588,13 @@ int main(int argc, char* argv[]) {
                 for (int cc=0; cc<c0; ++cc) {
                     float v = std::clamp(arr[cc], 0.0f, 1.0f);
                     vg->setCellIntensity(0, cc, v);
-                    vg->setCellText(0, cc, std::to_string((int)std::round(v*100.0f)));
+                    int pct = (int)std::round(v * 100.0f);
+                    vg->setCellText(0, cc, std::to_string(pct));
                     vg->setCellActive(0, cc, true);
                 }
             }
         }
+        isUpdatingPatternUI = false;
     };
 
     // Title
@@ -3513,8 +3609,8 @@ int main(int argc, char* argv[]) {
     // Temporary grid overlay toggle (like Sensors)
     {
         auto gridBtn = std::make_unique<Button>("patterns_grid", "Grid: OFF");
-        // Move to grid coordinate A0 -> X=0*40=0, Y='A'(0)*40=0
-        gridBtn->setPosition(0, 0);
+        // Move to grid coordinate A23 -> X=23*40=920, Y='A'(0)*40=0
+        gridBtn->setPosition(920, 0);
         gridBtn->setSize(110, 26);
         gridBtn->setBackgroundColor(Color(60, 60, 80));
         gridBtn->setTextColor(Color(255,255,255));
@@ -3525,6 +3621,92 @@ int main(int argc, char* argv[]) {
             gridPtr->setBackgroundColor(on ? Color(60,80,100) : Color(60,60,80));
         });
         patternsScreen->addChild(std::move(gridBtn));
+    }
+
+    // Envelope quick release (voice steal) toggle and minimums mode
+    {
+        // Quick release: toggle between 20ms and 8ms
+        auto qrBtn = std::make_unique<Button>("env_quick_release", "Env QuickRel: 20ms");
+        qrBtn->setPosition(920, 30);
+        qrBtn->setSize(170, 26);
+        qrBtn->setBackgroundColor(Color(60, 60, 80));
+        qrBtn->setTextColor(Color(255,255,255));
+        auto qrPtr = qrBtn.get();
+        qrBtn->setClickCallback([&, qrPtr]() mutable {
+            // Detect current state by label
+            bool toShort = qrPtr->getText().find("20ms") != std::string::npos;
+            float secs = toShort ? 0.008f : 0.020f;
+            // Apply to current voice manager
+            if (auto* vm = synthesizer->getVoiceManager()) {
+                vm->setQuickReleaseOverrideSeconds(secs);
+            }
+            qrPtr->setText(toShort ? "Env QuickRel: 8ms" : "Env QuickRel: 20ms");
+            qrPtr->setBackgroundColor(toShort ? Color(70,90,60) : Color(60,60,80));
+            std::cout << "[Env] Quick release set to " << secs << " seconds\n";
+            // Persist to config
+            try {
+                nlohmann::json out = loadedConfig.is_null() ? nlohmann::json::object() : loadedConfig;
+                out["envelope"]["quick_release_s"] = secs;
+                std::ofstream f(userConfigPath); if (f.good()) { f<<out.dump(2); f.flush(); loadedConfig = out; }
+            } catch (...) {}
+        });
+        patternsScreen->addChild(std::move(qrBtn));
+
+        // Minimums: toggle Normal vs Aggressive
+        auto minBtn = std::make_unique<Button>("env_minimums", "Env Min: Normal");
+        minBtn->setPosition(1098, 30);
+        minBtn->setSize(160, 26);
+        minBtn->setBackgroundColor(Color(60, 60, 80));
+        minBtn->setTextColor(Color(255,255,255));
+        auto minPtr = minBtn.get();
+        minBtn->setClickCallback([&, minPtr]() mutable {
+            bool toAgg = minPtr->getText().find("Normal") != std::string::npos;
+            if (toAgg) {
+                AIMusicHardware::ModEnvelope::setGlobalMinimums(0.002f, 0.005f); // A=2ms, R=5ms
+            } else {
+                AIMusicHardware::ModEnvelope::setGlobalMinimums(0.005f, 0.010f); // A=5ms, R=10ms
+            }
+            minPtr->setText(toAgg ? "Env Min: Aggressive" : "Env Min: Normal");
+            minPtr->setBackgroundColor(toAgg ? Color(70,90,60) : Color(60,60,80));
+            std::cout << "[Env] Global minimums set: attack="
+                      << AIMusicHardware::ModEnvelope::getGlobalMinAttack()
+                      << ", release=" << AIMusicHardware::ModEnvelope::getGlobalMinRelease() << "\n";
+            // Persist to config
+            try {
+                nlohmann::json out = loadedConfig.is_null() ? nlohmann::json::object() : loadedConfig;
+                out["envelope"]["min_attack_s"] = AIMusicHardware::ModEnvelope::getGlobalMinAttack();
+                out["envelope"]["min_release_s"] = AIMusicHardware::ModEnvelope::getGlobalMinRelease();
+                std::ofstream f(userConfigPath); if (f.good()) { f<<out.dump(2); f.flush(); loadedConfig = out; }
+            } catch (...) {}
+        });
+        patternsScreen->addChild(std::move(minBtn));
+    }
+
+    // Test Mode toggle
+    {
+        auto testBtn = std::make_unique<Button>("patterns_test_mode", "Test Mode: OFF");
+        // Place near overlay toggle (to the right)
+        testBtn->setPosition(1040, 0);
+        testBtn->setSize(170, 26);
+        testBtn->setBackgroundColor(Color(60, 60, 80));
+        testBtn->setTextColor(Color(255,255,255));
+        auto testPtr = testBtn.get();
+        testBtn->setClickCallback([&, testPtr]() mutable {
+            bool turnOn = testPtr->getText().find("ON") == std::string::npos;
+            sequencerTestMode.store(turnOn, std::memory_order_relaxed);
+            testPtr->setText(turnOn?"Test Mode: ON":"Test Mode: OFF");
+            testPtr->setBackgroundColor(turnOn ? Color(70,90,60) : Color(60,60,80));
+            if (turnOn) {
+                runSequencerUITests(uiContext.get());
+            } else {
+                if (auto* ps = uiContext->getScreen("patterns")) {
+                    if (auto* hud = dynamic_cast<Label*>(ps->getChild("pat_test_hud"))) {
+                        hud->setText("");
+                    }
+                }
+            }
+        });
+        patternsScreen->addChild(std::move(testBtn));
     }
 
     // Header controls: selector, prev/next, length, quantize, keep phase, velocity curve, mode
@@ -3562,6 +3744,8 @@ int main(int argc, char* argv[]) {
                 // Default to 4 bars (16 beats)
                 p->setLength(16.0);
                 sequencer->addPattern(std::move(p));
+                // Initialize per-column velocity defaults to 100%
+                patternColumnVelocity[(int)i].assign(16, 1.0f);
             }
             sequencer->setCurrentPattern(0);
         }
@@ -3619,7 +3803,8 @@ int main(int argc, char* argv[]) {
 
         // Pattern name label + dropdown
         auto nameLbl = std::make_unique<Label>("pat_name_lbl", "Apply Name to pattern:");
-        nameLbl->setPosition(260, 76);
+        // Move to grid coordinate B3 -> X=3*40=120, Y='B'(1)*40=40
+        nameLbl->setPosition(120, 40);
         nameLbl->setSize(60, 18);
         nameLbl->setTextColor(Color(180, 180, 200));
         patternsScreen->addChild(std::move(nameLbl));
@@ -3747,19 +3932,29 @@ int main(int argc, char* argv[]) {
         auto gridPtr = grid.get();
         // Toggle cells to add/remove notes in current pattern (thread-safe)
         gridPtr->setCellChangeCallback([&](int row, int col, bool active){
+            if (isUpdatingPatternUI) return; // ignore programmatic updates
+            if (sequencerTestMode.load(std::memory_order_relaxed)) return; // disable editing during tests
+            // Re-fetch grid to ensure pointer is valid
+            SequencerGrid* thisGrid = nullptr;
+            if (auto* ps = uiContext->getScreen("patterns")) thisGrid = dynamic_cast<SequencerGrid*>(ps->getChild("pat_grid"));
+            if (!thisGrid) return;
             size_t pi = getUISelectedPatternIndex(uiContext.get());
             int bpb = sequencer->getBeatsPerBar(); if (bpb <= 0) bpb = 4;
             int rows = 8; (void)rows;
-            int cols, rtmp; gridPtr->getGridSize(rtmp, cols);
+            int cols=16, rtmp=0; thisGrid->getGridSize(rtmp, cols);
             const double stepBeats = (double)bpb / 16.0;
             const double startBeat = (double)col * stepBeats;
             int base = 60; int pitch = base + (7 - row); // invert mapping
             if (active) {
-                // Use per-column velocity if present
-                float vel = 0.8f;
+                // Use per-column velocity if present (default 1.0 -> 100%)
+                float vel = 1.0f;
                 auto it = patternColumnVelocity.find((int)pi);
                 if (it != patternColumnVelocity.end()) { auto& v = it->second; if (col < (int)v.size()) vel = v[col]; }
-                Note n; n.pitch=pitch; n.velocity=vel; n.channel=0; n.startTime=startBeat; n.duration=stepBeats; n.env = Envelope();
+                // Apply per-column probability if present
+                float chance = 1.0f;
+                auto itc = patternColumnChance.find((int)pi);
+                if (itc != patternColumnChance.end()) { auto& c = itc->second; if (col < (int)c.size()) chance = c[col]; }
+                Note n; n.pitch=pitch; n.velocity=vel; n.channel=0; n.startTime=startBeat; n.duration=stepBeats; n.env = Envelope(); n.chance = chance;
                 sequencer->addNoteToPattern(pi, n);
             } else {
                 // Remove any note that matches this cell (pitch and start within epsilon)
@@ -3789,28 +3984,37 @@ int main(int argc, char* argv[]) {
         // State for value mode
         static enum { ModeVelocity, ModeProbability } stepValueModeLocal = ModeVelocity;
         velGridPtr->setCellChangeCallback([&](int row, int col, bool active){
+            if (isUpdatingPatternUI) return; // ignore programmatic updates
+            if (sequencerTestMode.load(std::memory_order_relaxed)) return; // disable editing during tests
+            // Re-fetch vel grid to ensure pointer is valid
+            SequencerGrid* thisVel = nullptr;
+            if (auto* ps = uiContext->getScreen("patterns")) thisVel = dynamic_cast<SequencerGrid*>(ps->getChild("pat_vel_grid"));
+            if (!thisVel) return;
             size_t pi = getUISelectedPatternIndex(uiContext.get());
-            int rows=0, cols=0; velGridPtr->getGridSize(rows, cols);
+            int rows=0, cols=16; thisVel->getGridSize(rows, cols);
             if (stepValueModeLocal == ModeVelocity) {
                 auto& v = patternColumnVelocity[(int)pi]; if ((int)v.size() < cols) v.resize(cols, 0.8f);
                 float nv = v[col];
+                // Original cycle: 100 -> 70 -> 40 -> 100 via threshold logic
                 if (nv < 0.6f) nv = 0.7f; else if (nv < 0.9f) nv = 1.0f; else nv = 0.4f;
                 v[col] = nv;
-                velGridPtr->setCellIntensity(0, col, nv);
+                thisVel->setCellIntensity(0, col, nv);
                 int pct = static_cast<int>(std::round(nv * 100.0f));
-                velGridPtr->setCellText(0, col, std::to_string(pct));
-                velGridPtr->setCellActive(0, col, true);
+                thisVel->setCellText(0, col, std::to_string(pct));
+                thisVel->setCellActive(0, col, true);
                 sequencer->setColumnVelocity(pi, col, nv);
                 std::cout << "[Patterns] Column " << col << " velocity set to " << nv << std::endl;
+
+                // Removed retrigger-on-edit to avoid unwanted tones and extra notes
             } else {
                 auto& c = patternColumnChance[(int)pi]; if ((int)c.size() < cols) c.resize(cols, 1.0f);
                 float nc = c[col];
                 if (nc > 0.95f) nc = 0.7f; else if (nc > 0.65f) nc = 0.4f; else nc = 1.0f; // cycle 100->70->40->100
                 c[col] = nc;
-                velGridPtr->setCellIntensity(0, col, nc);
+                thisVel->setCellIntensity(0, col, nc);
                 int pct = static_cast<int>(std::round(nc * 100.0f));
-                velGridPtr->setCellText(0, col, std::to_string(pct));
-                velGridPtr->setCellActive(0, col, true);
+                thisVel->setCellText(0, col, std::to_string(pct));
+                thisVel->setCellActive(0, col, true);
                 sequencer->setColumnChance(pi, col, nc);
                 std::cout << "[Patterns] Column " << col << " chance set to " << nc << std::endl;
             }
@@ -3820,11 +4024,11 @@ int main(int argc, char* argv[]) {
         {
             int rows=0, cols=0; velGridPtr->getGridSize(rows, cols);
             size_t pi = getUISelectedPatternIndex(uiContext.get());
-            auto initVelocity = [&](){ auto& v = patternColumnVelocity[(int)pi]; if ((int)v.size() < cols) v.resize(cols, 0.8f);
-                for (int c=0;c<cols;++c) { velGridPtr->setCellIntensity(0, c, v[c]); int pct = (int)std::round(v[c]*100.0f); velGridPtr->setCellText(0, c, std::to_string(pct)); velGridPtr->setCellActive(0, c, true);} };
+            auto initVelocity = [&](){ auto& v = patternColumnVelocity[(int)pi]; if ((int)v.size() < cols) v.resize(cols, 1.0f);
+                for (int c=0;c<cols;++c) { isUpdatingPatternUI=true; velGridPtr->setCellIntensity(0, c, v[c]); int pct = (int)std::round(v[c]*100.0f); velGridPtr->setCellText(0, c, std::to_string(pct)); velGridPtr->setCellActive(0, c, true); isUpdatingPatternUI=false; } };
             auto initChance = [&](){ auto& c = patternColumnChance[(int)pi]; if ((int)c.size() < cols) c.resize(cols, 1.0f);
-                for (int cc=0;cc<cols;++cc) { velGridPtr->setCellIntensity(0, cc, c[cc]); int pct = (int)std::round(c[cc]*100.0f); velGridPtr->setCellText(0, cc, std::to_string(pct)); velGridPtr->setCellActive(0, cc, true);} };
-            initVelocity();
+                for (int cc=0;cc<cols;++cc) { isUpdatingPatternUI=true; velGridPtr->setCellIntensity(0, cc, c[cc]); int pct = (int)std::round(c[cc]*100.0f); velGridPtr->setCellText(0, cc, std::to_string(pct)); velGridPtr->setCellActive(0, cc, true); isUpdatingPatternUI=false; } };
+            isUpdatingPatternUI = true; initVelocity(); isUpdatingPatternUI = false;
             // Hook up mode dropdown
             valModePtr->setSelectionCallback([&, velGridPtr, initVelocity, initChance](int index, const std::string& item){
                 if (index == 1) { // Probability
@@ -3861,7 +4065,7 @@ int main(int argc, char* argv[]) {
                 int bpb = std::max(1, sequencer->getBeatsPerBar());
                 p->setLength(4.0 * bpb);
                 p->setName(std::string("Pattern ")+std::to_string((int)idx+1));
-                patternColumnVelocity[(int)idx].assign(16, 0.8f);
+                patternColumnVelocity[(int)idx].assign(16, 1.0f);
                 savePatternsToConfig(userConfigPath);
                 refreshPatternGrid(uiContext.get());
             }
@@ -3891,7 +4095,7 @@ int main(int argc, char* argv[]) {
             size_t idx = getUISelectedPatternIndex(uiContext.get());
             if (auto* p = sequencer->getPattern(idx)) {
                 p->clear();
-                patternColumnVelocity[(int)idx].assign(16, 0.8f);
+                patternColumnVelocity[(int)idx].assign(16, 1.0f);
                 savePatternsToConfig(userConfigPath);
                 refreshPatternGrid(uiContext.get());
             }
@@ -3960,6 +4164,12 @@ int main(int argc, char* argv[]) {
             float ch = std::clamp(randomizeDensity, 0.0f, 1.0f);
             sequencer->setAllNotesChance(idx, ch);
             std::cout << "[Patterns] Applied per-note Chance=" << (int)std::round(ch*100.0f) << "% to Pattern " << (idx+1) << std::endl;
+        }));
+        // Quick 100% button to disable randomness in current pattern
+        patternsScreen->addChild(makeBtn("pat_chance_100", "Chance 100%", [&](){
+            size_t idx = getUISelectedPatternIndex(uiContext.get());
+            sequencer->setAllNotesChance(idx, 1.0f);
+            std::cout << "[Patterns] Applied per-note Chance=100% to Pattern " << (idx+1) << std::endl;
         }));
         patternsScreen->addChild(makeBtn("pat_copy", "Copy", [&](){
             std::cout << "[Patterns] Copy\n";
@@ -4229,6 +4439,53 @@ int main(int argc, char* argv[]) {
             }
         }
     } catch (...) {}
+    // Apply persisted envelope settings (quick release + minimums) and sync Settings dropdowns, then refresh patterns
+    try {
+        if (loadedConfig.contains("envelope")) {
+            const auto& ec = loadedConfig["envelope"];
+            if (ec.contains("min_attack_s") && ec.contains("min_release_s")) {
+                float ma = 0.005f, mr = 0.010f;
+                try { ma = ec["min_attack_s"].get<float>(); } catch (...) {}
+                try { mr = ec["min_release_s"].get<float>(); } catch (...) {}
+                AIMusicHardware::ModEnvelope::setGlobalMinimums(ma, mr);
+                // Update Patterns UI button label if present
+                if (auto* ps = uiContext->getScreen("patterns")) {
+                    if (auto* b = dynamic_cast<Button*>(ps->getChild("env_minimums"))) {
+                        bool aggressive = (ma <= 0.0026f && mr <= 0.0056f);
+                        b->setText(aggressive?"Env Min: Aggressive":"Env Min: Normal");
+                        b->setBackgroundColor(aggressive ? Color(70,90,60) : Color(60,60,80));
+                    }
+                }
+                // Update Settings dropdown if present
+                if (auto* ss = uiContext->getScreen("settings")) {
+                    if (auto* dd = dynamic_cast<DropdownMenu*>(ss->getChild("env_min_dd"))) {
+                        int sel = 0; if (ma <= 0.0016f && mr <= 0.0036f) sel = 2; else if (ma <= 0.0026f && mr <= 0.0056f) sel = 1; dd->selectItemSilently(sel);
+                    }
+                }
+                std::cout << "[Env] Loaded global minimums: attack=" << ma << " release=" << mr << std::endl;
+            }
+            if (ec.contains("quick_release_s")) {
+                float qr = 0.020f; try { qr = ec["quick_release_s"].get<float>(); } catch (...) {}
+                if (auto* vm = synthesizer->getVoiceManager()) vm->setQuickReleaseOverrideSeconds(qr);
+                // Update Patterns UI button label if present
+                if (auto* ps = uiContext->getScreen("patterns")) {
+                    if (auto* b = dynamic_cast<Button*>(ps->getChild("env_quick_release"))) {
+                        bool shortqr = (qr <= 0.010f);
+                        b->setText(shortqr?"Env QuickRel: 8ms":"Env QuickRel: 20ms");
+                        b->setBackgroundColor(shortqr ? Color(70,90,60) : Color(60,60,80));
+                    }
+                }
+                // Update Settings dropdown if present
+                if (auto* ss = uiContext->getScreen("settings")) {
+                    if (auto* dd = dynamic_cast<DropdownMenu*>(ss->getChild("env_qr_dd"))) {
+                        int sel = (qr <= 0.006f ? 2 : (qr <= 0.010f ? 1 : 0)); dd->selectItemSilently(sel);
+                    }
+                }
+                std::cout << "[Env] Loaded quick release seconds: " << qr << std::endl;
+            }
+        }
+    } catch (...) {}
+
     refreshPatternGrid(uiContext.get());
 
     // Removed keyboard pads on Patterns page per updated design
@@ -5611,6 +5868,136 @@ int main(int argc, char* argv[]) {
     settingsTitle->setSize(200, 30);
     settingsTitle->setTextColor(Color(255, 255, 100));
     settingsScreen->addChild(std::move(settingsTitle));
+    // Timing mode toggle (Normal / Strict sub-buffer stepping)
+    {
+        auto timingLbl = std::make_unique<Label>("timing_mode_label", "Timing Mode:");
+        timingLbl->setPosition(50, 80);
+        timingLbl->setSize(120, 20);
+        timingLbl->setTextColor(Color(180,180,200));
+        settingsScreen->addChild(std::move(timingLbl));
+        auto timingBtn = std::make_unique<Button>("timing_mode_btn", "Normal");
+        timingBtn->setPosition(180, 76);
+        timingBtn->setSize(120, 26);
+        timingBtn->setBackgroundColor(Color(60, 80, 110));
+        auto tPtr = timingBtn.get();
+        tPtr->setClickCallback([&strictTimingEnabled, tPtr]() mutable {
+            bool toStrict = (tPtr->getText() == std::string("Normal"));
+            strictTimingEnabled.store(toStrict, std::memory_order_relaxed);
+            tPtr->setText(toStrict ? "Strict" : "Normal");
+            tPtr->setBackgroundColor(toStrict ? Color(70,100,70) : Color(60,80,110));
+            std::cout << "[Timing] Mode set to " << (toStrict?"Strict":"Normal") << std::endl;
+        });
+        settingsScreen->addChild(std::move(timingBtn));
+    }
+    // Per-loop dedupe toggle
+    {
+        auto ddLbl = std::make_unique<Label>("dedupe_label", "Per-loop Dedupe:");
+        ddLbl->setPosition(320, 80);
+        ddLbl->setSize(150, 20);
+        ddLbl->setTextColor(Color(180,180,200));
+        settingsScreen->addChild(std::move(ddLbl));
+        auto ddBtn = std::make_unique<Button>("dedupe_btn", "OFF");
+        ddBtn->setPosition(470, 76);
+        ddBtn->setSize(80, 26);
+        ddBtn->setBackgroundColor(Color(90,70,70));
+        auto dPtr = ddBtn.get();
+        dPtr->setClickCallback([&perLoopDedupeEnabled, &sequencer, dPtr]() mutable {
+            bool currentlyOn = (dPtr->getText() == std::string("ON"));
+            bool toOn = !currentlyOn;
+            perLoopDedupeEnabled.store(toOn, std::memory_order_relaxed);
+            if (sequencer) sequencer->setPerLoopDedupeEnabled(toOn);
+            dPtr->setText(toOn ? "ON" : "OFF");
+            dPtr->setBackgroundColor(toOn ? Color(70,100,70) : Color(90,70,70));
+            std::cout << "[Timing] Per-loop dedupe " << (toOn?"enabled":"disabled") << std::endl;
+        });
+        // Initialize sequencer flag OFF by default to avoid suppressing valid retriggers
+        if (sequencer) sequencer->setPerLoopDedupeEnabled(false);
+        settingsScreen->addChild(std::move(ddBtn));
+    }
+    // Sequencer Envelope mode toggle (Synth vs Pattern)
+    {
+        auto seLbl = std::make_unique<Label>("seq_env_label", "Sequencer Envelope:");
+        seLbl->setPosition(600, 80);
+        seLbl->setSize(180, 20);
+        seLbl->setTextColor(Color(180,180,200));
+        settingsScreen->addChild(std::move(seLbl));
+        auto seBtn = std::make_unique<Button>("seq_env_btn", "Synth");
+        seBtn->setPosition(790, 76);
+        seBtn->setSize(100, 26);
+        seBtn->setBackgroundColor(Color(60,80,110));
+        auto sePtr = seBtn.get();
+        sePtr->setClickCallback([&seqUseSynthEnvelope, sePtr]() mutable {
+            bool toPattern = (sePtr->getText() == std::string("Synth"));
+            seqUseSynthEnvelope.store(!toPattern ? true : false, std::memory_order_relaxed);
+            sePtr->setText(toPattern ? "Pattern" : "Synth");
+            sePtr->setBackgroundColor(toPattern ? Color(70,100,70) : Color(60,80,110));
+            std::cout << "[Seq] Envelope mode set to " << (toPattern?"Pattern":"Synth") << std::endl;
+        });
+        settingsScreen->addChild(std::move(seBtn));
+    }
+    // Fast Retrigger mode toggle (shorter quick release on voice steal)
+    {
+        auto frLbl = std::make_unique<Label>("fast_retrig_label", "Fast Retrigger:");
+        frLbl->setPosition(930, 80);
+        frLbl->setSize(150, 20);
+        frLbl->setTextColor(Color(180,180,200));
+        settingsScreen->addChild(std::move(frLbl));
+        auto frBtn = std::make_unique<Button>("fast_retrig_btn", "OFF");
+        frBtn->setPosition(1080, 76);
+        frBtn->setSize(80, 26);
+        frBtn->setBackgroundColor(Color(90,70,70));
+        auto frPtr = frBtn.get();
+        frPtr->setClickCallback([&synthesizer, frPtr]() mutable {
+            bool toOn = (frPtr->getText() == std::string("OFF"));
+            if (auto* vm = synthesizer->getVoiceManager()) vm->setFastRetriggerEnabled(toOn);
+            frPtr->setText(toOn ? "ON" : "OFF");
+            frPtr->setBackgroundColor(toOn ? Color(70,100,70) : Color(90,70,70));
+            std::cout << "[Synth] Fast Retrigger " << (toOn?"enabled":"disabled") << std::endl;
+        });
+        settingsScreen->addChild(std::move(frBtn));
+    }
+    // Sequencer logging toggle
+    {
+        auto lsLbl = std::make_unique<Label>("log_seq_label", "Log Starts:");
+        lsLbl->setPosition(50, 112);
+        lsLbl->setSize(120, 20);
+        lsLbl->setTextColor(Color(180,180,200));
+        settingsScreen->addChild(std::move(lsLbl));
+        auto lsBtn = std::make_unique<Button>("log_seq_btn", "OFF");
+        lsBtn->setPosition(180, 108);
+        lsBtn->setSize(80, 26);
+        lsBtn->setBackgroundColor(Color(90,70,70));
+        auto lsPtr = lsBtn.get();
+        lsPtr->setClickCallback([&logSeqStarts, lsPtr]() mutable {
+            bool toOn = (lsPtr->getText() == std::string("OFF"));
+            logSeqStarts.store(toOn, std::memory_order_relaxed);
+            lsPtr->setText(toOn ? "ON" : "OFF");
+            lsPtr->setBackgroundColor(toOn ? Color(70,100,70) : Color(90,70,70));
+        });
+        settingsScreen->addChild(std::move(lsBtn));
+    }
+
+    // Note-on click toggle
+    {
+        auto ncLbl = std::make_unique<Label>("note_click_label", "Note-on Click:");
+        ncLbl->setPosition(280, 112);
+        ncLbl->setSize(140, 20);
+        ncLbl->setTextColor(Color(180,180,200));
+        settingsScreen->addChild(std::move(ncLbl));
+        auto ncBtn = std::make_unique<Button>("note_click_btn", "OFF");
+        ncBtn->setPosition(420, 108);
+        ncBtn->setSize(80, 26);
+        ncBtn->setBackgroundColor(Color(90,70,70));
+        auto ncPtr = ncBtn.get();
+        ncPtr->setClickCallback([&noteClickEnabled, ncPtr]() mutable {
+            bool toOn = (ncPtr->getText() == std::string("OFF"));
+            noteClickEnabled.store(toOn, std::memory_order_relaxed);
+            ncPtr->setText(toOn ? "ON" : "OFF");
+            ncPtr->setBackgroundColor(toOn ? Color(70,100,70) : Color(90,70,70));
+            std::cout << "[Debug] Note-on click " << (toOn?"enabled":"disabled") << std::endl;
+        });
+        settingsScreen->addChild(std::move(ncBtn));
+    }
     
     auto audioSection = std::make_unique<Label>("audio_section", "Audio Configuration");
     audioSection->setPosition(50, 100);
@@ -5641,6 +6028,57 @@ int main(int argc, char* argv[]) {
     midiInfo->setSize(400, 20);
     midiInfo->setTextColor(Color(180, 180, 180));
     settingsScreen->addChild(std::move(midiInfo));
+
+    // Envelope section (right column)
+    auto settingsEnvSection = std::make_unique<Label>("settings_env_section", "Envelope");
+    settingsEnvSection->setPosition(600, 100);
+    settingsEnvSection->setSize(200, 25);
+    settingsEnvSection->setTextColor(Color(200, 200, 255));
+    settingsScreen->addChild(std::move(settingsEnvSection));
+
+    // Quick release dropdown (voice-steal one-shot release)
+    auto settingsEnvQRLbl = std::make_unique<Label>("settings_env_qr_label", "Retrigger Quick Release:");
+    settingsEnvQRLbl->setPosition(620, 130);
+    settingsEnvQRLbl->setSize(200, 20);
+    settingsEnvQRLbl->setTextColor(Color(180, 180, 180));
+    settingsScreen->addChild(std::move(settingsEnvQRLbl));
+
+    auto settingsEnvQR = std::make_unique<DropdownMenu>("env_qr_dd", "20 ms");
+    settingsEnvQR->setPosition(820, 126);
+    settingsEnvQR->setSize(120, 26);
+    settingsEnvQR->addItem("20 ms");
+    settingsEnvQR->addItem("8 ms");
+    settingsEnvQR->addItem("5 ms");
+    auto envQRPtr = settingsEnvQR.get();
+    envQRPtr->setSelectionCallback([&, envQRPtr](int idx, const std::string& item){
+        float secs = 0.020f; if (idx == 1) secs = 0.008f; else if (idx == 2) secs = 0.005f;
+        if (auto* vm = synthesizer->getVoiceManager()) vm->setQuickReleaseOverrideSeconds(secs);
+        try { nlohmann::json out = loadedConfig.is_null()? nlohmann::json::object(): loadedConfig; out["envelope"]["quick_release_s"] = secs; std::ofstream f(userConfigPath); if (f.good()){ f<<out.dump(2); f.flush(); loadedConfig=out; } } catch (...) {}
+        std::cout << "[Settings] Quick release set to " << secs << " seconds ("<<item<<")\n";
+    });
+    settingsScreen->addChild(std::move(settingsEnvQR));
+
+    // Minimums dropdown (global clamp for attack/release)
+    auto settingsEnvMinLbl = std::make_unique<Label>("settings_env_min_label", "Envelope Minimums:");
+    settingsEnvMinLbl->setPosition(620, 160);
+    settingsEnvMinLbl->setSize(200, 20);
+    settingsEnvMinLbl->setTextColor(Color(180, 180, 180));
+    settingsScreen->addChild(std::move(settingsEnvMinLbl));
+
+    auto settingsEnvMin = std::make_unique<DropdownMenu>("env_min_dd", "Normal (A5ms/R10ms)");
+    settingsEnvMin->setPosition(820, 156);
+    settingsEnvMin->setSize(220, 26);
+    settingsEnvMin->addItem("Normal (A5ms/R10ms)");
+    settingsEnvMin->addItem("Aggressive (A2ms/R5ms)");
+    settingsEnvMin->addItem("Ultra (A1.5ms/R3ms)");
+    auto envMinPtr = settingsEnvMin.get();
+    envMinPtr->setSelectionCallback([&, envMinPtr](int idx, const std::string&){
+        float a=0.005f, r=0.010f; if (idx==1){ a=0.002f; r=0.005f; } else if (idx==2){ a=0.0015f; r=0.003f; }
+        AIMusicHardware::ModEnvelope::setGlobalMinimums(a, r);
+        try { nlohmann::json out = loadedConfig.is_null()? nlohmann::json::object(): loadedConfig; out["envelope"]["min_attack_s"]=a; out["envelope"]["min_release_s"]=r; std::ofstream f(userConfigPath); if (f.good()){ f<<out.dump(2); f.flush(); loadedConfig=out; } } catch (...) {}
+        std::cout << "[Settings] Envelope minimums set to attack="<<a<<"s release="<<r<<"s\n";
+    });
+    settingsScreen->addChild(std::move(settingsEnvMin));
     
     // Add Audio Quality section
     auto qualitySection = std::make_unique<Label>("quality_section", "Audio Quality");
@@ -6691,17 +7129,35 @@ int main(int argc, char* argv[]) {
     // Set up sequencer callbacks
     sequencer->setNoteCallbacks(
         [&](int pitch, float velocity, int channel, const Envelope& env) {
-            // Use per-note envelope from sequencer for clearer articulation
             float v = applyVelocityCurve(velocity);
-            synthesizer->noteOn(pitch, v, env);
+            if (seqUseSynthEnvelope.load(std::memory_order_relaxed)) {
+                synthesizer->noteOn(pitch, v, channel);
+            } else {
+                synthesizer->noteOn(pitch, v, env, channel);
+            }
+            debugFiredCount.fetch_add(1, std::memory_order_relaxed);
+            if (noteClickEnabled.load(std::memory_order_relaxed)) {
+                // Trigger a short audible click (handled after synth processing)
+                noteClickSamplesRemaining.store(600, std::memory_order_relaxed); // ~13.6ms @44.1k
+            }
+            if (logSeqStarts.load(std::memory_order_relaxed)) {
+                double pos = sequencer->getPrecisePositionInBeats();
+                int bpb = std::max(1, sequencer->getBeatsPerBar());
+                double step = (double)bpb/16.0;
+                int col = (int)std::floor(std::fmod(pos, (double)bpb) / step + 1e-6);
+                int bar = (int)std::floor(pos / (double)bpb);
+                std::cout << "[SEQ] fired pitch="<<pitch<<" col="<<col<<" bar="<<bar<<" pos="<<pos<<"\n";
+            }
             if (midiOutput && midiOutput->isDeviceOpen()) {
                 try { midiOutput->sendNoteOn(channel, pitch, static_cast<int>(velocity * 127.0f)); } catch (...) {}
             }
-            // Schedule a conservative fallback note-off based on current tempo (to avoid stuck notes)
-            double bpm = sequencer->getTempo();
-            double secPerBeat = 60.0 / std::max(1.0, bpm);
-            double fallbackDurSec = secPerBeat * 0.6; // shorter than 1 beat
-            pendingNoteOffs.push_back({pitch, channel, fallbackDurSec});
+            // Fallback note-off disabled to avoid interfering with rapid retriggers
+            if (fallbackNoteOffsEnabled) {
+                double bpm = sequencer->getTempo();
+                double secPerBeat = 60.0 / std::max(1.0, bpm);
+                double fallbackDurSec = secPerBeat * 0.6;
+                pendingNoteOffs.push_back({pitch, channel, fallbackDurSec});
+            }
         },
         [&](int pitch, int channel) {
             synthesizer->noteOff(pitch);
@@ -6709,8 +7165,10 @@ int main(int argc, char* argv[]) {
                 try { midiOutput->sendNoteOff(channel, pitch); } catch (...) {}
             }
             // Remove any pending fallback for this pitch/channel
-            for (auto it = pendingNoteOffs.begin(); it != pendingNoteOffs.end(); ) {
-                if (it->pitch == pitch && it->channel == channel) it = pendingNoteOffs.erase(it); else ++it;
+            if (fallbackNoteOffsEnabled) {
+                for (auto it = pendingNoteOffs.begin(); it != pendingNoteOffs.end(); ) {
+                    if (it->pitch == pitch && it->channel == channel) it = pendingNoteOffs.erase(it); else ++it;
+                }
             }
         }
     );
@@ -6728,8 +7186,53 @@ int main(int argc, char* argv[]) {
             double sr = audioEngine->getSampleRate();
             if (sr < 1.0) sr = 44100.0; // safety
             double dt = static_cast<double>(numFrames) / sr;
+            // Debug: reset count and compute active column
+            debugFiredCount.store(0, std::memory_order_relaxed);
+            {
+                int bpb = std::max(1, sequencer->getBeatsPerBar());
+                double pos = sequencer->getPrecisePositionInBeats();
+                double step = (double)bpb / 16.0;
+                if (step > 0.0) {
+                    int col = (int)std::floor(std::fmod(pos, (double)bpb) / step + 1e-6);
+                    if (col < 0) col = 0; if (col > 15) col = col % 16;
+                    debugActiveColumn.store(col, std::memory_order_relaxed);
+                }
+            }
             if (muteAfterRecoverySec <= 0.0) {
-                sequencer->process(dt);
+                // Auto-chunk when the audio buffer is coarse relative to a 16th note
+                // or when Strict mode is enabled via Settings. This avoids skipping
+                // very fast retriggers at high tempos / big buffers.
+                bool forceChunk = false;
+                {
+                    // Estimate beats per buffer and compare to 1/16th step
+                    double secPerBeat = sequencer->getPreciseBeatTime();
+                    if (secPerBeat > 0.0) {
+                        double beatsPerBuffer = dt / secPerBeat;
+                        double stepBeats = (double)std::max(1, sequencer->getBeatsPerBar()) / 16.0;
+                        // If our buffer spans a large fraction of a step, sub-slice
+                        if (beatsPerBuffer > stepBeats * 0.75) forceChunk = true;
+                    }
+                }
+                if (strictTimingEnabled.load(std::memory_order_relaxed) || forceChunk) {
+                    // Choose slice size so each slice is at most ~1/2 of a 16th step in time
+                    int slice = 128;
+                    // Derive a tighter slice dynamically if needed
+                    double secPerBeat = sequencer->getPreciseBeatTime();
+                    if (secPerBeat > 0.0) {
+                        double stepSec = secPerBeat * ((double)std::max(1, sequencer->getBeatsPerBar()) / 16.0);
+                        int stepFrames = (int)std::max(16.0, std::floor(stepSec * sr));
+                        slice = std::min(slice, std::max(32, stepFrames / 2));
+                    }
+                    if (slice > numFrames) slice = numFrames;
+                    int done = 0;
+                    while (done < numFrames) {
+                        int n = std::min(slice, numFrames - done);
+                        sequencer->process(static_cast<double>(n) / sr);
+                        done += n;
+                    }
+                } else {
+                    sequencer->process(dt);
+                }
             }
             // Mute window after recovery: suppress note-ons and force silence
             if (muteAfterRecoverySec > 0.0) {
@@ -6739,9 +7242,8 @@ int main(int argc, char* argv[]) {
                     try { for (int ch=0; ch<16; ++ch) for (int n=0; n<128; ++n) midiOutput->sendNoteOff(ch, n); } catch (...) {}
                 }
             }
-            // (Removed) Demo pulse fallback — sequencer should drive notes now
-            // Service fallback note-offs
-            if (!pendingNoteOffs.empty()) {
+            // Service fallback note-offs (disabled by default)
+            if (fallbackNoteOffsEnabled && !pendingNoteOffs.empty()) {
                 for (auto it = pendingNoteOffs.begin(); it != pendingNoteOffs.end(); ) {
                     it->remainingSec -= dt;
                     if (it->remainingSec <= 0.0) {
@@ -6755,13 +7257,35 @@ int main(int argc, char* argv[]) {
                     }
                 }
             }
+            // Capture envelope scope value (max over active voices) and voice count
+            if (auto* vm = synthesizer->getVoiceManager()) {
+                float maxEnv = 0.0f;
+                int vcount = 0; int lastPitch = -1;
+                for (int i=0;i<vm->getMaxVoices();++i) {
+                    if (auto* v = vm->getVoice(i)) {
+                        if (v->isActive()) {
+                            vcount++;
+                            lastPitch = v->getMidiNote();
+                            if (auto* e = v->getEnvelope()) {
+                                float val = e->getCurrentValue();
+                                if (val > maxEnv) maxEnv = val;
+                            }
+                        }
+                    }
+                }
+                int idx = (envScopeIndex.load(std::memory_order_relaxed) + 1) % EnvScopeSize;
+                envScopeIndex.store(idx, std::memory_order_relaxed);
+                envScope[idx] = maxEnv;
+                overlayActiveVoices.store(vcount, std::memory_order_relaxed);
+                overlayLastPitch.store(lastPitch, std::memory_order_relaxed);
+            }
         }
         // Then generate audio
         audioCallback(audioEngine.get(), synthesizer.get(), effectProcessor.get(),
                      sequencer.get(), waveformPtr, levelPtr, outputBuffer, numFrames);
 
-        // Metronome: add click at beat boundaries when enabled
-        if (metronomeEnabled.load(std::memory_order_relaxed)) {
+        // Metronome: add click at beat boundaries when enabled AND sequencer is playing AND audio processing is on
+        if (metronomeEnabled.load(std::memory_order_relaxed) && sequencer->isPlaying() && seqProcEnabled.load(std::memory_order_relaxed)) {
             double sr = audioEngine->getSampleRate(); if (sr < 1.0) sr = 44100.0;
             // Detect boundary using precise position
             static int lastBeat = -1;
@@ -6778,9 +7302,43 @@ int main(int argc, char* argv[]) {
                     --clickSamplesRemaining;
                 }
             }
-        } else {
-            clickSamplesRemaining = 0;
+            // Update visualizers with metronome-mixed buffer so the click is visible
+            if (waveformPtr) {
+                waveformPtr->pushSamples(outputBuffer, numFrames, 2);
+            }
+            if (levelPtr) {
+                float rms = 0.0f;
+                for (int i = 0; i < numFrames * 2; i += 2) {
+                    float sample = (outputBuffer[i] + outputBuffer[i + 1]) * 0.5f;
+                    rms += sample * sample;
+                }
+                rms = std::sqrt(rms / numFrames);
+                levelPtr->setLevel(rms * 2.0f);
+            }
         }
+
+        // Debug: inject short click on each note-on when enabled
+        if (noteClickEnabled.load(std::memory_order_relaxed) && sequencer->isPlaying() && seqProcEnabled.load(std::memory_order_relaxed)) {
+            const int noteClickDecaySamples = 800; // ~18ms @44.1k
+            const float noteClickAmplitude = 0.5f;
+            int remaining = noteClickSamplesRemaining.load(std::memory_order_relaxed);
+            for (int i=0; i<numFrames && remaining > 0; ++i) {
+                float env = (float)remaining / (float)noteClickDecaySamples;
+                float s = noteClickAmplitude * env;
+                outputBuffer[2*i]   += s;
+                outputBuffer[2*i+1] += s;
+                --remaining;
+            }
+            noteClickSamplesRemaining.store(remaining, std::memory_order_relaxed);
+        }
+        else {
+            // Ensure metronome is completely silenced when not active
+            clickSamplesRemaining = 0;
+            // Reset detector baseline so first beat after enabling starts fresh
+            static int lastBeat = -1; lastBeat = -1;
+        }
+
+        // Allow natural tails from synth and FX when stopped; no global mute applied here.
     });
     
     // Deferred apply: if synth settings were loaded, re-apply once after UI has fully initialized
@@ -7099,6 +7657,28 @@ int main(int argc, char* argv[]) {
                             if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("pat_select"))) {
                                 if (dropdown->isDropdownOpen()) {
                                     dropdownHandled = dropdown->handleInput(inputEvent);
+                                    if (inputEvent.type == InputEventType::TouchPress && !dropdownHandled) {
+                                        dropdownHandled = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Settings page: Envelope dropdowns (handle in reverse order)
+                    if (!dropdownHandled && uiContext->getActiveScreenId() == std::string("settings")) {
+                        if (auto* dd = dynamic_cast<DropdownMenu*>(activeScreen->getChild("env_min_dd"))) {
+                            if (dd->isDropdownOpen()) {
+                                dropdownHandled = dd->handleInput(inputEvent);
+                                if (inputEvent.type == InputEventType::TouchPress && !dropdownHandled) {
+                                    dropdownHandled = true; // consume outside clicks
+                                }
+                            }
+                        }
+                        if (!dropdownHandled) {
+                            if (auto* dd = dynamic_cast<DropdownMenu*>(activeScreen->getChild("env_qr_dd"))) {
+                                if (dd->isDropdownOpen()) {
+                                    dropdownHandled = dd->handleInput(inputEvent);
                                     if (inputEvent.type == InputEventType::TouchPress && !dropdownHandled) {
                                         dropdownHandled = true;
                                     }
@@ -7992,7 +8572,7 @@ int main(int argc, char* argv[]) {
                             }
                             // (Removed) Demo pulse fallback
                             // Service fallback note-offs
-                            if (!pendingNoteOffs.empty()) {
+                            if (fallbackNoteOffsEnabled && !pendingNoteOffs.empty()) {
                                 for (auto it = pendingNoteOffs.begin(); it != pendingNoteOffs.end(); ) {
                                     it->remainingSec -= dt;
                                     if (it->remainingSec <= 0.0) {
@@ -8026,7 +8606,7 @@ int main(int argc, char* argv[]) {
                         if (midiOutput && midiOutput->isDeviceOpen()) {
                             try { for (int ch=0; ch<16; ++ch) for (int n=0; n<128; ++n) midiOutput->sendNoteOff(ch, n); } catch (...) {}
                         }
-                        pendingNoteOffs.clear();
+                        if (fallbackNoteOffsEnabled) pendingNoteOffs.clear();
                         // Start short mute to avoid immediate retrigger during bounce
                         muteAfterRecoverySec = 0.3;
                     } else {
@@ -8139,6 +8719,16 @@ int main(int argc, char* argv[]) {
             if (auto* dropdown = dynamic_cast<DropdownMenu*>(activeScreen->getChild("pat_velcurve"))) {
                 if (dropdown->isDropdownOpen()) {
                     dropdown->renderDropdownList(sdlDisplayManager.get());
+                }
+            }
+
+            // Settings: render Envelope dropdown lists (Quick Release / Minimums)
+            if (uiContext->getActiveScreenId() == std::string("settings")) {
+                if (auto* dd = dynamic_cast<DropdownMenu*>(activeScreen->getChild("env_qr_dd"))) {
+                    if (dd->isDropdownOpen()) dd->renderDropdownList(sdlDisplayManager.get());
+                }
+                if (auto* dd = dynamic_cast<DropdownMenu*>(activeScreen->getChild("env_min_dd"))) {
+                    if (dd->isDropdownOpen()) dd->renderDropdownList(sdlDisplayManager.get());
                 }
             }
             
@@ -8262,6 +8852,38 @@ int main(int argc, char* argv[]) {
                             auto aCut = synthesizer->getModAmount("Velocity","Filter Cutoff");
                             std::string dbg = std::string("Vel->Vol: ") + fmtAmt(aVol) + "  |  Vel->Cutoff: " + fmtAmt(aCut);
                             sdlDisplayManager->drawText(20, 20, dbg, nullptr, Color(200, 220, 255));
+                            // Debug: show active column and fired count
+                            int col = debugActiveColumn.load(std::memory_order_relaxed);
+                            int fired = debugFiredCount.load(std::memory_order_relaxed);
+                            std::string dbg2 = std::string("[DBG] col ") + std::to_string(col) + " fired " + std::to_string(fired);
+                            sdlDisplayManager->drawText(20, 40, dbg2, nullptr, Color(255, 200, 120));
+
+                            // Envelope scope mini-plot (top-right corner of Patterns page)
+                            int plotW = 260, plotH = 60;
+                            int px = sdlDisplayManager->getWidth() - (plotW + 20);
+                            int py = 20;
+                            // Frame
+                            sdlDisplayManager->drawRect(px, py, plotW, plotH, Color(120,140,160,255));
+                            // Plot line
+                            int idx = envScopeIndex.load(std::memory_order_relaxed);
+                            auto sampleAt = [&](int i){ int k = (idx - i); if (k < 0) k += EnvScopeSize; if (k < 0) k = 0; return envScope[(size_t)k]; };
+                            int prevX = px + plotW - 1;
+                            int prevY = py + plotH - 1 - (int)std::round(sampleAt(0) * (plotH - 2));
+                            for (int i=1; i<std::min(plotW, EnvScopeSize); ++i) {
+                                int x = px + plotW - 1 - i;
+                                int y = py + plotH - 1 - (int)std::round(sampleAt(i) * (plotH - 2));
+                                sdlDisplayManager->drawLine(prevX, prevY, x, y, Color(255, 220, 140, 255));
+                                prevX = x; prevY = y;
+                            }
+                            // Numeric readout of latest env value
+                            float curEnv = sampleAt(0);
+                            std::stringstream es; es.setf(std::ios::fixed); es<<"Env: "<<std::setprecision(2)<<curEnv;
+                            sdlDisplayManager->drawText(px, py + plotH + 4, es.str(), nullptr, Color(220, 220, 240));
+                            // Active voices count and last pitch
+                            int av = overlayActiveVoices.load(std::memory_order_relaxed);
+                            int lp = overlayLastPitch.load(std::memory_order_relaxed);
+                            std::stringstream vs; vs<<"Voices: "<<av<<"  Last: "<<(lp>=0?lp:0);
+                            sdlDisplayManager->drawText(px, py + plotH + 20, vs.str(), nullptr, Color(200, 210, 230));
                         }
                     }
                 }
@@ -8310,6 +8932,8 @@ int main(int argc, char* argv[]) {
                 const int step = 40;
                 const int textX = 1 * step;
                 const int textY = 11 * step;
+                // Draw a background rectangle behind the text for better visibility
+                sdlDisplayManager->fillRect(textX - 5, textY - 5, 200, 25, Color(20, 20, 30));
                 sdlDisplayManager->drawText(textX, textY, "TIMELINE", nullptr, Color(200, 220, 255));
                 // Timeline rectangle below label: start at row M (12*40 = 480), span 1200px (30 columns)
                 int tlX = 1 * step;
@@ -8331,6 +8955,8 @@ int main(int argc, char* argv[]) {
                     int x = tlX + (int)std::round(beat * pxPerBeat);
                     sdlDisplayManager->drawLine(x, tlY, x, tlY + tlH, Color(90, 110, 140));
                     int barIdx = beat / bpb;
+                    // Draw background behind bar labels for better visibility
+                    sdlDisplayManager->fillRect(x + 1, tlY + tlH + 2, 20, 16, Color(20, 20, 30));
                     sdlDisplayManager->drawText(x + 2, tlY + tlH + 4, std::to_string(barIdx), nullptr, Color(140, 160, 190));
                 }
                 // Section markers and active section highlight
@@ -8354,6 +8980,8 @@ int main(int argc, char* argv[]) {
                 for (const auto& d : defs) {
                     int sx = tlX + (int)std::round(d.second * pxPerBeat);
                     sdlDisplayManager->drawLine(sx, tlY, sx, tlY + tlH, Color(60, 200, 120));
+                    // Draw background behind section labels for better visibility
+                    sdlDisplayManager->fillRect(sx + 2, tlY - 20, 30, 18, Color(20, 20, 30));
                     sdlDisplayManager->drawText(sx + 4, tlY - 16, d.first, nullptr, Color(140, 220, 160));
                 }
                 // Playhead

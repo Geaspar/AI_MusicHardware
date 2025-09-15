@@ -4,6 +4,10 @@
 
 namespace AIMusicHardware {
 
+// Static defaults for global minimums
+float ModEnvelope::s_minAttackSeconds_ = 0.005f;  // 5 ms default
+float ModEnvelope::s_minReleaseSeconds_ = 0.010f; // 10 ms default
+
 ModEnvelope::ModEnvelope(int sampleRate)
     : attack_(0.01f),      // 10ms attack by default
       decay_(0.1f),        // 100ms decay by default
@@ -114,7 +118,8 @@ float ModEnvelope::generateValue() {
 }
 
 void ModEnvelope::setAttack(float seconds) {
-    attack_ = std::max(0.005f, seconds); // Minimum 5ms attack to prevent clicks
+    float minA = std::max(0.0005f, s_minAttackSeconds_);
+    attack_ = std::max(minA, seconds);
     updateRates();
 }
 
@@ -128,7 +133,8 @@ void ModEnvelope::setSustain(float level) {
 }
 
 void ModEnvelope::setRelease(float seconds) {
-    release_ = std::max(0.010f, seconds); // Minimum 10ms release to prevent clicks
+    float minR = std::max(0.001f, s_minReleaseSeconds_);
+    release_ = std::max(minR, seconds);
     updateRates();
 }
 
@@ -175,6 +181,11 @@ float ModEnvelope::applyCurve(float value, float curve) const {
     } else {
         return 1.0f - std::pow(1.0f - value, 1.0f + (curve * 3.0f));
     }
+}
+
+void ModEnvelope::setGlobalMinimums(float minAttackSeconds, float minReleaseSeconds) {
+    s_minAttackSeconds_ = std::max(0.0005f, minAttackSeconds);
+    s_minReleaseSeconds_ = std::max(0.001f, minReleaseSeconds);
 }
 
 } // namespace AIMusicHardware

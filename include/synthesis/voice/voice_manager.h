@@ -72,6 +72,13 @@ public:
     void setPitchBendRange(float semitones) { pitchBendRange_ = semitones; }
     float getPitchBendRange() const { return pitchBendRange_; }
 
+    // Configure one-shot quick release used when stealing voices (seconds)
+    void setQuickReleaseOverrideSeconds(float seconds) { quickReleaseOverrideSeconds_ = std::max(0.0f, seconds); }
+    float getQuickReleaseOverrideSeconds() const { return quickReleaseOverrideSeconds_; }
+    // Fast retrigger mode: shorten quick release for very tight retriggers (reduces "bloom").
+    void setFastRetriggerEnabled(bool enabled) { fastRetriggerEnabled_ = enabled; }
+    bool isFastRetriggerEnabled() const { return fastRetriggerEnabled_; }
+
     // Access individual voices for advanced control
     Voice* getVoice(int index) {
         if (index >= 0 && index < static_cast<int>(voices_.size())) {
@@ -124,6 +131,10 @@ private:
     
     // Pitch bend settings
     float pitchBendRange_ = 2.0f;  // Default +/- 2 semitones
+
+    // Voice-steal quick fade seconds (one-shot per stolen note)
+    float quickReleaseOverrideSeconds_ = 0.02f; // 20ms default
+    bool fastRetriggerEnabled_ = false;
 };
 
 } // namespace AIMusicHardware

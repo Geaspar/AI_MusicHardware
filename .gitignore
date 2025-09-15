@@ -19,3 +19,6 @@ build/
 
 # Local runtime config/state
 user_config.json
+
+# Local open-source references (not versioned)
+References/OpenSource/

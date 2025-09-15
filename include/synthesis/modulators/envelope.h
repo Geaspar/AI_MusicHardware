@@ -57,6 +57,11 @@ public:
     
     // Sample rate management
     void setSampleRate(int sampleRate);
+
+    // Global minimums control (affects future setAttack/setRelease calls)
+    static void setGlobalMinimums(float minAttackSeconds, float minReleaseSeconds);
+    static float getGlobalMinAttack() { return s_minAttackSeconds_; }
+    static float getGlobalMinRelease() { return s_minReleaseSeconds_; }
     
 private:
     // Calculate rates based on time values
@@ -87,6 +92,10 @@ private:
     
     float stageProgress_; // progress through current stage (0-1)
     float releaseStartValue_; // value captured at noteOff() to release from actual level
+
+    // Global minimum attack/release seconds (static)
+    static float s_minAttackSeconds_;
+    static float s_minReleaseSeconds_;
 };
 
 } // namespace AIMusicHardware

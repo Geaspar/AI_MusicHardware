@@ -63,6 +63,9 @@ public:
     void setAftertouch(int note, float pressure, int channel = 0);
     void setChannelPressure(float pressure, int channel = 0);
     void resetAllControllers();
+
+    // Utility: whether any voice is currently active (sounding)
+    bool hasActiveVoices() const;
     
     // Parameter system
     void setParameter(const std::string& paramId, float value);

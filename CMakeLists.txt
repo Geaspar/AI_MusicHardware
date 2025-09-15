@@ -433,6 +433,54 @@ message(STATUS "- Run ./bin/TestAudio to test real-time audio generation")
 message(STATUS "- Run ./bin/OscillatorStackDemo to try the oscillator stacking capabilities")
 message(STATUS "- Run ./bin/AdvancedFilterDemo to try the enhanced filter system with multiple filter types")
 
+# Sequencer regression test (headless)
+add_executable(SequencerRegressionTest examples/SequencerRegressionTest.cpp)
+target_link_libraries(SequencerRegressionTest PRIVATE AIMusicCore)
+message(STATUS "Building SequencerRegressionTest")
+message(STATUS "- Run ./bin/SequencerRegressionTest to validate retriggers and ghost notes")
+
+# Ghost note test (headless)
+add_executable(GhostNoteTest examples/GhostNoteTest.cpp)
+target_link_libraries(GhostNoteTest PRIVATE AIMusicCore)
+message(STATUS "Building GhostNoteTest")
+message(STATUS "- Run ./bin/GhostNoteTest to test for ghost notes in specific sequences")
+
+# Sequencer diagnostic test (headless)
+add_executable(SequencerDiagnosticTest examples/SequencerDiagnosticTest.cpp)
+target_link_libraries(SequencerDiagnosticTest PRIVATE AIMusicCore)
+message(STATUS "Building SequencerDiagnosticTest")
+message(STATUS "- Run ./bin/SequencerDiagnosticTest to diagnose sequencer timing issues")
+
+# Sequencer audio output analysis (headless)
+add_executable(SequencerAudioOutputAnalysisTest examples/SequencerAudioOutputAnalysisTest.cpp)
+target_link_libraries(SequencerAudioOutputAnalysisTest PRIVATE AIMusicCore)
+message(STATUS "Building SequencerAudioOutputAnalysisTest")
+message(STATUS "- Run ./bin/SequencerAudioOutputAnalysisTest to validate audio onsets vs sequenced notes")
+
+# Detailed ghost note test (headless)
+add_executable(DetailedGhostNoteTest examples/DetailedGhostNoteTest.cpp)
+target_link_libraries(DetailedGhostNoteTest PRIVATE AIMusicCore)
+message(STATUS "Building DetailedGhostNoteTest")
+message(STATUS "- Run ./bin/DetailedGhostNoteTest to analyze ghost note timing in detail")
+
+# Audio buffer integrity test (headless)
+add_executable(AudioBufferIntegrityTest examples/AudioBufferIntegrityTest.cpp)
+target_link_libraries(AudioBufferIntegrityTest PRIVATE AIMusicCore)
+message(STATUS "Building AudioBufferIntegrityTest")
+message(STATUS "- Run ./bin/AudioBufferIntegrityTest to verify buffer-level note-on impulses vs expected columns")
+
+# Song-mode integrity test (headless)
+add_executable(SongArrangementIntegrityTest examples/SongArrangementIntegrityTest.cpp)
+target_link_libraries(SongArrangementIntegrityTest PRIVATE AIMusicCore)
+message(STATUS "Building SongArrangementIntegrityTest")
+message(STATUS "- Run ./bin/SongArrangementIntegrityTest to validate Song-mode timing across loop boundaries")
+
+# Envelope regression test (headless)
+add_executable(EnvelopeRegressionTest examples/EnvelopeRegressionTest.cpp)
+target_link_libraries(EnvelopeRegressionTest PRIVATE AIMusicCore)
+message(STATUS "Building EnvelopeRegressionTest")
+message(STATUS "- Run ./bin/EnvelopeRegressionTest to validate ADSR continuity and sequencer integration")
+
 # Create Synchronized Sequencer Demo executable
 add_executable(SynchronizedSequencerDemo examples/SynchronizedSequencerDemo.cpp)
 target_link_libraries(SynchronizedSequencerDemo PRIVATE

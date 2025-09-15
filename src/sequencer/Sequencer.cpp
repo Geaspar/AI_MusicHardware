@@ -238,6 +238,9 @@ void Sequencer::start() {
     
     // Atomic state change - no lock needed
     isPlaying_.store(true, std::memory_order_release);
+    // Reset per-loop dedupe
+    firedThisLoop_.clear();
+    loopedThisCall_ = false;
 }
 
 void Sequencer::stop() {
@@ -451,6 +454,7 @@ void Sequencer::clearPattern(size_t index) {
     std::lock_guard<std::mutex> lock(patternMutex_);
     if (index < patterns_.size() && patterns_[index]) {
         patterns_[index]->clear();
+        ++patternVersion_;
     }
 }
 
@@ -622,6 +626,8 @@ void Sequencer::setPositionInBeats(double positionInBeats) {
         double beatInBar = fmod(positionInBeats_, static_cast<double>(beatsPerBar_));
         beat = static_cast<int>(std::floor(beatInBar)) + 1;
     }
+    // Reset per-loop dedupe keys since we performed an explicit jump
+    firedThisLoop_.clear();
     
     // Notify transport callback with the safe copies (outside the lock)
     if (transportCallback_) {
@@ -681,9 +687,9 @@ void Sequencer::setColumnVelocity(size_t patternIndex, int column16th, float vel
     if (!p) return;
 
     const double stepBeats = static_cast<double>(beatsPerBar_) / 16.0;
+    const size_t n = p->getNumNotes();
     const double startBeat = static_cast<double>(column16th) * stepBeats;
     constexpr double EPS = 1e-6;
-    const size_t n = p->getNumNotes();
     for (size_t i = 0; i < n; ++i) {
         if (Note* note = p->getNote(i)) {
             if (std::abs(note->startTime - startBeat) < EPS) {
@@ -691,6 +697,7 @@ void Sequencer::setColumnVelocity(size_t patternIndex, int column16th, float vel
             }
         }
     }
+    ++patternVersion_;
 }
 
 void Sequencer::addNoteToPattern(size_t patternIndex, const Note& note) {
@@ -699,6 +706,7 @@ void Sequencer::addNoteToPattern(size_t patternIndex, const Note& note) {
     Pattern* p = patterns_[patternIndex].get();
     if (!p) return;
     p->addNote(note);
+    ++patternVersion_;
 }
 
 void Sequencer::removeNotesAt(size_t patternIndex, int pitch, double startBeat, double epsilon) {
@@ -715,6 +723,7 @@ void Sequencer::removeNotesAt(size_t patternIndex, int pitch, double startBeat, 
             ++i;
         }
     }
+    ++patternVersion_;
 }
 
 void Sequencer::setColumnChance(size_t patternIndex, int column16th, float chance) {
@@ -735,6 +744,7 @@ void Sequencer::setColumnChance(size_t patternIndex, int column16th, float chanc
             }
         }
     }
+    ++patternVersion_;
 }
 
 void Sequencer::setAllNotesChance(size_t patternIndex, float chance) {
@@ -747,6 +757,7 @@ void Sequencer::setAllNotesChance(size_t patternIndex, float chance) {
     for (size_t i = 0; i < n; ++i) {
         if (Note* no = p->getNote(i)) no->chance = chance;
     }
+    ++patternVersion_;
 }
 
 void Sequencer::setStep(size_t patternIndex, int step16th, int pitch, float velocity, float gate) {
@@ -762,6 +773,7 @@ void Sequencer::setStep(size_t patternIndex, int step16th, int pitch, float velo
     Note n;
     n.pitch = pitch; n.velocity = velocity; n.channel = 0; n.startTime = startBeat; n.duration = dur; n.env = Envelope(); n.chance = 1.0f;
     addNoteToPattern(patternIndex, n);
+    ++patternVersion_;
 }
 
 void Sequencer::toggleStep(size_t patternIndex, int step16th, int pitch) {
@@ -812,63 +824,12 @@ void Sequencer::process(double deltaTime) {
     // Convert delta time to beats with high precision using synchronized timing
     double deltaBeats = deltaTime * beatsPerSecond;
 
-    // Apply timing correction to compensate for drift
-    static double accumulatedError = 0.0;
+    // Simplified timing correction - just use the delta beats directly
+    // The complex quantization was causing timing issues
     double adjustedDeltaBeats = deltaBeats;
 
-    {
-        std::lock_guard<std::mutex> lock(timingMutex_);
-
-        // Use high-precision quantization for timing correction
-        // Quantize to 1/960th note precision (standard MIDI tick resolution)
-        const double quantizationFactor = 960.0;
-        double quantizedDeltaBeats = std::round(deltaBeats * quantizationFactor) / quantizationFactor;
-
-        // Accumulate tiny errors for future correction
-        accumulatedError += deltaBeats - quantizedDeltaBeats;
-
-        // When accumulated error gets large enough, apply the correction
-        // Use a threshold that corresponds to less than 1ms at typical tempos
-        if (std::abs(accumulatedError) >= 0.0005) {
-            adjustedDeltaBeats = quantizedDeltaBeats + accumulatedError;
-            accumulatedError = 0.0;
-        } else {
-            adjustedDeltaBeats = quantizedDeltaBeats;
-        }
-    }
-
-    // Use synchronized audio timing if available
-    if (std::abs(audioTimeOffset) > 0.0001) {
-        // Check if we need to adjust for drift between audio engine and sequencer
-        // This keeps the sequencer locked to the audio engine's timing
-        std::lock_guard<std::mutex> lock(syncMutex_);
-
-        // Calculate the time elapsed since last sync in the audio engine's timeline
-        double currentAudioTime = lastSyncTimeSeconds_ + deltaTime;
-        lastSyncTimeSeconds_ = currentAudioTime;
-
-        // Calculate what the beat position should be based on the audio engine's timing
-        double expectedPositionInBeats = (currentAudioTime - audioTimeOffset) / currentBeatTime;
-
-        // Get the current beat position
-        double currentPositionInBeats;
-        {
-            std::lock_guard<std::mutex> posLock(positionMutex_);
-            currentPositionInBeats = positionInBeats_;
-        }
-
-        // If the difference is significant, adjust the delta to converge
-        double positionDifference = expectedPositionInBeats - currentPositionInBeats;
-        if (std::abs(positionDifference) > 0.001) {
-            // Adjust by moving up to 10% of the way toward the correct position each frame
-            // This prevents sudden jumps while still converging to the right timing
-            double correctionFactor = 0.1;
-            double correction = positionDifference * correctionFactor;
-
-            // Add the correction to the delta beats
-            adjustedDeltaBeats += correction;
-        }
-    }
+    // Simplified audio synchronization - just use basic timing without complex drift correction
+    // The complex drift correction was causing timing instability
 
     // Process based on playback mode
     PlaybackMode mode = playbackMode_; // Make a local copy to avoid repeated access
@@ -876,6 +837,11 @@ void Sequencer::process(double deltaTime) {
         processSinglePattern(adjustedDeltaBeats);
     } else {
         processSongArrangement(adjustedDeltaBeats);
+    }
+
+    // Reset loop flag for next call
+    if (loopedThisCall_) {
+        loopedThisCall_ = false;
     }
 
     // Prepare transport information for callback
@@ -922,8 +888,8 @@ void Sequencer::processSinglePattern(double deltaBeats) {
     // Service any pending resequencing at musical boundaries
     servicePendingJump(previousPosition, currentPosition);
 
-    // Define a small epsilon for floating-point comparisons with better precision
-    constexpr double EPSILON = 1e-9; // Smaller epsilon for more precise comparisons
+    // Define epsilon (in beats) based on beat time (~0.25ms) with a hard floor
+    const double EPSILON = timingEpsilonBeats();
 
     // Check if we need to loop
     std::lock_guard<std::mutex> lock(patternMutex_);
@@ -943,6 +909,27 @@ void Sequencer::processSinglePattern(double deltaBeats) {
     // Check for pattern end/loop condition with higher precision
     if (currentPosition >= patternLength - EPSILON) {
         if (looping_.load(std::memory_order_acquire)) {
+            // Before looping, stop ALL active notes to ensure clean loop boundaries
+            // Optionally collect those that should wrap across the loop point
+            struct NoteToStart { int pitch; float velocity; int channel; Envelope env; double endTime; };
+            std::vector<NoteToStart> wrappedRestarts;
+            {
+                std::lock_guard<std::mutex> notesLock(activeNotesMutex_);
+                if (wrapLongNotesAcrossLoop_.load(std::memory_order_relaxed)) {
+                    for (const auto& an : activeNotes_) {
+                        if (an.endTime > patternLength) {
+                            NoteToStart ns; ns.pitch = an.pitch; ns.velocity = an.velocity; ns.channel = an.channel; ns.env = an.env;
+                            ns.endTime = an.endTime - patternLength;
+                            wrappedRestarts.push_back(ns);
+                        }
+                    }
+                }
+                for (const auto& activeNote : activeNotes_) {
+                    if (noteOffCallback_) noteOffCallback_(activeNote.pitch, activeNote.channel);
+                }
+                activeNotes_.clear();
+            }
+            
             // Loop back to beginning with more accurate reset
             std::lock_guard<std::mutex> posLock(positionMutex_);
             // Use precise comparison and correctly handle the modulo
@@ -963,7 +950,23 @@ void Sequencer::processSinglePattern(double deltaBeats) {
             // Update with the corrected position after looping
             currentPosition = positionInBeats_;
             // At the loop point, we're starting from the beginning
-            previousPosition = 0.0;
+            // Set previousPosition to the pattern length to avoid triggering notes that were
+            // already processed in the previous loop iteration
+            previousPosition = patternLength;
+            // Mark that we looped and reset per-loop state
+            loopedThisCall_ = true;
+            firedThisLoop_.clear();
+            ++loopCount_;
+
+            // If we have wrapped restarts, schedule them now at position 0
+            if (!wrappedRestarts.empty()) {
+                for (const auto& ns : wrappedRestarts) {
+                    if (noteOnCallback_) noteOnCallback_(ns.pitch, ns.velocity, ns.channel, ns.env);
+                    ActiveNote an; an.pitch = ns.pitch; an.channel = ns.channel; an.endTime = ns.endTime; an.velocity = ns.velocity; an.env = ns.env;
+                    std::lock_guard<std::mutex> notesLock(activeNotesMutex_);
+                    activeNotes_.push_back(an);
+                }
+            }
         } else {
             // Stop at the end with precise positioning
             std::lock_guard<std::mutex> posLock(positionMutex_);
@@ -984,6 +987,7 @@ void Sequencer::processSinglePattern(double deltaBeats) {
         double endTime;
     };
     std::vector<NoteToStart> notesToStart;
+    notesToStart.reserve(static_cast<size_t>(std::max(16.0, std::ceil(currentPattern->getNumNotes() * 0.25))));
 
     // Check for notes to start in this time slice with improved timing precision
     for (size_t i = 0; i < currentPattern->getNumNotes(); ++i) {
@@ -993,24 +997,50 @@ void Sequencer::processSinglePattern(double deltaBeats) {
         double noteStartTime = note->startTime;
         double noteEndTime = noteStartTime + note->duration;
 
-        // Note starting in this time slice - use a more precise check
-        // Handle edge cases like notes exactly at frame boundaries
+        // Note starting in this time slice - half-open window [prev-EPS, current)
         bool noteStartsInFrame = (noteStartTime >= previousPosition - EPSILON) &&
-                                 (noteStartTime < currentPosition + EPSILON);
+                                 (noteStartTime < currentPosition);
 
-        // Special case for looping - handle notes at the start of the pattern
-        if (previousPosition > currentPosition && noteStartTime < currentPosition) {
-            noteStartsInFrame = true;
+        // Looping special-case: union of [prev-EPS, end) and [0, current)
+        if (previousPosition > currentPosition) {
+            bool inFirst = (noteStartTime >= previousPosition - EPSILON);
+            bool inSecond = (noteStartTime < currentPosition);
+            noteStartsInFrame = inFirst || inSecond;
         }
 
         if (noteStartsInFrame) {
-            // Gate by per-note chance (probability)
-            float prob = 1.0f;
-            if (note->chance < 0.0f) prob = 0.0f; else if (note->chance > 1.0f) prob = 1.0f; else prob = note->chance;
+#ifdef SEQ_DEBUG_PRINT
+            std::cout << "[SEQDBG] start note pitch=" << note->pitch
+                      << " vel=" << note->velocity
+                      << " start=" << noteStartTime
+                      << " prevPos=" << previousPosition
+                      << " curPos=" << currentPosition
+                      << " len=" << note->duration
+                      << std::endl;
+#endif
+            // Compute dynamic 16th column for dedupe/prob modes
+            const double stepBeats = static_cast<double>(beatsPerBar_) / 16.0;
+            const int cols = std::max(1, (int) std::llround(currentPattern->getLength() / stepBeats));
+            int col = (int) std::llround(std::fmod(noteStartTime, currentPattern->getLength()) / stepBeats + 1e-7);
+            if (col < 0) col = 0; if (cols > 0) col = col % cols;
+            const uint64_t dedupeKey = makeDedupeKey(col, note->pitch, note->channel);
+
+            // Gate by per-note chance (probability), with selectable mode
+            float prob = std::clamp(note->chance, 0.0f, 1.0f);
             if (prob < 1.0f) {
-                double r = (double)rand() / (double)RAND_MAX;
+                float r = (probabilityMode_ == ProbabilityMode::PerLoopStable)
+                          ? stableProb01(dedupeKey)
+                          : rngNextFloat01();
                 if (r > prob) continue; // skip triggering this note this time
             }
+            // Per-loop dedupe: avoid double triggers at boundaries
+            if (perLoopDedupeEnabled_.load(std::memory_order_relaxed)) {
+                if (firedThisLoop_.find(dedupeKey) != firedThisLoop_.end()) {
+                    continue;
+                }
+                firedThisLoop_.insert(dedupeKey);
+            }
+
             // Add to queue of notes to start
             NoteToStart noteStart;
             noteStart.pitch = note->pitch;
@@ -1033,6 +1063,8 @@ void Sequencer::processSinglePattern(double deltaBeats) {
         activeNote.pitch = noteToStart.pitch;
         activeNote.channel = noteToStart.channel;
         activeNote.endTime = noteToStart.endTime;
+        activeNote.velocity = noteToStart.velocity;
+        activeNote.env = noteToStart.env;
 
         {
             std::lock_guard<std::mutex> lock(activeNotesMutex_);
@@ -1042,6 +1074,7 @@ void Sequencer::processSinglePattern(double deltaBeats) {
 
     // Queue notes to stop in this time slice to avoid callbacks within locks
     std::vector<ActiveNote> notesToStop;
+    notesToStop.reserve(activeNotes_.size());
 
     {
         std::lock_guard<std::mutex> lock(activeNotesMutex_);
@@ -1052,12 +1085,28 @@ void Sequencer::processSinglePattern(double deltaBeats) {
             // or if we looped and the note end time was beyond the loop point
             bool noteEndsInFrame = (it->endTime <= currentPosition + EPSILON);
 
-            // Special case for looping - if we wrapped around, also check notes that should have ended
-            if (previousPosition > currentPosition && it->endTime > previousPosition) {
-                noteEndsInFrame = true;
+            // Special case for looping - if we wrapped around, check notes that:
+            // 1. Should have ended in the previous position range
+            // 2. Extend beyond the pattern length (these must be stopped at loop boundary)
+            if (previousPosition > currentPosition) {
+                // We've looped - stop any notes that extend beyond pattern length
+                if (it->endTime >= patternLength) {
+                    noteEndsInFrame = true;
+                }
+                // Also stop notes that should have ended in the gap
+                else if (it->endTime > previousPosition) {
+                    noteEndsInFrame = true;
+                }
             }
 
             if (noteEndsInFrame) {
+#ifdef SEQ_DEBUG_PRINT
+                std::cout << "[SEQDBG] stop note pitch=" << it->pitch
+                          << " endTime=" << it->endTime
+                          << " prevPos=" << previousPosition
+                          << " curPos=" << currentPosition
+                          << std::endl;
+#endif
                 notesToStop.push_back(*it);
                 it = activeNotes_.erase(it);
             } else {
@@ -1088,12 +1137,34 @@ void Sequencer::processSongArrangement(double deltaBeats) {
     // Service any pending resequencing at musical boundaries
     servicePendingJump(previousPosition, currentPosition);
 
-    // Define a small epsilon for floating-point comparisons with better precision
-    constexpr double EPSILON = 1e-9; // Smaller epsilon for more precise comparisons
+    // Define epsilon (in beats) based on beat time (~0.25ms) with a hard floor
+    const double EPSILON = timingEpsilonBeats();
 
     // Check if we need to loop
     if (currentPosition >= songLength_ - EPSILON) {
         if (looping_.load(std::memory_order_acquire) && songLength_ > EPSILON) {
+            // Prepare to wrap long notes if enabled
+            struct NoteToStart { int pitch; float velocity; int channel; Envelope env; double endTime; };
+            std::vector<NoteToStart> wrappedRestarts;
+            // Before looping, stop ALL active notes to ensure clean loop boundaries
+            // Optionally collect those that should wrap across the loop point
+            {
+                std::lock_guard<std::mutex> notesLock(activeNotesMutex_);
+                if (wrapLongNotesAcrossLoop_.load(std::memory_order_relaxed)) {
+                    for (const auto& an : activeNotes_) {
+                        if (an.endTime > songLength_) {
+                            NoteToStart ns; ns.pitch = an.pitch; ns.velocity = an.velocity; ns.channel = an.channel; ns.env = an.env;
+                            ns.endTime = an.endTime - songLength_;
+                            wrappedRestarts.push_back(ns);
+                        }
+                    }
+                }
+                for (const auto& activeNote : activeNotes_) {
+                    if (noteOffCallback_) noteOffCallback_(activeNote.pitch, activeNote.channel);
+                }
+                activeNotes_.clear();
+            }
+            
             // Loop back to beginning with more accurate reset
             std::lock_guard<std::mutex> lock(positionMutex_);
 
@@ -1116,7 +1187,23 @@ void Sequencer::processSongArrangement(double deltaBeats) {
             // Update with the corrected position after looping
             currentPosition = positionInBeats_;
             // At the loop point, we're starting from the beginning
-            previousPosition = 0.0;
+            // Set previousPosition to the song length to avoid triggering notes that were
+            // already processed in the previous loop iteration
+            previousPosition = songLength_;
+            // Signal to the outer process() that a loop occurred so it can reset timing accumulator
+            loopedThisCall_ = true;
+            firedThisLoop_.clear();
+            ++loopCount_;
+
+            // If we have wrapped restarts, schedule them now at position 0
+            if (!wrappedRestarts.empty()) {
+                for (const auto& ns : wrappedRestarts) {
+                    if (noteOnCallback_) noteOnCallback_(ns.pitch, ns.velocity, ns.channel, ns.env);
+                    ActiveNote an; an.pitch = ns.pitch; an.channel = ns.channel; an.endTime = ns.endTime; an.velocity = ns.velocity; an.env = ns.env;
+                    std::lock_guard<std::mutex> notesLock(activeNotesMutex_);
+                    activeNotes_.push_back(an);
+                }
+            }
         } else if (songLength_ > EPSILON) {
             // Stop at the end with precise positioning
             std::lock_guard<std::mutex> lock(positionMutex_);
@@ -1128,14 +1215,9 @@ void Sequencer::processSongArrangement(double deltaBeats) {
     }
 
     // Create data structures to collect notes to process
-    struct NoteToStart {
-        int pitch;
-        float velocity;
-        int channel;
-        Envelope env;
-        double endTime;
-    };
+    struct NoteToStart { int pitch; float velocity; int channel; Envelope env; double endTime; };
     std::vector<NoteToStart> notesToStart;
+    notesToStart.reserve(64);
 
     // Find active pattern instances for this time slice
     std::vector<PatternInstance*> activeInstances = getActivePatternInstances();
@@ -1189,19 +1271,48 @@ void Sequencer::processSongArrangement(double deltaBeats) {
             double noteStartTime = note->startTime;
             double noteEndTime = noteStartTime + note->duration;
 
-            // Note starting in this time slice - use a more precise check
-            // Handle edge cases like notes exactly at frame boundaries
-            bool noteStartsInFrame = (noteStartTime >= localPreviousPos - EPSILON) &&
-                                     (noteStartTime < localCurrentPos + EPSILON);
+            // Compute global start time of this note within the song timeline
+            const double globalStart = patternStart + noteStartTime;
 
-            // Handle song loop case - notes at pattern start after song loop
-            if (previousPosition > currentPosition &&
-                ((patternStart <= currentPosition + EPSILON) &&
-                 (patternStart + noteStartTime < currentPosition + EPSILON))) {
-                noteStartsInFrame = true;
+            // Half-open window: [previousPosition - EPS, currentPosition)
+            bool noteStartsInFrame = (globalStart >= previousPosition - EPSILON) &&
+                                     (globalStart < currentPosition);
+
+            // Looping special-case: if we wrapped this frame, take union of
+            // [previousPosition - EPS, songLength) U [0, currentPosition)
+            if (previousPosition > currentPosition) {
+                const bool inFirst = (globalStart >= previousPosition - EPSILON);
+                const bool inSecond = (globalStart < currentPosition);
+                noteStartsInFrame = inFirst || inSecond;
             }
 
             if (noteStartsInFrame) {
+                // Probability gating
+                float prob = std::clamp(note->chance, 0.0f, 1.0f);
+                if (prob < 1.0f) {
+                    // Compute per-step dedupe key for stable probability if needed
+                    const double stepBeats = static_cast<double>(beatsPerBar_) / 16.0;
+                    const int cols = std::max(1, (int) std::llround(pattern->getLength() / stepBeats));
+                    int col = (int) std::llround(std::fmod(noteStartTime, pattern->getLength()) / stepBeats + 1e-7);
+                    if (col < 0) col = 0; if (cols > 0) col = col % cols;
+                    const uint64_t dedupeKey = makeDedupeKey(col, note->pitch, note->channel);
+                    float r = (probabilityMode_ == ProbabilityMode::PerLoopStable)
+                                ? stableProb01(dedupeKey)
+                                : rngNextFloat01();
+                    if (r > prob) continue;
+                }
+                // Per-loop dedupe (optional)
+                if (perLoopDedupeEnabled_.load(std::memory_order_relaxed)) {
+                    const double stepBeats = static_cast<double>(beatsPerBar_) / 16.0;
+                    const int cols = std::max(1, (int) std::llround(pattern->getLength() / stepBeats));
+                    int col = (int) std::llround(std::fmod(noteStartTime, pattern->getLength()) / stepBeats + 1e-7);
+                    if (col < 0) col = 0; if (cols > 0) col = col % cols;
+                    const uint64_t dedupeKey = makeDedupeKey(col, note->pitch, note->channel);
+                    if (firedThisLoop_.find(dedupeKey) != firedThisLoop_.end()) {
+                        continue;
+                    }
+                    firedThisLoop_.insert(dedupeKey);
+                }
                 // Add to queue of notes to start
                 NoteToStart noteStart;
                 noteStart.pitch = note->pitch;
@@ -1238,6 +1349,8 @@ void Sequencer::processSongArrangement(double deltaBeats) {
         activeNote.pitch = noteToStart.pitch;
         activeNote.channel = noteToStart.channel;
         activeNote.endTime = noteToStart.endTime;
+        activeNote.velocity = noteToStart.velocity;
+        activeNote.env = noteToStart.env;
 
         {
             std::lock_guard<std::mutex> lock(activeNotesMutex_);
@@ -1247,6 +1360,7 @@ void Sequencer::processSongArrangement(double deltaBeats) {
 
     // Queue notes to stop in this time slice to avoid callbacks within locks
     std::vector<ActiveNote> notesToStop;
+    notesToStop.reserve(activeNotes_.size());
 
     {
         std::lock_guard<std::mutex> lock(activeNotesMutex_);

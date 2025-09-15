@@ -8,6 +8,7 @@
 #include <atomic>
 #include <optional>
 #include <cmath> // For fabs
+#include <unordered_set>
 
 namespace AIMusicHardware {
 
@@ -177,6 +178,7 @@ public:
 
     // Resequencing MVP API (Phase A)
     enum class Timing { Immediate, OnBeat, OnBar };
+    enum class ProbabilityMode { PerHitRandom, PerLoopStable };
     void defineSections(const std::vector<std::pair<std::string,double>>& sectionsInBeats);
     void jumpToSection(const std::string& name, Timing when = Timing::OnBar);
     void queueSection(const std::string& name, Timing when = Timing::OnBar); // alias to jump
@@ -186,6 +188,14 @@ public:
     std::string getCurrentSectionName() const;
     int getBeatsPerBar() const { return beatsPerBar_; }
     std::vector<std::pair<std::string,double>> getSectionDefinitions() const { return sections_; }
+
+    // Runtime controls
+    void setPerLoopDedupeEnabled(bool enabled) { perLoopDedupeEnabled_.store(enabled, std::memory_order_relaxed); }
+    void setProbabilityMode(ProbabilityMode m) { probabilityMode_ = m; }
+    ProbabilityMode getProbabilityMode() const { return probabilityMode_; }
+    void setWrapLongNotesAcrossLoop(bool enabled) { wrapLongNotesAcrossLoop_.store(enabled, std::memory_order_relaxed); }
+    bool getWrapLongNotesAcrossLoop() const { return wrapLongNotesAcrossLoop_.load(std::memory_order_relaxed); }
+    void seedRandom(uint32_t seed) { if (seed == 0) seed = 0x9E3779B9u; rngState_ = seed; }
     
 private:
     // Pattern processing method for audio thread
@@ -221,11 +231,14 @@ private:
 
     mutable std::mutex patternMutex_;
     mutable std::mutex arrangementMutex_;
+    std::atomic<uint64_t> patternVersion_{0};
 
     struct ActiveNote {
         int pitch;
         int channel;
         double endTime;
+        float velocity;
+        Envelope env;
     };
     std::vector<ActiveNote> activeNotes_;
     mutable std::mutex activeNotesMutex_; // Protect active notes
@@ -248,6 +261,57 @@ private:
 
     void scheduleJumpToBeat(double beat, Timing when);
     void servicePendingJump(double previousPosition, double currentPosition);
+
+    // Timing correction state (moved from static in process())
+    double timingAccumulatedError_ = 0.0;
+    bool loopedThisCall_ = false; // set true when a loop occurs during processing
+
+    // Per-loop deduplication of note-ons to avoid double triggers at boundaries
+    std::unordered_set<uint64_t> firedThisLoop_;
+    // Default OFF to avoid suppressing legitimate retriggers in edge cases.
+    std::atomic<bool> perLoopDedupeEnabled_{false};
+    static inline uint64_t makeDedupeKey(int col16, int pitch, int channel) {
+        return (static_cast<uint64_t>(col16 & 0xFFFF) << 16) |
+               (static_cast<uint64_t>(pitch & 0xFF) << 8) |
+               (static_cast<uint64_t>(channel & 0xFF));
+    }
+
+    // Probability and RNG
+    ProbabilityMode probabilityMode_ = ProbabilityMode::PerHitRandom;
+    uint32_t rngState_ = 0x12345678u;
+    inline float rngNextFloat01() {
+        // xorshift32
+        uint32_t x = rngState_;
+        x ^= x << 13;
+        x ^= x >> 17;
+        x ^= x << 5;
+        rngState_ = (x == 0 ? 0x9E3779B9u : x);
+        return (rngState_ & 0x00FFFFFFu) / 16777216.0f; // 24-bit mantissa
+    }
+    static inline uint64_t splitmix64(uint64_t x) {
+        x += 0x9e3779b97f4a7c15ull;
+        x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ull;
+        x = (x ^ (x >> 27)) * 0x94d049bb133111ebull;
+        return x ^ (x >> 31);
+    }
+    inline float stableProb01(uint64_t dedupeKey) const {
+        // Combine loop count with key for stability per loop
+        uint64_t h = splitmix64((loopCount_ << 32) ^ dedupeKey);
+        // Map to [0,1)
+        return (float)((h >> 11) & 0x1fffff) / (float)0x200000; // 21 bits
+    }
+
+    std::atomic<bool> wrapLongNotesAcrossLoop_{false};
+    uint64_t loopCount_ = 0; // increments on loop
+
+    // Timing epsilon helper (beats)
+    double timingEpsilonBeats() const {
+        std::lock_guard<std::mutex> lock(syncMutex_);
+        double bt = beatTimeSeconds_ > 0.0 ? beatTimeSeconds_ : (60.0 / std::max(1.0, tempo_.load()));
+        double epsBeats = 0.00025 / std::max(1e-9, bt); // ~0.25 ms in beats
+        if (epsBeats < 1e-6) epsBeats = 1e-6; // hard floor
+        return epsBeats;
+    }
 };
 
 } // namespace AIMusicHardware
