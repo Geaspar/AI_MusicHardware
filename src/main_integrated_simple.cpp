@@ -486,6 +486,10 @@ int main(int argc, char* argv[]) {
     static constexpr int EnvScopeSize = 256;
     static std::array<float, EnvScopeSize> envScope{};
     static std::atomic<int> envScopeIndex{0};
+    // Per-loop/ per-bar fired-note debug counts per 16th column (used by Patterns overlay)
+    static std::array<int, 16> debugFiredPerColumn{};
+    static int debugLastBar = -1;
+    static double debugLastPosBeats = 0.0;
     // Create Sensor Matrix (8 lanes)
     auto sensorMatrix = std::make_shared<SensorMatrix>(8);
     // Fallback note-off scheduler (belt-and-suspenders to avoid stuck notes)
@@ -3084,12 +3088,16 @@ int main(int argc, char* argv[]) {
     tempoSld->setRange(60.0f, 200.0f);
     tempoSld->setValue((float)sequencer->getTempo());
     tempoSld->setShowValue(false);
-    // Queue tempo change for next bar instead of immediate apply
-    // We'll draw a box to the right showing current vs upcoming
+    // Queue tempo change for next bar, but also apply immediately so debug/test
+    // modes (including Patterns Test Mode) respond audibly right away.
     seqUpcomingTempoUI = sequencer->getTempo();
-    tempoSld->setValueChangeCallback([&seqUpcomingTempoUI, &seqTempoQueuedUI](float v){
+    Sequencer* seqPtrForTempo = sequencer.get();
+    tempoSld->setValueChangeCallback([seqPtrForTempo, &seqUpcomingTempoUI, &seqTempoQueuedUI](float v){
         seqUpcomingTempoUI = v;
         seqTempoQueuedUI.store(true, std::memory_order_relaxed);
+        if (seqPtrForTempo) {
+            seqPtrForTempo->setTempo(v);
+        }
     });
     sequencerScreen->addChild(std::move(tempoSld));
 
@@ -7136,6 +7144,16 @@ int main(int argc, char* argv[]) {
                 synthesizer->noteOn(pitch, v, env, channel);
             }
             debugFiredCount.fetch_add(1, std::memory_order_relaxed);
+            // Accumulate per-column counts for debug overlay (per bar)
+            int bpb = std::max(1, sequencer->getBeatsPerBar());
+            double pos = sequencer->getPrecisePositionInBeats();
+            double step = (double)bpb / 16.0;
+            if (step > 0.0) {
+                int col = (int)std::floor(std::fmod(pos, (double)bpb) / step + 1e-6);
+                if (col < 0) col = 0;
+                if (col > 15) col = col % 16;
+                debugFiredPerColumn[(size_t)col] += 1;
+            }
             if (noteClickEnabled.load(std::memory_order_relaxed)) {
                 // Trigger a short audible click (handled after synth processing)
                 noteClickSamplesRemaining.store(600, std::memory_order_relaxed); // ~13.6ms @44.1k
@@ -7186,17 +7204,25 @@ int main(int argc, char* argv[]) {
             double sr = audioEngine->getSampleRate();
             if (sr < 1.0) sr = 44100.0; // safety
             double dt = static_cast<double>(numFrames) / sr;
-            // Debug: reset count and compute active column
+            // Debug: reset per-buffer count and update active column + per-bar state
             debugFiredCount.store(0, std::memory_order_relaxed);
             {
                 int bpb = std::max(1, sequencer->getBeatsPerBar());
                 double pos = sequencer->getPrecisePositionInBeats();
+                // Detect new bar OR loop (position wrapped) for debug aggregation
+                int bar = (int)std::floor(pos / std::max(1, bpb));
+                bool looped = (pos + 1e-6 < debugLastPosBeats);
+                if (looped || bar != debugLastBar) {
+                    debugLastBar = bar;
+                    debugFiredPerColumn.fill(0);
+                }
                 double step = (double)bpb / 16.0;
                 if (step > 0.0) {
                     int col = (int)std::floor(std::fmod(pos, (double)bpb) / step + 1e-6);
                     if (col < 0) col = 0; if (col > 15) col = col % 16;
                     debugActiveColumn.store(col, std::memory_order_relaxed);
                 }
+                debugLastPosBeats = pos;
             }
             if (muteAfterRecoverySec <= 0.0) {
                 // Auto-chunk when the audio buffer is coarse relative to a 16th note
@@ -8854,7 +8880,10 @@ int main(int argc, char* argv[]) {
                             sdlDisplayManager->drawText(20, 20, dbg, nullptr, Color(200, 220, 255));
                             // Debug: show active column and fired count
                             int col = debugActiveColumn.load(std::memory_order_relaxed);
-                            int fired = debugFiredCount.load(std::memory_order_relaxed);
+                            int fired = 0;
+                            if (col >= 0 && col < (int)debugFiredPerColumn.size()) {
+                                fired = debugFiredPerColumn[(size_t)col];
+                            }
                             std::string dbg2 = std::string("[DBG] col ") + std::to_string(col) + " fired " + std::to_string(fired);
                             sdlDisplayManager->drawText(20, 40, dbg2, nullptr, Color(255, 200, 120));
 

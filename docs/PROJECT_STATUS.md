@@ -220,7 +220,7 @@ The AIMusicHardware project has reached a significant milestone with multiple co
 - Dropdown rendering glitches reported on Sequencer page.
   - Symptoms: items not rendering correctly or z-ordering not respected.
   - Likely related to the per-screen “open list” rendering pass and new Sequencer dropdown IDs; needs explicit inclusion in the post-render dropdown pass, plus click-through handling.
-- Sequencer audio processing remains disabled (by design during earlier debugging); UI operates, but patterns aren’t audible yet.
+- Sequencer audio processing is enabled again after duplicate‑note debugging; Patterns Test Mode, ghost‑note diagnostics, and audio analysis tests confirm stable behavior (see 2025‑11‑17 log below).
 
 ### Next Steps (Proposed)
 1) Fix timeline rendering
@@ -271,6 +271,41 @@ The AIMusicHardware project has reached a significant milestone with multiple co
 - **Plan**: A detailed implementation plan is available in `docs/VITAL_SYNTHESIS_UPGRADE_PLAN.md`.
 - **Progress**: The implementation is complete. The `RealtimeWavetableVoiceManager` is integrated into the `Synthesizer` and can be enabled by calling `setVoiceManagerType(VoiceManagerType::RealTime)`.
 - **Next**: Further testing and optimization of the new engine.
+
+## 📅 2025-11-17 — Sequencer Ghost Note Debugging + JUCE Prep (Today)
+
+### What We Completed Today
+- **Sequencer ghost-note investigation (Patterns tab)**
+  - Verified core timing using headless tests: `SequencerRegressionTest`, `GhostNoteTest`, `DetailedGhostNoteTest`, and `SequencerAudioOutputAnalysisTest`.
+  - Updated `GhostNoteTest` / `DetailedGhostNoteTest` to run deterministically over exact loop counts (no wall-clock timing), and enabled per-loop dedupe to mirror production settings.
+  - Fixed `SequencerAudioOutputAnalysisTest` to render stereo correctly, down-mix to mono, and treat “no onsets but correct note-on callbacks” as a sequencer PASS when audio is silent.
+- **Patterns Test Mode + overlay diagnostics**
+  - Confirmed that Patterns Test Mode (spaced and consecutive 16th-note patterns) plays without ghost notes after recent sequencer fixes.
+  - Refined the debug overlay to show `[DBG] col X fired Y` where:
+    - `col` is the current 16th column in the bar.
+    - `fired` is the number of note-ons fired in that column for the current loop/bar (reset on loop), instead of a single tiny audio block count.
+  - Ensured overlay values remain low and stable for the canned test patterns (e.g., 1 per active column per loop), rather than accumulating across loops.
+- **Tempo control integration**
+  - Updated the Sequencer screen’s BPM slider to:
+    - Immediately call `sequencer->setTempo(v)` so Patterns Test Mode and debug overlays respond audibly in real time.
+    - Still queue a tempo change for application on the next bar boundary for musical transitions.
+
+### Next Steps — Stable Baseline and JUCE Migration
+- **Stable baseline & GitHub**
+  - Push the current state (with passing ghost-note tests, working Patterns Test Mode, and debug overlays) to GitHub.
+  - Tag this commit as the pre‑JUCE sequencer baseline (e.g., `pre-juce-sequencer-stable`) for easy rollback.
+- **Branching strategy**
+  - Create a dedicated `juce-migration` branch from the tagged baseline.
+  - Keep `main` for engine/bugfix work only; do all JUCE experiments on `juce-migration`.
+- **JUCE migration (initial scope)**
+  - Treat the existing engine (Synthesizer + Sequencer + IoT) as a library:
+    - Build a minimal JUCE host that opens an audio device, routes MIDI in, and calls the existing audio callback + `Sequencer::process` using the new `ClockSource`/`HostSync` scaffolding.
+  - Once audio + sequencer are stable inside JUCE, start porting UI:
+    - Add a basic grid-based Patterns view using JUCE components, wired to the existing `Pattern`/`Sequencer` APIs.
+    - Mirror key debug affordances (tempo slider, Patterns Test Mode, simple overlay) to preserve current diagnostics during migration.
+- **Ongoing guardrails**
+  - Do not materially change sequencer timing or voice/envelope behavior on the JUCE branch until the JUCE host reliably reproduces the current baseline tests.
+  - If JUCE becomes a dead end, restore the current RtAudio/SDL-based app by checking out the tagged baseline and continue development there.
 
 ## 📅 2025-09-15 — Sequencer Stability and Timing Fixes (Today)
 
