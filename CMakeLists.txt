@@ -548,6 +548,12 @@ else()
     message(STATUS "  to see MQTT installation instructions")
 endif()
 
+# Optional JUCE-based targets (for Elk OS / desktop host integration).
+option(ENABLE_JUCE_TARGETS "Build JUCE-based plugin/standalone targets (requires JUCE)" OFF)
+if(ENABLE_JUCE_TARGETS)
+    add_subdirectory(juce)
+endif()
+
 # Create Simple MQTT Test executable
 add_executable(SimpleMQTTTest examples/SimpleMQTTTest.cpp)
 target_link_libraries(SimpleMQTTTest PRIVATE

@@ -307,6 +307,166 @@ The AIMusicHardware project has reached a significant milestone with multiple co
   - Do not materially change sequencer timing or voice/envelope behavior on the JUCE branch until the JUCE host reliably reproduces the current baseline tests.
   - If JUCE becomes a dead end, restore the current RtAudio/SDL-based app by checking out the tagged baseline and continue development there.
 
+## 📅 2025-11-18 — JUCE Migration Branch Created + Initial Elk Host Scaffolding
+
+**Branching & Baseline**
+- Created a dedicated JUCE migration branch:
+  - Branch: `juce-migration` (current branch as of this entry).
+  - Purpose: all JUCE/Elk work happens here; `main` remains the stable RtAudio/SDL baseline with passing sequencer/ghost-note tests.
+- JUCE installation:
+  - Cloned JUCE from GitHub and built/installed it as a CMake package into `$HOME/juce-install`.
+  - Top-level CMake now uses `ENABLE_JUCE_TARGETS` (OFF by default) and `find_package(JUCE CONFIG)` to enable JUCE-based targets only when explicitly requested and JUCE is available.
+
+**JUCE Targets & Engine Integration**
+- Added a `juce/` subtree with:
+  - `juce/CMakeLists.txt`:
+    - Defines two JUCE targets when `ENABLE_JUCE_TARGETS=ON` and JUCE is found:
+      - `AIMH_JucePlugin` (VST3 plugin, headless/minimal) for Elk host + desktop.
+      - `AIMH_JuceStandalone` (JUCE GUI app) for desktop bring-up and diagnostics.
+    - Both targets link against the existing `AIMusicCore` static library, so the engine (Synthesizer, Sequencer, SegmentSequencer, IoT, UI-independent pieces) remains unchanged.
+  - `juce/ElkSynthPluginProcessor.h/.cpp`:
+    - `ElkSynthProcessor : juce::AudioProcessor` that wraps the existing engine:
+      - Owns `std::unique_ptr<Synthesizer>`, `Sequencer`, `HostSync`, `ClockSource`.
+      - In `prepareToPlay`: sets the synth sample rate and calls `sequencer->synchronizeWithAudioEngine(0.0, sampleRate)`.
+      - In `processBlock`:
+        - Clears the JUCE `AudioBuffer`.
+        - Iterates the JUCE `MidiBuffer` and forwards note on/off to `Synthesizer::noteOn/noteOff` (with room for CC/pitch bend later).
+        - Queries the host `AudioPlayHead::CurrentPositionInfo` (when available) and feeds:
+          - `HostSync::updateFromHost(bpm, ppqPosition, sampleRate)`.
+          - `Sequencer::synchronizeWithAudioEngine(timeInSeconds, sampleRate)` for alignment.
+        - Computes `deltaBeats` from `dtSeconds = numSamples / sampleRate` and `getPreciseBeatTime()` and calls `Sequencer::process(deltaBeats)`.
+        - Renders audio via `Synthesizer::process()` into a temporary interleaved stereo buffer and copies into the JUCE buffer’s left/right channels.
+      - Implements `acceptsMidi()`/`producesMidi()` appropriately so hosts see it as a MIDI-driven synth plugin.
+  - `juce/ElkSynthStandaloneApp.cpp`:
+    - A minimal `JUCEApplication` that:
+      - Creates an `AudioDeviceManager` and `AudioProcessorPlayer`.
+      - Instantiates `ElkSynthProcessor` and sets it on `AudioProcessorPlayer`.
+      - Adds the `AudioProcessorPlayer` as an audio callback to the device manager.
+    - There is intentionally no heavy UI yet; it is a headless-style standalone host for early audio/MIDI verification on desktop.
+
+**Build & Status**
+- Top-level CMake changes:
+  - Added:
+    - `option(ENABLE_JUCE_TARGETS "Build JUCE-based plugin/standalone targets (requires JUCE)" OFF)`
+    - When ON, `add_subdirectory(juce)` is called.
+  - Existing non-JUCE targets remain unchanged; default builds still do not require JUCE.
+- Verified JUCE builds on macOS:
+  - `cmake .. -DENABLE_JUCE_TARGETS=ON -DCMAKE_PREFIX_PATH=$HOME/juce-install`
+    - Successfully finds JUCE and enables the JUCE targets.
+  - Built and linked:
+    - `AIMH_JuceStandalone` → a working app bundle at `build/AIMH_JuceStandalone_artefacts/Debug/AIMH JUCE Standalone.app`.
+    - `AIMH_JucePlugin` → shared plugin code (`libAIMH Elk Synth_SharedCode.a`) and a VST3 artefact under `build/juce/AIMH_JucePlugin_artefacts/...`.
+  - Adjusted JUCE CoreAudio internals locally (added iterator traits to `StrideIterator` in `juce_audio_devices/native/juce_CoreAudio_mac.cpp`) to satisfy `std::iterator_traits` on macOS 14 / libc++.
+
+**Plugin vs Standalone Performance (Summary)**
+- Documented in `docs/JUCE_MIGRATION_PLAN.md`:
+  - For a headless build that simply calls `Sequencer::process` and `Synthesizer::process` once per audio block, a JUCE **plugin** and a JUCE **standalone app** have effectively the same hardware performance.
+  - On Elk OS, the system is specifically optimized to host plugins (e.g., VST3/LV2), so a headless JUCE plugin is the preferred deployment form.
+  - The JUCE standalone app is primarily for desktop development and debugging; Elk builds can remain plugin-only or use a minimal front-end.
+
+**Next Steps on `juce-migration`**
+- Desktop validation:
+  - Run `AIMH_JuceStandalone` on macOS to confirm that the JUCE wrapper drives the existing engine correctly (audio out, MIDI in).
+  - Load `AIMH_JucePlugin` in the JUCE Plugin Host and verify:
+    - MIDI note in → audio out.
+    - Host tempo/transport changes propagate via `HostSync` and `Sequencer::synchronizeWithAudioEngine`.
+    - No boundary double-triggers or ghost notes (compare behavior to the current RtAudio/SDL app and headless tests).
+- Minimal JUCE editor (desktop dev only):
+  - Add a small `AudioProcessorEditor` for `ElkSynthProcessor` with:
+    - Transport controls (Play/Stop, Loop).
+    - Tempo slider wired to `Sequencer::setTempo` (and optionally host tempo).
+    - Section controls (Jump/Next/Prev) wired to `defineSections`/`jumpToSection`.
+    - A “Patterns Test Mode” button that loads the same spaced/consecutive test patterns into `Pattern`/`Sequencer` as the SDL UI helper.
+    - A debug label showing `[DBG] col X fired Y` via the existing sequencer debug state.
+- Elk OS integration:
+  - Once desktop behavior matches the baseline, prepare an Elk-specific build config:
+    - Target: headless JUCE plugin (VST3/LV2 per Elk recommendations).
+    - Verify timing, CPU, and stability on the Elk hardware.
+  - Keep the `juce-migration` branch focused on host/Elk integration; any core engine timing changes should continue to land on `main` first and be merged into `juce-migration` after validation.
+
+## 📅 2025-11-18 — JUCE Standalone Keyboard + Ableton Live 10 VST3 Integration
+
+**Branch & Intent (recap)**
+- Branch: `juce-migration` (active).
+- Goal: expose the existing AIMusicHardware synth/sequencer engine through JUCE so it can:
+  - Run as a JUCE standalone app for fast desktop debugging.
+  - Run as a JUCE VST3 plugin in DAWs and on Elk OS / Raspberry Pi style hardware.
+  - Preserve the core design goal: a hardware IoT synth with game-audio style vertical/horizontal resequencing, with JUCE used purely as the host/portability layer.
+
+**Standalone App — On-Screen Keyboard + Engine Wiring**
+- `AIMH_JuceStandalone` now:
+  - Starts a JUCE `AudioDeviceManager` + `AudioProcessorPlayer` and hosts `ElkSynthProcessor`.
+  - Shows a minimal but usable editor (`ElkSynthEditor`) with:
+    - Header text identifying the app.
+    - Waveform selector (Sine/Square/Saw/Triangle/Noise).
+    - Master Volume slider.
+    - ADSR envelope sliders (Attack/Decay/Sustain/Release).
+    - A JUCE on-screen piano keyboard at the bottom.
+- Engine integration:
+  - Editor forwards keyboard note-on/note-off to `ElkSynthProcessor`, which calls the existing `Synthesizer::noteOn/noteOff`.
+  - `prepareToPlay` in `ElkSynthProcessor`:
+    - Sets the synth sample rate to the JUCE device sample rate.
+    - Calls `Synthesizer::setVoiceManagerType(Standard)` and `initialize()`.
+    - Logs voice manager status (e.g., `[JUCE] VoiceManager after init: ok`).
+  - `processBlock`:
+    - Forwards incoming JUCE MIDI events to the engine.
+    - Advances the (currently minimal) `Sequencer` via `HostSync`/`ClockSource` scaffolding.
+    - Calls `Synthesizer::process()` into an interleaved stereo buffer and copies into the JUCE `AudioBuffer`.
+- Result:
+  - On-screen piano now produces audio through the existing synthesizer (confirmed by both audible output and RMS debug logging).
+  - No additional effects are active in this JUCE path; the sound is the raw synth (e.g., triangle-like tones with some perceived phasing are coming from the engine, not JUCE FX).
+
+**VST3 Plugin — Live 10 Suite Integration**
+- `AIMH_JucePlugin` status:
+  - Plugin code: `ElkSynthProcessor` + `ElkSynthEditor` shared with the standalone.
+  - CMake:
+    - `juce_add_plugin(AIMH_JucePlugin ...)` defines a VST3 synth plugin with:
+      - `PRODUCT_NAME "AIMH Elk Synth"`
+      - `COMPANY_NAME "AIMusicHardware"`
+      - `IS_SYNTH TRUE`, `NEEDS_MIDI_INPUT TRUE`, `NEEDS_MIDI_OUTPUT FALSE`.
+    - `target_sources` explicitly includes `ElkSynthPluginProcessor.cpp/.h` and `ElkSynthPluginEditor.cpp/.h` in the plugin target so `createPluginFilter()` is compiled into the shared code library.
+    - `AIMH_JucePlugin_VST3` target now links successfully, producing:
+      - `build/juce/AIMH_JucePlugin_artefacts/Debug/VST3/AIMH Elk Synth.vst3`
+      - With a binary at `Contents/MacOS/AIMH Elk Synth`.
+  - Architecture:
+    - Configured CMake and JUCE target properties so the plugin builds as a **universal binary**:
+      - `CMAKE_OSX_ARCHITECTURES=x86_64;arm64` (top-level).
+      - `AIMH_JucePlugin`/`AIMH_JucePlugin_VST3` inherit this and build both slices.
+    - Verified via `file`:
+      - `Mach-O universal binary with 2 architectures: [x86_64] [arm64]`.
+- Ableton Live 10 Suite (Intel/Rosetta) integration:
+  - Live 10 on this machine is an x86_64 app (`/Applications/Ableton Live 10 Suite.app/Contents/MacOS/Live` is Intel-only).
+  - Earlier, the plugin was arm64-only, so Live silently ignored it.
+  - After rebuilding as a universal binary and copying to:
+    - `/Library/Audio/Plug-Ins/VST3/AIMH Elk Synth.vst3`
+  - And forcing a full VST3 rescan in Live (Preferences → Plug-Ins → hold `Option` and click Rescan):
+    - Live 10 now detects `AIMusicHardware` as manufacturer and `AIMH Elk Synth` as a VST3 instrument.
+    - The plugin loads on a MIDI track and behaves consistently with the standalone:
+      - On-screen keyboard and DAW MIDI both trigger the synth.
+      - Wave/Vol/ADSR controls respond correctly.
+      - Audio output matches expectations from the standalone test.
+
+**Today’s Outcomes**
+- ✅ JUCE migration branch (`juce-migration`) is now running the real AIMusicHardware synth engine inside:
+  - A JUCE standalone app with an on-screen piano keyboard and labeled controls.
+  - A VST3 plugin successfully loaded and tested in Ableton Live 10 Suite (Intel, via Rosetta).
+- ✅ VST3 bundle is correctly formed and universal; copying to `/Library/Audio/Plug-Ins/VST3` is sufficient for Live to see it after a forced rescan.
+- ✅ The project’s long-term goal remains clear and documented:
+  - A hardware IoT synth (Raspberry Pi / Elk OS) using this engine, with game-audio style vertical resequencing.
+  - JUCE is being used as the portability layer for desktop DAWs and Elk OS host integration, not as a replacement for the core engine.
+
+**Next Steps on JUCE / Elk Path**
+- Short term:
+  - Add a few more high-value engine parameters to the JUCE editor (e.g., filter cutoff/resonance, unison/voice controls, one LFO amount) to make the plugin more representative for DAW testing.
+  - Begin wiring a minimal sequencer UI in JUCE:
+    - Play/Stop buttons.
+    - Tempo slider.
+    - “Patterns Test Mode” toggle that loads the same ghost-note diagnostic patterns used in the SDL app and tests.
+    - A simple debug label mirroring the `[DBG] col X fired Y` overlay used in the Patterns tab.
+- Medium term:
+  - Validate sequencer timing and ghost-note behavior inside JUCE (standalone + Live 10) against existing regression tests and debug tools.
+  - Prepare an Elk OS build profile targeting a headless JUCE plugin, keeping CPU usage and determinism aligned with the current RtAudio/SDL baseline.
+
 ## 📅 2025-09-15 — Sequencer Stability and Timing Fixes (Today)
 
 ### What We Fixed Today

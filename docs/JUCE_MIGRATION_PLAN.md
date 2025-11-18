@@ -12,55 +12,272 @@ This plan outlines how to migrate the current AIMusicHardware engine (AudioEngin
 - Optional: Provide a small JUCE editor for desktop use (transport + simple grid) to facilitate testing and debugging.
 
 ## 3) Deliverables
-- JUCE VST3 plugin target (headless) with:
-  - Audio rendering via `AudioProcessor::processBlock()`
-  - Host tempo/position sync wired to our `HostSync` and `Sequencer::synchronizeWithAudioEngine()`
-  - Exposed parameters via `AudioProcessorValueTreeState` (APVTS)
-  - MIDI input support and optional MIDI output
-- JUCE standalone app target with the same engine wiring (optional tiny UI for bring-up)
-- CMake integration with JUCE (desktop and cross-compile toolchains)
-- Deployment and validation scripts/instructions for Elk OS
+
+Given the project’s primary goal (a hardware IoT synth with game-audio style vertical/horizontal resequencing), JUCE is strictly a portability/hosting layer to get the **existing engine** onto Elk OS/RPi-class boards. We do **not** want to rewrite the engine, just wrap it.
+
+- JUCE plugin/standalone targets that:
+  - Treat the current engine (`AIMusicCore` static lib: Sequencer, Synthesizer, IoT, Segment/vertical remix) as a black-box library.
+  - Provide audio/MIDI/host sync integration for Elk OS and desktop.
+- JUCE VST3 plugin target (headless or minimal editor) with:
+  - Audio rendering via `AudioProcessor::processBlock()`.
+  - Host tempo/position sync wired to `HostSync`, `ClockSource`, and `Sequencer::synchronizeWithAudioEngine()`.
+  - Minimal exposed parameters via `AudioProcessorValueTreeState` (APVTS) for transport/tempo/sections.
+  - MIDI input support (and optional MIDI output) for external controllers.
+- JUCE standalone app target with the same engine wiring (optional tiny UI for bring-up and diagnostics).
+- CMake integration with JUCE (desktop and cross-compile toolchains) that links against the existing `AIMusicCore` library.
+- Deployment and validation scripts/instructions for Elk OS.
 
 ## 4) Phased Plan & Estimates
 
-- Phase 1: JUCE Standalone Spike (2–4 days)
-  - Add JUCE via submodule or `find_package(JUCE CONFIG)`
-  - Implement `juce::AudioAppComponent` or `AudioDeviceManager + AudioSourcePlayer` wrapper around our engine
-  - Replace RtMidi with JUCE `MidiInput/MidiOutput` in this target only
-  - Drive tempo internally or via `ClockSource`; expose basic CLI flags
-  - Outcome: Headless/tiny UI app runs at 48kHz small buffers on Linux
+### Phase 1: Branch & Minimal JUCE Host (Standalone Spike, 2–4 days)
 
-- Phase 2: JUCE VST3 Plugin MVP (4–7 days)
-  - `juce_add_plugin` target (VST3), no heavy UI (headless or minimal editor)
-  - Map `prepareToPlay`, `processBlock`, `releaseResources` to AudioEngine/Synthesizer/Sequencer
-  - Host sync: read `AudioPlayHead::CurrentPositionInfo`, feed `HostSync` and call `synchronizeWithAudioEngine`
-  - Parameters: APVTS for tempo, swing, loop, probability mode, per-loop dedupe, section jumps
-  - MIDI I/O: map host MIDI to the engine, ensure deterministic latency
-  - Outcome: Loads in Elk’s plugin host, renders audio correctly, responds to host transport
+- Create a `juce-migration` branch from the current sequencer-stable baseline (tagged in `PROJECT_STATUS.md`).
+- Add JUCE (submodule or `find_package(JUCE CONFIG)`).
+- Implement a minimal **standalone JUCE host** that wraps the existing engine:
+  - Use `juce::AudioAppComponent` or `AudioDeviceManager + AudioSourcePlayer`.
+  - Link against `libAIMusicCore.a` and instantiate `AudioEngine`, `Synthesizer`, `Sequencer`, `EffectProcessor` exactly as in `src/main_integrated_simple.cpp`, but without SDL UI.
+  - In `prepareToPlay`, call the same initialization paths (sample rate, voice count, etc.).
+  - In `getNextAudioBlock`:
+    - Compute `dt = numSamples / sampleRate`, derive `deltaBeats` as we do now, and call `Sequencer::process(deltaBeats)` (or reuse the existing `audioCallback` helper).
+    - Call `synthesizer->process(buffer, numSamples)` to render into JUCE’s `AudioBuffer`.
+  - Wire JUCE `MidiInput`/`MidiOutput` to the existing MIDI handler or directly to `synthesizer->noteOn/noteOff` + `Sequencer` as in the current main app.
+- Outcome: Desktop JUCE app that proves our engine runs correctly under JUCE’s audio/MIDI model, without changing engine code.
 
-- Phase 3: Minimal JUCE UI (3–6 days, optional for Elk)
-  - Editor with transport controls, small step grid for one pattern, and section select
-  - Thread-safe bridges to our engine (we already have mutex/atomic design)
-  - Outcome: Desktop-friendly editor for development; not required for Elk deployment
+### Phase 2: JUCE VST3 Plugin MVP for Elk (4–7 days)
 
-- Phase 4: Full UI Parity (2–4 weeks, optional)
-  - Rebuild multi-page UI (grid, sections, sensors, effects, preset browser) with JUCE Components
-  - Improve look & feel and persistence
+- Add a JUCE `juce_add_plugin` target (VST3) that:
+  - Links against `AIMusicCore`.
+  - Implements `AudioProcessor::prepareToPlay`, `processBlock`, `releaseResources` by delegating to `AudioEngine`/`Synthesizer`/`Sequencer`.
+  - In `processBlock`:
+    - Derive `dt = numSamples / sampleRate`.
+    - Call `AudioPlayHead::getCurrentPosition()` to obtain `CurrentPositionInfo`:
+      - Feed `HostSync` with `bpm`, `ppqPosition`, `sampleRate`.
+      - Call `Sequencer::synchronizeWithAudioEngine(timeInSeconds, sampleRate)` if appropriate.
+      - Drive `Sequencer::process(deltaBeats)` based on host tempo/position.
+    - Map `MidiBuffer` events to our existing MIDI handler or directly to synth/sequencer.
+- Parameters (APVTS) — start minimal:
+  - Transport: play/stop/loop.
+  - Tempo (if not host-driven), swing.
+  - Probability mode (PerHitRandom/PerLoopStable), per-loop dedupe enable.
+  - Section navigation: jump/next/prev for vertical resequencing segments.
+- Outcome: VST3 plugin loads in JUCE Plugin Host/DAW and, later, in Elk’s plugin host; audio and timing behave identically to the current RtAudio app.
+
+### Phase 3: Minimal JUCE UI (Desktop Dev Tool, 3–6 days; optional for Elk)
+
+Even though Elk can run headless, for development we want a small JUCE editor that mirrors the **Patterns** and **Sequencer** essentials:
+
+- Editor layout:
+  - Transport controls: Play/Stop, Loop.
+  - Tempo slider: calls `sequencer->setTempo()` and optionally updates host tempo.
+  - Section controls: a simple selector + Jump/Next/Prev, wired to `defineSections` / `jumpToSection` (`Timing::OnBeat`/`OnBar`).
+  - Patterns Test Mode button: calls a JUCE equivalent of `runSequencerUITests` that fills `Pattern` objects with the spaced and consecutive 16th-note tests.
+  - Simple debug labels (no heavy graphics) that replicate:
+    - `[DBG] col X fired Y` for the current 16th column and per-loop fired count.
+    - A minimal envelope scope/voice count if needed.
+- This editor is for **desktop debugging only**; Elk builds can remain headless or use a very small control panel.
+
+### Phase 4: Optional Full UI Port (2–4 weeks, nice-to-have)
+
+- If we later decide that JUCE should be the **primary** UI (replacing SDL on desktop):
+  - Port the existing grid-based Patterns page, Sections/Segments editor, Sensors mappings, and Preset browser to JUCE `Component`s.
+  - Reuse existing engine APIs and data models (Pattern/Sequencer/SegmentSequencer) without changing their semantics.
+  - Keep Elk deployments minimal; full UI would primarily benefit desktop and possibly richer front panels.
 
 ## 5) Technical Design
 
 ### 5.1 Engine Wiring in JUCE
-- Standalone:
-  - `AudioDeviceManager` → callback → compute `deltaTime` and call `Sequencer::process(deltaBeats)`
-  - Use our `ClockSource` for internal/external pulses when not hosted
-  - Use JUCE `MidiInput` callbacks → forward to our MIDI layer or Synth
-- Plugin:
-  - `AudioProcessor::prepareToPlay(sampleRate, blockSize)` → give to AudioEngine/Synth
-  - `AudioProcessor::processBlock(AudioBuffer<float>&, MidiBuffer&)`
-    - Derive `deltaTime` from `numSamples/sampleRate`
-    - Obtain `AudioPlayHead::CurrentPositionInfo cpi`; call `hostSync.updateFromHost(cpi.bpm, cpi.ppqPosition, sampleRate)`
-    - `sequencer.synchronizeWithAudioEngine(cpi.timeInSeconds, sampleRate)`
-    - Drive `sequencer.process(adjustedDeltaBeats)` and render audio
+
+The guiding principle: **keep the current engine intact** (Sequencer, SegmentSequencer, IoT/MQTT, Synthesizer, vertical/vertical remix) and make JUCE call into it, just like the current RtAudio/SDL front-end.
+
+- Standalone (desktop + Elk bring-up):
+  - `AudioDeviceManager` / `AudioAppComponent` → audio callback:
+    - Compute `deltaTime = numSamples / sampleRate`.
+    - Convert to beats using `tempo` / `beatTimeSeconds` and call `Sequencer::process(deltaBeats)` (or reuse the existing `audioCallback` helper that already does this).
+    - Call `synthesizer->process(buffer, numSamples)` to fill the JUCE audio buffer.
+  - Use JUCE `MidiInput` callbacks to feed the existing MIDI handler:
+    - Note on/off → `synthesizer->noteOn/noteOff` and/or `Sequencer` as we already do in `main_integrated_simple.cpp`.
+  - Use `ClockSource` for internal/external pulses when the app is not hosted by a DAW.
+
+- Plugin (for Elk host and DAWs):
+  - `AudioProcessor::prepareToPlay(sampleRate, blockSize)`:
+    - Initialize `AudioEngine`/`Synthesizer`/`Sequencer` with the given `sampleRate`.
+  - `AudioProcessor::processBlock(AudioBuffer<float>&, MidiBuffer&)`:
+    - Compute `deltaTime = numSamples / sampleRate`.
+    - Query `AudioPlayHead::CurrentPositionInfo`:
+      - Feed `HostSync` (BPM, PPQ position, sampleRate).
+      - Optionally call `Sequencer::synchronizeWithAudioEngine(timeInSeconds, sampleRate)` if we want engine-side alignment.
+    - Use `ClockSource` + host tempo to derive `deltaBeats` and call `Sequencer::process(deltaBeats)`.
+    - Map `MidiBuffer` to our MIDI handler (or directly to `Synthesizer` note on/off).
+    - Render audio via `synthesizer->process()` into the JUCE buffer.
+
+### 5.5 Proposed File Layout for JUCE Targets
+
+To keep the JUCE layer clearly separated from the core engine, add a `juce/` subtree with the following structure:
+
+- `juce/CMakeLists.txt`
+  - Defines JUCE targets and links against `AIMusicCore` from the top-level build.
+  - Example targets:
+    - `AIMH_JuceStandalone` — minimal desktop/Elk bring-up app.
+    - `AIMH_JucePlugin` — VST3 plugin for Elk host + desktop testing.
+- `juce/ElkSynthStandaloneApp.cpp`
+  - Implements a small `juce::AudioAppComponent` (or `AudioDeviceManager` + `AudioSourcePlayer`) that:
+    - Owns `std::unique_ptr<AIMusicHardware::Synthesizer>`, `Sequencer`, and optional `EffectProcessor`.
+    - In `prepareToPlay`, configures the engine with the JUCE sample rate.
+    - In `getNextAudioBlock`, calls the existing engine callback logic (sequencer + synth) and writes into the JUCE buffer.
+- `juce/ElkSynthPluginProcessor.h/.cpp`
+  - `class ElkSynthProcessor : public juce::AudioProcessor`:
+    - Owns the same engine objects (or a wrapper struct, e.g. `EngineContext`).
+    - Implements `prepareToPlay`, `processBlock`, `releaseResources`.
+    - Exposes minimal APVTS parameters for transport/tempo/sections.
+- `juce/ElkSynthPluginEditor.h/.cpp` (optional, desktop-only)
+  - Minimal editor providing:
+    - Transport buttons, tempo slider.
+    - Section selector and jump/next/prev controls.
+    - Patterns Test Mode button.
+    - A text overlay for `[DBG] col X fired Y`.
+
+The top-level `CMakeLists.txt` can then `add_subdirectory(juce)` when JUCE is available on the system.
+
+### 5.6 `processBlock` Bridge Sketch (Plugin)
+
+Below is a concrete sketch of how the plugin’s `processBlock` bridges JUCE’s `AudioBuffer`/`MidiBuffer` to the existing engine. This is illustrative; actual types (e.g., `AudioEngine`) can be adjusted to your current architecture.
+
+```cpp
+// juce/ElkSynthPluginProcessor.h (sketch)
+class ElkSynthProcessor : public juce::AudioProcessor {
+public:
+  ElkSynthProcessor();
+  ~ElkSynthProcessor() override = default;
+
+  void prepareToPlay(double newSampleRate, int samplesPerBlock) override;
+  void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+  void releaseResources() override;
+
+  // ... standard JUCE boilerplate ...
+
+private:
+  double sampleRate_ = 44100.0;
+  std::unique_ptr<AIMusicHardware::Synthesizer> synth_;
+  std::unique_ptr<AIMusicHardware::Sequencer>   seq_;
+  std::unique_ptr<AIMusicHardware::HostSync>    hostSync_;
+  std::unique_ptr<AIMusicHardware::ClockSource> clockSource_;
+};
+```
+
+```cpp
+// juce/ElkSynthPluginProcessor.cpp (sketch)
+ElkSynthProcessor::ElkSynthProcessor() {
+  synth_     = std::make_unique<AIMusicHardware::Synthesizer>(44100);
+  seq_       = std::make_unique<AIMusicHardware::Sequencer>(120.0, 4);
+  hostSync_  = std::make_unique<AIMusicHardware::HostSync>();
+  clockSource_ = std::make_unique<AIMusicHardware::ClockSource>();
+
+  seq_->attachHostSync(hostSync_.get());
+  seq_->attachClockSource(clockSource_.get());
+
+  seq_->setNoteCallbacks(
+    [this](int pitch, float vel, int ch, const AIMusicHardware::Envelope& env) {
+      if (synth_) synth_->noteOn(pitch, vel, env, ch);
+    },
+    [this](int pitch, int ch) {
+      if (synth_) synth_->noteOff(pitch, ch);
+    }
+  );
+}
+
+void ElkSynthProcessor::prepareToPlay(double newSampleRate, int samplesPerBlock) {
+  sampleRate_ = newSampleRate > 0.0 ? newSampleRate : 44100.0;
+  if (synth_) synth_->setSampleRate((int)sampleRate_);
+  if (seq_)   seq_->synchronizeWithAudioEngine(0.0, sampleRate_);
+}
+
+void ElkSynthProcessor::processBlock(juce::AudioBuffer<float>& buffer,
+                                     juce::MidiBuffer& midi) {
+  juce::ScopedNoDenormals noDenormals;
+  const int numSamples = buffer.getNumSamples();
+
+  // Clear buffer first; our engine writes full-range audio.
+  buffer.clear();
+
+  // 1) Handle MIDI: map host MIDI to engine
+  for (const auto metadata : midi) {
+    const auto msg  = metadata.getMessage();
+    const int  ch   = msg.getChannel() - 1;
+
+    if (msg.isNoteOn()) {
+      const int   note = msg.getNoteNumber();
+      const float vel  = msg.getVelocity(); // 0..1 in JUCE
+      if (synth_) synth_->noteOn(note, vel, ch);
+      // Optionally also route into Sequencer for live recording, etc.
+    } else if (msg.isNoteOff()) {
+      const int note = msg.getNoteNumber();
+      if (synth_) synth_->noteOff(note, ch);
+    }
+    // Handle CC/pitch bend/aftertouch as needed.
+  }
+
+  // 2) Host sync → HostSync/Sequencer
+  if (auto* playHead = getPlayHead()) {
+    juce::AudioPlayHead::CurrentPositionInfo cpi;
+    if (playHead->getCurrentPosition(cpi)) {
+      const double bpm  = cpi.bpm > 1.0 ? cpi.bpm : seq_->getTempo();
+      const double ppq  = cpi.ppqPosition;
+      const double sr   = sampleRate_;
+
+      hostSync_->updateFromHost(bpm, ppq, sr);
+      // Optional: align beat time to host seconds
+      seq_->synchronizeWithAudioEngine(cpi.timeInSeconds, sr);
+    }
+  }
+
+  // 3) Advance Sequencer in beats using either ClockSource or internal tempo
+  const double dtSeconds   = (double)numSamples / sampleRate_;
+  const double secPerBeat  = seq_->getPreciseBeatTime(); // or 60.0 / tempo
+  const double beatsPerSec = secPerBeat > 0.0 ? 1.0 / secPerBeat : 0.0;
+  const double deltaBeats  = dtSeconds * beatsPerSec;
+  seq_->process(deltaBeats);
+
+  // 4) Render audio from Synthesizer into JUCE buffer
+  if (synth_) {
+    float* left  = buffer.getWritePointer(0);
+    float* right = buffer.getNumChannels() > 1 ? buffer.getWritePointer(1) : nullptr;
+
+    // Use a temporary interleaved buffer if the engine expects interleaved stereo.
+    std::vector<float> tempInterleaved((size_t)numSamples * 2, 0.0f);
+    synth_->process(tempInterleaved.data(), numSamples);
+
+    for (int i = 0; i < numSamples; ++i) {
+      const float l = tempInterleaved[2 * i + 0];
+      const float r = tempInterleaved[2 * i + 1];
+      left[i]  += l;
+      if (right) right[i] += r;
+    }
+  }
+}
+```
+
+The standalone JUCE host’s audio callback (`getNextAudioBlock`) would look almost identical, except it would use `AudioSourceChannelInfo` instead of `AudioProcessor::processBlock`, and it wouldn’t need to query `AudioPlayHead` (unless we simulate host transport there as well).
+
+### 5.7 Plugin vs Standalone Performance on Elk OS
+
+From a DSP/CPU perspective, a JUCE **plugin** and a JUCE **standalone app** that both:
+
+- Run in Release on the same hardware,
+- Use the same buffer sizes and sample rates,
+- And simply call into your existing engine (`Sequencer::process`, `Synthesizer::process`) once per audio block,
+
+will have essentially the **same hardware performance**. The main differences are integration and deployment:
+
+- On Elk OS, the system is optimized around **plugins**:
+  - The Elk host already manages the audio device, buffer sizes, and RT scheduling.
+  - A single headless plugin adds only a very small wrapper cost (host → `processBlock` call, parameter/state handling) compared to your DSP.
+- A JUCE **standalone** app can be just as efficient if it’s headless and configured identically, but on Elk you would then be re‑implementing what the host already provides (device management, routing, etc.).
+- UI cost (especially on RPi‑class hardware) dominates any plugin vs standalone overhead. Elk builds should remain headless or use minimal controls regardless of plugin/standalone choice.
+
+**Conclusion for this project:**
+
+- **Best long‑term target on Elk OS**: a **headless JUCE plugin** (VST3/LV2 per Elk’s recommendation) that wraps the existing engine. It integrates cleanly with Elk’s audio engine and has no meaningful performance penalty versus a standalone app.
+- **Best for development on desktop**: keep a small **JUCE standalone host** for quick bring‑up and debugging (Patterns, vertical resequencing, IoT behavior), but treat the plugin build as the final deployment form for Elk hardware.
 
 ### 5.2 Parameter Bridge (APVTS)
 - Expose minimal controls initially:
@@ -129,4 +346,3 @@ This plan outlines how to migrate the current AIMusicHardware engine (AudioEngin
 - Add JUCE to the repo (submodule or package) and scaffold CMake targets
 - Implement AudioProcessor wrapper + APVTS, wire HostSync/ClockSource
 - Validate on desktop; then cross-compile and deploy to Elk
-

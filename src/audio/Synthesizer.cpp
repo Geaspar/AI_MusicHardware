@@ -1374,7 +1374,8 @@ void Synthesizer::setModWheel(float value) {
 }
 
 void Synthesizer::setVoiceManagerType(VoiceManagerType type) {
-    if (voiceManagerType_ != type) {
+    // Also recreate if we don't yet have a voice manager (e.g. first-time setup).
+    if (voiceManagerType_ != type || !voiceManager_) {
         voiceManagerType_ = type;
         
         int maxVoices = voiceManager_ ? voiceManager_->getMaxVoices() : 16;
