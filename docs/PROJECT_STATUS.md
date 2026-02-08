@@ -459,10 +459,11 @@ The AIMusicHardware project has reached a significant milestone with multiple co
 - Short term:
   - Add a few more high-value engine parameters to the JUCE editor (e.g., filter cutoff/resonance, unison/voice controls, one LFO amount) to make the plugin more representative for DAW testing.
   - Begin wiring a minimal sequencer UI in JUCE:
-    - Play/Stop buttons.
-    - Tempo slider.
-    - “Patterns Test Mode” toggle that loads the same ghost-note diagnostic patterns used in the SDL app and tests.
-    - A simple debug label mirroring the `[DBG] col X fired Y` overlay used in the Patterns tab.
+    - Add Play/Stop transport buttons in the JUCE editor that start/stop the existing `Sequencer` in `ElkSynthProcessor`.
+    - Add a BPM slider wired to `Sequencer::setTempo`, so sequencer playback inside the JUCE standalone and VST follows the same tempo behavior as the Patterns tab.
+    - Add a “Patterns Test Mode” toggle that loads the same spaced and consecutive ghost-note diagnostic patterns used in the SDL app/tests, so timing can be auditioned directly in JUCE.
+    - Add a compact sequencer debug display (label/text area) that mirrors the `[DBG] col X fired Y` overlay for quick visual confirmation of per-column note firing.
+    - Add a first vertical resequencing hook: simple A/B/C section buttons in the JUCE UI that call the existing section/segment APIs (`defineSections`, `jumpToSection`, etc.) to exercise vertical resequencing inside the JUCE host.
 - Medium term:
   - Validate sequencer timing and ghost-note behavior inside JUCE (standalone + Live 10) against existing regression tests and debug tools.
   - Prepare an Elk OS build profile targeting a headless JUCE plugin, keeping CPU usage and determinism aligned with the current RtAudio/SDL baseline.
