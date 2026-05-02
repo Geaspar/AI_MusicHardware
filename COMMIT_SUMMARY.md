@@ -1,87 +1,73 @@
-# Commit Summary - Modulation System Complete
+# PR Summary - JUCE Sequencer Controls and Status Reconciliation
 
-## Major Features Implemented
+Date: 2026-05-02
+Branch: `juce-migration`
 
-### 1. Complete Modulation System
-- Dual LFO system with 5 waveforms
-- Comprehensive modulation matrix
-- Visual routing UI with dropdowns
-- Vital-style pitch modulation
-- Block-based processing for efficiency
+## Overview
 
-### 2. Critical Bug Fixes
-- **BUG-002**: Fixed modulation system crash (null pointer access)
-- **BUG-003**: Fixed filter not affecting audio output
-- **BUG-004**: Fixed LFO rate slider not working
-- **BUG-005**: Fixed LFO running 64x slower than expected
-- **BUG-006**: Fixed oscillator wave shape mislabeling
-- **BUG-007**: Added debug for duplicate note issue (in progress)
+This update moves the JUCE migration branch from a synth-only desktop host toward a usable sequencer test host. It adds the missing JUCE-side transport and diagnostic controls needed to audition sequencer timing directly in the standalone app and VST3 plugin, while also reconciling project documentation with the actual branch state.
 
-### 3. UI Enhancements
-- Added LFO controls (Rate, Depth, Shape)
-- Implemented modulation routing matrix
-- Connected all parameters through unified system
-- Added timestamps to debug output
+## What Changed
 
-### 4. Documentation Updates
-- Created MODULATION_SYSTEM_UPDATE.md
-- Updated BUG_FIXES_LOG.md with 6 new bug entries
-- Updated PROJECT_STATUS.md to version 1.2.0
-- Created individual fix summaries for each issue
+### 1. JUCE Sequencer Controls
+- Added `Play`, `Stop`, and `Loop` controls to the JUCE editor
+- Added a BPM slider wired to `Sequencer::setTempo()`
+- Added a `Load Test Patterns` action and selector for:
+  - `Test Spaced` using columns `[1,6,10,12]`
+  - `Test Retriggers` using columns `[3,4,5,6]`
+- Added live transport and debug readouts showing:
+  - playback state
+  - BPM
+  - bar and beat
+  - current pattern
+  - `[DBG] col X fired Y`
 
-## Files Modified
+### 2. Processor-Side Sequencer Bridge
+- Initialized the sequencer in the JUCE processor `prepareToPlay()`
+- Added editor-facing processor methods for:
+  - transport start/stop
+  - looping toggle
+  - tempo updates
+  - canned test-pattern loading
+  - pattern selection
+  - polling sequencer/debug state for UI refresh
+- Added lightweight per-bar debug counting in the processor so the JUCE editor mirrors the SDL ghost-note diagnostics closely enough for desktop timing validation
 
-### Source Code
-- `src/audio/Synthesizer.cpp` - Core modulation implementation
-- `src/main_integrated_simple.cpp` - UI integration and parameter routing
-- `include/audio/Synthesizer.h` - External effect processor support
-- `src/synthesis/modulators/modulation_matrix.cpp` - Connection handling
-- `src/synthesis/voice/voice_manager.cpp` - Pitch modulation system
+### 3. Documentation Updates
+- Added a `2026-05-02` status entry to `docs/PROJECT_STATUS.md`
+- Corrected the stale top-level claim that sequencing was not working
+- Marked the unresolved `2025-09-12` ghost-note section as historical context rather than current branch status
+- Updated `docs/JUCE_MIGRATION_PLAN.md` milestones and next steps to reflect:
+  - desktop standalone/plugin milestones complete
+  - optional UI work partially complete
+  - Elk bring-up still pending
+
+## Files Updated
+
+### JUCE
+- `juce/ElkSynthPluginEditor.cpp`
+- `juce/ElkSynthPluginEditor.h`
+- `juce/ElkSynthPluginProcessor.cpp`
+- `juce/ElkSynthPluginProcessor.h`
 
 ### Documentation
-- `docs/MODULATION_SYSTEM_UPDATE.md` - New comprehensive update
-- `docs/BUG_FIXES_LOG.md` - Added 6 new bug entries
-- `docs/PROJECT_STATUS.md` - Updated to version 1.2.0
-- Multiple fix summary files in root directory
+- `docs/PROJECT_STATUS.md`
+- `docs/JUCE_MIGRATION_PLAN.md`
 
-## Testing Status
-- ✅ LFO modulation of all parameters
-- ✅ Filter processing audio correctly
-- ✅ Stable operation under heavy modulation
-- ✅ Correct oscillator wave shapes
-- 🔄 Duplicate note issue under investigation
+## Validation
+- Built successfully with:
+  - `cmake --build build --target AIMH_JuceStandalone AIMH_JucePlugin -j4`
+- Verified by local manual testing:
+  - standalone app launches
+  - VST3 loads in Ableton
+  - new JUCE sequencer controls are available for testing
 
-## Next Steps
-1. Push all changes to GitHub
-2. Implement external MIDI controller support
-3. Add parameter smoothing
-4. Complete duplicate note investigation
+## Known Follow-Ups
+- Add section / segment resequencing controls to the JUCE editor
+- Validate sequencer timing parity in JUCE against the existing ghost-note and retrigger regression scenarios
+- Decide whether to add APVTS/state persistence before Elk bring-up
+- Replace deprecated JUCE playhead API usage during the next host-sync cleanup pass
 
----
+## Suggested PR Title
 
-## Git Commands to Execute
-
-```bash
-# Add all modified files
-git add .
-
-# Commit with comprehensive message
-git commit -m "feat: Complete modulation system implementation with bug fixes
-
-- Implement dual LFO system with 5 waveforms (Sine, Triangle, Saw, Square, Random)
-- Add comprehensive modulation matrix with visual routing UI
-- Implement Vital-style unified pitch modulation system
-- Add block-based processing for CPU efficiency (64-sample blocks)
-- Fix critical modulation system crash (null pointer access)
-- Fix filter not affecting audio output
-- Fix LFO rate control and speed issues
-- Fix oscillator wave shape order mismatch
-- Add debug timestamps for duplicate note investigation
-- Update documentation to version 1.2.0
-
-BREAKING CHANGE: Sequencer temporarily disabled for debugging
-Closes #BUG-002, #BUG-003, #BUG-004, #BUG-005, #BUG-006"
-
-# Push to GitHub
-git push origin main
-```
+`feat: add JUCE sequencer controls and reconcile migration status docs`
