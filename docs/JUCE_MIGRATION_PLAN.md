@@ -336,13 +336,14 @@ will have essentially the **same hardware performance**. The main differences ar
 - Deployment pipeline for Elk: preferred packaging method?
 
 ## 11) Milestones & Acceptance
-- M1 (Standalone Spike): Audio renders, MIDI in, internal/ClockSource tempo; runs at 48kHz small buffers (2–4 days)
-- M2 (Plugin MVP): VST3 renders in host; host sync drives sequencer timing; parameters exposed & functional (4–7 days)
-- M3 (Elk Bring-up): Plugin runs on Elk, passes timing/loop boundary tests under host control (1–3 days)
-- M4 (Optional UI): Desktop JUCE editor with transport + grid for development (3–6 days)
+- M1 (Standalone Spike): Audio renders, MIDI in, internal/ClockSource tempo; runs at 48kHz small buffers (2–4 days) — desktop complete
+- M2 (Plugin MVP): VST3 renders in host; host sync drives sequencer timing; parameters exposed & functional (4–7 days) — desktop complete
+- M3 (Elk Bring-up): Plugin runs on Elk, passes timing/loop boundary tests under host control (1–3 days) — pending
+- M4 (Optional UI): Desktop JUCE editor with transport + grid for development (3–6 days) — partially complete (transport/BPM/test-mode/debug done; grid still pending)
 
 ## 12) Next Steps
-- Confirm scope (plugin vs standalone, desktop editor) and target OS matrix
-- Add JUCE to the repo (submodule or package) and scaffold CMake targets
-- Implement AudioProcessor wrapper + APVTS, wire HostSync/ClockSource
-- Validate on desktop; then cross-compile and deploy to Elk
+- Validate sequencer timing parity inside JUCE using the existing ghost-note / retrigger regression patterns and debug readout
+- Add section / segment controls to the JUCE editor so vertical resequencing can be exercised without the SDL app
+- Decide whether to add APVTS/state persistence now or keep the JUCE layer intentionally thin until Elk bring-up
+- Replace deprecated `AudioPlayHead::getCurrentPosition()` usage with `getPosition()` during the next host-sync pass
+- Cross-compile and validate a headless Elk-focused plugin build once desktop timing behavior is locked down

@@ -52,7 +52,7 @@ The AIMusicHardware project has reached a significant milestone with multiple co
   - Fixed filter resonance crash with Q value limits (0.1-30.0)
   - Removed CC learning buttons from LFO sliders for cleaner UI
 
-#### 4. Sequencer System ⭐ **currently basic sequencing functionality is not working**
+#### 4. Sequencer System ⭐ **core timing baseline stable; JUCE migration in progress**
 - **Status**: 🟢 **COMPLETE** - Game audio inspired
 - **Features**:
   - Multi-pattern system with 64+ pattern storage
@@ -467,6 +467,54 @@ The AIMusicHardware project has reached a significant milestone with multiple co
 - Medium term:
   - Validate sequencer timing and ghost-note behavior inside JUCE (standalone + Live 10) against existing regression tests and debug tools.
   - Prepare an Elk OS build profile targeting a headless JUCE plugin, keeping CPU usage and determinism aligned with the current RtAudio/SDL baseline.
+
+## 📅 2026-05-02 — JUCE Sequencer Controls + Status Reconciliation
+
+### What We Completed Today
+- **JUCE sequencer control surface**
+  - Added Play / Stop / Loop controls directly to the JUCE editor.
+  - Added a BPM slider wired to `Sequencer::setTempo()`.
+  - Added a `Load Test Patterns` action plus a pattern selector for the two diagnostic patterns:
+    - `Test Spaced` → columns `[1,6,10,12]`
+    - `Test Retriggers` → columns `[3,4,5,6]`
+  - Added a live transport/debug readout that mirrors the SDL-side diagnostic intent:
+    - transport state, BPM, bar/beat, current pattern
+    - `[DBG] col X fired Y` plus beat position
+- **Processor-side JUCE bridge updates**
+  - `ElkSynthProcessor` now initializes the sequencer in `prepareToPlay()`.
+  - Added JUCE-editor facing helpers for:
+    - sequencer start/stop
+    - looping toggle
+    - tempo control
+    - test-pattern loading/selection
+    - polling current sequencer/debug state for the editor timer
+  - Added lightweight per-bar debug counting in the processor so JUCE can show the same note-fire diagnostics used during SDL ghost-note work.
+- **Build verification**
+  - Reconfigured CMake with `ENABLE_JUCE_TARGETS=ON` on `2026-05-02`.
+  - Built both JUCE targets successfully:
+    - `AIMH_JuceStandalone`
+    - `AIMH_JucePlugin`
+  - Current build warnings are non-blocking:
+    - JUCE `AudioPlayHead::getCurrentPosition()` deprecation warning
+    - x86_64 standalone link warnings about ignoring arm64 RtAudio / RtMidi dylibs
+
+### Current Branch Status
+- **Working in JUCE now**
+  - Existing synth engine audio path
+  - On-screen keyboard / external MIDI note input
+  - Waveform, volume, ADSR, filter, delay, reverb, sensor mock, and LFO controls
+  - Sequencer transport controls, BPM, canned Patterns Test Mode, and debug readout
+  - VST3 build + standalone build
+- **Still not implemented in JUCE**
+  - Full Patterns grid editor
+  - Section / segment resequencing controls in the editor
+  - APVTS/state persistence for plugin parameters
+  - Formal Elk OS deployment validation
+  - Full timing parity validation inside JUCE against every sequencer regression scenario
+
+### Documentation Reconciliation
+- The stale top-level summary that said sequencing was not working has been corrected.
+- The `2025-09-12` ghost-note section below is now historical context only; it was superseded by the stabilized sequencer baseline logged on `2025-11-17` and the JUCE migration work logged on `2025-11-18` and `2026-05-02`.
 
 ## 📅 2025-09-15 — Sequencer Stability and Timing Fixes (Today)
 
@@ -2041,11 +2089,11 @@ The AIMusicHardware project represents a significant achievement in open-source 
 - **Complete Hardware Integration** with IoT sensor networks
 - **Production-Ready Performance** with sub-microsecond operation times
 
-**Status**: 
+**Status**: 🟡 Active JUCE migration branch with working standalone/VST3 synth host and initial sequencer controls.
 
-**Next Milestone**: Complete system integration and real-world deployment validation (June 2025).
+**Next Milestone**: Validate sequencer timing parity inside JUCE, then prepare an Elk-focused headless plugin build profile.
 
-## 📅 2025-09-12 — Ghost Note Sequencer Issue Investigation
+## 📅 2025-09-12 — Ghost Note Sequencer Issue Investigation (Historical; superseded by Nov 2025 stabilization work)
 
 ### What We Investigated Today
 - **Ghost Note Bug Analysis**: Extensive investigation of sequencer producing extra notes after beat 11 in a C4 pattern at beats 1, 8, and 11
@@ -2062,6 +2110,7 @@ The AIMusicHardware project represents a significant achievement in open-source 
   - `FinalGhostNoteVerification.cpp` - User scenario verification
 
 ### Current Status
+- Historical note: this unresolved snapshot was superseded by the `2025-11-17` sequencer stabilization entry and later JUCE migration entries above.
 - **❌ ISSUE REMAINS UNRESOLVED**: Despite extensive investigation and multiple fix attempts, the ghost note issue persists
 - **Diagnostic Tests Show Success**: Test programs indicate fixes are working, but real-world usage still produces ghost notes
 - **Further Investigation Needed**: The diagnostic tests may not accurately reproduce the real-world conditions where ghost notes occur

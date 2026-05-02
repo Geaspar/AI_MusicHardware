@@ -7,7 +7,8 @@ class ElkSynthProcessor;
 
 // Simple JUCE editor that exposes a playable MIDI keyboard for the existing engine.
 class ElkSynthEditor : public juce::AudioProcessorEditor,
-                       private juce::MidiKeyboardStateListener
+                       private juce::MidiKeyboardStateListener,
+                       private juce::Timer
 {
 public:
     explicit ElkSynthEditor(ElkSynthProcessor& p);
@@ -28,9 +29,14 @@ private:
                        int midiNoteNumber,
                        float velocity) override;
 
+    void timerCallback() override;
+    void refreshSequencerState();
+
     ElkSynthProcessor& processor_;
     juce::MidiKeyboardState keyboardState_;
     juce::MidiKeyboardComponent keyboard_;
+    juce::Label transportLabel_;
+    juce::Label debugLabel_;
     juce::Label   waveformLabel_;
     juce::ComboBox waveformBox_;
     juce::Label   volumeLabel_;
@@ -65,6 +71,15 @@ private:
     juce::ComboBox lightTargetBox_;
     juce::Label   distanceTargetLabel_;
     juce::ComboBox distanceTargetBox_;
+    juce::TextButton playButton_{"Play"};
+    juce::TextButton stopButton_{"Stop"};
+    juce::TextButton patternsTestButton_{"Load Test Patterns"};
+    juce::ToggleButton loopButton_{"Loop"};
+    juce::Label bpmLabel_;
+    juce::Slider bpmSlider_;
+    juce::Label testPatternLabel_;
+    juce::ComboBox testPatternBox_;
+    juce::Label testPatternHelpLabel_;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ElkSynthEditor)
 };

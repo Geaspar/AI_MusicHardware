@@ -1,9 +1,11 @@
 #pragma once
 
-#include <atomic>
 #include <algorithm>
+#include <array>
+#include <atomic>
 #include <functional>
 #include <memory>
+#include <string>
 #include <juce_audio_processors/juce_audio_processors.h>
 
 namespace AIMusicHardware {
@@ -28,6 +30,21 @@ enum class SensorMode {
 // JUCE AudioProcessor wrapper around the existing AIMusicHardware engine.
 class ElkSynthProcessor : public juce::AudioProcessor {
 public:
+    struct SequencerUIState {
+        bool playing = false;
+        bool looping = true;
+        bool patternsTestMode = false;
+        double tempoBpm = 120.0;
+        double positionInBeats = 0.0;
+        int bar = 1;
+        int beat = 1;
+        int currentPatternIndex = 0;
+        std::string currentPatternName;
+        std::string currentSectionName;
+        int activeColumn = -1;
+        int firedCount = 0;
+    };
+
     ElkSynthProcessor();
     ~ElkSynthProcessor() override;
 
@@ -84,6 +101,13 @@ public:
                            std::function<float()> distanceReader,
                            int intervalMs = 20);
     void stopSensorPoller();
+    void startSequencerFromUI();
+    void stopSequencerFromUI();
+    void setSequencerTempoFromUI(double bpm);
+    void setSequencerLoopingFromUI(bool enabled);
+    void loadPatternsTestModeFromUI();
+    void selectSequencerPatternFromUI(int patternIndex);
+    SequencerUIState getSequencerUIState() const;
 
 private:
     class SensorPoller : public juce::Thread {
@@ -134,5 +158,15 @@ private:
     float lastDistanceApplied_ = -1.0f; // audio-thread only
     int lastLightTargetApplied_ = -1; // audio-thread only
     int lastDistanceTargetApplied_ = -1; // audio-thread only
+    std::atomic<bool> patternsTestModeActive_{false};
+    std::array<int, 16> debugFiredPerColumn_{};
+    std::atomic<int> debugActiveColumn_{-1};
+    std::atomic<int> debugFiredCount_{0};
+    int debugLastBar_ = -1;           // audio-thread only
+    double debugLastPosBeats_ = 0.0;  // audio-thread only
     std::unique_ptr<SensorPoller> sensorPoller_;
+
+    void resetSequencerDebugState();
+    void updateSequencerDebugState(double positionInBeats);
+    void ensureSequencerTestPatternsLoaded();
 };

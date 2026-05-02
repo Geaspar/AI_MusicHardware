@@ -71,6 +71,23 @@ ElkSynthProcessor::ElkSynthProcessor()
             if (synth_) {
                 synth_->noteOn(pitch, velocity, env, channel);
             }
+
+            if (seq_) {
+                const int bpb = std::max(1, seq_->getBeatsPerBar());
+                const double stepBeats = static_cast<double>(bpb) / 16.0;
+                if (stepBeats > 0.0) {
+                    double pos = std::fmod(seq_->getPrecisePositionInBeats(), static_cast<double>(bpb));
+                    if (pos < 0.0) pos += static_cast<double>(bpb);
+                    int col = static_cast<int>(std::floor(pos / stepBeats + 1e-6));
+                    if (col < 0) col = 0;
+                    if (col > 15) col %= 16;
+                    debugFiredPerColumn_[static_cast<size_t>(col)] += 1;
+                    if (col == debugActiveColumn_.load(std::memory_order_relaxed)) {
+                        debugFiredCount_.store(debugFiredPerColumn_[static_cast<size_t>(col)],
+                                               std::memory_order_relaxed);
+                    }
+                }
+            }
         },
         [this](int pitch, int channel) {
             if (synth_) {
@@ -213,8 +230,12 @@ void ElkSynthProcessor::prepareToPlay(double newSampleRate, int /*samplesPerBloc
                   << (synth_->getVoiceManager() ? "ok" : "null") << std::endl;
     }
     if (seq_) {
+        if (!seq_->initialize()) {
+            std::cout << "[JUCE] Sequencer::initialize() returned false\n";
+        }
         seq_->synchronizeWithAudioEngine(0.0, sampleRate_);
     }
+    resetSequencerDebugState();
 }
 
 void ElkSynthProcessor::releaseResources() {
@@ -383,6 +404,153 @@ void ElkSynthProcessor::setSensorModeFromUI(int modeIndex)
     sensorMode_.store(clamped, std::memory_order_relaxed);
 }
 
+void ElkSynthProcessor::startSequencerFromUI()
+{
+    if (!seq_) return;
+    seq_->start();
+    resetSequencerDebugState();
+}
+
+void ElkSynthProcessor::stopSequencerFromUI()
+{
+    if (!seq_) return;
+    seq_->stop();
+    resetSequencerDebugState();
+}
+
+void ElkSynthProcessor::setSequencerTempoFromUI(double bpm)
+{
+    if (!seq_) return;
+    seq_->setTempo(std::clamp(bpm, 30.0, 240.0));
+}
+
+void ElkSynthProcessor::setSequencerLoopingFromUI(bool enabled)
+{
+    if (!seq_) return;
+    seq_->setLooping(enabled);
+}
+
+void ElkSynthProcessor::ensureSequencerTestPatternsLoaded()
+{
+    if (!seq_) return;
+
+    while (seq_->getNumPatterns() <= 1) {
+        const int nextIndex = static_cast<int>(seq_->getNumPatterns()) + 1;
+        seq_->createPattern("Pattern " + std::to_string(nextIndex), 16);
+    }
+
+    const int bpb = std::max(1, seq_->getBeatsPerBar());
+    const double step = static_cast<double>(bpb) / 16.0;
+
+    seq_->clearPattern(0);
+    seq_->renamePattern(0, "Test Spaced");
+    for (int col : {1, 6, 10, 12}) {
+        seq_->addNoteToPattern(0, Note(60, 1.0f, static_cast<double>(col) * step, step, 0));
+    }
+
+    seq_->clearPattern(1);
+    seq_->renamePattern(1, "Test Retriggers");
+    for (int col : {3, 4, 5, 6}) {
+        seq_->addNoteToPattern(1, Note(62, 1.0f, static_cast<double>(col) * step, step, 0));
+    }
+}
+
+void ElkSynthProcessor::loadPatternsTestModeFromUI()
+{
+    if (!seq_) return;
+
+    ensureSequencerTestPatternsLoaded();
+    patternsTestModeActive_.store(true, std::memory_order_relaxed);
+    seq_->setPlaybackMode(PlaybackMode::SinglePattern);
+    seq_->setPerLoopDedupeEnabled(true);
+    seq_->setLooping(true);
+    seq_->setCurrentPattern(0);
+    seq_->setPositionInBeats(0.0);
+    seq_->start();
+    resetSequencerDebugState();
+}
+
+void ElkSynthProcessor::selectSequencerPatternFromUI(int patternIndex)
+{
+    if (!seq_) return;
+    if (patternIndex < 0) return;
+
+    if (patternsTestModeActive_.load(std::memory_order_relaxed)) {
+        ensureSequencerTestPatternsLoaded();
+    }
+
+    seq_->setCurrentPattern(static_cast<size_t>(patternIndex));
+    seq_->setPositionInBeats(0.0);
+    resetSequencerDebugState();
+}
+
+ElkSynthProcessor::SequencerUIState ElkSynthProcessor::getSequencerUIState() const
+{
+    SequencerUIState state;
+    if (!seq_) return state;
+
+    state.playing = seq_->isPlaying();
+    state.looping = seq_->isLooping();
+    state.patternsTestMode = patternsTestModeActive_.load(std::memory_order_relaxed);
+    state.tempoBpm = seq_->getTempo();
+    state.positionInBeats = seq_->getPrecisePositionInBeats();
+    state.bar = seq_->getCurrentBar();
+    state.beat = seq_->getCurrentBeat();
+    state.currentPatternIndex = static_cast<int>(seq_->getCurrentPatternIndex());
+    state.currentSectionName = seq_->getCurrentSectionName();
+    state.activeColumn = debugActiveColumn_.load(std::memory_order_relaxed);
+    state.firedCount = debugFiredCount_.load(std::memory_order_relaxed);
+
+    if (const Pattern* pattern = seq_->getPattern(static_cast<size_t>(state.currentPatternIndex))) {
+        state.currentPatternName = pattern->getName();
+    }
+
+    return state;
+}
+
+void ElkSynthProcessor::resetSequencerDebugState()
+{
+    debugFiredPerColumn_.fill(0);
+    debugActiveColumn_.store(-1, std::memory_order_relaxed);
+    debugFiredCount_.store(0, std::memory_order_relaxed);
+    debugLastBar_ = -1;
+    debugLastPosBeats_ = 0.0;
+}
+
+void ElkSynthProcessor::updateSequencerDebugState(double positionInBeats)
+{
+    if (!seq_) return;
+
+    const int bpb = std::max(1, seq_->getBeatsPerBar());
+    const int barIndex = static_cast<int>(std::floor(positionInBeats / std::max(1, bpb)));
+    const bool looped = (positionInBeats + 1e-6 < debugLastPosBeats_);
+
+    if (looped || barIndex != debugLastBar_) {
+        debugLastBar_ = barIndex;
+        debugFiredPerColumn_.fill(0);
+    }
+
+    const double stepBeats = static_cast<double>(bpb) / 16.0;
+    double posInBar = std::fmod(positionInBeats, static_cast<double>(bpb));
+    if (posInBar < 0.0) posInBar += static_cast<double>(bpb);
+
+    int col = -1;
+    if (stepBeats > 0.0) {
+        col = static_cast<int>(std::floor(posInBar / stepBeats + 1e-6));
+        if (col < 0) col = 0;
+        if (col > 15) col %= 16;
+    }
+
+    debugActiveColumn_.store(col, std::memory_order_relaxed);
+    if (col >= 0) {
+        debugFiredCount_.store(debugFiredPerColumn_[static_cast<size_t>(col)], std::memory_order_relaxed);
+    } else {
+        debugFiredCount_.store(0, std::memory_order_relaxed);
+    }
+
+    debugLastPosBeats_ = positionInBeats;
+}
+
 // Factory function required by JUCE's plugin client code.
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
@@ -453,11 +621,17 @@ void ElkSynthProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 
     // 3) Advance Sequencer in beats
     if (seq_) {
+        updateSequencerDebugState(seq_->getPrecisePositionInBeats());
         const double dtSeconds   = static_cast<double>(numSamples) / sampleRate_;
         const double secPerBeat  = seq_->getPreciseBeatTime();
         const double beatsPerSec = secPerBeat > 0.0 ? 1.0 / secPerBeat : 0.0;
         const double deltaBeats  = dtSeconds * beatsPerSec;
         seq_->process(deltaBeats);
+        const int activeCol = debugActiveColumn_.load(std::memory_order_relaxed);
+        if (activeCol >= 0 && activeCol < static_cast<int>(debugFiredPerColumn_.size())) {
+            debugFiredCount_.store(debugFiredPerColumn_[static_cast<size_t>(activeCol)],
+                                   std::memory_order_relaxed);
+        }
     }
 
     // 4) Render audio from Synthesizer into JUCE buffer
