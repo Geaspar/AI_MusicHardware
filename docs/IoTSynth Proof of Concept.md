@@ -1,14 +1,29 @@
 # IoTSynth Proof of Concept
-**Date:** Mon, Jan 14th, 2026  
+**Last updated:** 2026-05-02  
 **Branch:** juce-migration
 
+## Weekend POC Decision (May 2, 2026)
+- **Immediate goal**: get a proof-of-concept running and filmed this weekend where a real physical input changes a synth parameter audibly.
+- **Primary path**: Raspberry Pi + local sensors + existing JUCE host path.
+- **Deferred path**: ESP32 / MQTT sensor-node workflow is intentionally archived for this immediate demo.
+- **Why**:
+  - The current JUCE path already supports external normalized Light + Distance inputs.
+  - The ESP32 firmware in this repo is broader than needed for a weekend demo and currently targets periodic MQTT publishing plus deep sleep, not continuous live modulation.
+  - Elk OS remains the preferred long-term deployment target, but it should not be the first blocker for a one-weekend video proof.
+
+## Archived for Immediate POC
+- `firmware/esp32_sensor_node/` remains in the repo as a future/distributed-sensor direction.
+- MQTT-based wireless sensor nodes are **not** the recommended path for the current weekend proof-of-concept.
+- Revisit the ESP32/MQTT direction after the first local hardware demo is working reliably on a Pi-class host.
+
 ## Executive Summary
-- JUCE standalone runs on macOS with sensor UI for two sensor streams (Light + Distance). Manual and External paths are separated; env-driven external sources (fake ramps/files) work and headless defaults are in place.
-- Elk VST3 build is pending: the Elk toolchain file is not on this machine (but we can also build natively on the Pi).
-- Hardware target: Pi 4B + HiFiBerry DAC+ ADC Pro + VL53L0X distance sensor + ADS1115 + LDR divider (light). Plan: wire both on I2C, normalize in code, and map to synth parameters for an audible/visual demo.
+- JUCE standalone and VST3 both build on macOS, and the JUCE path now exposes sequencer + sensor controls suitable for hardware bring-up.
+- Elk deployment is still pending: the weekend POC path is Raspberry Pi + local sensors first, then Elk after the interaction is stable.
+- Hardware target: Pi 4B or 5 + working audio output + ADS1115 + LDR divider first; VL53L0X distance is optional second-sensor scope after the first filmed demo works.
 
 ## What we did today
 - Built and ran `AIMH_JuceStandalone` on macOS (GUI confirmed).
+- Built the JUCE VST3 and validated the updated plugin path in Ableton Live.
 - Added sensor source toggle (Manual vs External) and per-sensor targets (Light->*, Distance->*); manual/external values separated to avoid overrides.
 - External helpers (from the environment):
   - `AIMH_LIGHT_FILE=/tmp/light.txt` (0..1) and `AIMH_DISTANCE_FILE=/tmp/distance.txt` (0..1)
@@ -18,12 +33,31 @@
 - Added MIDI control handling in the plugin (useful for sensors->MIDI bridges):
   - Pitch wheel -> pitch bend
   - CC74 -> filter cutoff, CC71 -> resonance, CC7 -> master volume
+- Added a Pi-side ADS1115 light bridge at `tools/pi_ads1115_light_bridge.py`.
+- Added a weekend execution guide at `docs/WEEKEND_PI_LIGHT_POC.md`.
+- Added a detailed breadboard-level hardware guide at `docs/PI_LIGHT_SENSOR_HARDWARE_SETUP.md`.
 - Searched for Elk toolchain locally; none found.
 
 ## Current state
-- Targets: `AIMH_JuceStandalone` (tested) and `AIMH_JucePlugin_VST3` (build pending Elk toolchain).
+- Targets: `AIMH_JuceStandalone` and `AIMH_JucePlugin_VST3` both build on macOS; Elk-host deployment is still pending.
 - Two sensor streams (Light + Distance): UI sliders (Manual) or env/poller (External) each routed to Cutoff/Volume/Pitch Bend.
+- The fastest hardware path is now: Pi audio working -> external file smoke test -> ADS1115 bridge -> light-to-cutoff demo -> optional second sensor.
 - Build warnings: JUCE `getCurrentPosition` deprecation (benign), RtAudio/RtMidi arm64 vs x86_64 ignored in universal link.
+
+## Recommended Weekend Execution Order
+1) Prove the musical interaction on Raspberry Pi without Elk
+   - Run the existing JUCE standalone or the JUCE plugin in a simple local host.
+   - Feed normalized sensor values through the already-implemented file-based path.
+   - Capture a working video as soon as the light/distance interaction feels good.
+
+2) Add real sensors locally on the Pi
+   - Read ADS1115 + VL53L0X over I2C.
+   - Convert to normalized `0..1` values in a sidecar process.
+   - Write those values to `/tmp/light.txt` and `/tmp/distance.txt`.
+
+3) Only after the above is stable, move toward Elk OS
+   - Port the same proven behavior into the headless JUCE plugin deployment path.
+   - Treat Elk as packaging/hosting validation, not as the first proof-of-concept milestone.
 
 ## Plan (detailed steps)
 1) Build the plugin for Elk on Raspberry Pi  

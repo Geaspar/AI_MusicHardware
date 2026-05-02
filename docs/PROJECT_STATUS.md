@@ -516,6 +516,38 @@ The AIMusicHardware project has reached a significant milestone with multiple co
 - The stale top-level summary that said sequencing was not working has been corrected.
 - The `2025-09-12` ghost-note section below is now historical context only; it was superseded by the stabilized sequencer baseline logged on `2025-11-17` and the JUCE migration work logged on `2025-11-18` and `2026-05-02`.
 
+## 📅 2026-05-02 — Weekend Hardware POC Direction
+
+### Decision
+- The **ESP32/MQTT sensor-node direction is archived for the immediate proof-of-concept weekend**.
+- The immediate hardware demo target is now:
+  - **Raspberry Pi + local sensors + existing JUCE host path**
+  - Example demo: real light or distance input audibly changes a synth parameter and can be filmed reliably
+
+### Why This Direction
+- The current JUCE code already supports two external normalized sensor inputs (`Light` and `Distance`) mapped to synth parameters.
+- The current ESP32 firmware is broader than needed for a weekend demo and is optimized for a different operating model:
+  - MQTT publishing
+  - device management
+  - battery-aware behavior
+  - deep sleep
+- Elk OS remains the preferred long-term deployment target, but using Elk as the first integration step increases risk for a time-boxed demo.
+
+### Immediate POC Scope
+- Prove the interaction first on a Pi-class Linux host using:
+  - local audio
+  - local I2C sensors
+  - a tiny bridge process writing normalized values to `/tmp/light.txt` and `/tmp/distance.txt`
+- Once the interaction is stable and videoable, move the same behavior into the Elk plugin deployment path.
+- First concrete artifact for this path:
+  - `tools/pi_ads1115_light_bridge.py` for ADS1115 light sensor -> normalized file output
+  - `docs/WEEKEND_PI_LIGHT_POC.md` for the weekend runbook
+  - `docs/PI_LIGHT_SENSOR_HARDWARE_SETUP.md` for detailed breadboard wiring and bring-up
+
+### Archived for Now
+- `firmware/esp32_sensor_node/` remains in the repository as a future/distributed-sensor track.
+- Real MQTT deployment and ESP32 wireless nodes are deferred until after the first local proof-of-concept is working.
+
 ## 📅 2025-09-15 — Sequencer Stability and Timing Fixes (Today)
 
 ### What We Fixed Today
